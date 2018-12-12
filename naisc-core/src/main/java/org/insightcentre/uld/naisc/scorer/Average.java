@@ -5,6 +5,7 @@ import java.io.IOException;
 import static java.lang.Double.max;
 import static java.lang.Double.min;
 import java.util.Map;
+import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.Scorer;
@@ -68,7 +69,7 @@ public class Average implements ScorerFactory {
 
         public AverageImpl(double[] weights, String relation, boolean softmax) {
             this.weights = weights;
-            this.relation = relation;
+            this.relation = relation == null ? Alignment.SKOS_EXACT_MATCH : relation;
             this.softmax = softmax;
         }
         

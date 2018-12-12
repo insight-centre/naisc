@@ -90,6 +90,7 @@ public class Execution implements ExecuteListener {
             pstat.execute();
             stat.execute("CREATE TABLE results (res1 TEXT, prop TEXT, res2 TEXT, lens TEXT, score REAL, valid TEXT)");
             pstat.close();
+            connection.setAutoCommit(false);
             pstat = connection.prepareStatement("INSERT INTO results VALUES (?,?,?,?,?,?)");
             for (Alignment alignment : alignmentSet) {
                 Map<String, LangStringPair> m = lensResults.get(new Pair(alignment.entity1, alignment.entity2));
@@ -102,6 +103,7 @@ public class Execution implements ExecuteListener {
                 pstat.setString(6, "unknown");
                 pstat.execute();
             }
+            connection.commit();
             pstat.close();
             stat.close();
             connection.close();

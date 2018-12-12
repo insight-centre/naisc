@@ -1,0 +1,25 @@
+{
+    "blocking": {
+        "name": "blocking.LabelMatch",
+        "params": {
+            "mode": "lenient",
+            "property": "http://www.w3.org/2000/01/rdf-schema#label"
+        }
+    },
+    "lenses": [{
+        "name": "lens.Label"
+    }],
+    "textFeatures": [{
+        "name": "feature.BasicString"
+    }],
+    "scorers": [{
+        "name": "scorer.Average",
+        "params": {
+            "softmax": true
+        }
+    }],
+    "matcher": {
+        "name": "matcher.UniqueAssignment"
+    }
+}
+
