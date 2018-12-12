@@ -1,0 +1,4 @@
+<file:left#id1> <http://www.w3.org/2004/02/skos/core#exactMatch> <file:right#id1> . # 0.8
+<file:left#id1> <http://www.w3.org/2004/02/skos/core#exactMatch> <file:right#id2> . # 0.1
+<file:left#id2> <http://www.w3.org/2004/02/skos/core#exactMatch> <file:right#id1> . # 0.2
+<file:left#id2> <http://www.w3.org/2004/02/skos/core#exactMatch> <file:right#id2> . # 0.9

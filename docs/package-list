@@ -1,0 +1,13 @@
+eu.monnetproject.lang
+org.insightcentre.uld.naisc
+org.insightcentre.uld.naisc.blocking
+org.insightcentre.uld.naisc.constraint
+org.insightcentre.uld.naisc.feature
+org.insightcentre.uld.naisc.feature.embeddings
+org.insightcentre.uld.naisc.feature.wordnet
+org.insightcentre.uld.naisc.graph
+org.insightcentre.uld.naisc.lens
+org.insightcentre.uld.naisc.main
+org.insightcentre.uld.naisc.matcher
+org.insightcentre.uld.naisc.scorer
+org.insightcentre.uld.naisc.util

@@ -1,0 +1,197 @@
+package org.insightcentre.uld.naisc;
+
+import org.insightcentre.uld.naisc.util.Option;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.PrintStream;
+import java.util.AbstractCollection;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Objects;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.insightcentre.uld.naisc.util.None;
+import org.insightcentre.uld.naisc.util.Some;
+import org.insightcentre.uld.naisc.util.StringPair;
+
+/**
+ * A set of alignments
+ * 
+ * @author John McCrae
+ */
+public class AlignmentSet extends AbstractCollection<Alignment> {
+    /** The alignments */
+    private final List<Alignment> alignments;
+
+    public AlignmentSet() {
+        this.alignments = new ArrayList<>();
+    }
+
+    
+    @JsonCreator public AlignmentSet(List<Alignment> alignments) {
+        this.alignments = alignments;
+    }
+    private Map<StringPair, Alignment> byPair;
+
+    public Option<Alignment> byPair(String id1, String id2) {
+        if(byPair == null) {
+            Map<StringPair, Alignment> map = new HashMap<>();
+            for(Alignment alignment : alignments) {
+                map.put(new StringPair(alignment.entity1,
+                            alignment.entity2), alignment);
+            }
+            byPair = map;
+        }
+        final StringPair sp = new StringPair(id1, id2);
+        return byPair.containsKey(sp) ? new Some<Alignment>(byPair.get(sp)) : new None<Alignment>();
+
+    }
+
+    public List<Alignment> getAlignments() {
+        return Collections.unmodifiableList(alignments);
+    }
+    
+    @SuppressWarnings("Convert2Lambda")
+    public void sortAlignments() {
+        alignments.sort(new Comparator<Alignment>() {
+            @Override
+            public int compare(Alignment o1, Alignment o2) {
+                int i = Double.compare(o1.score, o2.score);
+                if(i != 0) return -i;
+                i = o1.entity1.compareTo(o2.entity1);
+                if(i != 0) return i;
+                i = o1.entity2.compareTo(o2.entity2);
+                if(i != 0) return i;
+                return o1.relation.compareTo(o2.relation);
+            }
+        });
+    }
+
+    @Override
+    public boolean add(Alignment alignment) {
+        boolean rv = this.alignments.add(alignment);
+        if(byPair != null) {
+            byPair.put(new StringPair(alignment.entity1, alignment.entity2), alignment);
+        }
+        return rv;
+    }
+    
+    @Override
+    public Iterator<Alignment> iterator() {
+        final Iterator<Alignment> iter = alignments.iterator();
+        return new Iterator<Alignment>() {
+            Alignment next;
+            @Override
+            public boolean hasNext() {
+                return iter.hasNext();
+            }
+
+            @Override
+            public Alignment next() {
+                return next = iter.next();
+            }
+
+            @Override
+            public void remove() {
+                iter.remove();
+                if(byPair != null) byPair.remove(new StringPair(next.entity1, next.entity2));
+            }
+        };
+    }
+
+    @Override
+    public int size() {
+        return alignments.size();
+    }
+    
+    private String toXML(String rel) {
+        if(rel == null ? Alignment.SKOS_EXACT_MATCH == null : rel.equals(Alignment.SKOS_EXACT_MATCH)) {
+            return "=";
+        /*} else if(rel == Relation.broader) {
+            return ">";
+        } else if(rel == Relation.narrower) {
+            return "<";
+        } else if(rel == Relation.incompatible) {
+            return "%";
+        } else if(rel == Relation.instance) {
+            return "HasInstance";
+        } else if(rel == Relation.isInstanceOf) {
+            return "InstanceOf";*/
+        } else {
+            throw new RuntimeException("Relation not supported by XML");
+        }
+    }
+    
+    public void toXML(PrintStream out) {
+        out.println("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+        out.println("<rdf:RDF xmlns=\"http://knowledgeweb.semanticweb.org/heterogeneity/alignment\"");
+        out.println("  xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\""); 
+        out.println("  xmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\">");
+        out.println("<Alignment>");
+        out.println("  <xml>yes</xml>");
+        out.println("  <level>0</level>");
+        out.println("  <type>??</type>");
+        for(Alignment alignment : alignments) {
+            out.println("  <map>");
+            out.println("    <Cell>");
+            out.println(String.format("      <entity1 rdf:resource=\"%s\"/>", StringEscapeUtils.escapeXml11(alignment.entity1)));
+            out.println(String.format("      <entity2 rdf:resource=\"%s\"/>", StringEscapeUtils.escapeXml11(alignment.entity2)));
+            out.println(String.format("      <measure rdf:datatype=\"xsd:float\">%.6f</measure>", alignment.score));
+            out.println(String.format("      <relation>%s</relation>", toXML(alignment.relation))); 
+            out.println("    </Cell>");
+            out.println("  </map>");
+        }
+        out.println("</Alignment>");
+        out.println("</rdf:RDF>");
+        out.flush();
+    }
+    
+    public void toRDF(PrintStream out) {
+        for(Alignment alignment : alignments) {
+            out.println(String.format("<%s> <%s> <%s> . # %.4f", alignment.entity1, alignment.relation, alignment.entity2, alignment.score));
+        }
+    }
+    
+    private ObjectMapper mapper;
+
+    @Override
+    public String toString() {
+        if(mapper == null) {
+            mapper = new ObjectMapper();
+        }
+        try {
+            return mapper.writeValueAsString(this);
+        } catch(JsonProcessingException x) {
+            throw new RuntimeException(x);
+        }
+    }
+
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 59 * hash + Objects.hashCode(this.alignments);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final AlignmentSet other = (AlignmentSet) obj;
+        if (!Objects.equals(this.alignments, other.alignments)) {
+            return false;
+        }
+        return true;
+    }
+    
+}

@@ -1,0 +1,5 @@
+<file:left#id1> <http://www.w3.org/2000/01/rdf-schema#label> "easy example"@en .
+<file:left#id2> <http://www.w3.org/2000/01/rdf-schema#label> "this is a harder example"@en .
+<file:left#id3> <http://www.w3.org/2000/01/rdf-schema#label> "this is not really something to match"@en .
+<file:left#id3> <http://www.w3.org/2000/01/rdf-schema#label> "einfacher Beispiel"@de .
+

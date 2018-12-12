@@ -1,0 +1,2 @@
+<file:right#id1> <http://www.w3.org/2000/01/rdf-schema#label> "an example"@en .
+<file:right#id2> <http://www.w3.org/2000/01/rdf-schema#label> "this is harder"@en .

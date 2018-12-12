@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE LexicalResource SYSTEM "http://globalwordnet.github.io/schemas/WN-LMF-1.0.dtd">
+<LexicalResource xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <Lexicon>
+        <LexicalEntry id="e1">
+            <Lemma writtenForm="cat" partOfSpeech="n"/>
+            <Sense id="s1" synset="c1"/>
+        </LexicalEntry>
+        <LexicalEntry id="e2">
+            <Lemma writtenForm="dog" partOfSpeech="n"/>
+            <Sense id="s2" synset="c2"/>
+        </LexicalEntry>
+        <LexicalEntry id="e3">
+            <Lemma writtenForm="animal" partOfSpeech="n"/>
+            <Sense id="s3" synset="c3"/>
+        </LexicalEntry>
+        <Synset id="c1">
+            <Definition>feline</Definition>
+            <SynsetRelation relType="hypernym" target="c3"/>
+        </Synset>
+        <Synset id="c2">
+            <Definition>canine</Definition>
+            <SynsetRelation relType="hypernym" target="c3"/>
+        </Synset>
+        <Synset id="c3">
+            <Definition>feline or canine</Definition>
+            <SynsetRelation relType="hyponym" target="c1"/>
+            <SynsetRelation relType="hyponym" target="c2"/>
+        </Synset>
+    </Lexicon>
+</LexicalResource>
