@@ -140,6 +140,10 @@ public class Main {
             int count = 0;
             AlignmentSet alignments = new AlignmentSet();
             for (Pair<Resource, Resource> block : blocks) {
+                if(block._1.getURI() == null || block._1.getURI().equals("") ||
+                        block._1.getURI() == null || block._1.getURI().equals("")) {
+                    throw new RuntimeException("Resource with URI");
+                }
                 if (++count % 1000 == 0) {
                     monitor.updateStatus(Stage.SCORING, "Scoring (" + count + " done)");
                 }

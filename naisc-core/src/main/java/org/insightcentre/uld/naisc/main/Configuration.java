@@ -24,6 +24,7 @@ import org.insightcentre.uld.naisc.TextFeatureFactory;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.GraphFeatureFactory;
 import org.insightcentre.uld.naisc.blocking.All;
+import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching;
 import org.insightcentre.uld.naisc.blocking.IDMatch;
 import org.insightcentre.uld.naisc.blocking.LabelMatch;
 import org.insightcentre.uld.naisc.constraint.Bijective;
@@ -400,7 +401,8 @@ public class Configuration {
     public static Class[] knownBlockingStrategies = new Class[]{
         All.class,
         IDMatch.class,
-        LabelMatch.class
+        LabelMatch.class,
+        ApproximateStringMatching.class
     };
 
     /**

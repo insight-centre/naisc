@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
 import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
+import java.util.AbstractCollection;
 import java.util.Comparator;
 import java.util.Iterator;
 
@@ -13,7 +14,7 @@ import java.util.Iterator;
  * 
  * @author John McCrae
  */
-public class Beam<A> implements Iterable<A> {
+public class Beam<A> extends AbstractCollection<A> {
     private final Object2DoubleMap<A> scores = new Object2DoubleOpenHashMap<>();
     private final ObjectSortedSet<A> queue = new ObjectRBTreeSet<A>(new ScoreComparator<A>());
     private final int size;
@@ -87,5 +88,13 @@ public class Beam<A> implements Iterable<A> {
     public void clear() {
         queue.clear();
         scores.clear();
+    }
+    
+    public double minimum() {
+        if(queue.isEmpty()) {
+            return Double.MIN_VALUE;
+        } else {
+            return scores.getDouble(queue.last());
+        }
     }
 }

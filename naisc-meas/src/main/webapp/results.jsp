@@ -144,6 +144,7 @@ var app = new Vue({
   data: data,
   methods: {
     displayUrl(url) {
+        if(url == null) { return "null"; }
         var hashIndex = url.indexOf('#');
         if(hashIndex > 0) {
             return url.substring(hashIndex + 1);

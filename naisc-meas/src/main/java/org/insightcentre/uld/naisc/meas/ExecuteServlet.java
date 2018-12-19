@@ -38,7 +38,9 @@ public class ExecuteServlet extends HttpServlet {
             String id = er.runId == null || !er.runId.matches(VALID_ID)
                     ? String.format("%016x", new Random().nextLong())
                     : er.runId;
-            if (ManageServlet.completed.containsKey(id) || executions.containsKey(id)) {
+            if(executions.containsKey(id) && !executions.get(id).isActive && !ManageServlet.completed.containsKey(id)) {
+                executions.remove(id);
+            } else if (ManageServlet.completed.containsKey(id) || executions.containsKey(id)) {
                 throw new IllegalArgumentException("Run already exists!");
             }
             ExecutionTask execution = new ExecutionTask(er.config, er.configName, er.dataset, id);
@@ -81,6 +83,7 @@ public class ExecuteServlet extends HttpServlet {
         private final Configuration config;
         private final String dataset, id, configName;
         public final Execution listener;
+        public boolean isActive;
 
         public ExecutionTask(Configuration config, String configName, String dataset, String id) {
             this.config = config;
@@ -88,17 +91,20 @@ public class ExecuteServlet extends HttpServlet {
             this.id = id;
             this.configName = configName;
             this.listener = new Execution(id);
+            this.isActive = false;
         }
 
         @Override
         public void run() {
             try {
+                isActive = true;
                 File f = new File("runs");
                 f.mkdirs();
                 long time = System.currentTimeMillis();
                 AlignmentSet alignment = Main.execute(new File(new File(new File("datasets"), dataset), "left.rdf"),
                         new File(new File(new File("datasets"), dataset), "right.rdf"),
                         config, listener);
+                if(alignment == null) return;
                 time = System.currentTimeMillis() - time;
                 listener.updateStatus(Stage.COMPLETED, "Completed");
                 Run run = new Run(id, configName, dataset, -1.0, -1.0, -1.0, -2.0, time);
@@ -109,6 +115,8 @@ public class ExecuteServlet extends HttpServlet {
                 x.printStackTrace();
                 listener.response.stage = Stage.FAILED;
                 listener.response.lastMessage = x.getClass().getSimpleName() + ": " + x.getMessage();
+            } finally {
+                isActive = false;
             }
         }
 
