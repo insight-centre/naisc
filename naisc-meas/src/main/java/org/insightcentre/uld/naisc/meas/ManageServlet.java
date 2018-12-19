@@ -40,7 +40,9 @@ public class ManageServlet extends HttpServlet {
                         }
                     }
                     completed.remove(id);
-                    new File(new File("runs"), id + ".db").delete();
+                    File f = new File(new File("runs"), id + ".db");
+                    f.delete();
+                    System.err.println("Deleted " + f);
                 } catch (Exception x) {
                     x.printStackTrace();
                 }

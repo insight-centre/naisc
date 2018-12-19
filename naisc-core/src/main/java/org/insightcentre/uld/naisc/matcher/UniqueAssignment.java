@@ -139,8 +139,10 @@ public class UniqueAssignment implements MatcherFactory {
                 MunkRes munkRes = new MunkRes(m);
                 double[] sim = m.sim();
                 for (IntPair ip : munkRes.execute()) {
-                    alignmentSet.add(new Alignment(linv.get(ip._1), rinv.get(ip._2),
+                    if(linv.containsKey(ip._1) && rinv.containsKey(ip._2)) {
+                        alignmentSet.add(new Alignment(linv.get(ip._1), rinv.get(ip._2),
                             scores.getOrDefault(new IntStringTriple(ip._1, ip._2, rel), baseProbability), rel));
+                    }
                 }
                 System.err.printf("Produced %d matches from %d x %d (%s)\n", alignmentSet.size(), lefts.size(), rights.size(), rel);
             }
@@ -185,6 +187,11 @@ public class UniqueAssignment implements MatcherFactory {
                 return false;
             }
             return true;
+        }
+
+        @Override
+        public String toString() {
+            return "IntPair{" + "_1=" + _1 + ", _2=" + _2 + '}';
         }
 
     }

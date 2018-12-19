@@ -5,10 +5,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Random;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -29,7 +26,7 @@ public class ExecuteServlet extends HttpServlet {
     private HashMap<String, ExecutionTask> executions = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
 
-    final static public String VALID_ID = "[A-Za-z][A-Za-z0-9_\\-]*";
+    final static public String VALID_ID = "[A-Za-z0-9][A-Za-z0-9_\\-]*";
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
