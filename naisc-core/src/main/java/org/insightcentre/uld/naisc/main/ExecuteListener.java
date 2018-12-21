@@ -16,7 +16,8 @@ public interface ExecuteListener {
         TRAINING,
         FINALIZING,
         FAILED,
-        COMPLETED
+        COMPLETED,
+        EVALUATION
     }
     
     /**

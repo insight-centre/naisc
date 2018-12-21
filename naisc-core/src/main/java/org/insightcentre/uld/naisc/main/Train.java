@@ -10,7 +10,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,13 +21,13 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
-import org.apache.jena.riot.RDFLanguages;
+import org.insightcentre.uld.naisc.Alignment;
+import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.FeatureSetWithScore;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.Matcher;
-import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.ScorerTrainer;
@@ -49,7 +48,7 @@ public class Train {
     }
     final static ObjectMapper mapper = new ObjectMapper();
 
-    public static Map<Property, Object2DoubleMap<Statement>> readAlignments(File alignmentFile) throws IOException {
+    public static  Map<Property, Object2DoubleMap<Statement>>  readAlignments(File alignmentFile) throws IOException {
         Map<Property, Object2DoubleMap<Statement>> alignments = new HashMap<>();
         Model model = ModelFactory.createDefaultModel();
         BufferedReader br = new BufferedReader(new FileReader(alignmentFile));
@@ -89,6 +88,18 @@ public class Train {
         }
         return alignments;
     }
+//    
+//    public static AlignmentSet readAlignmentSet(File alignmentFile) throws IOException {
+//         Map<Property, Object2DoubleMap<Statement>> alignments = readAlignments(alignmentFile);
+//        AlignmentSet aligns = new AlignmentSet();
+//        for(Map.Entry<Property, Object2DoubleMap<Statement>> e : alignments.entrySet()) {
+//            for(Object2DoubleMap.Entry<Statement> e2 : e.getValue().object2DoubleEntrySet()) {
+//                Alignment a = new Alignment(e2.getKey().getSubject(), e2.getKey().getObject().asResource(), e2.getDoubleValue(), e.getKey().getURI());
+//                aligns.add(a);
+//            }
+//        }
+//        return aligns;
+//    }
 
     private static final LangStringPair EMPTY_LANG_STRING_PAIR = new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "", "");
     

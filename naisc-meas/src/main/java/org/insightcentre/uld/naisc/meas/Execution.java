@@ -15,11 +15,11 @@ import java.util.List;
 import java.util.Map;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
+import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
 import org.insightcentre.uld.naisc.meas.Meas.Run;
 import org.insightcentre.uld.naisc.meas.Meas.RunResultRow;
-import org.insightcentre.uld.naisc.meas.Meas.Valid;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Pair;
 
@@ -100,7 +100,7 @@ public class Execution implements ExecuteListener {
                 pstat.setString(3, alignment.entity2);
                 pstat.setString(4, lens);
                 pstat.setDouble(5, alignment.score);
-                pstat.setString(6, "unknown");
+                pstat.setString(6, alignment.valid.toString());
                 pstat.execute();
             }
             connection.commit();

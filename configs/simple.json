@@ -1,8 +1,8 @@
 {
     "blocking": {
-        "name": "blocking.LabelMatch",
+        "name": "blocking.ApproximateStringMatching",
         "params": {
-            "mode": "lenient",
+            "maxMatches": 5,
             "property": "http://www.w3.org/2000/01/rdf-schema#label"
         }
     },

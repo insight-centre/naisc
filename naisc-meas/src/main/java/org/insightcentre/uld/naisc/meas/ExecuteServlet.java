@@ -1,20 +1,26 @@
 package org.insightcentre.uld.naisc.meas;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.Statement;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.main.Configuration;
+import org.insightcentre.uld.naisc.main.Evaluate;
 import org.insightcentre.uld.naisc.main.ExecuteListener.Stage;
 import org.insightcentre.uld.naisc.main.Main;
+import org.insightcentre.uld.naisc.main.Train;
 import org.insightcentre.uld.naisc.meas.Meas.Run;
 
 /**
@@ -103,8 +109,21 @@ public class ExecuteServlet extends HttpServlet {
                         config, listener);
                 if(alignment == null) return;
                 time = System.currentTimeMillis() - time;
+                File alignFile = new File(new File(new File("datasets"), dataset), "align.rdf");
+                final Evaluate.EvaluationResults er;
+                if(alignFile.exists()) {
+                    listener.updateStatus(Stage.EVALUATION, "Evaluating");
+                    Map<Property, Object2DoubleMap<Statement>> gold = Train.readAlignments(alignFile);
+                    er = Evaluate.evaluate(alignment, gold);
+                } else {
+                    er = null;
+                }
                 listener.updateStatus(Stage.COMPLETED, "Completed");
-                Run run = new Run(id, configName, dataset, -1.0, -1.0, -1.0, -2.0, time);
+                Run run = new Run(id, configName, dataset, 
+                        er == null ? -1.0 : er.precision(), 
+                        er == null ? -1.0 : er.recall(), 
+                        er == null ? -1.0 : er.fmeasure(), 
+                        er == null ? -2.0 : er.correlation, time);
                 ManageServlet.completed.put(id, run);
                 listener.saveAligment(run, alignment);
                 Meas.data.runs.add(run);

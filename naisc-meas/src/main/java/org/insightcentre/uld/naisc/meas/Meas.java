@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.main.Configuration;
 import org.insightcentre.uld.naisc.main.ExecuteListener.Stage;
 import org.insightcentre.uld.naisc.util.LangStringPair;
@@ -166,10 +167,4 @@ public class Meas {
         public Valid valid;
     }
     
-    public enum Valid {
-        yes,
-        no,
-        unknown,
-        novel
-    }
 }
