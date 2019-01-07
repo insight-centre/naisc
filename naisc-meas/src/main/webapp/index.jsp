@@ -66,15 +66,19 @@
                         </tr>
                     </thead>
                     <tr v-for="run in runs">
-                        <td><a v-bind:href="'results.jsp?id=' + run.identifier">{{run.identifier}}</a></td>
+                        <td><a v-bind:href="'results.jsp?id=' + run.identifier" v-if="!run.isTrain">{{run.identifier}}</a>
+                            <span v-if="run.isTrain">{{run.identifier}}</span></td>
                         <td>{{run.configName}}</td>
                         <td>{{run.datasetName}}</td>
                         <td v-if="run.precision >= 0">{{run.precision.toFixed(2)}}%</td>
-                        <td v-if="run.precision < 0">n/a</td>
+                        <td v-if="run.precision < 0 && !run.isTrain">n/a</td>
                         <td v-if="run.recall >= 0">{{run.recall.toFixed(2)}}%</td>
-                        <td v-if="run.recall < 0">n/a</td>
+                        <td v-if="run.recall < 0 && !run.isTrain">n/a</td>
                         <td v-if="run.fmeasure >= 0">{{run.fmeasure.toFixed(2)}}%</td>
-                        <td v-if="run.fmeasure < 0">n/a</td>
+                        <td v-if="run.fmeasure < 0 && !run.isTrain">n/a</td>
+                        <td v-if="run.isTrain">Train</td>
+                        <td v-if="run.isTrain">Train</td>
+                        <td v-if="run.isTrain">Train</td>
                         <!--<td v-if="run.correlation >= -1">{{run.correlation.toFixed(3)}}</td>
                         <td v-if="run.correlation < -1">n/a</td>-->
                         <td>{{(run.time / 1000).toFixed(3)}}s</td>
@@ -111,6 +115,8 @@
                             <i class="fas fa-edit"></i>New Configuration</button>
                     </div>
                     <button class="btn btn-success" type="button" v-on:click.prevent="startRun()"><i class="fas fa-play"></i> Start Run</button>
+                    <button class="btn btn-success" type="button" v-on:click.prevent="train()"><i class="fas fa-dumbbell"></i> Train Model</button>
+                    <button class="btn btn-success" type="button" v-on:click.prevent="crossfold()"><i class="fas fa-flask"></i> Cross-fold Evaluation</button>
                     <div v-if="configName" class="config">
                         <a v-on:click="toggleConfig()" ><i class="fas fa-angle-right" v-if="!showConfig"></i><i class="fas fa-angle-down" v-if="showConfig"></i> Show/hide configuration</a>
                     </div>
@@ -321,7 +327,53 @@ var app = new Vue({
         var datasetName = this.datasetName;
         var data = this;
         jQuery.ajax({
-            url: "/execute",
+            url: "/execute/start",
+            method: "POST",
+            data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier }),
+            processData: false,
+            success: function(result) {
+                var id = result;
+                data.activeRuns.push({
+                    "configName": configName,
+                    "datasetName": datasetName,
+                    "identifier": id,
+                    "stage": "INITIALIZING",
+                    "status": "Submitted",
+                    "active": true
+                });
+            },
+            error: function(er) { document.write(er.responseText); }
+        });
+    },
+    train() {
+        var configName = this.configName;
+        var datasetName = this.datasetName;
+        var data = this;
+        jQuery.ajax({
+            url: "/execute/train",
+            method: "POST",
+            data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier }),
+            processData: false,
+            success: function(result) {
+                var id = result;
+                data.activeRuns.push({
+                    "configName": configName,
+                    "datasetName": datasetName,
+                    "identifier": id,
+                    "stage": "INITIALIZING",
+                    "status": "Submitted",
+                    "active": true
+                });
+            },
+            error: function(er) { document.write(er.responseText); }
+        });
+    },
+    crossfold() {
+        var configName = this.configName;
+        var datasetName = this.datasetName;
+        var data = this;
+        jQuery.ajax({
+            url: "/execute/crossfold",
             method: "POST",
             data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier }),
             processData: false,

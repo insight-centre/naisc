@@ -63,7 +63,7 @@ public class ManageServlet extends HttpServlet {
                     oldRun = Execution.loadRun(id);
                 }
                 if(oldRun != null) {
-                    Run run = new Meas.Run(data.identifier, oldRun.configName, oldRun.datasetName, data.precision, data.recall, data.fmeasure, -2, oldRun.time);
+                    Run run = new Meas.Run(data.identifier, oldRun.configName, oldRun.datasetName, data.precision, data.recall, data.fmeasure, -2, oldRun.time, oldRun.isTrain);
                     completed.put(data.identifier, run);
                     Meas.updateRun(data.identifier, run);
                     new Execution(data.identifier).updateAlignment(run, data.results);

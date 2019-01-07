@@ -21,8 +21,6 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.FeatureSetWithScore;
@@ -102,8 +100,8 @@ public class Train {
 //    }
 
     private static final LangStringPair EMPTY_LANG_STRING_PAIR = new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "", "");
-    
-    /**
+   
+        /**
      * Execute NAISC
      *
      * @param leftFile The left RDF dataset to align
@@ -114,6 +112,22 @@ public class Train {
      */
     public static void execute(File leftFile, File rightFile, File alignment,
             File configuration) throws IOException {
+        System.err.println("Reading Configuration");
+        final Configuration config = mapper.readValue(configuration, Configuration.class);
+        execute(leftFile, rightFile, alignment, config);
+    }
+    
+    /**
+     * Execute NAISC
+     *
+     * @param leftFile The left RDF dataset to align
+     * @param rightFile The right RDF dataset to align
+     * @param alignment The alignments to learn
+     * @param configuration The configuration object
+     * @throws IOException If an IO error occurs
+     */
+    public static void execute(File leftFile, File rightFile, File alignment,
+            Configuration config) throws IOException {
         System.err.println("Reading left dataset");
         Model leftModel = ModelFactory.createDefaultModel();
         leftModel.read(new FileReader(leftFile), leftFile.toURI().toString(), "riot");
@@ -124,9 +138,6 @@ public class Train {
 
         System.err.println("Reading alignments");
         Map<Property, Object2DoubleMap<Statement>> goldAlignments = readAlignments(alignment);
-
-        System.err.println("Reading Configuration");
-        final Configuration config = mapper.readValue(configuration, Configuration.class);
 
         System.err.println("Loading blocking strategy");
         BlockingStrategy blocking = config.makeBlockingStrategy();

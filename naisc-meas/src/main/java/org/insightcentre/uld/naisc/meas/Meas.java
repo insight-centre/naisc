@@ -123,11 +123,12 @@ public class Meas {
         public String datasetName;
         public double precision, recall, fmeasure, correlation;
         public long time;
+        public boolean isTrain;
 
         public Run() {
         }
 
-        public Run(String identifier, String configName, String datasetName, double precision, double recall, double fmeasure, double correlation, long time) {
+        public Run(String identifier, String configName, String datasetName, double precision, double recall, double fmeasure, double correlation, long time, boolean isTrain) {
             this.identifier = identifier;
             this.configName = configName;
             this.datasetName = datasetName;
@@ -136,6 +137,7 @@ public class Meas {
             this.fmeasure = fmeasure;
             this.correlation = correlation;
             this.time = time;
+            this.isTrain = isTrain;
         }
 
     }
