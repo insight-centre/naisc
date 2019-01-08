@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +26,8 @@ import org.insightcentre.uld.naisc.util.Pair;
  */
 public class CrossFold {
 
+    public final int MAX_ITERS = 10;
+
     private List<Pair<Resource, Resource>> getAllPairs(Map<Property, Object2DoubleMap<Statement>> alignments) {
         List<Pair<Resource, Resource>> pairs = new ArrayList<>();
         for (Map.Entry<Property, Object2DoubleMap<Statement>> e : alignments.entrySet()) {
@@ -41,11 +42,9 @@ public class CrossFold {
 
     /**
      * Split the dataset, randomly but heuristically. This method attempts to
-     * group the entities according to two measures, firstly <b>balance</b>,
-     * which is based on the Fano factor of the dist. Secondly,
+     * group the entities according to
      * <b>precision</b> which is the number of links in the same fold, divided
-     * by the total number of links. This method greedily attempts to minimize
-     * the harmonic mean of this.
+     * by the total number of links. This method greedily attempts to maximize this.
      *
      * @param alignments The alignment data
      * @param folds The number of folds
@@ -54,8 +53,8 @@ public class CrossFold {
      */
     public Result splitDataset(Map<Property, Object2DoubleMap<Statement>> alignments, int folds) {
         final List<Pair<Resource, Resource>> allPairs = getAllPairs(alignments);
-        final List<Resource> leftEntities = allPairs.stream().map(x -> x._1).collect(Collectors.toList());
-        final List<Resource> rightEntities = allPairs.stream().map(x -> x._2).collect(Collectors.toList());
+        final List<Resource> leftEntities = new ArrayList<>(allPairs.stream().map(x -> x._1).collect(Collectors.toSet()));
+        final List<Resource> rightEntities = new ArrayList<>(allPairs.stream().map(x -> x._2).collect(Collectors.toSet()));
 
         Collections.shuffle(leftEntities);
         Collections.shuffle(rightEntities);
@@ -107,33 +106,20 @@ public class CrossFold {
             }
         }
 
-        double lbalance = balance(lsize);
-        double rbalance = balance(rsize);
-        double precision = (double) inlinks / (double) alllinks;
-        double lscore = 2.0 * lbalance * precision / (lbalance + precision);
-        double rscore = 2.0 * rbalance * precision / (rbalance + precision);
-
         boolean improved = true;
+        int iters = 0;
 
-        while (improved) {
+        while (improved && ++iters <= MAX_ITERS) {
             improved = false;
-            StepResult res = step(leftEntities, folds, forward, rightFolds, byLeftFold, inlinks, alllinks, lbalance, lscore, lsize, leftFolds);
+            StepResult res = step(leftEntities, forward, rightFolds, byLeftFold, inlinks, alllinks, leftFolds);
             if (res.improved) {
                 improved = true;
                 inlinks = res.inlinks;
-                lbalance = res.balance;
-                precision = (double) inlinks / (double) alllinks;
-                lscore = 2.0 * lbalance * precision / (lbalance + precision);
-                rscore = 2.0 * rbalance * precision / (rbalance + precision);
             }
-            res = step(rightEntities, folds, backward, leftFolds, byRightFold, inlinks, alllinks, rbalance, rscore, rsize, rightFolds);
+            res = step(rightEntities, backward, leftFolds, byRightFold, inlinks, alllinks, rightFolds);
             if (res.improved) {
                 improved = true;
                 inlinks = res.inlinks;
-                rbalance = res.balance;
-                precision = (double) inlinks / (double) alllinks;
-                lscore = 2.0 * lbalance * precision / (lbalance + precision);
-                rscore = 2.0 * rbalance * precision / (rbalance + precision);
             }
         }
 
@@ -144,26 +130,24 @@ public class CrossFold {
     private static class StepResult {
 
         public final int inlinks;
-        public final double balance;
         public final boolean improved;
 
-        public StepResult(int inlinks, double balance, boolean improved) {
+        public StepResult(int inlinks, boolean improved) {
             this.inlinks = inlinks;
-            this.balance = balance;
             this.improved = improved;
         }
 
     }
 
-    private StepResult step(final List<Resource> entities, final int folds, final IntSet[] links,
+    private StepResult step(final List<Resource> entities, final IntSet[] links,
             final IntSet[] reverseFolds, final int[] byFold,
-            int inlinks, final int alllinks, double balance, double _score,
-            final int[] lsize, final IntSet[] leftFolds) {
+            int inlinks, final int alllinks, 
+            final IntSet[] leftFolds) {
         boolean improved = false;
-        double precision;
+        double precision = (double)inlinks / (double)alllinks;
         for (int l = 0; l < entities.size(); l++) {
-            double[] score = new double[entities.size() + folds];
-            int[] dinlinks = new int[entities.size() + folds];
+            double[] score = new double[entities.size()];
+            int[] dinlinks = new int[entities.size()];
             int d = 0;
             for (int t : links[l]) {
                 if (reverseFolds[byFold[l]].contains(t)) {
@@ -186,58 +170,28 @@ public class CrossFold {
                     }
                 }
                 double precision2 = (double) (inlinks + dinlinks[l2]) / alllinks;
-                score[l2] = 2.0 * balance * precision2 / (balance + precision2) - _score;
-            }
-            for (int i = 0; i < folds; i++) {
-                for (int t : links[l]) {
-                    if (reverseFolds[i].contains(t)) {
-                        dinlinks[entities.size() + i] += 1;
-                    }
-                }
-                double precision2 = (double) (inlinks + dinlinks[entities.size() + i]) / alllinks;
-                lsize[byFold[l]]--;
-                lsize[i]++;
-                double lbalance2 = balance(lsize);
-                lsize[byFold[l]]++;
-                lsize[i]--;
-                score[entities.size() + i] = 2.0 * lbalance2 * precision2 / (lbalance2 + precision2) - _score;
+                score[l2] = precision2 - precision;
             }
             int best = whichMax(score);
             if (score[best] > 0) {
-                if (best < entities.size()) {
                     int fold1 = byFold[l];
                     int fold2 = byFold[best];
                     if (fold1 == fold2) {
                         throw new RuntimeException();
                     }
-                    System.err.println(String.format("Swapping %d with %d", l, best));
+                    //System.err.println(String.format("Swapping %d with %d", l, best));
                     inlinks += dinlinks[best];
                     precision = (double) inlinks / alllinks;
-                    _score = 2.0 * balance * precision / (balance + precision);
                     leftFolds[fold1].remove(l);
                     leftFolds[fold1].add(best);
                     leftFolds[fold2].add(l);
                     leftFolds[fold2].remove(best);
                     byFold[l] = fold2;
                     byFold[best] = fold1;
-                } else {
-                    int fold1 = byFold[l];
-                    int fold2 = best - entities.size();
-                    System.err.println(String.format("Moving %d to %d", l, fold2));
-                    inlinks += dinlinks[best];
-                    precision = (double) inlinks / alllinks;
-                    lsize[fold1]--;
-                    lsize[fold2]++;
-                    balance = balance(lsize);
-                    _score = 2.0 * balance * precision / (balance + precision);
-                    leftFolds[fold1].remove(l);
-                    leftFolds[fold2].add(l);
-                    byFold[l] = fold2;
-                }
                 improved = true;
             }
         }
-        return new StepResult(inlinks, balance, improved);
+        return new StepResult(inlinks, improved);
 
     }
 
@@ -255,24 +209,6 @@ public class CrossFold {
             }
         }
         return i;
-    }
-
-    /**
-     * The Fano Factor is defined F = var(x) / mean(x). This metric is changed
-     * to return 1 - F / sum(x) as this is bounded between 0 and 1 and the
-     * maximum is given when the distribution is well-balanced. We also apply
-     * add-one alpha smoothing
-     */
-    private double balance(int[] sizes) {
-        int sumxx = 0;
-        int sumx = 0;
-        int N = sizes.length;
-        for (int s : sizes) {
-            sumxx += (s + 1) * (s + 1);
-            sumx += s + 1;
-        }
-        double F = (double) (N * sumxx - sumx * sumx) / (double) ((N - 1) * sumx);
-        return 1.0 - F / sumx;
     }
 
     private Object2IntMap<Resource> reverseMap(List<Resource> leftEntities) {
