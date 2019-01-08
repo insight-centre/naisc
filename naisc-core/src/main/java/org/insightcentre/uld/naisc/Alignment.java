@@ -58,11 +58,11 @@ public class Alignment {
         assert (score >= 0 && score <= 1);
     }
     
-    public Alignment(Statement st, double score, Valid valid) {
-        this.entity1 = st.getSubject().getURI();
-        this.entity2 = st.getObject().asResource().getURI();
+    public Alignment(Alignment a, double score, Valid valid) {
+        this.entity1 = a.entity1;
+        this.entity2 = a.entity2;
         this.score = score;
-        this.relation = st.getPredicate().getURI();
+        this.relation = a.relation;
         this.valid = valid;
         assert (score >= 0 && score <= 1);
     }
@@ -79,6 +79,15 @@ public class Alignment {
         assert (score >= 0 && score <= 1);
     }
 
+    public Alignment(Statement statement, double score) {
+        assert(statement.getSubject().isURIResource() && statement.getObject().isURIResource());
+        this.entity1 = statement.getSubject().getURI();
+        this.entity2 = statement.getObject().asResource().getURI();
+        this.score = score;
+        this.relation = statement.getPredicate().getURI();
+        assert (score >= 0 && score <= 1);
+    }
+    
     private ObjectMapper mapper;
 
     @Override

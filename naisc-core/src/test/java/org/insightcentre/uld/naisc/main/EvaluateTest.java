@@ -54,23 +54,16 @@ public class EvaluateTest {
         output.add(new Alignment("file:id2", "file:id3", 0.56, Alignment.SKOS_EXACT_MATCH));
         output.add(new Alignment("file:id3", "file:id1", 1.0, Alignment.SKOS_EXACT_MATCH));
         output.add(new Alignment("file:id1", "file:id2", 0.3, "file:customProp"));
-        Map<Property, Object2DoubleMap<Statement>> gold = new HashMap<>();
-        Model m = ModelFactory.createDefaultModel();
-        Property exactMatch = m.createProperty(Alignment.SKOS_EXACT_MATCH);
-        Property redHerring = m.createProperty("file:redHerring");
-        Object2DoubleMap exactMap = new Object2DoubleOpenHashMap();
-        exactMap.put(m.createStatement(m.createResource("file:id1"), exactMatch, m.createResource("file:id2")), 0.5);
-        exactMap.put(m.createStatement(m.createResource("file:id2"), exactMatch, m.createResource("file:id1")), 0.3);
-        Object2DoubleMap herringMap = new Object2DoubleOpenHashMap();
-        herringMap.put(m.createStatement(m.createResource("file:id1"), redHerring, m.createResource("file:id2")), 0.3);
-        gold.put(exactMatch, exactMap);
-        gold.put(redHerring, herringMap);
+        AlignmentSet gold = new AlignmentSet();
+        gold.add(new Alignment("file:id1", "file:id2", 0.5, Alignment.SKOS_EXACT_MATCH));
+        gold.add(new Alignment("file:id2", "file:id1", 0.3, Alignment.SKOS_EXACT_MATCH));
+        gold.add(new Alignment("file:id1","file:id2", 0.3, "file:redHerring"));
         
         Evaluate.EvaluationResults expResult = new Evaluate.EvaluationResults();
         expResult.tp = 1;
         expResult.fp = 3;
         expResult.fn = 2;
-        Evaluate.EvaluationResults result = Evaluate.evaluate(output, gold);
+        Evaluate.EvaluationResults result = Evaluate.evaluate(output, gold, new Main.StdErrMonitor());
         assertEquals(expResult.tp, result.tp);
         assertEquals(expResult.fp, result.fp);
         assertEquals(expResult.fn, result.fn);

@@ -2,8 +2,6 @@ package org.insightcentre.uld.naisc.main;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -14,13 +12,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
+import org.insightcentre.uld.naisc.Alignment;
+import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.FeatureSetWithScore;
@@ -46,8 +46,8 @@ public class Train {
     }
     final static ObjectMapper mapper = new ObjectMapper();
 
-    public static  Map<Property, Object2DoubleMap<Statement>>  readAlignments(File alignmentFile) throws IOException {
-        Map<Property, Object2DoubleMap<Statement>> alignments = new HashMap<>();
+    public static AlignmentSet readAlignments(File alignmentFile) throws IOException {
+        AlignmentSet alignments = new AlignmentSet();
         Model model = ModelFactory.createDefaultModel();
         BufferedReader br = new BufferedReader(new FileReader(alignmentFile));
         String line = br.readLine();
@@ -63,10 +63,7 @@ public class Train {
                     throw new IOException("Bad line in alignments (no statement)", x);
                 }
                 double score = Double.parseDouble(elems[1]);
-                if (!alignments.containsKey(st.getPredicate())) {
-                    alignments.put(st.getPredicate(), new Object2DoubleOpenHashMap<Statement>());
-                }
-                alignments.get(st.getPredicate()).put(st, score);
+                alignments.add(new Alignment(st, score));
             } else {
                 model.removeAll();
                 model.read(new StringReader(line), alignmentFile.toURI().toString(), "NTRIPLES");
@@ -77,10 +74,7 @@ public class Train {
                     throw new IOException("Bad line in alignments (no statement)", x);
                 }
                 double score = 1.0;
-                if (!alignments.containsKey(st.getPredicate())) {
-                    alignments.put(st.getPredicate(), new Object2DoubleOpenHashMap<Statement>());
-                }
-                alignments.get(st.getPredicate()).put(st, score);
+                alignments.add(new Alignment(st, score));
             }
             line = br.readLine();
         }
@@ -111,60 +105,76 @@ public class Train {
      * @throws IOException If an IO error occurs
      */
     public static void execute(File leftFile, File rightFile, File alignment,
-            File configuration) throws IOException {
-        System.err.println("Reading Configuration");
+            File configuration, ExecuteListener monitor) throws IOException {
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
         final Configuration config = mapper.readValue(configuration, Configuration.class);
-        execute(leftFile, rightFile, alignment, config);
+        execute(leftFile, rightFile, alignment, config, monitor);
     }
     
     /**
-     * Execute NAISC
+     * Execute a NAISC training run
      *
      * @param leftFile The left RDF dataset to align
      * @param rightFile The right RDF dataset to align
      * @param alignment The alignments to learn
-     * @param configuration The configuration object
+     * @param config The configuration object
      * @throws IOException If an IO error occurs
      */
     public static void execute(File leftFile, File rightFile, File alignment,
-            Configuration config) throws IOException {
-        System.err.println("Reading left dataset");
+            Configuration config, ExecuteListener monitor) throws IOException {
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
         Model leftModel = ModelFactory.createDefaultModel();
         leftModel.read(new FileReader(leftFile), leftFile.toURI().toString(), "riot");
 
-        System.err.println("Reading right dataset");
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
         Model rightModel = ModelFactory.createDefaultModel();
         rightModel.read(new FileReader(rightFile), rightFile.toURI().toString(), "riot");
 
-        System.err.println("Reading alignments");
-        Map<Property, Object2DoubleMap<Statement>> goldAlignments = readAlignments(alignment);
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading alignments");
+        AlignmentSet goldAlignments = readAlignments(alignment);
+        execute(leftModel, rightModel, goldAlignments, config, monitor);
+    }
+    
+    /**
+     * Train a NAISC model
+     * @param leftModel The left dataset
+     * @param rightModel The right dataset
+     * @param goldAlignments The gold standard alignments
+     * @param config The configuration object
+     * @param monitor The listener for events
+     * @throws IOException If an IO error occurs
+     */
+    public static void execute(Model leftModel, Model rightModel, 
+            AlignmentSet goldAlignments, 
+            Configuration config, ExecuteListener monitor)  throws IOException {
 
-        System.err.println("Loading blocking strategy");
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading blocking strategy");
         BlockingStrategy blocking = config.makeBlockingStrategy();
 
-        System.err.println("Loading lenses");
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading lenses");
         Model combined = ModelFactory.createDefaultModel();
         combined.add(leftModel);
         combined.add(rightModel);
         List<Lens> lenses = config.makeLenses(combined);
 
-        System.err.println("Loading Feature Extractors");
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
         List<TextFeature> textFeatures = config.makeTextFeatures();
         List<GraphFeature> dataFeatures = config.makeDataFeatures(combined);
 
-        System.err.println("Loading Scorers");
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Scorers");
         List<ScorerTrainer> scorers = config.makeTrainableScorers();
 
-        System.err.println("Loading Matcher");
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Matcher");
         Matcher matcher = config.makeMatcher();
 
-        System.err.println("Blocking");
+        monitor.updateStatus(ExecuteListener.Stage.BLOCKING, "Blocking");
         final Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel);
 
-        System.err.println("Training");
+        monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Constructing Training Data");
         Map<String, List<FeatureSetWithScore>> trainingData = new HashMap<>();
-        for (Property prop : goldAlignments.keySet()) {
-            trainingData.put(prop.getURI(), new ArrayList<>());
+        Set<String> goldProps = goldAlignments.properties();
+        for (String prop : goldProps) {
+            trainingData.put(prop, new ArrayList<>());
         }
         //AlignmentSet alignments = new AlignmentSet();
         for (Pair<Resource, Resource> block : blocks) {
@@ -172,7 +182,7 @@ public class Train {
             for (Lens lens : lenses) {
                 Option<LangStringPair> oFacet = lens.extract(block._1, block._2);
                 if(!oFacet.has()) {
-                    System.err.println(String.format("Lens produced no label for %s %s", block._1, block._2));
+                    monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block._1, block._2));
                 }
                 LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
                 for (TextFeature featureExtractor : textFeatures) {
@@ -188,17 +198,17 @@ public class Train {
                 double[] features = feature.extractFeatures(block._1, block._2);
                 featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
             }
-            for (Map.Entry<Property, Object2DoubleMap<Statement>> e : goldAlignments.entrySet()) {
-                Statement st = combined.createStatement(block._1, e.getKey(), block._2);
-                if (e.getValue().containsKey(st)) {
-                    trainingData.get(e.getKey().getURI()).add(featureSet.withScore(e.getValue().getDouble(st)));
+            for(String prop : goldProps) {
+                Option<Alignment> a = goldAlignments.find(block._1.getURI(), block._2.getURI(), prop);
+                if(a.has()) {
+                    trainingData.get(prop).add(featureSet.withScore(a.get().score));
                 } else {
                     // TODO: Negative Sampling
                 }
             }
         }
 
-        System.err.println("Training");
+        monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Learning model");
         //ArrayList<Scorer> trainedScorers = new ArrayList<>();
         for(ScorerTrainer tsf : scorers) {
             List<FeatureSetWithScore> data = trainingData.get(tsf.property());
@@ -216,6 +226,7 @@ public class Train {
             final OptionParser p = new OptionParser() {
                 {
                     accepts("c", "The configuration to use").withRequiredArg().ofType(File.class);
+                    accepts("q", "Quiet (suppress output)");
                     nonOptions("Two RDF files and One Alignment RDF files (N-Triples, one per line with score after as a comment)");
                 }
             };
@@ -250,7 +261,8 @@ public class Train {
             if (configuration == null || !configuration.exists()) {
                 badOptions(p, "Configuration does not exist or not specified");
             };
-            execute(left, right, alignment, configuration);
+            execute(left, right, alignment, configuration,
+                    os.has("q") ? new Main.NoMonitor() : new Main.StdErrMonitor());
         } catch (Throwable x) {
             x.printStackTrace();
             System.exit(-1);

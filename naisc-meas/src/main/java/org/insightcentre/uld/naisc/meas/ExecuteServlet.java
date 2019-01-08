@@ -141,8 +141,8 @@ public class ExecuteServlet extends HttpServlet {
                     File alignFile = new File(new File(new File("datasets"), dataset), "align.rdf");
                     if (alignFile.exists()) {
                         listener.updateStatus(Stage.EVALUATION, "Evaluating");
-                        Map<Property, Object2DoubleMap<Statement>> gold = Train.readAlignments(alignFile);
-                        er = Evaluate.evaluate(alignment, gold);
+                        AlignmentSet gold = Train.readAlignments(alignFile);
+                        er = Evaluate.evaluate(alignment, gold, listener);
                     } else {
                         er = null;
                     }
@@ -153,7 +153,7 @@ public class ExecuteServlet extends HttpServlet {
                     }
                     Train.execute(new File(new File(new File("datasets"), dataset), "left.rdf"),
                             new File(new File(new File("datasets"), dataset), "right.rdf"), 
-                            alignFile, config);
+                            alignFile, config, listener);
                     time = System.currentTimeMillis() - time;
                     er = null;
                     alignment = null;

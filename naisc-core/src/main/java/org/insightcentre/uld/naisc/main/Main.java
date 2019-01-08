@@ -6,7 +6,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.jena.rdf.model.Model;
@@ -104,7 +107,7 @@ public class Main {
      * @return The alignment
      */
     public static AlignmentSet execute(File leftFile, File rightFile, Configuration config,
-            ExecuteListener monitor) {
+            ExecuteListener monitor) { 
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
             Model leftModel = ModelFactory.createDefaultModel();
@@ -113,7 +116,20 @@ public class Main {
             monitor.updateStatus(Stage.INITIALIZING, "Reading right dataset");
             Model rightModel = ModelFactory.createDefaultModel();
             rightModel.read(new FileReader(rightFile), rightFile.toURI().toString(), "riot");
-
+            
+            return execute(leftModel, rightModel, config, monitor, null, null);
+            
+        } catch (Exception x) {
+            x.printStackTrace();
+            monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
+            return null;
+        }
+    }
+    
+    public static AlignmentSet execute(Model leftModel, Model rightModel, Configuration config,
+            ExecuteListener monitor, Set<String> left, Set<String> right) {
+        try {
+            
             monitor.updateStatus(Stage.INITIALIZING, "Loading blocking strategy");
             BlockingStrategy blocking = config.makeBlockingStrategy();
 
@@ -134,7 +150,10 @@ public class Main {
             Matcher matcher = config.makeMatcher();
 
             monitor.updateStatus(Stage.BLOCKING, "Blocking");
-            final Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel);
+            Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel);
+            if(left != null && right != null) {
+                blocks = new FilterBlocks(blocks, left, right);
+            }
 
             monitor.updateStatus(Stage.SCORING, "Scoring");
             int count = 0;
@@ -264,5 +283,49 @@ public class Main {
         public void addLensResult(Resource id1, Resource id2, String lensId, LangStringPair res) {
         }
 
+    }
+    
+    private static class FilterBlocks implements Iterable<Pair<Resource, Resource>> {
+        private final Iterable<Pair<Resource, Resource>> iter;
+        private final Set<String> left, right;
+
+        public FilterBlocks(Iterable<Pair<Resource, Resource>> iter, Set<String> left, Set<String> right) {
+            this.iter = iter;
+            this.left = left;
+            this.right = right;
+        }
+
+        @Override
+        public Iterator<Pair<Resource, Resource>> iterator() {
+            final Iterator<Pair<Resource, Resource>> i = iter.iterator();
+            return new Iterator<Pair<Resource, Resource>>() {
+                Pair<Resource, Resource> p = advance();
+                @Override
+                public boolean hasNext() {
+                    return p != null;
+                }
+
+                @Override
+                public Pair<Resource, Resource> next() {
+                    if(p == null)
+                        throw new NoSuchElementException();
+                    Pair<Resource, Resource> rval = p;
+                    p = advance();
+                    return rval;
+                }
+                
+                private Pair<Resource, Resource> advance() {
+                    while(i.hasNext()) {
+                        Pair<Resource, Resource> x = i.next();
+                        if(left.contains(x._1.getURI()) && right.contains(x._2.getURI())) {
+                            return x;
+                        }
+                    }
+                    return null;
+                }
+            };
+        }
+        
+        
     }
 }

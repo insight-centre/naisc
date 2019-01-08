@@ -2,14 +2,20 @@ package org.insightcentre.uld.naisc.main;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Statement;
 import org.insightcentre.uld.naisc.Alignment;
+import static org.insightcentre.uld.naisc.Alignment.SKOS_EXACT_MATCH;
+import org.insightcentre.uld.naisc.AlignmentSet;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -50,16 +56,13 @@ public class CrossFoldTest {
         System.out.println("splitDataset");
         Model model = ModelFactory.createDefaultModel();
         Property p = model.createProperty(Alignment.SKOS_EXACT_MATCH);
-        Object2DoubleMap<Statement> s = new Object2DoubleOpenHashMap<>();
-        s.put(model.createStatement(model.createResource("file:left#e1"), p, model.createResource("file:right#e1")), 1.0);
-        s.put(model.createStatement(model.createResource("file:left#e2"), p, model.createResource("file:right#e2")), 1.0);
-        s.put(model.createStatement(model.createResource("file:left#e3"), p, model.createResource("file:right#e3")), 1.0);
-        s.put(model.createStatement(model.createResource("file:left#e4"), p, model.createResource("file:right#e4")), 1.0);
-        Map<Property, Object2DoubleMap<Statement>> alignments =  new HashMap<>();
-        alignments.put(p, s);
+        AlignmentSet alignments = new AlignmentSet();
+        alignments.add(new Alignment("file:left#e1", "file:right#e1", 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment("file:left#e2", "file:right#e2", 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment("file:left#e3", "file:right#e3", 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment("file:left#e4", "file:right#e4", 1.0, SKOS_EXACT_MATCH));
         int folds = 4;
-        CrossFold instance = new CrossFold();
-        CrossFold.Result result = instance.splitDataset(alignments, folds);
+        CrossFold.Folds result = CrossFold.splitDataset(alignments, folds);
         assertEquals(folds,result.leftSplit.size());
         assertEquals(folds,result.rightSplit.size());
         for(int i = 0 ; i < folds; i++) {
@@ -72,19 +75,16 @@ public class CrossFoldTest {
     public void testSplitDatasetRandom() {
         Model model = ModelFactory.createDefaultModel();
         Property p = model.createProperty(Alignment.SKOS_EXACT_MATCH);
-        Object2DoubleMap<Statement> s = new Object2DoubleOpenHashMap<>();
+        AlignmentSet alignments = new AlignmentSet();
         Random rand = new Random();
         for(int i = 0; i < 1000; i++) {
             int l = rand.nextInt(100);
             int r = rand.nextInt(100);
-            s.put(model.createStatement(model.createResource("file:left#e" + l), p, model.createResource("file:right#e" + r)), 1.0);
+            alignments.add(new Alignment("file:left#e" + l, "file:right#e" + r, 1.0, SKOS_EXACT_MATCH));
             
         }
-        Map<Property, Object2DoubleMap<Statement>> alignments =  new HashMap<>();
-        alignments.put(p, s);
         int folds = 10;
-        CrossFold instance = new CrossFold();
-        CrossFold.Result result = instance.splitDataset(alignments, folds);
+        CrossFold.Folds result = CrossFold.splitDataset(alignments, folds);
         assertEquals(folds,result.leftSplit.size());
         assertEquals(folds,result.rightSplit.size());
         for(int i = 0 ; i < folds; i++) {
@@ -97,6 +97,39 @@ public class CrossFoldTest {
             assert(5 <= result.rightSplit.get(i).size());
             assert(15 >= result.rightSplit.get(i).size());
         }
+    }
+    
+    public void testResult() {
+        System.out.println("testResult");
+        Model model = ModelFactory.createDefaultModel();
+        AlignmentSet alignments = new AlignmentSet();
+        alignments.add(new Alignment("file:left#e1", "file:right#e1", 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment("file:left#e2", "file:right#e2", 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment("file:left#e2", "file:right#e3", 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment("file:left#e3", "file:right#e3", 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment("file:left#e4", "file:right#e4", 1.0, SKOS_EXACT_MATCH));
+        List<Set<String>> leftSplit = new ArrayList<>();
+        leftSplit.add(new HashSet<>());
+        leftSplit.get(0).add("file:left#e1");
+        leftSplit.get(0).add("file:left#e2");
+        leftSplit.add(new HashSet<>());
+        leftSplit.get(0).add("file:left#e3");
+        leftSplit.get(0).add("file:left#e4");
+        List<Set<String>> rightSplit = new ArrayList<>();
+        rightSplit.add(new HashSet<>());
+        rightSplit.get(0).add("file:right#e1");
+        rightSplit.get(0).add("file:right#e2");
+        rightSplit.add(new HashSet<>());
+        rightSplit.get(0).add("file:right#e3");
+        rightSplit.get(0).add("file:right#e4");
+        CrossFold.Folds result = new CrossFold.Folds(leftSplit, rightSplit);
+        AlignmentSet fold1 = result.train(alignments, 0);
+        AlignmentSet fold2 = result.test(alignments, 1);
+        assertEquals(2, fold1.size());
+        assertEquals(2, fold2.size());
+        assertEquals(fold1, result.train(alignments, 1));
+        assertEquals(fold2, result.test(alignments, 2));
+        
     }
 
 }

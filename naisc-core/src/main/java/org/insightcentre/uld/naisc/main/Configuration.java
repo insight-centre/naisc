@@ -160,7 +160,7 @@ public class Configuration {
             tsfs.addAll(sf.makeTrainer(config.params).toList());
         }
         if (tsfs.isEmpty()) {
-            System.err.println("No trainable scorers loaded!");
+            System.err.println("Training but no trainable scorers are in the configuration!");
         }
         return tsfs;
     }
