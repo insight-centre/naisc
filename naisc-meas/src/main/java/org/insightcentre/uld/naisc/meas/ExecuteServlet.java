@@ -17,6 +17,7 @@ import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Statement;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.main.Configuration;
+import org.insightcentre.uld.naisc.main.CrossFold;
 import org.insightcentre.uld.naisc.main.Evaluate;
 import org.insightcentre.uld.naisc.main.ExecuteListener.Stage;
 import org.insightcentre.uld.naisc.main.Main;
@@ -149,7 +150,7 @@ public class ExecuteServlet extends HttpServlet {
                 } else if(mode == ExecutionMode.TRAIN) {
                     File alignFile = new File(new File(new File("datasets"), dataset), "align.rdf");
                     if(!alignFile.exists()) {
-                        throw new IllegalArgumentException("Training was attempted on run with no gold standard alignments");
+                        throw new IllegalArgumentException("Training was requested on run with no gold standard alignments");
                     }
                     Train.execute(new File(new File(new File("datasets"), dataset), "left.rdf"),
                             new File(new File(new File("datasets"), dataset), "right.rdf"), 
@@ -158,8 +159,17 @@ public class ExecuteServlet extends HttpServlet {
                     er = null;
                     alignment = null;
                 } else if(mode == ExecutionMode.CROSSFOLD) {
-                    er = null;
-                    alignment = null;
+                    File alignFile = new File(new File(new File("datasets"), dataset), "align.rdf");
+                    if(!alignFile.exists()) {
+                        throw new IllegalArgumentException("Cross-fold was requesetd on run with no gold standard alignments");
+                    }
+                    CrossFold.CrossFoldResult result = CrossFold.execute(
+                            new File(new File(new File("datasets"), dataset), "left.rdf"),
+                            new File(new File(new File("datasets"), dataset), "right.rdf"), 
+                            alignFile, 10, config, listener);
+                    time = System.currentTimeMillis() - time;
+                    er = result.results;
+                    alignment = result.alignments;
                 } else {
                     throw new RuntimeException("Unreachable");
                 }

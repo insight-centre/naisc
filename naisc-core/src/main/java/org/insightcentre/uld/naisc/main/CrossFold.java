@@ -2,8 +2,6 @@ package org.insightcentre.uld.naisc.main;
 
 import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
@@ -13,18 +11,14 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.Statement;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import static org.insightcentre.uld.naisc.main.Main.mapper;
@@ -38,6 +32,17 @@ import org.insightcentre.uld.naisc.util.Pair;
  */
 public class CrossFold {
 
+    /**
+     * Perform a cross-fold validation
+     *
+     * @param leftFile The left dataset
+     * @param rightFile The right dataset
+     * @param gold The alignments
+     * @param nFolds The number of folds to use
+     * @param output The output file or null to write to STDOUT
+     * @param configuration The configuration object
+     * @param monitor A listener for events in the execution
+     */
     @SuppressWarnings("UseSpecificCatch")
     public static void execute(File leftFile, File rightFile, File gold, int nFolds, File output,
             File configuration, ExecuteListener monitor) {
@@ -45,20 +50,8 @@ public class CrossFold {
         try {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
             final Configuration config = mapper.readValue(configuration, Configuration.class);
-            monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
 
-            monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
-            Model leftModel = ModelFactory.createDefaultModel();
-            leftModel.read(new FileReader(leftFile), leftFile.toURI().toString(), "riot");
-
-            monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
-            Model rightModel = ModelFactory.createDefaultModel();
-            rightModel.read(new FileReader(rightFile), rightFile.toURI().toString(), "riot");
-
-            monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading gold standard");
-            final AlignmentSet goldAlignments = Train.readAlignments(gold);
-
-            CrossFoldResult cfr = execute(leftModel, rightModel, goldAlignments, nFolds, config, monitor);
+            CrossFoldResult cfr = execute(leftFile, rightFile, gold, nFolds, config, monitor);
 
             final PrintStream out;
             if (output != null) {
@@ -74,6 +67,49 @@ public class CrossFold {
 
     }
 
+    /**
+     * Execute a cross-fold validation
+     *
+     * @param leftFile The left dataset
+     * @param rightFile The right dataset
+     * @param gold The gold standard alignments
+     * @param nFolds The number of folds to use
+     * @param config The configuration
+     * @param monitor The listener for events
+     * @return The alignments and the evaluation scores
+     * @throws IOException If a file cannot be read
+     */
+    public static CrossFoldResult execute(File leftFile, File rightFile,
+            File gold,
+            int nFolds,
+            Configuration config, ExecuteListener monitor) throws IOException {
+
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
+        Model leftModel = ModelFactory.createDefaultModel();
+        leftModel.read(new FileReader(leftFile), leftFile.toURI().toString(), "riot");
+
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
+        Model rightModel = ModelFactory.createDefaultModel();
+        rightModel.read(new FileReader(rightFile), rightFile.toURI().toString(), "riot");
+
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading gold standard");
+        final AlignmentSet goldAlignments = Train.readAlignments(gold);
+
+        return execute(leftModel, rightModel, goldAlignments, nFolds, config, monitor);
+
+    }
+
+    /**
+     * Execute a cross-fold validation
+     * @param leftModel The left dataset
+     * @param rightModel The right dataset
+     * @param goldAlignments The gold standard alignments
+     * @param nFolds The number of folds
+     * @param config The alignment configuration
+     * @param _monitor A listener for events
+     * @return The alignment and evaluation score
+     * @throws IOException If an error occurs reading a file
+     */
     public static CrossFoldResult execute(Model leftModel, Model rightModel,
             AlignmentSet goldAlignments,
             int nFolds,
@@ -96,6 +132,9 @@ public class CrossFold {
         return new CrossFoldResult(as, er);
     }
 
+    /**
+     * The result of a cross fold evaluation
+     */
     public static class CrossFoldResult {
 
         public final AlignmentSet alignments;
@@ -176,6 +215,7 @@ public class CrossFold {
         }
     }
 
+    /** The maximum number of iterations to use in finding a good split */
     public static final int MAX_ITERS = 10;
 
     private static List<Pair<String, String>> getAllPairs(AlignmentSet alignments) {

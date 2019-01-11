@@ -46,8 +46,13 @@ public class Meas {
                 Map<String,Configuration> configs = new HashMap<>();
                 for (File f2 : f.listFiles()) {
                     if (f2.getPath().endsWith(".json")) {
+                        try {
                         configs.put(f2.getName().substring(0, f2.getName().length() - 5),
                                 mapper.readValue(f2, Configuration.class));
+                        } catch(Exception x) {
+                            System.err.printf("Failed to load %s due to %s (%s)\n", f2.getName(),
+                                    x.getClass().getName(), x.getMessage());
+                        }
                     }
                 }
                 return configs;

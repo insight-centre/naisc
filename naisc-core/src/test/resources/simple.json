@@ -10,16 +10,12 @@
     }],
     "scorers": [{
         "name": "scorer.LibSVM",
-        "params": {
-            "modelFile": "src/test/resources/model.libsvm",
-            "property": "http://www.w3.org/2004/02/skos/core#exactMatch"
-        }
+        "modelFile": "src/test/resources/model.libsvm",
+        "property": "http://www.w3.org/2004/02/skos/core#exactMatch"
     }],
     "matcher": {
         "name": "matcher.Threshold",
-        "params": {
-            "threshold": "0.5"
-        }
+        "threshold": "0.5"
     }
 }
 

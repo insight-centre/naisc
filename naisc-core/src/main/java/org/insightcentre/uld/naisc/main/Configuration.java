@@ -2,11 +2,27 @@ package org.insightcentre.uld.naisc.main;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.apache.jena.rdf.model.Model;
 import org.insightcentre.uld.naisc.BlockingStrategy;
@@ -79,6 +95,10 @@ public class Configuration {
      * The configuration of the schema matcher
      */
     public final MatcherConfiguration matcher;
+    /**
+     * The description of the configuration
+     */
+    public final String description;
 
     @JsonCreator
     public Configuration(
@@ -87,7 +107,8 @@ public class Configuration {
             @JsonProperty("dataFeatures") List<GraphFeatureConfiguration> dataFeatures,
             @JsonProperty("textFeatures") List<TextFeatureConfiguration> textFeatures,
             @JsonProperty("scorers") List<ScorerConfiguration> scorers,
-            @JsonProperty("matcher") MatcherConfiguration matcher) {
+            @JsonProperty("matcher") MatcherConfiguration matcher,
+            @JsonProperty("description") String description) {
         if (blocking == null) {
             throw new ConfigurationException("Blocking strategy not specified");
         }
@@ -106,6 +127,7 @@ public class Configuration {
         }
         this.matcher = matcher;
         this.lenses = lenses == null ? Collections.EMPTY_LIST : lenses;
+        this.description = description;
     }
 
     public List<GraphFeature> makeDataFeatures(Model model) {
@@ -201,6 +223,8 @@ public class Configuration {
      * {@link org.insightcentre.uld.naisc.feature.WordEmbeddings.Configuration}</li>
      * </ul>
      */
+    @JsonDeserialize(using = TextFeatureConfigurationDeserializer.class)
+    @JsonSerialize(using = TextFeatureConfigurationSerializer.class)
     public static class TextFeatureConfiguration {
 
         /**
@@ -226,6 +250,115 @@ public class Configuration {
             this.params = params == null ? Collections.EMPTY_MAP : params;
             this.tags = tags;
         }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 97 * hash + Objects.hashCode(this.name);
+            hash = 97 * hash + Objects.hashCode(this.params);
+            hash = 97 * hash + Objects.hashCode(this.tags);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final TextFeatureConfiguration other = (TextFeatureConfiguration) obj;
+            if (!Objects.equals(this.name, other.name)) {
+                return false;
+            }
+            if (!Objects.equals(this.params, other.params)) {
+                return false;
+            }
+            if (!Objects.equals(this.tags, other.tags)) {
+                return false;
+            }
+            return true;
+        }
+
+    }
+
+    private static class TextFeatureConfigurationDeserializer extends StdDeserializer<TextFeatureConfiguration> {
+
+        public TextFeatureConfigurationDeserializer() {
+            super(TextFeatureConfiguration.class);
+        }
+
+        @Override
+        public TextFeatureConfiguration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+            JsonNode node = p.getCodec().readTree(p);
+            final Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            String name = null;
+            Map<String, Object> params = new HashMap<>();
+            Set<String> tags = null;
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> f = fields.next();
+                if (f.getKey().equals("name")) {
+                    name = f.getValue().textValue();
+                } else if (f.getKey().equals("tags")) {
+                    tags = new HashSet<>();
+                    final Iterator<JsonNode> elements = f.getValue().elements();
+                    while (elements.hasNext()) {
+                        tags.add(elements.next().asText());
+                    }
+                } else {
+                    // HACK: This is working around what I assume is a bug in Jackson
+                    Object v = ((ObjectMapper)p.getCodec()).convertValue(f.getValue(), Object.class);
+                    if(v instanceof List) {
+                        ListIterator<Object> i = ((List)v).listIterator();
+                        while(i.hasNext()) {
+                            Object n = i.next();
+                            if(n instanceof Map && ((Map)n).containsKey("0")) {
+                                StringBuilder sb = new StringBuilder();
+                                for(int j = 0; ; j++) {
+                                    if(!((Map)n).containsKey(j + ""))
+                                        break;
+                                    sb.append(((Map)n).get(j + "").toString());
+                                }
+                                i.set(sb.toString());
+                            }
+                            
+                        }
+                    }
+                    params.put(f.getKey(), v);
+                    
+                            
+                }
+            }
+            return new TextFeatureConfiguration(name, params, tags);
+        }
+    }
+
+    private static class TextFeatureConfigurationSerializer extends StdSerializer<TextFeatureConfiguration> {
+
+        public TextFeatureConfigurationSerializer() {
+            super(TextFeatureConfiguration.class);
+        }
+
+        @Override
+        public void serialize(TextFeatureConfiguration value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("name", value.name);
+            if (value.tags != null) {
+                gen.writeArrayFieldStart("tags");
+                for (String t : value.tags) {
+                    gen.writeString(t);
+                }
+                gen.writeEndArray();
+            }
+            for (Map.Entry<String, Object> e : value.params.entrySet()) {
+                gen.writeObjectField(e.getKey(), e.getValue());
+            }
+            gen.writeEndObject();
+        }
     }
 
     public static Class[] knownGraphFeatures = new Class[]{
@@ -241,6 +374,8 @@ public class Configuration {
      * {@link org.insightcentre.uld.naisc.graph.PropertyOverlap.Configuration}</li>
      * </ul>
      */
+    @JsonDeserialize(using = GraphFeatureConfigurationDeserializer.class)
+    @JsonSerialize(using = GraphFeatureConfigurationSerializer.class)
     public static class GraphFeatureConfiguration {
 
         /**
@@ -266,6 +401,95 @@ public class Configuration {
             this.params = params == null ? Collections.EMPTY_MAP : params;
             this.tags = tags;
         }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 53 * hash + Objects.hashCode(this.name);
+            hash = 53 * hash + Objects.hashCode(this.params);
+            hash = 53 * hash + Objects.hashCode(this.tags);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final GraphFeatureConfiguration other = (GraphFeatureConfiguration) obj;
+            if (!Objects.equals(this.name, other.name)) {
+                return false;
+            }
+            if (!Objects.equals(this.params, other.params)) {
+                return false;
+            }
+            if (!Objects.equals(this.tags, other.tags)) {
+                return false;
+            }
+            return true;
+        }
+
+    }
+
+    private static class GraphFeatureConfigurationDeserializer extends StdDeserializer<GraphFeatureConfiguration> {
+
+        public GraphFeatureConfigurationDeserializer() {
+            super(GraphFeatureConfiguration.class);
+        }
+
+        @Override
+        public GraphFeatureConfiguration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+            JsonNode node = p.getCodec().readTree(p);
+            final Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            String name = null;
+            Map<String, Object> params = new HashMap<>();
+            Set<String> tags = null;
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> f = fields.next();
+                if (f.getKey().equals("name")) {
+                    name = f.getValue().textValue();
+                } else if (f.getKey().equals("tags")) {
+                    tags = new HashSet<>();
+                    final Iterator<JsonNode> elements = f.getValue().elements();
+                    while (elements.hasNext()) {
+                        tags.add(elements.next().asText());
+                    }
+                } else {
+                    params.put(f.getKey(), p.getCodec().readValue(f.getValue().traverse(), Object.class));
+                }
+            }
+            return new GraphFeatureConfiguration(name, params, tags);
+        }
+    }
+
+    private static class GraphFeatureConfigurationSerializer extends StdSerializer<GraphFeatureConfiguration> {
+
+        public GraphFeatureConfigurationSerializer() {
+            super(GraphFeatureConfiguration.class);
+        }
+
+        @Override
+        public void serialize(GraphFeatureConfiguration value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("name", value.name);
+            if (value.tags != null) {
+                gen.writeArrayFieldStart("tags");
+                for (String t : value.tags) {
+                    gen.writeString(t);
+                }
+                gen.writeEndArray();
+            }
+            for (Map.Entry<String, Object> e : value.params.entrySet()) {
+                gen.writeObjectField(e.getKey(), e.getValue());
+            }
+            gen.writeEndObject();
+        }
     }
 
     public static Class[] knownScorers = new Class[]{
@@ -284,6 +508,8 @@ public class Configuration {
      * {@link org.insightcentre.uld.naisc.scorer.LibSVM.Configuration}</li>
      * </ul>
      */
+    @JsonDeserialize(using = ScorerConfigurationDeserializer.class)
+    @JsonSerialize(using = ScorerConfigurationSerializer.class)
     public static class ScorerConfiguration {
 
         /**
@@ -299,11 +525,81 @@ public class Configuration {
         @JsonCreator
         public ScorerConfiguration(
                 @JsonProperty("name") String name,
-                @JsonProperty("train") boolean train,
                 @JsonProperty("params") Map<String, Object> params) {
             this.name = name;
             assert (name != null);
             this.params = params == null ? Collections.EMPTY_MAP : params;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 59 * hash + Objects.hashCode(this.name);
+            hash = 59 * hash + Objects.hashCode(this.params);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final ScorerConfiguration other = (ScorerConfiguration) obj;
+            if (!Objects.equals(this.name, other.name)) {
+                return false;
+            }
+            if (!Objects.equals(this.params, other.params)) {
+                return false;
+            }
+            return true;
+        }
+
+    }
+
+    private static class ScorerConfigurationDeserializer extends StdDeserializer<ScorerConfiguration> {
+
+        public ScorerConfigurationDeserializer() {
+            super(ScorerConfiguration.class);
+        }
+
+        @Override
+        public ScorerConfiguration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+            JsonNode node = p.getCodec().readTree(p);
+            final Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            String name = null;
+            Map<String, Object> params = new HashMap<>();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> f = fields.next();
+                if (f.getKey().equals("name")) {
+                    name = f.getValue().textValue();
+                } else {
+                    params.put(f.getKey(), p.getCodec().readValue(f.getValue().traverse(), Object.class));
+                }
+            }
+            return new ScorerConfiguration(name, params);
+        }
+    }
+
+    private static class ScorerConfigurationSerializer extends StdSerializer<ScorerConfiguration> {
+
+        public ScorerConfigurationSerializer() {
+            super(ScorerConfiguration.class);
+        }
+
+        @Override
+        public void serialize(ScorerConfiguration value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("name", value.name);
+            for (Map.Entry<String, Object> e : value.params.entrySet()) {
+                gen.writeObjectField(e.getKey(), e.getValue());
+            }
+            gen.writeEndObject();
         }
     }
 
@@ -329,6 +625,8 @@ public class Configuration {
      * {@link org.insightcentre.uld.naisc.matcher.BeamSearch.Configuration}</li>
      * </ul>
      */
+    @JsonDeserialize(using = MatcherConfigurationDeserializer.class)
+    @JsonSerialize(using = MatcherConfigurationSerializer.class)
     public static class MatcherConfiguration {
 
         /**
@@ -348,6 +646,77 @@ public class Configuration {
             this.name = name;
             assert (name != null);
             this.params = params == null ? Collections.EMPTY_MAP : params;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 5;
+            hash = 97 * hash + Objects.hashCode(this.name);
+            hash = 97 * hash + Objects.hashCode(this.params);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final MatcherConfiguration other = (MatcherConfiguration) obj;
+            if (!Objects.equals(this.name, other.name)) {
+                return false;
+            }
+            if (!Objects.equals(this.params, other.params)) {
+                return false;
+            }
+            return true;
+        }
+
+    }
+
+    private static class MatcherConfigurationDeserializer extends StdDeserializer<MatcherConfiguration> {
+
+        public MatcherConfigurationDeserializer() {
+            super(MatcherConfiguration.class);
+        }
+
+        @Override
+        public MatcherConfiguration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+            JsonNode node = p.getCodec().readTree(p);
+            final Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            String name = null;
+            Map<String, Object> params = new HashMap<>();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> f = fields.next();
+                if (f.getKey().equals("name")) {
+                    name = f.getValue().textValue();
+                } else {
+                    params.put(f.getKey(), p.getCodec().readValue(f.getValue().traverse(), Object.class));
+                }
+            }
+            return new MatcherConfiguration(name, params);
+        }
+    }
+
+    private static class MatcherConfigurationSerializer extends StdSerializer<MatcherConfiguration> {
+
+        public MatcherConfigurationSerializer() {
+            super(MatcherConfiguration.class);
+        }
+
+        @Override
+        public void serialize(MatcherConfiguration value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("name", value.name);
+            for (Map.Entry<String, Object> e : value.params.entrySet()) {
+                gen.writeObjectField(e.getKey(), e.getValue());
+            }
+            gen.writeEndObject();
         }
     }
 
@@ -370,6 +739,8 @@ public class Configuration {
      * {@link org.insightcentre.uld.naisc.lens.SPARQL.Configuration}</li>
      * </ul>
      */
+    @JsonDeserialize(using = LensConfigurationDeserializer.class)
+    @JsonSerialize(using = LensConfigurationSerializer.class)
     public static class LensConfiguration {
 
         /**
@@ -396,6 +767,85 @@ public class Configuration {
             this.params = params == null ? Collections.EMPTY_MAP : params;
             this.tag = tag;
         }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 53 * hash + Objects.hashCode(this.name);
+            hash = 53 * hash + Objects.hashCode(this.params);
+            hash = 53 * hash + Objects.hashCode(this.tag);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final LensConfiguration other = (LensConfiguration) obj;
+            if (!Objects.equals(this.name, other.name)) {
+                return false;
+            }
+            if (!Objects.equals(this.tag, other.tag)) {
+                return false;
+            }
+            if (!Objects.equals(this.params, other.params)) {
+                return false;
+            }
+            return true;
+        }
+
+    }
+
+    private static class LensConfigurationDeserializer extends StdDeserializer<LensConfiguration> {
+
+        public LensConfigurationDeserializer() {
+            super(LensConfiguration.class);
+        }
+
+        @Override
+        public LensConfiguration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+            JsonNode node = p.getCodec().readTree(p);
+            final Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            String name = null;
+            String tag = null;
+            Map<String, Object> params = new HashMap<>();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> f = fields.next();
+                if (f.getKey().equals("name")) {
+                    name = f.getValue().textValue();
+                } else if (f.getKey().equals("tag")) {
+                    tag = f.getValue().textValue();
+                } else {
+                    params.put(f.getKey(), p.getCodec().readValue(f.getValue().traverse(), Object.class));
+                }
+            }
+            return new LensConfiguration(name, params, tag);
+        }
+    }
+
+    private static class LensConfigurationSerializer extends StdSerializer<LensConfiguration> {
+
+        public LensConfigurationSerializer() {
+            super(LensConfiguration.class);
+        }
+
+        @Override
+        public void serialize(LensConfiguration value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("name", value.name);
+            gen.writeStringField("tag", value.tag);
+            for (Map.Entry<String, Object> e : value.params.entrySet()) {
+                gen.writeObjectField(e.getKey(), e.getValue());
+            }
+            gen.writeEndObject();
+        }
     }
 
     public static Class[] knownBlockingStrategies = new Class[]{
@@ -418,6 +868,8 @@ public class Configuration {
      * {@link org.insightcentre.uld.naisc.blocking.LabelMatch.Configuration}</li>
      * </ul>
      */
+    @JsonDeserialize(using = BlockingStrategyConfigurationDeserializer.class)
+    @JsonSerialize(using = BlockingStrategyConfigurationSerializer.class)
     public static class BlockingStrategyConfiguration {
 
         /**
@@ -439,23 +891,99 @@ public class Configuration {
             assert (name != null);
             this.params = params == null ? Collections.EMPTY_MAP : params;
         }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 41 * hash + Objects.hashCode(this.name);
+            hash = 41 * hash + Objects.hashCode(this.params);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final BlockingStrategyConfiguration other = (BlockingStrategyConfiguration) obj;
+            if (!Objects.equals(this.name, other.name)) {
+                return false;
+            }
+            if (!Objects.equals(this.params, other.params)) {
+                return false;
+            }
+            return true;
+        }
+
     }
 
-    public static Class[] knownConstraints = new Class[] {
+    private static class BlockingStrategyConfigurationDeserializer extends StdDeserializer<BlockingStrategyConfiguration> {
+
+        public BlockingStrategyConfigurationDeserializer() {
+            super(BlockingStrategyConfiguration.class);
+        }
+
+        @Override
+        public BlockingStrategyConfiguration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+            JsonNode node = p.getCodec().readTree(p);
+            final Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            String name = null;
+            Map<String, Object> params = new HashMap<>();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> f = fields.next();
+                if (f.getKey().equals("name")) {
+                    name = f.getValue().textValue();
+                } else {
+                    params.put(f.getKey(), p.getCodec().readValue(f.getValue().traverse(), Object.class));
+                }
+            }
+            return new BlockingStrategyConfiguration(name, params);
+        }
+    }
+
+    private static class BlockingStrategyConfigurationSerializer extends StdSerializer<BlockingStrategyConfiguration> {
+
+        public BlockingStrategyConfigurationSerializer() {
+            super(BlockingStrategyConfiguration.class);
+        }
+
+        @Override
+        public void serialize(BlockingStrategyConfiguration value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("name", value.name);
+            for (Map.Entry<String, Object> e : value.params.entrySet()) {
+                gen.writeObjectField(e.getKey(), e.getValue());
+            }
+            gen.writeEndObject();
+        }
+    }
+
+    public static Class[] knownConstraints = new Class[]{
         ThresholdConstraint.class,
         Bijective.class
-        
+
     };
-    
+
     /**
      * The configuration of a constraint. The following constraints are provided
      * by Naisc:
      * <ul>
-     * <li>Simple Threshold constraint (can be used as non constraint) {@link org.insightcentre.uld.naisc.constraint.ThresholdConstraint.Configuration}</li>
-     * <li>Bijective constraint (can be used as non constraint) {@link org.insightcentre.uld.naisc.constraint.Bijective.Configuration}</li>
+     * <li>Simple Threshold constraint (can be used as non constraint)
+     * {@link org.insightcentre.uld.naisc.constraint.ThresholdConstraint.Configuration}</li>
+     * <li>Bijective constraint (can be used as non constraint)
+     * {@link org.insightcentre.uld.naisc.constraint.Bijective.Configuration}</li>
      * </ul>
+     *
      * @author John McCrae
      */
+    @JsonDeserialize(using = ConstraintConfigurationDeserializer.class)
+    @JsonSerialize(using = ConstraintConfigurationSerializer.class)
     public static class ConstraintConfiguration {
 
         public final String name;
@@ -475,5 +1003,126 @@ public class Configuration {
             }
         }
 
+        @Override
+        public int hashCode() {
+            int hash = 5;
+            hash = 79 * hash + Objects.hashCode(this.name);
+            hash = 79 * hash + Objects.hashCode(this.params);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final ConstraintConfiguration other = (ConstraintConfiguration) obj;
+            if (!Objects.equals(this.name, other.name)) {
+                return false;
+            }
+            if (!Objects.equals(this.params, other.params)) {
+                return false;
+            }
+            return true;
+        }
+
     }
+
+    private static class ConstraintConfigurationDeserializer extends StdDeserializer<ConstraintConfiguration> {
+
+        public ConstraintConfigurationDeserializer() {
+            super(ConstraintConfiguration.class);
+        }
+
+        @Override
+        public ConstraintConfiguration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+            JsonNode node = p.getCodec().readTree(p);
+            final Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            String name = null;
+            Map<String, Object> params = new HashMap<>();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> f = fields.next();
+                if (f.getKey().equals("name")) {
+                    name = f.getValue().textValue();
+                } else {
+                    params.put(f.getKey(), p.getCodec().readValue(f.getValue().traverse(), Object.class));
+                }
+            }
+            return new ConstraintConfiguration(name, params);
+        }
+    }
+
+    private static class ConstraintConfigurationSerializer extends StdSerializer<ConstraintConfiguration> {
+
+        public ConstraintConfigurationSerializer() {
+            super(ConstraintConfiguration.class);
+        }
+
+        @Override
+        public void serialize(ConstraintConfiguration value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("name", value.name);
+            for (Map.Entry<String, Object> e : value.params.entrySet()) {
+                gen.writeObjectField(e.getKey(), e.getValue());
+            }
+            gen.writeEndObject();
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 43 * hash + Objects.hashCode(this.blocking);
+        hash = 43 * hash + Objects.hashCode(this.lenses);
+        hash = 43 * hash + Objects.hashCode(this.textFeatures);
+        hash = 43 * hash + Objects.hashCode(this.dataFeatures);
+        hash = 43 * hash + Objects.hashCode(this.scorers);
+        hash = 43 * hash + Objects.hashCode(this.matcher);
+        hash = 43 * hash + Objects.hashCode(this.description);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Configuration other = (Configuration) obj;
+        if (!Objects.equals(this.description, other.description)) {
+            return false;
+        }
+        if (!Objects.equals(this.blocking, other.blocking)) {
+            return false;
+        }
+        if (!Objects.equals(this.lenses, other.lenses)) {
+            return false;
+        }
+        if (!Objects.equals(this.textFeatures, other.textFeatures)) {
+            return false;
+        }
+        if (!Objects.equals(this.dataFeatures, other.dataFeatures)) {
+            return false;
+        }
+        if (!Objects.equals(this.scorers, other.scorers)) {
+            return false;
+        }
+        if (!Objects.equals(this.matcher, other.matcher)) {
+            return false;
+        }
+        return true;
+    }
+    
+    
 }

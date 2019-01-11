@@ -1,6 +1,5 @@
 package org.insightcentre.uld.naisc.feature;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import static eu.monnetproject.lang.Language.ENGLISH;
@@ -106,7 +105,7 @@ public class BasicString implements TextFeatureFactory {
         return new BasicStringImpl(config.labelChar, config.wordWeights(),
                 config.ngramWeights(),
                 tags,
-                config.features == null ? null : new HashSet<Feature>(config.features));
+                config.features == null ? null : new HashSet<>(config.features));
     }
 
     static class BasicStringImpl implements TextFeature {

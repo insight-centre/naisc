@@ -70,11 +70,11 @@
                             <span v-if="run.isTrain">{{run.identifier}}</span></td>
                         <td>{{run.configName}}</td>
                         <td>{{run.datasetName}}</td>
-                        <td v-if="run.precision >= 0">{{run.precision.toFixed(2)}}%</td>
+                        <td v-if="run.precision >= 0">{{(run.precision*100).toFixed(2)}}%</td>
                         <td v-if="run.precision < 0 && !run.isTrain">n/a</td>
-                        <td v-if="run.recall >= 0">{{run.recall.toFixed(2)}}%</td>
+                        <td v-if="run.recall >= 0">{{(run.recall*100).toFixed(2)}}%</td>
                         <td v-if="run.recall < 0 && !run.isTrain">n/a</td>
-                        <td v-if="run.fmeasure >= 0">{{run.fmeasure.toFixed(2)}}%</td>
+                        <td v-if="run.fmeasure >= 0">{{(run.fmeasure*100).toFixed(2)}}%</td>
                         <td v-if="run.fmeasure < 0 && !run.isTrain">n/a</td>
                         <td v-if="run.isTrain">Train</td>
                         <td v-if="run.isTrain">Train</td>
@@ -109,7 +109,7 @@
                     <div class="form-group">
                         <label for="configuration">Configuration</label>
                         <select class="form-control" v-model="configName" @change="setConfig()">
-                            <option v-for="(_,config) in configs" v-bind:value="config">{{config}}</option>
+                            <option v-for="(c,config) in configs" v-bind:value="config">{{config}}<span v-if="c.description"> - {{c.description}}</span></option>
                         </select>
                         <button type="button" class="btn btn-primary float-right" data-toggle="modal" data-target="#addConfig">
                             <i class="fas fa-edit"></i>New Configuration</button>

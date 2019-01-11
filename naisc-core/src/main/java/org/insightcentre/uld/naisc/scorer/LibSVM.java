@@ -20,6 +20,7 @@ import libsvm.svm_problem;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.jena.ext.xerces.impl.dv.util.Base64;
+import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.FeatureSetWithScore;
@@ -167,11 +168,16 @@ public class LibSVM implements ScorerFactory {
     }
 
     private class LibSVMTrainer implements ScorerTrainer {
-
-        private final Configuration config;
+        private final boolean perFeature;
+        private final String property;
+        private final String modelFile;
 
         public LibSVMTrainer(Configuration configuration) {
-            this.config = configuration;
+            this.perFeature = configuration.perFeature;
+            this.property = configuration.property == null ? Alignment.SKOS_EXACT_MATCH : configuration.property;
+            this.modelFile = configuration.modelFile;
+            if(modelFile == null)
+                throw new IllegalArgumentException("Model file cannot be null");
         }
 
         @Override
@@ -181,7 +187,7 @@ public class LibSVM implements ScorerFactory {
             }
             String[] featNames = null;
             final svm_problem prob = makeInstances(dataset.get(0));
-            final boolean perFeature = config.perFeature;
+            //final boolean perFeature = this.perFeature;
 
             ArrayList<svm_node[]> xs = new ArrayList<>();
             DoubleList ys = new DoubleArrayList();
@@ -222,10 +228,10 @@ public class LibSVM implements ScorerFactory {
             } catch (Exception x) {
                 throw new RuntimeException("Could not train classifier", x);
             }
-            final LibSVMClassifier classifier = new LibSVMClassifier(model, featNames, config.property);
+            final LibSVMClassifier classifier = new LibSVMClassifier(model, featNames, property);
 
             try {
-                classifier.save(new File(config.modelFile));
+                classifier.save(new File(modelFile));
             } catch (IOException x) {
                 throw new RuntimeException(x);
             }
@@ -235,7 +241,7 @@ public class LibSVM implements ScorerFactory {
 
         @Override
         public String property() {
-            return config.property;
+            return property;
         }
 
         private String[] extractFeats(FeatureSetWithScore fss) {

@@ -1,8 +1,12 @@
 
 package org.insightcentre.uld.naisc.feature;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
+import java.io.IOException;
+import java.util.Map;
 import org.insightcentre.uld.naisc.feature.BasicString.BasicStringImpl;
+import org.insightcentre.uld.naisc.main.Configuration;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.PrettyGoodTokenizer;
 import org.junit.After;
@@ -206,4 +210,41 @@ public class BasicStringTest {
         assertEquals(expResult, result,0.0);
     }
 
+    @Test
+    public void testLoadConfig() throws IOException {
+        String config = "{\n" +
+"    \"blocking\": {\n" +
+"        \"name\": \"blocking.ApproximateStringMatching\",\n" +
+"        \"maxMatches\": 5,\n" +
+"        \"property\": \"http://www.w3.org/2000/01/rdf-schema#label\"\n" +
+"    },\n" +
+"    \"lenses\": [{\n" +
+"        \"name\": \"lens.Label\"\n" +
+"    }],\n" +
+"    \"textFeatures\": [{\n" +
+"        \"name\": \"feature.BasicString\",\n" +
+"        \"labelChar\": true,\n" +
+"        \"features\": [ \"jaccard\" ]\n" +
+"    }],\n" +
+"    \"scorers\": [{\n" +
+"        \"name\": \"scorer.LibSVM\",\n" +
+"        \"modelFile\": \"models/jaccard.libsvm\"\n" +
+"    }],\n" +
+"    \"matcher\": {\n" +
+"        \"name\": \"matcher.UniqueAssignment\"\n" +
+"    },\n" +
+"    \"description\": \"Simple baseline method using string metrics and a SVM\"\n" +
+"}";
+        Configuration c = new ObjectMapper().readValue(config, Configuration.class);
+        
+        String s = "{\"params\": { \"foo\": [\"bar\",\"baz\"] } }";
+        
+        Foo f = new ObjectMapper().readValue(s, Foo.class);
+        c.makeTextFeatures();
+        
+    }
+    
+    private static class Foo {
+        public Map<String, Object> params;
+    }
 }
