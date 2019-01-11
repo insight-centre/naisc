@@ -425,7 +425,7 @@ var app = new Vue({
                     });
                 }
             }
-        }, 5000);
+        }, 500);
     },
     abortRun(runId) {
         jQuery.ajax({

@@ -81,9 +81,10 @@
                     </tr>
                 </table>
                 <div class="row spaced-buttons">
-                <button type="button" class="btn btn-success" v-on:click.prevent="save()"><i class="fas fa-save"></i> Save</button>
-                <button type="button" class="btn btn-success" v-on:click.prevent="rerun()"><i class="fas fa-redo"></i> Rerun</button>
-                <button type="button" class="btn btn-success" v-on:click.prevent="retrain()"><i class="fas fa-dumbbell"></i> Retrain</button>
+                <button type="button" class="btn btn-success" v-on:click.prevent="rerun()" data-toggle="tooltip" data-placement="top" title="Rerun the system including the correct links"><i class="fas fa-redo"></i> Rerun</button>
+                <button type="button" class="btn btn-success" v-on:click.prevent="retrain()" data-toggle="tooltip" data-placement="top" title="Retrain the model using the marked data"><i class="fas fa-dumbbell"></i> Retrain</button>
+                <a href="/manage/download_all/<%= request.getParameter("id") %>"><button type="button" class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' or 'No'"><i class="fas fa-download"></i> Download output links</button></a>
+                <a href="/manage/download_valid/<%= request.getParameter("id") %>"><button type="button" class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' and new links"><i class="fas fa-check-double"></i> Download validated</button></a>
                 </div>
 
                 <div class="modal fade" id="updateElement" tabindex="-1" role="dialog"  aria-hidden="true">
@@ -178,6 +179,16 @@ var app = new Vue({
             }
         }
         this.results[idx].valid = value;
+        jQuery.ajax({
+            "url": "/manage/update/<%= request.getParameter("id") %>",
+            data: JSON.stringify({
+                "idx": idx,
+                "valid": value,
+                "data": {"identifier":"<%= request.getParameter("id") %>", "precision": this.precnum(), "recall": this.recnum(), "fmeasure": this.fmnum()}}),
+            method: "POST",
+            processData: false,
+            error: function(er){ document.write(er.responseText); }
+        });
     },
     precision() {
         if(this.tp > 0 || this.fp > 0) {
@@ -261,23 +272,31 @@ var app = new Vue({
             this.fn++;
         }
         $('#updateElement').modal('hide');
-
+        jQuery.ajax({
+            "url": "/manage/add/<%= request.getParameter("id") %>",
+            data: JSON.stringify({
+                idx: this.updateIdx,
+                subject: newRow.subject,
+                object: newRow.object,
+                property: newRow.property,
+                data: {"identifier":"<%= request.getParameter("id") %>", "precision": this.precnum(), "recall": this.recnum(), "fmeasure": this.fmnum()}}),
+            method: "POST",
+            processData: false,
+            error: function(er){ document.write(er.responseText); }
+        }); 
     },
     removeLink(idx) {
         this.results.splice(idx,1);
         this.fn--;
-    },
-    save() {
-        
         jQuery.ajax({
-            url: "/manage/save/<%= request.getParameter("id") %>",
-            data: JSON.stringify({"identifier":"<%= request.getParameter("id") %>", "precision": this.precnum(), "recall": this.recnum(), "fmeasure": this.fmnum(), "results": this.results}),
+            url: "/manage/remove/<%= request.getParameter("id") %>",
+            data: JSON.stringify({
+                "idx": idx,
+                "data": {"identifier":"<%= request.getParameter("id") %>", "precision": this.precnum(), "recall": this.recnum(), "fmeasure": this.fmnum()}}),
             method: "POST",
             processData: false,
-            success: function() {
-            },
             error: function(er){ document.write(er.responseText); }
-        });
+        }); 
     },
     rerun() {
         alert("TODO");
@@ -287,6 +306,9 @@ var app = new Vue({
     }
   }
 });
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})
 </script>
     </body>
 </html>

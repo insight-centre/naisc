@@ -84,3 +84,5 @@ data-old
 /naisc-meas/datasets/
 /naisc-meas/runs/
 /runs/
+datasets/*
+naisc-core/src/test/resources/model.libsvm
