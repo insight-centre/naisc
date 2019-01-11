@@ -86,3 +86,7 @@ data-old
 /runs/
 datasets/*
 naisc-core/src/test/resources/model.libsvm
+configs/0*
+configs/1*
+configs/2*
+
