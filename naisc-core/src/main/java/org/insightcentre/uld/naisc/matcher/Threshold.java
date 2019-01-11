@@ -51,7 +51,8 @@ public class Threshold implements MatcherFactory {
         public AlignmentSet align(AlignmentSet matches) {
             Iterator<Alignment> iter = matches.iterator();
             while(iter.hasNext()) {
-                if(iter.next().score < threshold)
+                final double score = iter.next().score;
+                if(score < threshold)
                     iter.remove();
             }
             return matches;

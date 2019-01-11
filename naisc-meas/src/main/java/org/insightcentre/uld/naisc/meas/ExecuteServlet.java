@@ -1,20 +1,16 @@
 package org.insightcentre.uld.naisc.meas;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.jena.rdf.model.Property;
-import org.apache.jena.rdf.model.Statement;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.main.Configuration;
 import org.insightcentre.uld.naisc.main.CrossFold;

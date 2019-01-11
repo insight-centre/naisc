@@ -189,14 +189,14 @@ public class Train {
                     if (featureExtractor.tags() == null || lens.tag() == null
                             || featureExtractor.tags().contains(lens.tag())) {
                         double[] features = featureExtractor.extractFeatures(facet);
-                        featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
+                        featureSet = featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
                                 lens.id(), features, block._1, block._2));
                     }
                 }
             }
             for (GraphFeature feature : dataFeatures) {
                 double[] features = feature.extractFeatures(block._1, block._2);
-                featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
+                featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
             }
             for(String prop : goldProps) {
                 Option<Alignment> a = goldAlignments.find(block._1.getURI(), block._2.getURI(), prop);

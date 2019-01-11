@@ -24,7 +24,6 @@ public class DatasetUploadServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse resp) throws ServletException, IOException {
-        System.err.println("doPost");
         // Create a factory for disk-based file items
         DiskFileItemFactory factory = new DiskFileItemFactory();
 
@@ -45,9 +44,10 @@ public class DatasetUploadServlet extends HttpServlet {
                 switch (item.getFieldName()) {
                     case "name":
                         datasetName = item.getString();
-                        if(!datasetName.matches("[A-Za-z][A-Za-z0-9-_]*")) {
+                        if (!datasetName.matches("[A-Za-z][A-Za-z0-9-_]*")) {
                             throw new ServletException("Bad input for dataset name");
-                        }   break;
+                        }
+                        break;
                     case "left":
                         leftFile = File.createTempFile("left", ".rdf");
                         leftFile.deleteOnExit();
@@ -59,29 +59,38 @@ public class DatasetUploadServlet extends HttpServlet {
                         writeFile(rightFile, item.getInputStream());
                         break;
                     case "align":
-                        alignFile = File.createTempFile("align", ".rdf");
-                        alignFile.deleteOnExit();
-                        writeFile(alignFile, item.getInputStream());
+                        if (item.getName() != null && !item.getName().equals("")) {
+                            alignFile = File.createTempFile("align", ".rdf");
+                            alignFile.deleteOnExit();
+                            writeFile(alignFile, item.getInputStream());
+                        }
                         break;
                     default:
                         System.err.println("Not recognized: " + item.getFieldName());
                         break;
                 }
             }
-            if(datasetName != null && leftFile != null && rightFile != null) {
+            if (datasetName != null && leftFile != null && rightFile != null) {
                 File directory = new File(new File("datasets"), datasetName);
-                if(!directory.mkdirs() && !directory.exists() && !directory.isDirectory()) {
+                if (!directory.mkdirs() && !directory.exists() && !directory.isDirectory()) {
                     throw new ServletException("Could not create directoy");
                 }
                 Files.move(leftFile.toPath(), new File(directory, "left.rdf").toPath());
                 Files.move(rightFile.toPath(), new File(directory, "right.rdf").toPath());
-                if(alignFile != null) {
+                if (alignFile != null) {
                     Files.move(alignFile.toPath(), new File(directory, "align.rdf").toPath());
                 }
             } else {
-                if(leftFile != null) leftFile.delete();
-                if(rightFile != null) rightFile.delete();
-                if(alignFile != null) alignFile.delete();
+                if (leftFile != null) {
+                    leftFile.delete();
+                }
+                if (rightFile != null) {
+                    rightFile.delete();
+                }
+                if (alignFile != null) {
+                    alignFile.delete();
+                }
+                Meas.data.datasetNames.add(datasetName);
             }
         } catch (FileUploadException x) {
             throw new ServletException(x);

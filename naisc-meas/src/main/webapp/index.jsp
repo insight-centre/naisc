@@ -318,6 +318,7 @@ var app = new Vue({
             success: function(result){ 
                 $('#addDataset').modal('hide');
                 data.datasetNames.push(name);
+                data.datasetName = name;
             },
             error: function(er){ document.write(er.responseText); }
         });

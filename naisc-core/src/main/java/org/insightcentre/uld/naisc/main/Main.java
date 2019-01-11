@@ -179,14 +179,14 @@ public class Main {
                         if (featureExtractor.tags() == null || lens.tag() == null
                                 || featureExtractor.tags().contains(lens.tag())) {
                             double[] features = featureExtractor.extractFeatures(facet);
-                            featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
+                            featureSet = featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
                                     lens.id(), features, block._1, block._2));
                         }
                     }
                 }
                 for (GraphFeature feature : dataFeatures) {
                     double[] features = feature.extractFeatures(block._1, block._2);
-                    featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
+                    featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
                 }
                 for (Scorer scorer : scorers) {
                     double score = scorer.similarity(featureSet);
@@ -206,7 +206,7 @@ public class Main {
             return null;
         }
     }
-
+    
     @SuppressWarnings("UseSpecificCatch")
     public static void main(String[] args) {
         try {
@@ -214,9 +214,7 @@ public class Main {
                 {
                     accepts("o", "The file to write the output dataset to (STDOUT if omitted)").withRequiredArg().ofType(File.class);
                     accepts("c", "The configuration to use").withRequiredArg().ofType(File.class);
-                    //accepts("x", "Output only for the provided dataset");
                     accepts("xml", "Output as XML");
-                    //accepts("easy", "Do not find hard confounding problems (only works with -x)");
                     accepts("q", "Suppress output");
                     nonOptions("Two RDF files");
                 }

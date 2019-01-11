@@ -66,7 +66,7 @@ public class Label implements LensFactory {
 
         @Override
         public Option<LangStringPair> extract(Resource entity1, Resource entity2) {
-            List<LangStringPair> result = new ArrayList<>();
+            //List<LangStringPair> result = new ArrayList<>();
             for (Property lproperty : properties) {
                 NodeIterator iter1 = model.listObjectsOfProperty(entity1, lproperty);
                 while (iter1.hasNext()) {
