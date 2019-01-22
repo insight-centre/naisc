@@ -14,7 +14,7 @@ To obtain the data necessary to run Naisc, run the following script
 
 Finally, to run and start the Web interface use the following
 
-    mvn -f naisc-meas/pom.xml install jetty:run
+    ./meas.sh
 
 The Web interface will be available at `http://localhost:8080`
 
