@@ -74,9 +74,12 @@ public class BasicString implements TextFeatureFactory {
         public List<Feature> features;
 
         public Object2DoubleMap<String> ngramWeights() {
-            if (ngramWeights != null) {
+            if (ngramWeights != null && !"".equals(ngramWeights)) {
                 try {
-                    return WordWeighting.get(new File(ngramWeights));
+                    final File file = new File(ngramWeights);
+                    if(!file.exists())
+                        throw new RuntimeException("Could not find file: " + file.getAbsolutePath());
+                    return WordWeighting.get(file);
                 } catch (IOException x) {
                     throw new RuntimeException(x);
                 }
@@ -86,9 +89,12 @@ public class BasicString implements TextFeatureFactory {
         }
 
         public Object2DoubleMap<String> wordWeights() {
-            if (wordWeights != null) {
+            if (wordWeights != null && !"".equals(wordWeights)) {
                 try {
-                    return WordWeighting.get(new File(wordWeights));
+                    final File file = new File(wordWeights);
+                    if(!file.exists())
+                        throw new RuntimeException("Could not find file: " + file.getAbsolutePath());
+                    return WordWeighting.get(file);
                 } catch (IOException x) {
                     throw new RuntimeException(x);
                 }
