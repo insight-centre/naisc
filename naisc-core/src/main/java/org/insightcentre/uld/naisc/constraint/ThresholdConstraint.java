@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.constraint;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,7 @@ public class ThresholdConstraint implements ConstraintFactory {
 
     @Override
     public Constraint make(Map<String, Object> params) {
-        Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
+        Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         return new ThresholdImpl(new ArrayList<>(), 0.0, config.threshold);
     }
 

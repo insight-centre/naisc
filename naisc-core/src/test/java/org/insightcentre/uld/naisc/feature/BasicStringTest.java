@@ -1,6 +1,7 @@
 
 package org.insightcentre.uld.naisc.feature;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import java.io.IOException;
@@ -235,7 +236,7 @@ public class BasicStringTest {
 "    },\n" +
 "    \"description\": \"Simple baseline method using string metrics and a SVM\"\n" +
 "}";
-        Configuration c = new ObjectMapper().readValue(config, Configuration.class);
+        Configuration c = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).readValue(config, Configuration.class);
         
         String s = "{\"params\": { \"foo\": [\"bar\",\"baz\"] } }";
         

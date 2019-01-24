@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.matcher;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.insightcentre.uld.naisc.constraint.UnsolvableConstraint;
 import org.insightcentre.uld.naisc.constraint.Constraint;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +40,7 @@ public class Greedy implements MatcherFactory {
 
     @Override
     public Matcher makeMatcher(Map<String, Object> params) {
-        Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
+        Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if(config.constraint == null)
             throw new ConfigurationException("Greedy matcher requires a constraint");
         

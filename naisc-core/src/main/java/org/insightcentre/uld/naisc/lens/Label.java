@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.lens;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ import org.insightcentre.uld.naisc.util.Some;
  */
 public class Label implements LensFactory {
 
-    private ObjectMapper mapper = new ObjectMapper();
+    private ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
     public Lens makeLens(String tag, Model sparqlData, Map<String, Object> params) {

@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.scorer;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import static java.lang.Double.max;
@@ -21,7 +22,7 @@ import org.insightcentre.uld.naisc.util.Option;
  * @author John McCrae
  */
 public class Average implements ScorerFactory {
-    private ObjectMapper mapper = new ObjectMapper();
+    private ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     
     @Override
     public String id() {

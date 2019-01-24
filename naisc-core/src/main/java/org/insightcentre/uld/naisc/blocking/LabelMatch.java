@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.blocking;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ import org.insightcentre.uld.naisc.util.PrettyGoodTokenizer;
  */
 public class LabelMatch implements BlockingStrategyFactory {
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
     public BlockingStrategy makeBlockingStrategy(Map<String, Object> params) {

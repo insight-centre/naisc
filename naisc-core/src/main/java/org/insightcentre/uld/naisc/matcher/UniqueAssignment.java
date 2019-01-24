@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.matcher;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMaps;
@@ -73,7 +74,7 @@ public class UniqueAssignment implements MatcherFactory {
 
     @Override
     public Matcher makeMatcher(Map<String, Object> params) {
-        Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
+        Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if (config.baseProbability <= 0 || config.baseProbability > 1) {
             throw new ConfigurationException("Base probability must be between 0 and 1");
         }

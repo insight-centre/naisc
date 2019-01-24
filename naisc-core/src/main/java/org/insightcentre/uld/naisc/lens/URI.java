@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.lens;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import java.io.UnsupportedEncodingException;
@@ -32,7 +33,7 @@ public class URI implements LensFactory {
 
     @Override
     public Lens makeLens(String tag, Model sparqlData, Map<String, Object> params) {
-        Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
+        Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         return new URIImpl(tag, config.location, config.form, config.separator);
     }
 

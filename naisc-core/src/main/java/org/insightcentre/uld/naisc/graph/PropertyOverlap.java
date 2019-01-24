@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.graph;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,7 +26,7 @@ public class PropertyOverlap implements GraphFeatureFactory {
 
     @Override
     public GraphFeature makeFeature(Model sparqlData, Map<String, Object> params) {
-        Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
+        Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         return new PropertyOverlapImpl(config.properties);
     }
 

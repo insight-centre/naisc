@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.feature;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.File;
@@ -31,7 +32,7 @@ public class Dictionary implements TextFeatureFactory {
 
     @Override
     public TextFeature makeFeatureExtractor(Set<String> tags, Map<String, Object> params) {
-        Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
+        Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if(config.dict != null) {
             File f = new File(config.dict);
             if(!f.exists()) {

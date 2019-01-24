@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.blocking;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -25,7 +26,7 @@ public class IDMatch implements BlockingStrategyFactory {
 
     @Override
     public BlockingStrategy makeBlockingStrategy(Map<String, Object> params) {
-        Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
+        Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if(config.method == IDMatching.namespace && (config.leftNamespace == null || config.rightNamespace == null)) {
             throw new ConfigurationException("Method is namespace but namespaces are not set");
         }

@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.feature;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Arrays;
@@ -42,7 +43,7 @@ public class BagOfWordsSim implements TextFeatureFactory {
 
     @Override
     public TextFeature makeFeatureExtractor(Set<String> tags, Map<String, Object> params) {
-        Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
+        Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         return new BagOfWordsFeatureExtractor(config.method, config.weighting, tags);
     }
 

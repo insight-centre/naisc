@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.feature;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class WordNet implements TextFeatureFactory {
 
     @Override
     public TextFeature makeFeatureExtractor(Set<String> tags, Map<String, Object> params) {
-        Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
+        Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         File wordnetXmlFile = new File(config.wordnetXmlFile);
         if(!wordnetXmlFile.exists()) {
             throw new ConfigurationException("WordNet XML file does not exist");

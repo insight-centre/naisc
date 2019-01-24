@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.feature;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import static eu.monnetproject.lang.Language.ENGLISH;
@@ -106,7 +107,7 @@ public class BasicString implements TextFeatureFactory {
 
     @Override
     public TextFeature makeFeatureExtractor(Set<String> tags, Map<String, Object> params) {
-        final ObjectMapper mapper = new ObjectMapper();
+        final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         Configuration config = mapper.convertValue(params, Configuration.class);
         return new BasicStringImpl(config.labelChar, config.wordWeights(),
                 config.ngramWeights(),

@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.scorer;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
@@ -66,7 +67,7 @@ public class LibSVM implements ScorerFactory {
         //public String arffFile;
     }
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
     public Scorer makeScorer(Map<String, Object> params) {
@@ -76,7 +77,7 @@ public class LibSVM implements ScorerFactory {
         }
         final File objectFile = new File(config.modelFile);
         if (!objectFile.exists()) {
-            throw new ConfigurationException("Model file does not exist");
+            throw new ConfigurationException("Model file does not exist. (Perhaps you need to train this model?)");
         }
         try {
             return load(objectFile, config);

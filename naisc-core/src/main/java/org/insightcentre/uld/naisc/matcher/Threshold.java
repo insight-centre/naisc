@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.matcher;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Iterator;
@@ -16,7 +17,7 @@ import org.insightcentre.uld.naisc.MatcherFactory;
  * @author John McCrae
  */
 public class Threshold implements MatcherFactory {
-    private ObjectMapper mapper = new ObjectMapper();
+    private ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     
     @Override
     public String id() {
