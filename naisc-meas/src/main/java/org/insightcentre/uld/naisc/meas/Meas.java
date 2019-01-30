@@ -69,7 +69,7 @@ public class Meas {
             if (f.exists() && f.isDirectory()) {
                 List<String> datasets = new ArrayList<>();
                 for (File f2 : f.listFiles()) {
-                    if (f2.isDirectory() && new File(f2, "left.rdf").exists() && new File(f2, "right.rdf").exists()) {
+                    if (Dataset.isDataset(f2)) {
                         datasets.add(f2.getName());
                     }
                 }

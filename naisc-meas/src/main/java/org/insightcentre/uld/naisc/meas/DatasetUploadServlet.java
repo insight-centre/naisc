@@ -40,6 +40,7 @@ public class DatasetUploadServlet extends HttpServlet {
             List<FileItem> items = upload.parseRequest(request);
             String datasetName = null;
             File leftFile = null, rightFile = null, alignFile = null;
+            String leftSuffix = ".rdf", rightSuffix = ".rdf";
             for (FileItem item : items) {
                 switch (item.getFieldName()) {
                     case "name":
@@ -49,12 +50,12 @@ public class DatasetUploadServlet extends HttpServlet {
                         }
                         break;
                     case "left":
-                        leftFile = File.createTempFile("left", ".rdf");
+                        leftFile = File.createTempFile("left", leftSuffix = guessSuffix(item));
                         leftFile.deleteOnExit();
                         writeFile(leftFile, item.getInputStream());
                         break;
                     case "right":
-                        rightFile = File.createTempFile("right", ".rdf");
+                        rightFile = File.createTempFile("right", rightSuffix = guessSuffix(item));
                         rightFile.deleteOnExit();
                         writeFile(rightFile, item.getInputStream());
                         break;
@@ -75,8 +76,8 @@ public class DatasetUploadServlet extends HttpServlet {
                 if (!directory.mkdirs() && !directory.exists() && !directory.isDirectory()) {
                     throw new ServletException("Could not create directoy");
                 }
-                Files.move(leftFile.toPath(), new File(directory, "left.rdf").toPath());
-                Files.move(rightFile.toPath(), new File(directory, "right.rdf").toPath());
+                Files.move(leftFile.toPath(), new File(directory, "left" + leftSuffix).toPath());
+                Files.move(rightFile.toPath(), new File(directory, "right" + rightSuffix).toPath());
                 if (alignFile != null) {
                     Files.move(alignFile.toPath(), new File(directory, "align.rdf").toPath());
                 }
@@ -95,6 +96,18 @@ public class DatasetUploadServlet extends HttpServlet {
         } catch (FileUploadException x) {
             throw new ServletException(x);
         }
+    }
+
+    private String guessSuffix(FileItem item) {
+        String suffix = ".rdf";
+        if(item.getName().endsWith(".nt")) {
+            suffix = ".nt";
+        } else if(item.getName().endsWith(".xml")) {
+            suffix = ".xml";
+        } else if(item.getName().endsWith(".ttl")) {
+            suffix = ".ttl";
+        }
+        return suffix;
     }
 
     private static int BUF_SIZE = 4096;

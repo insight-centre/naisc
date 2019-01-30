@@ -19,6 +19,7 @@ import org.insightcentre.uld.naisc.main.ExecuteListener.Stage;
 import org.insightcentre.uld.naisc.main.Main;
 import org.insightcentre.uld.naisc.main.Train;
 import org.insightcentre.uld.naisc.meas.Meas.Run;
+import org.insightcentre.uld.naisc.util.Option;
 
 /**
  *
@@ -121,6 +122,7 @@ public class ExecuteServlet extends HttpServlet {
         @Override
         public void run() {
             try {
+                final Dataset ds = new Dataset(new File(new File("datasets"), dataset));
                 isActive = true;
                 File f = new File("runs");
                 f.mkdirs();
@@ -128,41 +130,40 @@ public class ExecuteServlet extends HttpServlet {
                 final Evaluate.EvaluationResults er;
                 final AlignmentSet alignment;
                 if(mode == ExecutionMode.EVALUATE) {
-                    alignment = Main.execute(new File(new File(new File("datasets"), dataset), "left.rdf"),
-                            new File(new File(new File("datasets"), dataset), "right.rdf"),
+                    alignment = Main.execute(ds.left(), ds.right(),
                             config, listener);
                     if (alignment == null) {
                         return;
                     }
                     time = System.currentTimeMillis() - time;
-                    File alignFile = new File(new File(new File("datasets"), dataset), "align.rdf");
-                    if (alignFile.exists()) {
+                    Option<File> alignFile = ds.align();
+                    if (alignFile.has()) {
                         listener.updateStatus(Stage.EVALUATION, "Evaluating");
-                        AlignmentSet gold = Train.readAlignments(alignFile);
+                        AlignmentSet gold = Train.readAlignments(alignFile.get());
                         er = Evaluate.evaluate(alignment, gold, listener);
                     } else {
                         er = null;
                     }
                 } else if(mode == ExecutionMode.TRAIN) {
-                    File alignFile = new File(new File(new File("datasets"), dataset), "align.rdf");
-                    if(!alignFile.exists()) {
+                    Option<File> alignFile = ds.align();
+                    if(!alignFile.has()) {
                         throw new IllegalArgumentException("Training was requested on run with no gold standard alignments");
                     }
-                    Train.execute(new File(new File(new File("datasets"), dataset), "left.rdf"),
-                            new File(new File(new File("datasets"), dataset), "right.rdf"), 
-                            alignFile, config, listener);
+                    Train.execute(ds.left(),
+                            ds.right(), 
+                            alignFile.get(), config, listener);
                     time = System.currentTimeMillis() - time;
                     er = null;
                     alignment = null;
                 } else if(mode == ExecutionMode.CROSSFOLD) {
-                    File alignFile = new File(new File(new File("datasets"), dataset), "align.rdf");
-                    if(!alignFile.exists()) {
+                    Option<File> alignFile = ds.align();
+                    if(!alignFile.has()) {
                         throw new IllegalArgumentException("Cross-fold was requesetd on run with no gold standard alignments");
                     }
                     CrossFold.CrossFoldResult result = CrossFold.execute(
-                            new File(new File(new File("datasets"), dataset), "left.rdf"),
-                            new File(new File(new File("datasets"), dataset), "right.rdf"), 
-                            alignFile, 10, config, listener);
+                            ds.left(),
+                            ds.right(), 
+                            alignFile.get(), 10, config, listener);
                     time = System.currentTimeMillis() - time;
                     er = result.results;
                     alignment = result.alignments;
