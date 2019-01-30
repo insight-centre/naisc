@@ -1,18 +1,15 @@
 package org.insightcentre.uld.naisc.blocking;
 
+import org.insightcentre.uld.naisc.util.TreeNode;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
@@ -42,7 +39,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             throw new ConfigurationException("Property must be set");
         }
 
-        return new ApproximateStringMatchingImpl(config.maxMatches, config.property, config.rightProperty);
+        return new ApproximateStringMatchingImpl(config.maxMatches, config.property, config.rightProperty, config.queueMax);
     }
 
     /**
@@ -62,6 +59,10 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
          * The property for the right ontology (if different)
          */
         public String rightProperty = null;
+        /**
+         * The maximum size of the queue (sets the default queue size, 0 for no limit)
+         */
+        public int queueMax = maxMatches * 20;
     }
 
     private static class ApproximateStringMatchingImpl implements BlockingStrategy {
@@ -69,11 +70,13 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         private final int maxMatches;
         private final String property;
         private final String rightProperty;
+        private final int queueMax;
 
-        public ApproximateStringMatchingImpl(int maxMatches, String property, String rightProperty) {
+        public ApproximateStringMatchingImpl(int maxMatches, String property, String rightProperty, int queueMax) {
             this.maxMatches = maxMatches;
             this.property = property;
             this.rightProperty = rightProperty;
+            this.queueMax = queueMax;
         }
 
         @Override
@@ -124,7 +127,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                 @Override
                 public Iterator<Pair<Resource, Resource>> iterator() {
                     return labels.stream().flatMap(pair -> {
-                        return trie.nearest(pair._2, maxMatches).stream().
+                        return trie.nearest(pair._2, maxMatches, queueMax).stream().
                                 map(x -> new Pair<Resource, Resource>(pair._1, x));
                     }).iterator();
                 }
@@ -271,7 +274,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             return Collections.EMPTY_LIST;
         }
 
-        public List<R> nearest(String s, int n) {
+        public List<R> nearest(String s, int n, int queueMax) {
             ScoredQueue<TrieLink<R>> queue = new ScoredQueue<>();
             ScoredQueue<R> beam = new ScoredQueue<>();
             for (TrieLink<R> link : root.children) {
@@ -289,6 +292,9 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     if (lowerBound < beam.maximum() || beam.size() < n) {
                         queue.add(new TrieLink<>(key, link2.node), lowerBound);
                     }
+                }
+                if(queue.size() > queueMax) {
+                    queue.trim(queueMax);
                 }
                 double score = (double) editDistance(s, link.link) / (double) (s.length() + link.link.length());
                 for (R r : link.node.values) {
@@ -352,61 +358,33 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         }
     }
 
-    private static class ScoredQueueItem<R> implements Comparable<ScoredQueueItem<R>> {
-
-        public final R r;
-        public final double score;
-
-        public ScoredQueueItem(R r, double score) {
-            this.r = r;
-            this.score = score;
-        }
-
-        @Override
-        public int compareTo(ScoredQueueItem<R> o2) {
-            double s1 = this.score;
-            double s2 = o2.score;
-            int i = Double.compare(s1, s2);
-            if (i != 0) {
-                return i;
-            } else {
-                int i2 = Integer.compare(this.hashCode(), o2.hashCode());
-                if (i2 == 0 && !this.equals(o2)) {
-                    return 1;
-                } else {
-                    return i2;
-                }
-            }
-        }
-
-    }
-
+    
     private static class ScoredQueue<R> extends AbstractCollection<R> {
 
-        private PriorityQueue<ScoredQueueItem<R>> queue;
+        private TreeNode<R> queue;
         private double maximum = Double.NEGATIVE_INFINITY;
 
         public ScoredQueue() {
-            this.queue = new PriorityQueue<>();
+            this.queue = new TreeNode<>();
         }
 
         @Override
         public Iterator<R> iterator() {
-            return queue.stream().map(x -> x.r).iterator();
+            return queue.iterator();
         }
-
+        
         @Override
         public int size() {
             return queue.size();
         }
 
         public void add(R r, double score) {
-            queue.add(new ScoredQueueItem<>(r, score));
             maximum = Math.max(maximum, score);
+            queue.add(r, score);
         }
 
         public R poll() {
-            ScoredQueueItem<R> r = queue.poll();
+            TreeNode.ScoredQueueItem<R> r = queue.poll();
             if (this.isEmpty()) {
                 maximum = Double.NEGATIVE_INFINITY;
             }
@@ -415,16 +393,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
 
         public void trim(int n) {
             if (queue.size() > n) {
-                PriorityQueue<ScoredQueueItem<R>> queue2 = new PriorityQueue<>();
-                for (int i = 0; i < n; i++) {
-                    ScoredQueueItem<R> r = queue.poll();
-                    queue2.add(r);
-                    maximum = r.score;
-                }
-                while (!queue.isEmpty()) {
-                    queue.poll();
-                }
-                queue = queue2;
+                queue = queue.trim(n);
             }
         }
 
@@ -450,4 +419,6 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         }
 
     }
+    
+    
 }

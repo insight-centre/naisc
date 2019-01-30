@@ -122,7 +122,7 @@ public class ApproximateStringMatchingTest {
             add("aab");
             add("ab");
         }};
-        assertEquals(expResult, trie.nearest("aa", 2));
+        assertEquals(expResult, trie.nearest("aa", 2, 1000));
     }
     
     @Test
@@ -135,7 +135,7 @@ public class ApproximateStringMatchingTest {
             trie.add(s, s);
         }
         int N = 8;
-        List<String> nearest = trie.nearest("abc", N);
+        List<String> nearest = trie.nearest("abc", N, 100);
         strings.sort(new Comparator<String>() {
             @Override
             public int compare(String o1, String o2) {

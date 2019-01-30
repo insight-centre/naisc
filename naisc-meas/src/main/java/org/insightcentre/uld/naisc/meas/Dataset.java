@@ -64,7 +64,7 @@ public class Dataset {
      */
     public Option<File> align() {
         for(String suffix : Arrays.asList(".rdf",".nt",".ttl",".xml")) {
-            final File f = new File(folder, "right" + suffix);
+            final File f = new File(folder, "align" + suffix);
             if(f.exists())
                 return new Some<>(f);
         }
