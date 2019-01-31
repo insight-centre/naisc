@@ -1,0 +1,24 @@
+{
+    "blocking": {
+        "name": "blocking.ApproximateStringMatching",
+        "maxMatches": 100,
+        "property": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "lenses": [{
+        "name": "lens.Label"
+    }],
+    "textFeatures": [{
+        "name": "feature.BasicString",
+        "wordWeights": "models/idf",
+        "ngramWeights": "models/ngidf",
+        "labelChar": true
+    }],
+    "scorers": {
+        "name": "scorer.LibSVM",
+        "modelFile": "models/basic.libsvm"
+    },
+    "matcher": {
+        "name": "matcher.UniqueAssignment"
+    },
+    "description": "The good but basic feature setting"
+}
