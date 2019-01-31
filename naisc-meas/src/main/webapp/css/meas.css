@@ -138,3 +138,10 @@ input:invalid {
     font-size: 70%;
     color: #666;
 }
+
+.results_title {
+    color: #333;
+    text-align:center;
+    font-style: italic;
+    width: 100%;
+}

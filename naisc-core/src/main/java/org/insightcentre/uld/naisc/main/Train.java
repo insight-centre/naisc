@@ -13,12 +13,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.regex.Pattern;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.riot.RiotException;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.BlockingStrategy;
@@ -50,31 +52,27 @@ public class Train {
         AlignmentSet alignments = new AlignmentSet();
         Model model = ModelFactory.createDefaultModel();
         BufferedReader br = new BufferedReader(new FileReader(alignmentFile));
+        Pattern lineRegex = Pattern.compile("(<.*>\\s+<.*>\\s+<.*>\\s*\\.)\\s*(#\\s*(\\d*\\.?\\d*))?\\s*");
         String line = br.readLine();
-        while (line != null) {
-            String[] elems = line.split("#"); // Comment occurs at end of line
-            if (elems.length == 2) {
+        while (line != null && !line.matches("\\s*")) {
+            java.util.regex.Matcher m = lineRegex.matcher(line);
+            if(m.matches()) {
                 model.removeAll();
-                model.read(new StringReader(elems[0]), alignmentFile.toURI().toString());
+                try {
+                    model.read(new StringReader(m.group(1)), alignmentFile.toURI().toString(), "NTRIPLES");
+                } catch (RiotException x) {
+                    throw new RuntimeException("Could not read line: " + line, x);
+                }
                 final Statement st;
                 try {
                     st = model.listStatements().next();
                 } catch (NoSuchElementException x) {
                     throw new IOException("Bad line in alignments (no statement)", x);
                 }
-                double score = Double.parseDouble(elems[1]);
+                double score = m.group(2) == null ? 1.0 : Double.parseDouble(m.group(3));
                 alignments.add(new Alignment(st, score));
             } else {
-                model.removeAll();
-                model.read(new StringReader(line), alignmentFile.toURI().toString(), "NTRIPLES");
-                final Statement st;
-                try {
-                    st = model.listStatements().next();
-                } catch (NoSuchElementException x) {
-                    throw new IOException("Bad line in alignments (no statement)", x);
-                }
-                double score = 1.0;
-                alignments.add(new Alignment(st, score));
+                throw new RuntimeException("Line does not seem valid: " + line);
             }
             line = br.readLine();
         }
@@ -94,8 +92,8 @@ public class Train {
 //    }
 
     private static final LangStringPair EMPTY_LANG_STRING_PAIR = new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "", "");
-   
-        /**
+
+    /**
      * Execute NAISC
      *
      * @param leftFile The left RDF dataset to align
@@ -110,7 +108,7 @@ public class Train {
         final Configuration config = mapper.readValue(configuration, Configuration.class);
         execute(leftFile, rightFile, alignment, config, monitor);
     }
-    
+
     /**
      * Execute a NAISC training run
      *
@@ -134,9 +132,10 @@ public class Train {
         AlignmentSet goldAlignments = readAlignments(alignment);
         execute(leftModel, rightModel, goldAlignments, config, monitor);
     }
-    
+
     /**
      * Train a NAISC model
+     *
      * @param leftModel The left dataset
      * @param rightModel The right dataset
      * @param goldAlignments The gold standard alignments
@@ -144,9 +143,9 @@ public class Train {
      * @param monitor The listener for events
      * @throws IOException If an IO error occurs
      */
-    public static void execute(Model leftModel, Model rightModel, 
-            AlignmentSet goldAlignments, 
-            Configuration config, ExecuteListener monitor)  throws IOException {
+    public static void execute(Model leftModel, Model rightModel,
+            AlignmentSet goldAlignments,
+            Configuration config, ExecuteListener monitor) throws IOException {
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading blocking strategy");
         BlockingStrategy blocking = config.makeBlockingStrategy();
@@ -181,7 +180,7 @@ public class Train {
             FeatureSet featureSet = new FeatureSet(block._1, block._2);
             for (Lens lens : lenses) {
                 Option<LangStringPair> oFacet = lens.extract(block._1, block._2);
-                if(!oFacet.has()) {
+                if (!oFacet.has()) {
                     monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block._1, block._2));
                 }
                 LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
@@ -198,9 +197,9 @@ public class Train {
                 double[] features = feature.extractFeatures(block._1, block._2);
                 featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
             }
-            for(String prop : goldProps) {
+            for (String prop : goldProps) {
                 Option<Alignment> a = goldAlignments.find(block._1.getURI(), block._2.getURI(), prop);
-                if(a.has()) {
+                if (a.has()) {
                     trainingData.get(prop).add(featureSet.withScore(a.get().score));
                 } else {
                     // TODO: Negative Sampling
@@ -210,9 +209,9 @@ public class Train {
 
         monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Learning model");
         //ArrayList<Scorer> trainedScorers = new ArrayList<>();
-        for(ScorerTrainer tsf : scorers) {
+        for (ScorerTrainer tsf : scorers) {
             List<FeatureSetWithScore> data = trainingData.get(tsf.property());
-            if(data != null) {
+            if (data != null) {
                 tsf.train(data);
             } else {
                 System.err.println(String.format("No data for %s so could not train model", tsf.property()));

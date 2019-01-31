@@ -153,7 +153,6 @@ public class Execution implements ExecuteListener {
     }
 
     public static Run loadRun(String id) {
-        ObjectMapper mapper = new ObjectMapper();
         try {
             // create a database connection
             Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db");
@@ -209,6 +208,84 @@ public class Execution implements ExecuteListener {
         } catch (SQLException | IOException x) {
             throw new RuntimeException(x);
         }
+    }
+
+    public static List<RunResultRow> loadData(String id, int offset, int limit) {
+        ObjectMapper mapper = new ObjectMapper();
+        if (!new File("runs/" + id + ".db").exists()) {
+            return null;
+        }
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            List<RunResultRow> rrrs = new ArrayList<>();
+            try (Statement stat = connection.createStatement()) {
+                try (ResultSet rs = stat.executeQuery("SELECT res1, prop, res2, lens, score, valid FROM results LIMIT " + limit + " OFFSET " + offset)) {
+                    while (rs.next()) {
+                        RunResultRow rrr = new RunResultRow();
+                        rrr.subject = rs.getString(1);
+                        rrr.property = rs.getString(2);
+                        rrr.object = rs.getString(3);
+                        rrr.lens = mapper.readValue(rs.getString(4), mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class));
+                        rrr.score = rs.getDouble(5);
+                        rrr.valid = Valid.valueOf(rs.getString(6));
+                        rrrs.add(rrr);
+                    }
+                }
+            }
+            return rrrs;
+        } catch (SQLException | IOException x) {
+            throw new RuntimeException(x);
+        }
+    }
+    
+    public static int truePositives(String id) {
+        return count(id, "yes");
+    }
+    
+    public static int falsePositives(String id) {
+        return count(id, "no");
+    }
+    
+    public static int falseNegatives(String id) {
+        return count(id, "novel");
+    }
+    
+    private static int count(String id, String what) {
+        if (!new File("runs/" + id + ".db").exists()) {
+            return -1;
+        }
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            List<RunResultRow> rrrs = new ArrayList<>();
+            try (Statement stat = connection.createStatement()) {
+                try (ResultSet rs = stat.executeQuery("SELECT COUNT(*) FROM results WHERE valid == '"+what+"'")) {
+                    if(rs.next()) {
+                        return rs.getInt(1);
+                    }
+                }
+            }
+        } catch(SQLException x) {
+            x.printStackTrace();
+        }
+        return -1;
+    }
+    
+    
+    public static int noResults(String id) {
+        if (!new File("runs/" + id + ".db").exists()) {
+            return -1;
+        }
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            List<RunResultRow> rrrs = new ArrayList<>();
+            try (Statement stat = connection.createStatement()) {
+                try (ResultSet rs = stat.executeQuery("SELECT COUNT(*) FROM results")) {
+                    if(rs.next()) {
+                        return rs.getInt(1);
+                    }
+                }
+            }
+        } catch(SQLException x) {
+            x.printStackTrace();
+        }
+        return -1;
     }
 
     public void addAlignment(Run run, int idx, String subject, String property, String object) {

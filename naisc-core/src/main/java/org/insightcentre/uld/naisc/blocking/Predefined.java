@@ -12,6 +12,7 @@ import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
+import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.main.Train;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -26,15 +27,18 @@ public class Predefined implements BlockingStrategyFactory {
     @Override
     public BlockingStrategy makeBlockingStrategy(Map<String, Object> params) {
         final Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
-        if(config.links == null || !config.links.exists()) 
+        final File links = config.links == null ? null : new File(config.links);
+        if(links == null || !links.exists()) 
             throw new ConfigurationException("The links file is not specified or does not exist");
-        return new PredefinedImpl(config.links);
+        return new PredefinedImpl(links);
     }
     /**
      * The configuration of the predefined mapping
      */
     public static class Configuration {
-        public File links;
+        /** The path to the file containing the links to playback */
+        @ConfigurationParameter(description = "The path to the file containing the links to produce")
+        public String links;
     }
     
     private static class PredefinedImpl implements BlockingStrategy {

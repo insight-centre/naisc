@@ -89,7 +89,18 @@ public class ManageServlet extends HttpServlet {
             } else {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             }
-
+        } else if (path.equals("/results")) {
+            try {
+                String id = req.getParameter("id");
+                int offset = Integer.parseInt(req.getParameter("offset"));
+                int limit = Integer.parseInt(req.getParameter("limit"));
+                resp.setContentType("application/json");
+                try(PrintWriter out = resp.getWriter()) {
+                    out.println(Meas.loadRunResult(id, offset, limit));
+                }
+            } catch(IOException | NumberFormatException x) {
+                throw new ServletException(x);
+            }
         } else {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         }

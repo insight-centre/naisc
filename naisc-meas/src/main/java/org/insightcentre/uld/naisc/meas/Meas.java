@@ -157,11 +157,11 @@ public class Meas {
         public boolean active;
     }
 
-    public static String loadRunResult(String id) throws JsonProcessingException, IOException {
+    public static String loadRunResult(String id, int offset, int limit) throws JsonProcessingException, IOException {
         if(!id.matches(ExecuteServlet.VALID_ID)) {
             throw new IllegalArgumentException("Bad ID");
         }
-        List<RunResultRow> rows = Execution.loadData(id);
+        List<RunResultRow> rows = Execution.loadData(id, offset, limit);
         return mapper.writeValueAsString(rows);
     }
     

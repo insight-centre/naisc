@@ -43,6 +43,7 @@ import org.insightcentre.uld.naisc.blocking.All;
 import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching;
 import org.insightcentre.uld.naisc.blocking.IDMatch;
 import org.insightcentre.uld.naisc.blocking.LabelMatch;
+import org.insightcentre.uld.naisc.blocking.Predefined;
 import org.insightcentre.uld.naisc.constraint.Bijective;
 import org.insightcentre.uld.naisc.constraint.Constraint;
 import org.insightcentre.uld.naisc.constraint.ConstraintFactory;
@@ -852,7 +853,8 @@ public class Configuration {
         All.class,
         IDMatch.class,
         LabelMatch.class,
-        ApproximateStringMatching.class
+        ApproximateStringMatching.class,
+        Predefined.class
     };
 
     /**

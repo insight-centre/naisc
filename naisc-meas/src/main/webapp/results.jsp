@@ -1,5 +1,6 @@
 <%@ page import="org.insightcentre.uld.naisc.meas.*" %>
 <%@ page import="org.insightcentre.uld.naisc.main.Configuration" %>
+<% int limit = 50; %>
 <!doctype html>
 <html lang="en">
   <head>
@@ -35,6 +36,7 @@
                 </div>
             </div>
             <div class="row">
+                <h3 class="results_title">Results {{offset}}-{{Math.min(offset+<%=limit%>,totalResults)}} of {{totalResults}}</h3>
                 <table class="table table-striped">
                     <thead>
                         <tr>
@@ -79,6 +81,17 @@
                             </div>
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                        <button type="button" class="btn btn-dark" v-bind:class="{disabled: offset <= 0}" v-on:click="prevResults()">&laquo; Previous <%=limit%> Links</button>
+                    </td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                        <td>
+                        <button type="button" class="btn btn-dark" v-bind:class="{disabled: offset + <%=limit%> > totalResults}" v-on:click="nextResults()">Next <%=limit%> Links &raquo;</button>
+                        </td>
+                    </tr>
                 </table>
                 <div class="row spaced-buttons">
                 <button type="button" class="btn btn-success" v-on:click.prevent="rerun()" data-toggle="tooltip" data-placement="top" title="Rerun the system including the correct links"><i class="fas fa-redo"></i> Rerun</button>
@@ -120,21 +133,13 @@
     <script src="/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
     <script src="/js/vue.js"></script>
 <script>
-var data = {"results":<%= Meas.loadRunResult(request.getParameter("id")) %>};
+var data = {"results":<%= Meas.loadRunResult(request.getParameter("id"), 0, limit) %>};
 
-function count(value) {
-    var n = 0;
-    for(var i = 0; i < data.results.length; i++) {
-        if(data.results[i].valid === value) {
-            n++;
-        }
-    }
-    return n;
-}
-
-data.tp = count('yes');
-data.fp = count('no');
-data.fn = count('novel');
+data.totalResults = <%= Execution.noResults(request.getParameter("id")) %>;
+data.offset = 0;
+data.tp = <%= Execution.truePositives(request.getParameter("id")) %>;
+data.fp = <%= Execution.falsePositives(request.getParameter("id")) %>;
+data.fn = <%= Execution.falseNegatives(request.getParameter("id")) %>;
 data.currentElem = "";
 data.elems = new Set();
 data.left = true;
@@ -182,7 +187,7 @@ var app = new Vue({
         jQuery.ajax({
             "url": "/manage/update/<%= request.getParameter("id") %>",
             data: JSON.stringify({
-                "idx": idx,
+                "idx": idx + this.offset,
                 "valid": value,
                 "data": {"identifier":"<%= request.getParameter("id") %>", "precision": this.precnum(), "recall": this.recnum(), "fmeasure": this.fmnum()}}),
             method: "POST",
@@ -303,6 +308,28 @@ var app = new Vue({
     },
     retrain() {
         alert("TODO");
+    },
+    prevResults() {
+        var self = this;
+        jQuery.ajax({
+            url: "/manage/results?id=<%= request.getParameter("id") %>&offset=" + (this.offset-<%=limit%>) + "&limit=<%=limit%>",
+            success: function(d) {
+                self.results = d;
+                self.offset -= <%=limit%>;
+            }, 
+            error: function(er){ document.write(er.responseText); }
+        });
+    },
+    nextResults() {
+        var self = this;
+        jQuery.ajax({
+            url: "/manage/results?id=<%= request.getParameter("id") %>&offset=" + (this.offset+<%=limit%>) + "&limit=<%=limit%>",
+            success: function(d) {
+                self.results = d;
+                self.offset += <%=limit%>;
+            }, 
+            error: function(er){ document.write(er.responseText); }
+        });
     }
   }
 });

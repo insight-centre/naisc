@@ -55,7 +55,7 @@ public class Java2Vue {
             } else if (f.getType().equals(double.class)) {
                 sb.append("<div class=\"form-group\">\n");
                 sb.append("  <label for=\"").append(toVar(path)).append(f.getName()).append("\">").append(deCamelCase(f.getName())).append("</label>\n");
-                sb.append("  <input type=\"text\" pattern=\"[0-9]*\\.[0-9]+\" class=\"form-control\" id=\"").
+                sb.append("  <input type=\"text\" pattern=\"([0-9]*\\.[0-9]+|[0-9]+)\" class=\"form-control\" id=\"").
                         append(toVar(path)).append(f.getName()).append("\" v-model=\"").
                         append(path).append(sep(path)).append(f.getName()).append("\">\n");
                 if (description.length() > 0) {
