@@ -2,10 +2,17 @@ package org.insightcentre.uld.naisc.blocking;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
+import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching.PatriciaTrie;
 import static org.insightcentre.uld.naisc.blocking.ApproximateStringMatching.editDistance;
+import org.insightcentre.uld.naisc.lens.Label;
+import org.insightcentre.uld.naisc.util.Pair;
 import org.junit.After;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
@@ -167,5 +174,56 @@ public class ApproximateStringMatchingTest {
         for(int i = 0; i < N; i++) {
             assert(nearest.contains(strings.get(i)));
         }
+    }
+    
+    
+    @Test
+    public void testNearestNgramHard() {
+        int N = 8;
+        ApproximateStringMatching matching = new ApproximateStringMatching();
+        BlockingStrategy strat = matching.makeBlockingStrategy(new HashMap<String, Object>() {{ this.put("metric", "ngrams"); this.put("maxMatches", N); this.put("ngrams", 1); }});
+                
+        Model left = ModelFactory.createDefaultModel();
+        left.add(left.createResource("file:tmp#abc"), left.createProperty(Label.RDFS_LABEL), left.createLiteral("abc"));
+        Model right = ModelFactory.createDefaultModel();
+        List<Resource> strings = new ArrayList<>();
+        for(int i = 0 ; i < 100; i++) {
+            String s = randString2();
+            //System.err.println(s);
+            right.add(right.createResource("file:tmp#" + s), right.createProperty(Label.RDFS_LABEL), right.createLiteral(s));
+            strings.add(right.createResource("file:tmp#" + s));
+        }
+        final List<Pair<Resource,Resource>> results = new ArrayList<>();
+        for(Pair<Resource,Resource> p : strat.block(left, right)) {
+            results.add(p);
+        }
+        strings.sort(new Comparator<Resource>() {
+            @Override
+            public int compare(Resource o1, Resource o2) {
+                double score1 = ngramSim(o1);
+                double score2 = ngramSim(o2);
+                int i = -Double.compare(score1, score2);
+                return i != 0 ? i : o1.getURI().compareTo(o2.getURI());
+            }
+        });
+        assertEquals(N, results.size());
+        for(int i = 0; i < N; i++) {
+            //System.err.println(results.get(i)._2 + " " + strings.get(i));
+        }
+        for(int i = 0; i < N; i++) {
+            final Resource r = strings.get(i);
+            assert(results.stream().anyMatch(p -> p._2.equals(r)));
+        }
+    }
+    
+    private double ngramSim(Resource r) {
+        String s = r.getURI().substring(9);
+        double score = 0.0;
+        for(int i = 0; i < s.length(); i++) {
+            if(s.charAt(i) == 'a' || s.charAt(i) == 'b' || s.charAt(i) == 'c') {
+                score += 1.0 / s.length();
+            }
+        }
+        return score;
     }
 }

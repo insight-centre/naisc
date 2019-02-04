@@ -13,10 +13,10 @@
         "ngramWeights": "models/ngidf",
         "labelChar": true
     }],
-    "scorers": {
+    "scorers": [{
         "name": "scorer.LibSVM",
         "modelFile": "models/basic.libsvm"
-    },
+    }],
     "matcher": {
         "name": "matcher.UniqueAssignment"
     },
