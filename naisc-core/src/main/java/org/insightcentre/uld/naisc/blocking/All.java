@@ -33,6 +33,25 @@ public class All implements BlockingStrategyFactory {
             };
         }
 
+        @Override
+        public int estimateSize(Model left, Model right) {
+            Iterator<Resource> i1 = left.listSubjects();
+            Iterator<Resource> i2 = right.listSubjects();
+            int n = 0;
+            while(i1.hasNext()) {
+                n++;
+                i1.next();
+            }
+            int m = 0;
+            while(i2.hasNext()) {
+                m++;
+                i2.next();
+            }
+            return n * m;
+        }
+        
+        
+
     }
 
     private static class AllIterator implements Iterator<Pair<Resource, Resource>> {

@@ -2,17 +2,19 @@ package org.insightcentre.uld.naisc.main;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 import joptsimple.OptionParser;
@@ -28,7 +30,6 @@ import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.FeatureSetWithScore;
 import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.Matcher;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.ScorerTrainer;
@@ -172,9 +173,6 @@ public class Train {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Scorers");
         List<ScorerTrainer> scorers = config.makeTrainableScorers();
 
-        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Matcher");
-        Matcher matcher = config.makeMatcher();
-
         monitor.updateStatus(ExecuteListener.Stage.BLOCKING, "Blocking");
         final Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel);
 
@@ -195,41 +193,55 @@ public class Train {
 
         boolean blocksGenerated = false;
 
-        //AlignmentSet alignments = new AlignmentSet();
+        // We use the negative sampling as the seed such that the experiment
+        // produces the same result every time
+        final Random random = new Random(Double.doubleToLongBits(negativeSampling));
+        final int estimatedSize = blocking.estimateSize(leftModel, rightModel);
+        final double negSampProp = negativeSampling > 0
+                ? negativeSampling * (double) (goldAlignments.size()) / (double) (estimatedSize - goldAlignments.size())
+                : -1.0;
+        final Object2IntMap<String> positives = new Object2IntOpenHashMap<>(),
+                negatives = new Object2IntOpenHashMap<>();
+        int count = 0;
         for (Pair<Resource, Resource> block : blocks) {
             blocksGenerated = true;
-            FeatureSet featureSet = makeFeatures(block._1, block._2, lenses, monitor, textFeatures, dataFeatures);
-
+            if (++count % 1000 == 0) {
+                monitor.updateStatus(ExecuteListener.Stage.SCORING, "Generating Features (" + count + "/" + estimatedSize + "")");
+            }
             for (String prop : goldProps) {
                 Option<Alignment> a = goldAlignments.find(block._1.getURI(), block._2.getURI(), prop);
 
                 if (a.has()) {
+                    FeatureSet featureSet = makeFeatures(block._1, block._2, lenses, monitor, textFeatures, dataFeatures);
                     trainingData.get(prop).add(featureSet.withScore(a.get().score));
                     goldAlignments.remove(a.get());
+                    positives.put(prop, positives.getInt(prop) + 1);
                 } else {
-                    if (negData != null) {
-                        negData.get(prop).add(featureSet.withScore(0.0));
+                    if (negData != null && random.nextDouble() < negSampProp) {
+                        FeatureSet featureSet = makeFeatures(block._1, block._2, lenses, monitor, textFeatures, dataFeatures);
+                        trainingData.get(prop).add(featureSet.withScore(0.0));
+                        negatives.put(prop, positives.getInt(prop) + 1);
                     }
                 }
             }
         }
-        
+
         int unblockedGold = 0;
-        for(Alignment a : goldAlignments) {
-            FeatureSet featureSet = makeFeatures(leftModel.createResource(a.entity1), 
+        for (Alignment a : goldAlignments) {
+            FeatureSet featureSet = makeFeatures(leftModel.createResource(a.entity1),
                     rightModel.createResource(a.entity2), lenses, monitor, textFeatures, dataFeatures);
             trainingData.get(a.relation).add(featureSet.withScore(a.score));
             unblockedGold++;
         }
 
-        if (negData != null) {
-            for (Map.Entry<String, List<FeatureSetWithScore>> negEntry : negData.entrySet()) {
-                int negSize = (int) Math.ceil(trainingData.get(negEntry.getKey()).size() * negativeSampling);
-                Collections.shuffle(negEntry.getValue());
-                negSize = Math.min(negSize, negEntry.getValue().size());
-                monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Adding " + negSize + " negative examples to " + trainingData.get(negEntry.getKey()).size()
-                        + " positive examples for property " + negEntry.getKey());
-                trainingData.get(negEntry.getKey()).addAll(negEntry.getValue().subList(0, negSize));
+        for (String prop : goldProps) {
+            if (negData != null) {
+                monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Adding " + negatives.getInt(prop) +
+                        " negative examples to " + positives.getInt(prop)
+                        + " positive examples for property " + prop);
+            } else {
+                monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Generated data for " +
+                        positives.getInt(prop) + " examples");
             }
         }
 
@@ -237,8 +249,9 @@ public class Train {
             monitor.updateStatus(ExecuteListener.Stage.FAILED, "No blocks were generated");
             return;
         }
-        if(unblockedGold > 0)
+        if (unblockedGold > 0) {
             monitor.updateStatus(ExecuteListener.Stage.TRAINING, unblockedGold + " gold standard values were not generated by the blocking strategy. If this value is high consider using a more exhaustive blocking method");
+        }
 
         monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Learning model");
         //ArrayList<Scorer> trainedScorers = new ArrayList<>();
