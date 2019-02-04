@@ -91,3 +91,4 @@ configs/1*
 configs/2*
 munkres.tmp
 out
+naisc-core/src/test/resources/model.libsvm
