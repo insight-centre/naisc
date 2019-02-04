@@ -151,7 +151,7 @@ public class ExecuteServlet extends HttpServlet {
                     }
                     Train.execute(ds.left(),
                             ds.right(), 
-                            alignFile.get(), config, listener);
+                            alignFile.get(), 5.0, config, listener);
                     time = System.currentTimeMillis() - time;
                     er = null;
                     alignment = null;
@@ -163,7 +163,7 @@ public class ExecuteServlet extends HttpServlet {
                     CrossFold.CrossFoldResult result = CrossFold.execute(
                             ds.left(),
                             ds.right(), 
-                            alignFile.get(), 10, config, listener);
+                            alignFile.get(), 10, 5.0, config, listener);
                     time = System.currentTimeMillis() - time;
                     er = result.results;
                     alignment = result.alignments;

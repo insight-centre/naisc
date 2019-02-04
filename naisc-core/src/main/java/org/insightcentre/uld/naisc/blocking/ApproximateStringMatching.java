@@ -35,6 +35,9 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         if (config.maxMatches < 1) {
             throw new ConfigurationException("Max matches must be at least one");
         }
+        if (config.queueMax < 1) {
+            config.queueMax = config.maxMatches * 20;
+        }
         if (config.property == null || config.property.equals("")) {
             throw new ConfigurationException("Property must be set");
         }

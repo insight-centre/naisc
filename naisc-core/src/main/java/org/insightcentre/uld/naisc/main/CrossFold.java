@@ -39,19 +39,21 @@ public class CrossFold {
      * @param rightFile The right dataset
      * @param gold The alignments
      * @param nFolds The number of folds to use
+     * @param negativeSampling The rate of negative sampling
      * @param output The output file or null to write to STDOUT
      * @param configuration The configuration object
      * @param monitor A listener for events in the execution
      */
     @SuppressWarnings("UseSpecificCatch")
-    public static void execute(File leftFile, File rightFile, File gold, int nFolds, File output,
+    public static void execute(File leftFile, File rightFile, File gold, int nFolds, 
+            double negativeSampling, File output,
             File configuration, ExecuteListener monitor) {
 
         try {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
             final Configuration config = mapper.readValue(configuration, Configuration.class);
 
-            CrossFoldResult cfr = execute(leftFile, rightFile, gold, nFolds, config, monitor);
+            CrossFoldResult cfr = execute(leftFile, rightFile, gold, nFolds, negativeSampling, config, monitor);
 
             final PrintStream out;
             if (output != null) {
@@ -74,6 +76,7 @@ public class CrossFold {
      * @param rightFile The right dataset
      * @param gold The gold standard alignments
      * @param nFolds The number of folds to use
+     * @param negativeSampling The rate of negative sampling
      * @param config The configuration
      * @param monitor The listener for events
      * @return The alignments and the evaluation scores
@@ -81,7 +84,7 @@ public class CrossFold {
      */
     public static CrossFoldResult execute(File leftFile, File rightFile,
             File gold,
-            int nFolds,
+            int nFolds, double negativeSampling,
             Configuration config, ExecuteListener monitor) throws IOException {
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
@@ -95,7 +98,7 @@ public class CrossFold {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading gold standard");
         final AlignmentSet goldAlignments = Train.readAlignments(gold);
 
-        return execute(leftModel, rightModel, goldAlignments, nFolds, config, monitor);
+        return execute(leftModel, rightModel, goldAlignments, nFolds, negativeSampling, config, monitor);
 
     }
 
@@ -105,6 +108,7 @@ public class CrossFold {
      * @param rightModel The right dataset
      * @param goldAlignments The gold standard alignments
      * @param nFolds The number of folds
+     * @param negativeSampling The rate of negative sampling
      * @param config The alignment configuration
      * @param _monitor A listener for events
      * @return The alignment and evaluation score
@@ -112,17 +116,18 @@ public class CrossFold {
      */
     public static CrossFoldResult execute(Model leftModel, Model rightModel,
             AlignmentSet goldAlignments,
-            int nFolds,
+            int nFolds, double negativeSampling,
             Configuration config, ExecuteListener _monitor) throws IOException {
 
         _monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Creating data folds");
         Folds folds = splitDataset(goldAlignments, nFolds);
+        _monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Folds created: " + folds.toString());
 
         FoldExecuteListener monitor = new FoldExecuteListener(_monitor, nFolds);
         AlignmentSet as = new AlignmentSet();
         for (int i = 0; i < nFolds; i++) {
             monitor.foldNo++;
-            Train.execute(leftModel, rightModel, folds.train(goldAlignments, i), config, monitor);
+            Train.execute(leftModel, rightModel, folds.train(goldAlignments, i), negativeSampling, config, monitor);
             as.addAll(Main.execute(leftModel, rightModel, config, monitor, folds.leftSplit.get(i), folds.rightSplit.get(i)));
         }
         monitor.foldNo = 0;
@@ -161,6 +166,7 @@ public class CrossFold {
                     accepts("o", "The file to write the alignments to").withRequiredArg().ofType(File.class);
                     accepts("c", "The configuration to use").withRequiredArg().ofType(File.class);
                     accepts("n", "The number of folds").withRequiredArg().ofType(Integer.class);
+                    accepts("s", "The negative sampling rate").withRequiredArg().ofType(Double.class);
                     accepts("q", "Quiet (suppress output)");
                     nonOptions("The two RDF files and the gold standard dataset");
                 }
@@ -207,7 +213,8 @@ public class CrossFold {
             if (configuration == null || !configuration.exists()) {
                 badOptions(p, "Configuration does not exist or not specified");
             }
-            execute(left, right, gold, nFolds, outputFile, configuration,
+            double negativeSampling = os.has("s") ? (Double)os.valueOf("s") : 5.0;
+            execute(left, right, gold, nFolds, negativeSampling, outputFile, configuration,
                     os.has("q") ? new Main.NoMonitor() : new Main.StdErrMonitor());
         } catch (Throwable x) {
             x.printStackTrace();
@@ -481,6 +488,17 @@ public class CrossFold {
             return m;
 
         }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            for(int i = 0; i < leftSplit.size(); i++) {
+                sb.append(leftSplit.get(i).size()).append("/").append(rightSplit.get(i).size()).append(" ");
+            }
+            return sb.toString();
+        }
+        
+        
     }
 
     private static class FoldExecuteListener implements ExecuteListener {

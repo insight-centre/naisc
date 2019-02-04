@@ -66,6 +66,15 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
         return byPair.containsKey(sp) ? new Some<>(byPair.get(sp)) : new None<>();
 
     }
+    
+    public boolean remove(Alignment alignment) {
+        boolean rv = alignments.remove(alignment);
+        if(index != null) {
+            index.get(alignment.relation).remove(new StringPair(alignment.entity1, alignment.entity2));
+        }
+        return rv;
+        
+    }
 
     public List<Alignment> getAlignments() {
         return Collections.unmodifiableList(alignments);
@@ -91,7 +100,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
     public boolean add(Alignment alignment) {
         boolean rv = this.alignments.add(alignment);
         if(index != null) {
-            if(index.containsKey(alignment.relation))
+            if(!index.containsKey(alignment.relation))
                 index.put(alignment.relation, new HashMap<>());
             index.get(alignment.relation).put(new StringPair(alignment.entity1, alignment.entity2), alignment);
         }

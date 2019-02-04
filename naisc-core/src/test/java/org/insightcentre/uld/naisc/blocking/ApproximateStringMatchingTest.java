@@ -125,6 +125,24 @@ public class ApproximateStringMatchingTest {
         assertEquals(expResult, trie.nearest("aa", 2, 1000));
     }
     
+    
+    @Test
+    public void testNearest2() {
+        PatriciaTrie<String> trie = new ApproximateStringMatching.PatriciaTrie<>();
+        String[] strings = new String[] {
+            "t",
+            "toni morrison"
+        };
+        for(int i = 0 ; i < strings.length; i++) {
+            String s = strings[i];
+            trie.add(s, s);
+        }
+        List<String> expResult = new ArrayList<String>() {{
+            add("toni morrison");
+        }};
+        assertEquals(expResult, trie.nearest("toni morrison", 1, 1000));
+    }
+    
     @Test
     public void testNearestHard() {
         PatriciaTrie<String> trie = new ApproximateStringMatching.PatriciaTrie<>();
