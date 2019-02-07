@@ -192,6 +192,7 @@ public class LibSVM implements ScorerFactory {
 
             ArrayList<svm_node[]> xs = new ArrayList<>();
             DoubleList ys = new DoubleArrayList();
+            int dim = 0;
             for (FeatureSetWithScore fss : dataset) {
                 if (featNames == null) {
                     featNames = extractFeats(fss);
@@ -199,7 +200,9 @@ public class LibSVM implements ScorerFactory {
                 Instance inst = buildInstance(fss, fss.score, prob);
                 xs.add(inst.x);
                 ys.add(inst.y > 0.5 ? 1.0 : -1.0);
+                dim = fss.values.length;
             }
+            System.err.printf("Problem is %d examples of dimension %d\n", xs.size(), dim);
             prob.x = xs.toArray(new svm_node[xs.size()][]);
             prob.y = ys.toDoubleArray();
             prob.l = xs.size();

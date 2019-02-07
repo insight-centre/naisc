@@ -11,11 +11,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
@@ -41,7 +39,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         if (config.maxMatches < 1) {
             throw new ConfigurationException("Max matches must be at least one");
         }
-        if(config.metric == null) {
+        if (config.metric == null) {
             config.metric = StringMetric.ngrams;
         }
         if (config.metric == StringMetric.levenshtein && config.queueMax < 1) {
@@ -50,10 +48,10 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         if (config.property == null || config.property.equals("")) {
             throw new ConfigurationException("Property must be set");
         }
-        if(config.metric == StringMetric.ngrams && config.ngrams < 1) {
+        if (config.metric == StringMetric.ngrams && config.ngrams < 1) {
             config.ngrams = 3;
         }
-        switch(config.metric) {
+        switch (config.metric) {
             case levenshtein:
                 return new LevenshteinApproximateStringMatch(config.maxMatches, config.property, config.rightProperty, config.queueMax);
             case ngrams:
@@ -94,8 +92,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
          */
         public int ngrams = 3;
     }
-    
-    
+
     public static enum StringMetric {
         levenshtein,
         ngrams
@@ -152,20 +149,22 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                             } else {
                                 ngMap = ngrams.get(ng);
                             }
-                            ngMap.put(r, ngMap.getDouble(r) +  1.0 / s.length());
+                            ngMap.put(r, ngMap.getDouble(r) + 1.0 / s.length());
                         }
                     }
                 }
             }
-            final List<Pair<Resource, String>> labels = new ArrayList<>();
+            final List<Pair<Resource, List<String>>> labels = new ArrayList<>();
             for (Resource r : lefts) {
                 NodeIterator iter = left.listObjectsOfProperty(r, leftProp);
+                List<String> l = new ArrayList<>();
                 while (iter.hasNext()) {
                     RDFNode n = iter.next();
                     if (n.isLiteral()) {
-                        labels.add(new Pair(r, n.asLiteral().getLexicalForm()));
+                        l.add(n.asLiteral().getLexicalForm());
                     }
                 }
+                labels.add(new Pair(r, l));
             }
 
             return new Iterable<Pair<Resource, Resource>>() {
@@ -180,24 +179,30 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             };
         }
 
-        private List<Resource> nearest(String  r, Map<String, Object2DoubleMap<Resource>> ngrams) {
-            final Object2DoubleMap<Resource> freqs = new Object2DoubleOpenHashMap<>();
-            for(int i = 0; i < r.length() - n + 1; i++) {
-                String ng = r.substring(i, i + n);
-                Object2DoubleMap<Resource> ngs = ngrams.get(ng);
-                if(ngs != null) {
-                    for(Object2DoubleMap.Entry<Resource> e : ngs.object2DoubleEntrySet()) {
-                        freqs.put(e.getKey(), freqs.getDouble(e.getKey()) + e.getDoubleValue());
+        private List<Resource> nearest(List<String> labels, Map<String, Object2DoubleMap<Resource>> ngrams) {
+            final Object2DoubleMap<Resource> freqsFinal = new Object2DoubleOpenHashMap<>();
+            for (String r : labels) {
+                final Object2DoubleMap<Resource> freqs = new Object2DoubleOpenHashMap<>();
+                for (int i = 0; i < r.length() - n + 1; i++) {
+                    String ng = r.substring(i, i + n);
+                    Object2DoubleMap<Resource> ngs = ngrams.get(ng);
+                    if (ngs != null) {
+                        for (Object2DoubleMap.Entry<Resource> e : ngs.object2DoubleEntrySet()) {
+                            freqs.put(e.getKey(), freqs.getDouble(e.getKey()) + e.getDoubleValue());
+                        }
                     }
                 }
+                for(Object2DoubleMap.Entry<Resource> e : freqs.object2DoubleEntrySet()) {
+                    freqsFinal.put(e.getKey(), Math.max(freqsFinal.getDouble(e.getKey()),e.getDoubleValue()));
+                }
             }
-            List<Resource> resList = new ArrayList<>(freqs.keySet());
+            List<Resource> resList = new ArrayList<>(freqsFinal.keySet());
             Collections.sort(resList, new Comparator<Resource>() {
                 @Override
                 public int compare(Resource o1, Resource o2) {
-                    double f1 = freqs.getDouble(o1);
-                    double f2 = freqs.getDouble(o2);
-                    if(f1 > f2) {
+                    double f1 = freqsFinal.getDouble(o1);
+                    double f2 = freqsFinal.getDouble(o2);
+                    if (f1 > f2) {
                         return -1;
                     } else if (f1 < f2) {
                         return +1;
@@ -206,31 +211,30 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     }
                 }
             });
-            if(resList.size() > maxMatches)
+            if (resList.size() > maxMatches) {
                 return resList.subList(0, maxMatches);
-            else 
+            } else {
                 return resList;
+            }
         }
 
-        
         @Override
         public int estimateSize(Model left, Model right) {
             Iterator<Resource> i1 = left.listSubjects();
             Iterator<Resource> i2 = right.listSubjects();
             int n = 0;
-            while(i1.hasNext()) {
+            while (i1.hasNext()) {
                 n++;
                 i1.next();
             }
             int m = 0;
-            while(i2.hasNext()) {
+            while (i2.hasNext()) {
                 m++;
                 i2.next();
             }
             return n * Math.min(m, maxMatches);
         }
 
-        
     }
 
     private static class LevenshteinApproximateStringMatch implements BlockingStrategy {
@@ -291,6 +295,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                 }
             }
 
+            // TODO: Should only produce pairs per entry not label as NGram Approximate matcher
             return new Iterable<Pair<Resource, Resource>>() {
                 @Override
                 public Iterator<Pair<Resource, Resource>> iterator() {
@@ -302,18 +307,18 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
 
             };
         }
-        
-         @Override
+
+        @Override
         public int estimateSize(Model left, Model right) {
             Iterator<Resource> i1 = left.listSubjects();
             Iterator<Resource> i2 = right.listSubjects();
             int n = 0;
-            while(i1.hasNext()) {
+            while (i1.hasNext()) {
                 n++;
                 i1.next();
             }
             int m = 0;
-            while(i2.hasNext()) {
+            while (i2.hasNext()) {
                 m++;
                 i2.next();
             }
