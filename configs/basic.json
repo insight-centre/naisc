@@ -18,7 +18,10 @@
         "modelFile": "models/basic.libsvm"
     }],
     "matcher": {
-        "name": "matcher.UniqueAssignment"
+        "name": "matcher.BeamSearch",
+        "constraint": {
+            "name": "constraint.Bijective"
+        }
     },
     "description": "The good but basic feature setting"
 }

@@ -35,6 +35,9 @@ public class BeamSearch implements MatcherFactory {
         if (config.constraint == null) {
             throw new ConfigurationException("Greedy matcher requires a constraint");
         }
+        if (config.beamSize <= 0) {
+            config.beamSize = 1000;
+        }
         return new BeamSearchImpl(config.threshold, config.constraint.make(), config.beamSize);
     }
 
@@ -58,7 +61,7 @@ public class BeamSearch implements MatcherFactory {
          * off with the quality of the solution
          */
         @ConfigurationParameter(description = "The size of beam. Trades the speed and memory usage of the algorithm off with the quality of the solution")
-        public final int beamSize = 1000;
+        public int beamSize = 1000;
 
     }
 
