@@ -37,7 +37,7 @@ cache:
   stage: build
   script:
     - 'mvn $MAVEN_CLI_OPTS -f naisc-core/pom.xml test-compile'
-    - 'mvn $MAVEN_CLI_OPTS -f naisc-meas/pom.xml test-compile'
+      #    - 'mvn $MAVEN_CLI_OPTS -f naisc-meas/pom.xml test-compile'
 
 # For merge requests do not `deploy` but only run `verify`.
 # See https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html

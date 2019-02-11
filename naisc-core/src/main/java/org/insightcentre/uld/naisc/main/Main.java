@@ -199,7 +199,7 @@ public class Main {
             }
 
             monitor.updateStatus(Stage.MATCHING, "Matching");
-            return matcher.align(alignments);
+            return matcher.align(alignments,monitor);
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
