@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.insightcentre.uld.naisc.constraint.UnsolvableConstraint;
 import org.insightcentre.uld.naisc.constraint.Constraint;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.Map;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
@@ -76,7 +77,7 @@ public class Greedy implements MatcherFactory {
                 }
             }
             if(lastComplete != null)
-                return new AlignmentSet(lastComplete.alignments);
+                return new AlignmentSet(lastComplete.alignments(new ArrayList<>()));
             else
                 throw new UnsolvableConstraint("No complete solution was generated");
         }

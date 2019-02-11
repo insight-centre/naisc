@@ -2,6 +2,7 @@ package org.insightcentre.uld.naisc.matcher;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.Map;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
@@ -129,7 +130,7 @@ public class BeamSearch implements MatcherFactory {
                 }
             }
             if (bestValid != null) {
-                return new AlignmentSet(bestValid.alignments);
+                return new AlignmentSet(bestValid.alignments(new ArrayList<>()));
             } else {
                 throw new UnsolvableConstraint("Beam search did not find any complete solutions");
             }

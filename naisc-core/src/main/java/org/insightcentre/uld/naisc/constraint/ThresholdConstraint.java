@@ -29,30 +29,44 @@ public class ThresholdConstraint implements ConstraintFactory {
     @Override
     public Constraint make(Map<String, Object> params) {
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
-        return new ThresholdImpl(new ArrayList<>(), 0.0, config.threshold);
+        return new ThresholdImpl(null, null, 0.0, config.threshold);
     }
 
     private static class ThresholdImpl extends Constraint {
 
         private final double threshold;
+        private final Alignment alignment;
+        private final ThresholdImpl parent;
 
-        public ThresholdImpl(List<Alignment> alignments, double score, double threshold) {
-            super(alignments, score);
+        public ThresholdImpl(Alignment alignment, ThresholdImpl parent, double score, double threshold) {
+            super(score);
             this.threshold = threshold;
+            this.alignment = alignment;
+            this.parent = parent;
         }
 
         @Override
         public Constraint add(Alignment alignment) {
-            List<Alignment> newAligns = new ArrayList<>(alignments);
-            newAligns.add(alignment);
             double newScore = score + delta(alignment);
-            return new ThresholdImpl(newAligns, newScore, threshold);
+            return new ThresholdImpl(alignment, this, newScore, threshold);
         }
 
         @Override
         public boolean canAdd(Alignment alignment) {
             return alignment.score >= threshold;
         }
+
+        @Override
+        public List<Alignment> alignments(List<Alignment> alignments) {
+            if(alignment != null) {
+                alignments.add(alignment);
+                return parent.alignments(alignments);
+            } else {
+                return alignments;
+            }
+        }
+        
+        
 
     }
 

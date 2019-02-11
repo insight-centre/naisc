@@ -13,18 +13,19 @@ public abstract class Constraint {
      * the delta in score should be <code>Math.log(p + 1.0 + EPS)</code>
      */
     public static final double EPS = 1e-10;
-    /** The alignments that this score is calculated from */
-    public final List<Alignment> alignments;
     /** The score of this alignment */
     public final double score;
-
+    /** The alignments that this score is calculated from 
+     * @param alignments The list to add all alignments to
+     * @returns The list passed
+     */
+    public abstract List<Alignment> alignments(List<Alignment> alignments);
+    
     /**
      * Create an score
-     * @param alignments The alignments
      * @param score The score
      */
-    protected Constraint(List<Alignment> alignments, double score) {
-        this.alignments = alignments;
+    protected Constraint(double score) {
         this.score = score;
     }
 

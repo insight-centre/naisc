@@ -218,7 +218,7 @@ public class Execution implements ExecuteListener {
         try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
             List<RunResultRow> rrrs = new ArrayList<>();
             try (Statement stat = connection.createStatement()) {
-                try (ResultSet rs = stat.executeQuery("SELECT res1, prop, res2, lens, score, valid FROM results LIMIT " + limit + " OFFSET " + offset)) {
+                try (ResultSet rs = stat.executeQuery("SELECT res1, prop, res2, lens, score, valid FROM results ORDER BY score DESC LIMIT " + limit + " OFFSET " + offset)) {
                     while (rs.next()) {
                         RunResultRow rrr = new RunResultRow();
                         rrr.subject = rs.getString(1);

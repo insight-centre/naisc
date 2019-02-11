@@ -7,10 +7,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
 import org.insightcentre.uld.naisc.Alignment;
 import static org.insightcentre.uld.naisc.constraint.Bijective.Surjection.bijective;
 import static org.insightcentre.uld.naisc.constraint.Bijective.Surjection.surjective;
 import static org.insightcentre.uld.naisc.constraint.Bijective.Surjection.inverseSurjective;
+import org.insightcentre.uld.naisc.util.SimpleCache;
 
 /**
  * A constraint of strict bijectivity, that is no element on either side may be
@@ -45,117 +48,136 @@ public class Bijective implements ConstraintFactory {
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if(config.surjection == null)
             config.surjection = bijective;
-        return new BijectiveImpl(new ArrayList<>(), 0, config.surjection);
+        return new BijectiveImpl(new SimpleCache<>(100000), new Random(), config.surjection);
     }
 
     private static class BijectiveImpl extends Constraint {
-        // Data is stored either as a hashset (to allow efficient querying)
-        // or by storing the left and right and the link to the parents
-        // and back-tracking (memory efficient but slow querying)
-        // The soft references ensure that Java won't crash but will slow
-        // down for big problems
-        SoftReference<HashSet<String>> l2r;
-        SoftReference<HashSet<String>> r2l;
-        final String l, r;
+        final SimpleCache<BijectiveCacheEntry, Boolean> cache;
+        final long id;
+        final Random random;
+        final Alignment alignment;
         final BijectiveImpl parent;
         final Surjection surjection;
 
-        public BijectiveImpl(List<Alignment> alignments, double score, Surjection surjection) {
-            super(alignments, score);
-            HashSet<String> l2r = new HashSet<>();
-            HashSet<String> r2l = new HashSet<>();
-            if (!alignments.isEmpty()) {
-                for (Alignment alignment : alignments) {
-                    l2r.add(alignment.entity1);
-                    r2l.add(alignment.entity2);
-                }
-            }
-            this.l2r = new SoftReference<>(l2r);
-            this.r2l = new SoftReference<>(r2l);
-            this.l = null;
-            this.r = null;
+        public BijectiveImpl(SimpleCache<BijectiveCacheEntry, Boolean> cache, Random random,
+                Surjection surjection) {
+            super(0.0);
+            this.cache = cache;
+            this.id = random.nextLong();
+            this.random = random;
+            this.alignment = null;
             this.parent = null;
             this.surjection = surjection;
         }
 
-        public BijectiveImpl(HashSet<String> l2r, HashSet<String> r2l,
-                List<Alignment> alignments, double score, String l, String r,
-                BijectiveImpl parent, Surjection surjection) {
-            super(alignments, score);
-            this.l2r = new SoftReference<>(l2r);
-            this.r2l = new SoftReference<>(r2l);
-            this.l = l;
-            this.r = r;
+        public BijectiveImpl(SimpleCache<BijectiveCacheEntry, Boolean> cache, 
+                Random random, Alignment alignment, BijectiveImpl parent, Surjection surjection, 
+                double score) {
+            super(score);
+            this.cache = cache;
+            this.id = random.nextLong();
+            this.random = random;
+            this.alignment = alignment;
             this.parent = parent;
             this.surjection = surjection;
         }
 
+       
+
         @Override
         public Constraint add(Alignment alignment) {
-            HashSet<String> newl2r, newr2l;
-            if(surjection != inverseSurjective) {
-                newl2r = (HashSet<String>) this.l2r().clone();
-                newl2r.add(alignment.entity1);
-            } else {
-                newl2r = new HashSet<>();
-            }
-            if(surjection != surjective) {
-                newr2l = (HashSet<String>) this.r2l().clone();
-                newr2l.add(alignment.entity2);
-            } else {
-                newr2l = new HashSet<>();
-            }
-            List<Alignment> newaligments = new ArrayList<>(this.alignments);
-            newaligments.add(alignment);
             double newscore = this.score + delta(alignment);
-            return new BijectiveImpl(newl2r, newr2l, newaligments, newscore,
-                    alignment.entity1, alignment.entity2, this, this.surjection);
+            return new BijectiveImpl(cache, random, alignment, this, surjection, newscore);
         }
 
         @Override
         public boolean canAdd(Alignment alignment) {
-            return (surjection == inverseSurjective || !l2r().contains(alignment.entity1)) && 
-                    (surjection == surjective || !r2l().contains(alignment.entity2));
+            return (surjection == inverseSurjective || !lcontains(alignment.entity1)) && 
+                    (surjection == surjective || !rcontains(alignment.entity2));
         }
 
-        private HashSet<String> l2r() {
-            return l2r(true);
+        private boolean lcontains(String s) {
+            if(alignment == null) {
+                return false;
+            } else if (alignment.entity1.equals(s)) {
+                return true;
+            } else {
+                final BijectiveCacheEntry bce = new BijectiveCacheEntry(id, s);
+                return cache.get(bce, new SimpleCache.Get<BijectiveCacheEntry, Boolean>() {
+                    @Override
+                    public Boolean get(BijectiveCacheEntry e) {
+                        return parent.lcontains(e.text);
+                    }
+                });
+            }
         }
         
-        private HashSet<String> l2r(boolean head) {
-            HashSet<String> s = this.l2r.get();
-            if (s != null) {
-                return s;
-            } else if (l != null && surjection != inverseSurjective) {
-                s = (HashSet<String>) parent.l2r(false).clone();
-                s.add(l);
-                if(head)
-                    this.l2r = new SoftReference(s);
-                return s;
+        private boolean rcontains(String s) {
+            if(alignment == null) {
+                return false;
+            } else if (alignment.entity2.equals(s)) {
+                return true;
             } else {
-                return new HashSet<>();
+                final BijectiveCacheEntry bce = new BijectiveCacheEntry(~id, s);
+                return cache.get(bce, new SimpleCache.Get<BijectiveCacheEntry, Boolean>() {
+                    @Override
+                    public Boolean get(BijectiveCacheEntry e) {
+                        return parent.rcontains(e.text);
+                    }
+                });
             }
         }
 
-        private HashSet<String> r2l() {
-            return r2l(true);
-        }
         
-        private HashSet<String> r2l(boolean head) {
-            HashSet<String> s = this.r2l.get();
-            if (s != null) {
-                return s;
-            } else if (r != null && surjection != surjective) {
-                s = (HashSet<String>) parent.r2l(false).clone();
-                s.add(r);
-                if(head)
-                    this.r2l = new SoftReference<>(s);
-                return s;
+        @Override
+        public List<Alignment> alignments(List<Alignment> alignments) {
+            if(alignment != null) {
+                alignments.add(alignment);
+                return parent.alignments(alignments);
             } else {
-                return new HashSet<>();
+                return alignments;
             }
         }
-
+        
     }
 
+    private static class BijectiveCacheEntry {
+        private final long id;
+        private final String text;
+
+        public BijectiveCacheEntry(long id, String text) {
+            this.id = id;
+            this.text = text;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 53 * hash + (int) (this.id ^ (this.id >>> 32));
+            hash = 53 * hash + Objects.hashCode(this.text);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final BijectiveCacheEntry other = (BijectiveCacheEntry) obj;
+            if (this.id != other.id) {
+                return false;
+            }
+            if (!Objects.equals(this.text, other.text)) {
+                return false;
+            }
+            return true;
+        }
+        
+    }
 }
