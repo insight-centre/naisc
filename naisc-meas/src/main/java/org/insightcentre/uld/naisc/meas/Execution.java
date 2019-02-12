@@ -2,6 +2,7 @@ package org.insightcentre.uld.naisc.meas;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.MapType;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -40,6 +41,7 @@ public class Execution implements ExecuteListener {
         try {
             Class.forName("org.sqlite.JDBC");
             this.id = id;
+            assert (id.matches(ExecuteServlet.VALID_ID));
         } catch (ClassNotFoundException x) {
             throw new RuntimeException("SQLite JDBC not available", x);
         }
@@ -71,7 +73,7 @@ public class Execution implements ExecuteListener {
             try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
                 createTables(connection);
                 saveBlocks(connection);
-            } catch(SQLException x) {
+            } catch (SQLException x) {
                 x.printStackTrace();
             }
         }
@@ -417,6 +419,34 @@ public class Execution implements ExecuteListener {
                 stat.execute();
             }
         } catch (SQLException x) {
+            throw new RuntimeException(x);
+        }
+    }
+
+    List<Pair<String, Map<String, LangStringPair>>> getAlternatives(String entityid, boolean left) {
+
+        ObjectMapper mapper = new ObjectMapper();
+        final MapType mapType = mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class);
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            try (PreparedStatement pstat = connection.prepareStatement("SELECT DISTINCT blocks.res"
+                    + (left ? "2" : "1") + ", results.lens FROM blocks JOIN results ON blocks.res"
+                    + (left ? "2" : "1") + "=results.res"
+                    + (left ? "2" : "1") + " WHERE blocks.res"
+                    + (left ? "1" : "2") + "=?")) {
+                pstat.setString(1, entityid);
+                try (ResultSet rs = pstat.executeQuery()) {
+                    List<Pair<String, Map<String, LangStringPair>>> result = new ArrayList<>();
+                    while (rs.next()) {
+                        String altId = rs.getString(1);
+                        Map<String, LangStringPair> lens = mapper.readValue(rs.getString(2), mapType);
+                        result.add(new Pair<>(altId, lens));
+                    }
+                    return result;
+                }
+
+            }
+        } catch (SQLException | IOException x) {
+            x.printStackTrace();
             throw new RuntimeException(x);
         }
     }

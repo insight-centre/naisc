@@ -95,10 +95,35 @@ public class ManageServlet extends HttpServlet {
                 int offset = Integer.parseInt(req.getParameter("offset"));
                 int limit = Integer.parseInt(req.getParameter("limit"));
                 resp.setContentType("application/json");
-                try(PrintWriter out = resp.getWriter()) {
+                try (PrintWriter out = resp.getWriter()) {
                     out.println(Meas.loadRunResult(id, offset, limit));
                 }
-            } catch(IOException | NumberFormatException x) {
+            } catch (IOException | NumberFormatException x) {
+                throw new ServletException(x);
+            }
+        } else if (path.equals("/alternatives")) {
+            try {
+                String leftId = req.getParameter("left");
+                String rightId = req.getParameter("right");
+                String executionId = req.getParameter("id");
+                if (executionId != null) {
+                    resp.setContentType("application/json");
+                    if (leftId != null) {
+                        try (PrintWriter out = resp.getWriter()) {
+                            out.println(mapper.writeValueAsString(new Execution(executionId).getAlternatives(leftId, true)));
+                        }
+                    } else if (rightId != null) {
+                        try (PrintWriter out = resp.getWriter()) {
+                            out.println(mapper.writeValueAsString(new Execution(executionId).getAlternatives(rightId, false)));
+                        }
+                    } else {
+                        resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "No query");
+                    }
+                } else {
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "No run id");
+                }
+            } catch (IOException | NumberFormatException x) {
+                x.printStackTrace();
                 throw new ServletException(x);
             }
         } else {
@@ -122,7 +147,7 @@ public class ManageServlet extends HttpServlet {
                     new Execution(id).addAlignment(run, data.idx, data.subject, data.property, data.object);
                 }
             }
-        } else if(path.startsWith("/remove/")) {
+        } else if (path.startsWith("/remove/")) {
             String id = path.substring(8);
             if (id.matches(VALID_ID)) {
                 AddRemoveData data = mapper.readValue(req.getReader(), AddRemoveData.class);
@@ -134,7 +159,7 @@ public class ManageServlet extends HttpServlet {
                     new Execution(id).removeAlignment(run, data.idx);
                 }
             }
-        } else if(path.startsWith("/update/")) {
+        } else if (path.startsWith("/update/")) {
             String id = path.substring(8);
             if (id.matches(VALID_ID)) {
                 AddRemoveData data = mapper.readValue(req.getReader(), AddRemoveData.class);
@@ -146,7 +171,7 @@ public class ManageServlet extends HttpServlet {
                     new Execution(id).changeStatus(run, data.idx, data.valid);
                 }
             }
-            
+
         } else if (path.startsWith("/rerun/")) {
             throw new UnsupportedOperationException("TODO");
         } else if (path.startsWith("/retrain/")) {
