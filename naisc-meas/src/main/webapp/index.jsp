@@ -103,8 +103,9 @@
                         <button type="button" class="btn btn-primary float-right" data-toggle="modal" data-target="#addDataset">
                             <i class="fas fa-upload"></i> Add dataset
                         </button>
-
-
+                        <button type="button" class="btn btn-primary float-right" data-toggle="modal" data-target="#downloadDataset" style="margin-right:6px;">
+                            <i class="fas fa-cloud-download-alt"></i> Download dataset
+                        </button>
                     </div>
                     <div class="form-group">
                         <label for="configuration">Configuration</label>
@@ -164,6 +165,35 @@
                     </div>
                 </div>
 
+
+                <div class="modal fade" id="downloadDataset" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalLabel">Download a dataset</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            
+                            <form action="/download_dataset" enctype="multipart/form-data" id="downloadDatasetForm">
+                                <div class="modal-body">
+                                    The list of available datasets is on the <a href="http://server1.nlp.insight-centre.org/naisc-datasets/" target="_blank">NUIG Server</a>
+                                    <div class="form-group">
+                                        <label for="datasetName">Name</label>
+                                        <input type="text" class="form-control" name="name" id="downloadDatasetName">
+                                    </div>
+
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-secondary" v-on:click.prevent="downloadDataset()">Submit</button>
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                </div>
+                            <form>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="modal fade" id="addConfig" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">
@@ -185,6 +215,20 @@
                                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="error" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document" style="min-width:90%;">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Operation failed</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div id="exceptionText"></div>
                         </div>
                     </div>
                 </div>
@@ -320,9 +364,30 @@ var app = new Vue({
                 data.datasetNames.push(name);
                 data.datasetName = name;
             },
-            error: function(er){ document.write(er.responseText); }
+            error: function(er){ 
+                $('#exceptionText').html(er.responseText);
+                $('#error').modal('show'); 
+            }
         });
     },
+    downloadDataset() {
+        var form = new FormData($("#downloadDatasetForm")[0]);
+        var name = $('#downloadDatasetName').val();
+        var data = this;
+        jQuery.ajax({
+            url: "/download_dataset?dataset=" + name,
+            success: function(result){ 
+                $('#downloadDataset').modal('hide');
+                data.datasetNames.push(name);
+                data.datasetName = name;
+            },
+            error: function(er) { 
+                $('#downloadDataset').modal('hide');
+                $('#exceptionText').html(er.responseText);
+                $('#error').modal('show');
+            }
+        });
+    },        
     startRun() {
         var configName = this.configName;
         var datasetName = this.datasetName;
@@ -343,7 +408,10 @@ var app = new Vue({
                     "active": true
                 });
             },
-            error: function(er) { document.write(er.responseText); }
+            error: function(er) { 
+                $('#exceptionText').html(er.responseText);
+                $('#error').modal('show');
+             }
         });
     },
     train() {
@@ -366,7 +434,10 @@ var app = new Vue({
                     "active": true
                 });
             },
-            error: function(er) { document.write(er.responseText); }
+            error: function(er) { 
+                $('#exceptionText').html(er.responseText);
+                $('#error').modal('show'); 
+            }
         });
     },
     crossfold() {
@@ -389,7 +460,10 @@ var app = new Vue({
                     "active": true
                 });
             },
-            error: function(er) { document.write(er.responseText); }
+            error: function(er) { 
+                $('#exceptionText').html(er.responseText);
+                $('#error').modal('show');
+            }
         });
     },
     pollData() {

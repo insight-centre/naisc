@@ -36,7 +36,7 @@
                 </div>
             </div>
             <div class="row">
-                <h3 class="results_title">Results {{offset}}-{{Math.min(offset+<%=limit%>,totalResults)}} of {{totalResults}}</h3>
+                <h3 class="results_title">Results {{offset+1}}-{{Math.min(offset+<%=limit%>,totalResults)}} of {{totalResults}}</h3>
                 <table class="table table-striped">
                     <thead>
                         <tr>

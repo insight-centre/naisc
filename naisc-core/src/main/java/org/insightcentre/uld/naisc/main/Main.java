@@ -163,6 +163,7 @@ public class Main {
                         block._1.getURI() == null || block._1.getURI().equals("")) {
                     throw new RuntimeException("Resource with URI");
                 }
+                monitor.addBlock(block._1, block._2);
                 if (++count % 1000 == 0) {
                     monitor.updateStatus(Stage.SCORING, "Scoring (" + count + " done)");
                 }

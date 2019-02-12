@@ -34,6 +34,7 @@ public class Execution implements ExecuteListener {
     boolean aborted = false;
     private final String id;
     private final HashMap<Pair<String, String>, Map<String, LangStringPair>> lensResults = new HashMap<>();
+    private final List<Pair<Resource, Resource>> blocks = new ArrayList<>();
 
     public Execution(String id) {
         try {
@@ -63,23 +64,45 @@ public class Execution implements ExecuteListener {
         lensResults.get(p).put(lensId, res);
     }
 
-    public void saveAligment(Run run, AlignmentSet alignmentSet) {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            // create a database connection
-            Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db");
-            Statement stat = connection.createStatement();
-            stat.execute("CREATE TABLE runs ("
-                    + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                    + "identifier TEXT,\n"
-                    + "configName TEXT,\n"
-                    + "datasetName TEXT,\n"
-                    + "precision REAL, "
-                    + "recall REAL,"
-                    + "fmeasure REAL,"
-                    + "correlation REAL,\n"
-                    + "time BIGINT)");
-            PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time) VALUES (?,?,?,?,?,?,?,?)");
+    @Override
+    public void addBlock(Resource res1, Resource res2) {
+        blocks.add(new Pair<>(res1, res2));
+        if (blocks.size() > 100000) {
+            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+                createTables(connection);
+                saveBlocks(connection);
+            } catch(SQLException x) {
+                x.printStackTrace();
+            }
+        }
+    }
+
+    private boolean tablesCreated = false;
+
+    private void createTables(Connection connection) throws SQLException {
+        if (!tablesCreated) {
+            try (Statement stat = connection.createStatement()) {
+                stat.execute("CREATE TABLE runs ("
+                        + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                        + "identifier TEXT,\n"
+                        + "configName TEXT,\n"
+                        + "datasetName TEXT,\n"
+                        + "precision REAL, "
+                        + "recall REAL,"
+                        + "fmeasure REAL,"
+                        + "correlation REAL,\n"
+                        + "time BIGINT)");
+
+                stat.execute("CREATE TABLE results (id INTEGER PRIMARY KEY AUTOINCREMENT, res1 TEXT, prop TEXT, res2 TEXT, lens TEXT, score REAL, valid TEXT)");
+                stat.execute("CREATE TABLE blocks (res1 TEXT, res2 TEXT)");
+            }
+            tablesCreated = true;
+        }
+
+    }
+
+    private void saveStats(Connection connection, Run run) throws SQLException {
+        try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time) VALUES (?,?,?,?,?,?,?,?)")) {
             pstat.setString(1, run.identifier);
             pstat.setString(2, run.configName);
             pstat.setString(3, run.datasetName);
@@ -89,10 +112,13 @@ public class Execution implements ExecuteListener {
             pstat.setDouble(7, run.correlation);
             pstat.setLong(8, run.time);
             pstat.execute();
-            stat.execute("CREATE TABLE results (id INTEGER PRIMARY KEY AUTOINCREMENT, res1 TEXT, prop TEXT, res2 TEXT, lens TEXT, score REAL, valid TEXT)");
-            pstat.close();
-            connection.setAutoCommit(false);
-            pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,score,valid) VALUES (?,?,?,?,?,?)");
+        }
+    }
+
+    private void saveResults(Connection connection, AlignmentSet alignmentSet) throws SQLException, JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        connection.setAutoCommit(false);
+        try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,score,valid) VALUES (?,?,?,?,?,?)")) {
             for (Alignment alignment : alignmentSet) {
                 Map<String, LangStringPair> m = lensResults.get(new Pair(alignment.entity1, alignment.entity2));
                 String lens = m == null ? "{}" : mapper.writeValueAsString(m);
@@ -106,8 +132,28 @@ public class Execution implements ExecuteListener {
             }
             connection.commit();
             pstat.close();
-            stat.close();
-            connection.close();
+        }
+    }
+
+    public void saveBlocks(Connection connection) throws SQLException {
+        connection.setAutoCommit(false);
+        try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO blocks(res1, res2) VALUES (?,?)")) {
+            for (Pair<Resource, Resource> block : blocks) {
+                pstat.setString(1, block._1.getURI());
+                pstat.setString(2, block._2.getURI());
+                pstat.execute();
+            }
+        }
+        connection.commit();
+        blocks.clear();
+    }
+
+    public void saveAligment(Run run, AlignmentSet alignmentSet) {
+        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            createTables(connection);
+            saveStats(connection, run);
+            saveResults(connection, alignmentSet);
+            saveBlocks(connection);
         } catch (SQLException | JsonProcessingException x) {
             throw new RuntimeException(x);
         }
@@ -236,19 +282,19 @@ public class Execution implements ExecuteListener {
             throw new RuntimeException(x);
         }
     }
-    
+
     public static int truePositives(String id) {
         return count(id, "yes");
     }
-    
+
     public static int falsePositives(String id) {
         return count(id, "no");
     }
-    
+
     public static int falseNegatives(String id) {
         return count(id, "novel");
     }
-    
+
     private static int count(String id, String what) {
         if (!new File("runs/" + id + ".db").exists()) {
             return -1;
@@ -256,19 +302,18 @@ public class Execution implements ExecuteListener {
         try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
             List<RunResultRow> rrrs = new ArrayList<>();
             try (Statement stat = connection.createStatement()) {
-                try (ResultSet rs = stat.executeQuery("SELECT COUNT(*) FROM results WHERE valid == '"+what+"'")) {
-                    if(rs.next()) {
+                try (ResultSet rs = stat.executeQuery("SELECT COUNT(*) FROM results WHERE valid == '" + what + "'")) {
+                    if (rs.next()) {
                         return rs.getInt(1);
                     }
                 }
             }
-        } catch(SQLException x) {
+        } catch (SQLException x) {
             x.printStackTrace();
         }
         return -1;
     }
-    
-    
+
     public static int noResults(String id) {
         if (!new File("runs/" + id + ".db").exists()) {
             return -1;
@@ -277,12 +322,12 @@ public class Execution implements ExecuteListener {
             List<RunResultRow> rrrs = new ArrayList<>();
             try (Statement stat = connection.createStatement()) {
                 try (ResultSet rs = stat.executeQuery("SELECT COUNT(*) FROM results")) {
-                    if(rs.next()) {
+                    if (rs.next()) {
                         return rs.getInt(1);
                     }
                 }
             }
-        } catch(SQLException x) {
+        } catch (SQLException x) {
             x.printStackTrace();
         }
         return -1;

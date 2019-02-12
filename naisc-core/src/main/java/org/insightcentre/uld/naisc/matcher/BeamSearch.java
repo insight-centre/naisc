@@ -125,7 +125,7 @@ public class BeamSearch implements MatcherFactory {
                 }
                 if(iter % 10000 == 0 && listener != null) {
                     listener.updateStatus(ExecuteListener.Stage.MATCHING, 
-                            String.format("Generated %s candidate with score %.2f", iter, 
+                            String.format("Generated %sth candidate (max score=%.2f)", iter, 
                                     bestValid == null ? 0.0 : bestValid.score));
                 }
             }

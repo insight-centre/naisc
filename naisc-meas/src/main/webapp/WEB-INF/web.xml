@@ -9,6 +9,10 @@
       <servlet-class>org.insightcentre.uld.naisc.meas.DatasetUploadServlet</servlet-class>
   </servlet>
   <servlet>
+      <servlet-name>DatasetDownloadServlet</servlet-name>
+      <servlet-class>org.insightcentre.uld.naisc.meas.DatasetDownloadServlet</servlet-class>
+  </servlet>
+  <servlet>
       <servlet-name>ExecuteServlet</servlet-name>
       <servlet-class>org.insightcentre.uld.naisc.meas.ExecuteServlet</servlet-class>
   </servlet>
@@ -20,6 +24,10 @@
   <servlet-mapping>
       <servlet-name>DatasetUploadServlet</servlet-name>
       <url-pattern>/upload_dataset</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+      <servlet-name>DatasetDownloadServlet</servlet-name>
+      <url-pattern>/download_dataset</url-pattern>
   </servlet-mapping>
   <servlet-mapping>
       <servlet-name>ExecuteServlet</servlet-name>

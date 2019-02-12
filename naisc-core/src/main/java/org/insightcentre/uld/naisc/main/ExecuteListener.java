@@ -35,4 +35,12 @@ public interface ExecuteListener {
      * @param res The lens extracted value
      */
     public void addLensResult(Resource id1, Resource id2, String lensId, LangStringPair res);
+    
+    /**
+     * Notify of a blocking result. This is used to provide alternatives to the
+     * user in the interface
+     * @param res1 The left resource
+     * @param res2 The right resource
+     */
+    default void addBlock(Resource res1, Resource res2) { }
 }
