@@ -109,11 +109,13 @@
                                     <span aria-hidden="true">&times;</span>
                                 </button>
                             </div>
+                            <div class="modal-body">
                             <form>
                                 <div class="form-group">
                                     <label for="updateElementElem">Element</label>
+                                    
                                     <select class="form-control" v-model="currentElem">
-                                        <option v-for="elem in elems" v-bind:value="elem">{{displayUrl(elem)}}</option>
+                                        <option v-for="elem in elems" v-bind:value="elem.id">{{elem.display}}</option>
                                     </select>
                                 </div>
                                 <div class="modal-footer" style="text-align:center;">
@@ -121,6 +123,7 @@
                                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                                 </div>
                             </form>
+                            </div>
                         </div>
                     </div>
                 </div>                  
@@ -238,27 +241,46 @@ var app = new Vue({
         }
     },
     changeRight(idx, currentValue) {
-        this.elems = new Set();
-        for(var i = 0; i < this.results.length; i++) {
-            this.elems.add(this.results[i].object);
-        }
-        this.elems = Array.from(this.elems);
-        this.currentElem = currentValue;
-        this.left = false;
-        this.updateIdx = idx;
-        $('#updateElement').modal('show');
-    
+        var self = this;
+        jQuery.ajax({
+            url: '/manage/alternatives?id=<%=request.getParameter("id")%>&left=' + self.results[idx].subject,
+            success: function(result) {
+                self.elems = [];
+                for(var i = 0; i < result.length; i++) {
+                    var display = "";
+                    for(var key in result[i]["_2"]) {
+                        display += result[i]["_2"][key] + " (" + key + ")";
+                    }
+                    var e = {"id": result[i]["_1"], "display": display};
+                    self.elems.push(e);
+                }
+                self.currentElem = currentValue;
+                self.left = true;
+                self.updateIdx = idx;
+                $('#updateElement').modal('show');
+            }
+        });
     },
     changeLeft(idx, currentValue) {
-        this.elems = new Set();
-        for(var i = 0; i < this.results.length; i++) {
-            this.elems.add(this.results[i].subject);
-        }
-        this.elems = Array.from(this.elems);
-        this.currentElem = currentValue;
-        this.left = true;
-        this.updateIdx = idx;
-        $('#updateElement').modal('show');
+        var self = this;
+        jQuery.ajax({
+            url: '/manage/alternatives?id=<%=request.getParameter("id")%>&right=' + self.results[idx].object,
+            success: function(result) {
+                self.elems = [];
+                for(var i = 0; i < result.length; i++) {
+                    var display = "";
+                    for(var key in result[i]["_2"]) {
+                        display += result[i]["_2"][key] + " (" + key + ")";
+                    }
+                    var e = {"id": result[i]["_1"], "display": display};
+                    self.elems.push(e);
+                }
+                self.currentElem = currentValue;
+                self.left = true;
+                self.updateIdx = idx;
+                $('#updateElement').modal('show');
+            }
+        });
     },
     addNew() {
         var newRow = JSON.parse(JSON.stringify(this.results[this.updateIdx]));

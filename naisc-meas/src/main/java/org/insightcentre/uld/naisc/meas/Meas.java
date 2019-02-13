@@ -39,17 +39,17 @@ public class Meas {
         }
     }
 
-    private static Map<String,Configuration> configNames() {
+    private static Map<String, Configuration> configNames() {
         try {
             File f = new File("configs/");
             if (f.exists() && f.isDirectory()) {
-                Map<String,Configuration> configs = new HashMap<>();
+                Map<String, Configuration> configs = new HashMap<>();
                 for (File f2 : f.listFiles()) {
                     if (f2.getPath().endsWith(".json")) {
                         try {
-                        configs.put(f2.getName().substring(0, f2.getName().length() - 5),
-                                mapper.readValue(f2, Configuration.class));
-                        } catch(Exception x) {
+                            configs.put(f2.getName().substring(0, f2.getName().length() - 5),
+                                    mapper.readValue(f2, Configuration.class));
+                        } catch (Exception x) {
                             System.err.printf("Failed to load %s due to %s (%s)\n", f2.getName(),
                                     x.getClass().getName(), x.getMessage());
                         }
@@ -80,20 +80,34 @@ public class Meas {
         }
         return Collections.EMPTY_LIST;
     }
-    
+
     private static List<Run> runs() {
         try {
             File f = new File("runs");
-            if(f.exists() && f.isDirectory()) {
+            if (f.exists() && f.isDirectory()) {
                 List<Run> runs = new ArrayList<>();
-                for(File f2 : f.listFiles()) {
-                    if(f2.getName().endsWith(".db")) {
-                        runs.add(Execution.loadRun(f2.getName().substring(0, f2.getName().length()-3)));
+                RUNS:
+                for (File f2 : f.listFiles()) {
+                    if (f2.getName().endsWith(".db")) {
+                        String runName = f2.getName().substring(0, f2.getName().length() - 3);
+                        for (ActiveRun r : data.activeRuns) {
+                            if (r.identifier.equals(runName)) {
+                                continue RUNS;
+                            }
+                        }
+                        try {
+                            Run run = Execution.loadRun(runName);
+                            if (run != null) {
+                                runs.add(run);
+                            }
+                        } catch (Exception x) {
+                            x.printStackTrace();
+                        }
                     }
                 }
                 return Collections.synchronizedList(runs);
             }
-        } catch(Exception x) {
+        } catch (Exception x) {
             x.printStackTrace();
         }
         return Collections.synchronizedList(new ArrayList<>());
@@ -101,18 +115,19 @@ public class Meas {
 
     public static void updateRun(String id, Run newRun) {
         ListIterator<Run> iter = data.runs.listIterator();
-        while(iter.hasNext()) {
-            if(iter.next().identifier.equals(id)) {
+        while (iter.hasNext()) {
+            if (iter.next().identifier.equals(id)) {
                 iter.set(newRun);
                 return;
             }
         }
     }
-    
+
     public static class Data {
+
         public List<ActiveRun> activeRuns = Collections.EMPTY_LIST;
         public List<Run> runs;
-        public Map<String,Configuration> configs;
+        public Map<String, Configuration> configs;
         public List<String> datasetNames;
         public Configuration config = null;
         public String configName;
@@ -146,9 +161,9 @@ public class Meas {
         }
 
     }
-    
+
     public static class ActiveRun {
-        
+
         public String identifier;
         public String configName;
         public String datasetName;
@@ -158,20 +173,22 @@ public class Meas {
     }
 
     public static String loadRunResult(String id, int offset, int limit) throws JsonProcessingException, IOException {
-        if(!id.matches(ExecuteServlet.VALID_ID)) {
+        if (!id.matches(ExecuteServlet.VALID_ID)) {
             throw new IllegalArgumentException("Bad ID");
         }
         List<RunResultRow> rows = Execution.loadData(id, offset, limit);
         return mapper.writeValueAsString(rows);
     }
-    
+
     public static class RunResultRow {
+
         public String subject;
         public String property;
         public String object;
-        public Map<String,LangStringPair> lens;
+        public Map<String, LangStringPair> lens;
         public double score;
         public Valid valid;
+        public int idx;
     }
-    
+
 }

@@ -118,6 +118,7 @@ public class Execution implements ExecuteListener {
     }
 
     private void saveResults(Connection connection, AlignmentSet alignmentSet) throws SQLException, JsonProcessingException {
+        alignmentSet.sortAlignments();
         ObjectMapper mapper = new ObjectMapper();
         connection.setAutoCommit(false);
         try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,score,valid) VALUES (?,?,?,?,?,?)")) {
@@ -266,7 +267,7 @@ public class Execution implements ExecuteListener {
         try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
             List<RunResultRow> rrrs = new ArrayList<>();
             try (Statement stat = connection.createStatement()) {
-                try (ResultSet rs = stat.executeQuery("SELECT res1, prop, res2, lens, score, valid FROM results ORDER BY score DESC LIMIT " + limit + " OFFSET " + offset)) {
+                try (ResultSet rs = stat.executeQuery("SELECT res1, prop, res2, lens, score, valid, id FROM results LIMIT " + limit + " OFFSET " + offset)) {
                     while (rs.next()) {
                         RunResultRow rrr = new RunResultRow();
                         rrr.subject = rs.getString(1);
@@ -275,6 +276,7 @@ public class Execution implements ExecuteListener {
                         rrr.lens = mapper.readValue(rs.getString(4), mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class));
                         rrr.score = rs.getDouble(5);
                         rrr.valid = Valid.valueOf(rs.getString(6));
+                        rrr.idx = rs.getInt(7);
                         rrrs.add(rrr);
                     }
                 }
@@ -423,7 +425,7 @@ public class Execution implements ExecuteListener {
         }
     }
 
-    List<Pair<String, Map<String, LangStringPair>>> getAlternatives(String entityid, boolean left) {
+    List<Pair<String, Map<String, String>>> getAlternatives(String entityid, boolean left) {
 
         ObjectMapper mapper = new ObjectMapper();
         final MapType mapType = mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class);
@@ -435,11 +437,19 @@ public class Execution implements ExecuteListener {
                     + (left ? "1" : "2") + "=?")) {
                 pstat.setString(1, entityid);
                 try (ResultSet rs = pstat.executeQuery()) {
-                    List<Pair<String, Map<String, LangStringPair>>> result = new ArrayList<>();
-                    while (rs.next()) {
+                    List<Pair<String, Map<String, String>>> result = new ArrayList<>();
+                    RESULTS: while (rs.next()) {
                         String altId = rs.getString(1);
+                        for(Pair<String, Map<String, String>> p : result) {
+                            if(p._1.equals(altId))
+                                continue RESULTS;
+                        }
                         Map<String, LangStringPair> lens = mapper.readValue(rs.getString(2), mapType);
-                        result.add(new Pair<>(altId, lens));
+                        Map<String, String> lensMap = new HashMap<>();
+                        for(Map.Entry<String, LangStringPair> e : lens.entrySet()) {
+                            lensMap.put(e.getKey(), left ? e.getValue()._2 : e.getValue()._1);
+                        }
+                        result.add(new Pair<>(altId, lensMap));
                     }
                     return result;
                 }
