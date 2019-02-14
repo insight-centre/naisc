@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +17,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.LensFactory;
+import org.insightcentre.uld.naisc.util.Labels;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
@@ -67,25 +67,35 @@ public class Label implements LensFactory {
 
         @Override
         public Option<LangStringPair> extract(Resource entity1, Resource entity2) {
-            //List<LangStringPair> result = new ArrayList<>();
+            List<Literal> lit1 = new ArrayList<>();
             for (Property lproperty : properties) {
                 NodeIterator iter1 = model.listObjectsOfProperty(entity1, lproperty);
                 while (iter1.hasNext()) {
                     RDFNode node1 = iter1.next();
                     Language l1 = getLang(node1);
-                    for(Property rproperty : properties) {
-                    if (node1.isLiteral() && (language == null || (l1 != null && language.getLanguageOnly().equals(l1.getLanguageOnly())))) {
-                        NodeIterator iter2 = model.listObjectsOfProperty(entity2, rproperty);
-                        while (iter2.hasNext()) {
-                            RDFNode node2 = iter2.next();
-                            Language l2 = getLang(node2);
-                            if (node2.isLiteral() && (language == null || (l2 != null && language.getLanguageOnly().equals(l2.getLanguageOnly())))) {
-                                return new Some<>(new LangStringPair(l1, l2, node1.asLiteral().getString(), node2.asLiteral().getString()));
-                            }
-                        }
+                    if (node1.isLiteral()) {
+                        lit1.add(node1.asLiteral());
                     }
+                }
+            }
+
+            List<Literal> lit2 = new ArrayList<>();
+            for (Property rproperty : properties) {
+                NodeIterator iter2 = model.listObjectsOfProperty(entity2, rproperty);
+                while (iter2.hasNext()) {
+                    RDFNode node2 = iter2.next();
+                    Language l2 = getLang(node2);
+                    if (node2.isLiteral()) {
+                        lit2.add(node2.asLiteral());
                     }
 
+                }
+            }
+            List<LangStringPair> labels = Labels.closestLabelsByLang(lit1, lit2);
+            
+            for(LangStringPair label : labels) {
+                if(language == null || label.lang1.equals(language)) {
+                    return new Some<>(label);
                 }
             }
             return new None<>();

@@ -76,7 +76,7 @@ public class LabelTest {
                 model.createProperty(Label.SKOS_PREFLABEL), 
                 model.createLiteral("???"));
         
-        assert(lens.extract(res, res2).has());
+        assert(!lens.extract(res, res2).has());
         assert(lens.extract(res, res3).has());
         assert(lens.extract(res, res4).has());
         assert(!lens.extract(res, res5).has());
@@ -86,7 +86,7 @@ public class LabelTest {
         
         
         assert(!lens.extract(res, res2).has());
-        assert(!lens.extract(res, res3).has());
+        assert(lens.extract(res, res3).has());
         assert(lens.extract(res, res4).has());
         assert(!lens.extract(res, res5).has());
         
@@ -95,7 +95,7 @@ public class LabelTest {
         lens = instance.makeLens(tag, model, params);
         
         
-        assert(lens.extract(res, res2).has());
+        assert(!lens.extract(res, res2).has());
         assert(lens.extract(res, res3).has());
         assert(lens.extract(res, res4).has());
         assert(lens.extract(res, res5).has());

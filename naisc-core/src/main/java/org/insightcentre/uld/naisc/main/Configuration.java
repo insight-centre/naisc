@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -312,6 +313,7 @@ public class Configuration {
                     }
                 } else {
                     // HACK: This is working around what I assume is a bug in Jackson
+                    // UPDATE: Actually a UI bug that is now fixed but this code does no harm :)
                     Object v = ((ObjectMapper)p.getCodec()).convertValue(f.getValue(), Object.class);
                     if(v instanceof List) {
                         ListIterator<Object> i = ((List)v).listIterator();
