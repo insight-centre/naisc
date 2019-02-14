@@ -57,6 +57,7 @@ import org.insightcentre.uld.naisc.feature.WordEmbeddings;
 import org.insightcentre.uld.naisc.feature.WordNet;
 import org.insightcentre.uld.naisc.graph.PropertyOverlap;
 import org.insightcentre.uld.naisc.lens.Label;
+import org.insightcentre.uld.naisc.lens.OntoLex;
 import org.insightcentre.uld.naisc.lens.SPARQL;
 import org.insightcentre.uld.naisc.lens.URI;
 import org.insightcentre.uld.naisc.matcher.BeamSearch;
@@ -726,7 +727,8 @@ public class Configuration {
     public static Class[] knownLenses = new Class[]{
         Label.class,
         URI.class,
-        SPARQL.class
+        SPARQL.class,
+        OntoLex.class
     };
 
     /**

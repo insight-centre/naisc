@@ -185,7 +185,6 @@ public class Java2Vue {
                 sb.append("</div>\n");
             } else if (f.getType().isEnum()) {
                 sb.append("<div class=\"form-group\">\n");
-                sb.append("{{").append(path).append(sep(path)).append(f.getName()).append("}}\n");
                 sb.append("  <label for=\"").append(toVar(path)).append(sep(path)).append(f.getName()).append("\">").append(deCamelCase(f.getName())).append("</label>\n");
                 sb.append("    <select class=\"form-control\"  v-model=\"").
                         append(path).append(sep(path)).append(f.getName()).append("\">\n");
