@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -51,6 +50,7 @@ import org.insightcentre.uld.naisc.constraint.ConstraintFactory;
 import org.insightcentre.uld.naisc.constraint.ThresholdConstraint;
 import org.insightcentre.uld.naisc.feature.BagOfWordsSim;
 import org.insightcentre.uld.naisc.feature.BasicString;
+import org.insightcentre.uld.naisc.feature.Command;
 import org.insightcentre.uld.naisc.feature.Dictionary;
 import org.insightcentre.uld.naisc.feature.KeyWords;
 import org.insightcentre.uld.naisc.feature.WordEmbeddings;
@@ -204,7 +204,8 @@ public class Configuration {
         Dictionary.class,
         KeyWords.class,
         WordEmbeddings.class,
-        WordNet.class
+        WordNet.class,
+        Command.class
     };
 
     /**
