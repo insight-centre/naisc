@@ -1,0 +1,140 @@
+package org.insightcentre.uld.naisc.feature;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.util.Map;
+import java.util.Set;
+import org.insightcentre.uld.naisc.ConfigurationParameter;
+import org.insightcentre.uld.naisc.TextFeature;
+import org.insightcentre.uld.naisc.TextFeatureFactory;
+import org.insightcentre.uld.naisc.main.Configs;
+import org.insightcentre.uld.naisc.main.ConfigurationException;
+import org.insightcentre.uld.naisc.util.LangStringPair;
+
+/**
+ * Use an external command for text feature extraction. The input to this will be 
+ * a single line with a JSON object of the form:
+ * 
+ * <code>
+ * {"lang1":"en","lang2":"en","_1":"Label 1","_2":"Label 2"}
+ * </code>
+ * 
+ * The output should be as follows. The first line should be an array of strings
+ * giving the feature names, and every value after should be an array of number 
+ * of the same length. There should be precisely one response for each line of input
+ * , e.g.,
+ * 
+ * <code>
+ * ["feature1","feature2"]
+ * [0.2,0.3]
+ * [0.4,0.6]
+ * </code>
+ *
+ * @author John McCrae
+ */
+public class Command implements TextFeatureFactory {
+
+    @Override
+    public TextFeature makeFeatureExtractor(Set<String> tags, Map<String, Object> params) {
+        Configuration config = Configs.loadConfig(Configuration.class, params);
+        if (config.command == null) {
+            throw new ConfigurationException("Command not set");
+        }
+        if (config.id == null) {
+            throw new ConfigurationException("Command does not have an ID");
+        }
+        return new CommandImpl(config.id, tags, config.command);
+    }
+
+    /**
+     * The class for configuring the command
+     */
+    public static class Configuration {
+
+        /**
+         * The command to run
+         */
+        @ConfigurationParameter(description = "The command to run")
+        public String command;
+
+        /**
+         * The identifier
+         */
+        @ConfigurationParameter(description = "The identifier")
+        public String id;
+    }
+
+    private static class CommandImpl implements TextFeature {
+
+        private final String id;
+        private final Set<String> tags;
+        private final String[] features;
+        Process pr;
+        PrintWriter out;
+        BufferedReader in;
+        private final ObjectMapper mapper = new ObjectMapper();
+
+        public CommandImpl(String id, Set<String> tags, String command) {
+            this.id = id;
+            this.tags = tags;
+            Runtime rt = Runtime.getRuntime();
+            try {
+                pr = rt.exec(command);
+                out = new PrintWriter(pr.getOutputStream());
+                in = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+                BufferedReader err = new BufferedReader(new InputStreamReader(pr.getErrorStream()));
+                String line = in.readLine();
+                if (line == null) {
+                    String eline = err.readLine();
+                    while (eline != null) {
+                        System.err.println(eline);
+                        eline = err.readLine();
+                    }
+                    throw new RuntimeException("Command failed to start");
+                }
+                features = mapper.readValue(line, mapper.getTypeFactory().constructArrayType(String.class));
+            } catch (IOException x) {
+                throw new RuntimeException(x);
+            }
+        }
+
+        @Override
+        public String id() {
+            return id;
+        }
+
+        @Override
+        public double[] extractFeatures(LangStringPair facet) {
+            try {
+                out.println(mapper.writeValueAsString(facet));
+                Double[] d = mapper.readValue(in.readLine(), mapper.getTypeFactory().constructArrayType(Double.class));
+                double[] r = new double[d.length];
+                for(int i = 0; i < d.length; i++) {
+                    r[i] = d[i];
+                }
+                return r;
+            } catch (IOException x) {
+                throw new RuntimeException();
+            }
+        }
+
+        @Override
+        public String[] getFeatureNames() {
+            return features;
+        }
+
+        @Override
+        public Set<String> tags() {
+            return tags;
+        }
+
+        @Override
+        public void close() throws IOException {
+            pr.destroy();
+        }
+
+    }
+}
