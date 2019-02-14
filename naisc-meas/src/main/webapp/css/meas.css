@@ -145,3 +145,11 @@ input:invalid {
     font-style: italic;
     width: 100%;
 }
+
+.btn-primary {
+    margin: 6px;
+}
+
+.btn-success {
+    margin: 6px;
+}
