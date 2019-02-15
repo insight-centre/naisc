@@ -127,7 +127,7 @@ public class Command implements ScorerFactory {
                 out.println(mapper.writeValueAsString(features.values));
                 out.flush();
                 String line = in.readLine();
-                return Double.parseDouble(line.strip());
+                return Double.parseDouble(line.trim());
             } catch (IOException x) {
                 throw new RuntimeException(x);
             }
