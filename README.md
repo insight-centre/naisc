@@ -36,4 +36,4 @@ The following basic configurations are available:
 
 ## Documentation
 
-Naisc documentation is available under `docs/`
+Javadoc for Naisc is available at https://uld.pages.insight-centre.org/naisc
