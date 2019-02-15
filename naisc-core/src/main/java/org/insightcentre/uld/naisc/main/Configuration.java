@@ -860,7 +860,8 @@ public class Configuration {
         IDMatch.class,
         LabelMatch.class,
         ApproximateStringMatching.class,
-        Predefined.class
+        Predefined.class,
+        org.insightcentre.uld.naisc.blocking.Command.class
     };
 
     /**

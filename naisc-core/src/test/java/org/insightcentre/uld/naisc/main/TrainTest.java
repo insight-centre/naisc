@@ -43,7 +43,7 @@ public class TrainTest {
         File rightFile = new File("src/test/resources/right.nt");
         File alignment = new File("src/test/resources/align.nt");
         File configuration = new File("src/test/resources/simple.json");
-        Train.execute(leftFile, rightFile, alignment, 5.0, configuration, new Main.StdErrMonitor(), new DefaultDatasetLoader());
+        Train.execute("test", leftFile, rightFile, alignment, 5.0, configuration, new Main.StdErrMonitor(), new DefaultDatasetLoader());
     }
 
 }

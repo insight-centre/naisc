@@ -20,6 +20,10 @@
       <servlet-name>ManageServlet</servlet-name>
       <servlet-class>org.insightcentre.uld.naisc.meas.ManageServlet</servlet-class>
   </servlet>
+  <servlet>
+      <servlet-name>SPARQLEndpoint</servlet-name>
+      <servlet-class>org.insightcentre.uld.naisc.meas.SPARQLEndpoint</servlet-class>
+  </servlet>
   
   <servlet-mapping>
       <servlet-name>DatasetUploadServlet</servlet-name>
@@ -36,5 +40,9 @@
   <servlet-mapping>
       <servlet-name>ManageServlet</servlet-name>
       <url-pattern>/manage/*</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+      <servlet-name>SPARQLEndpoint</servlet-name>
+      <url-pattern>/sparql/*</url-pattern>
   </servlet-mapping>
 </web-app>

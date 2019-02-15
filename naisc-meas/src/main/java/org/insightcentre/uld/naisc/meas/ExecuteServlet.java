@@ -27,12 +27,32 @@ import org.insightcentre.uld.naisc.util.Option;
  * @author John McCrae
  */
 public class ExecuteServlet extends HttpServlet {
-    
+
     private HashMap<String, ExecutionTask> executions = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
-    
+
     final static public String VALID_ID = "[A-Za-z0-9][A-Za-z0-9_\\-]*";
-    
+
+    private static String getURL(HttpServletRequest req) {
+
+        String scheme = req.getScheme();             // http
+        String serverName = req.getServerName();     // hostname.com
+        int serverPort = req.getServerPort();        // 80
+        String contextPath = req.getContextPath();   // /mywebapp
+
+        // Reconstruct original requesting URL
+        StringBuilder url = new StringBuilder();
+        url.append(scheme).append("://").append(serverName);
+
+        if (serverPort != 80 && serverPort != 443) {
+            url.append(":").append(serverPort);
+        }
+
+        url.append(contextPath);
+
+        return url.toString();
+    }
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String path = req.getPathInfo();
@@ -48,16 +68,17 @@ public class ExecuteServlet extends HttpServlet {
                     throw new IllegalArgumentException("Run already exists!");
                 }
                 final ExecutionMode mode;
-                if(path.equals("/start")) {
+                if (path.equals("/start")) {
                     mode = ExecutionMode.EVALUATE;
-                } else if(path.equals("/train")) {
+                } else if (path.equals("/train")) {
                     mode = ExecutionMode.TRAIN;
-                } else if(path.equals("/crossfold")) {
+                } else if (path.equals("/crossfold")) {
                     mode = ExecutionMode.CROSSFOLD;
                 } else {
                     throw new RuntimeException("Unreachable");
                 }
-                ExecutionTask execution = new ExecutionTask(er.config, er.configName, er.dataset, id, mode);
+                ExecutionTask execution = new ExecutionTask(er.config, er.configName, er.dataset, id, mode,
+                        getURL(req));
                 executions.put(id, execution);
                 Thread t = new Thread(execution);
                 t.start();
@@ -69,7 +90,7 @@ public class ExecuteServlet extends HttpServlet {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
-    
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String path = req.getPathInfo();
@@ -87,30 +108,32 @@ public class ExecuteServlet extends HttpServlet {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
-    
+
     private static class ExecuteRequest {
-        
+
         public Configuration config;
         public String configName;
         public String dataset;
         public String runId;
     }
-    
+
     private static enum ExecutionMode {
         EVALUATE,
         TRAIN,
         CROSSFOLD
     }
-    
+
     private static class ExecutionTask implements Runnable {
-        
+
         private final Configuration config;
         private final String dataset, id, configName;
         public final Execution listener;
         public boolean isActive;
         private final ExecutionMode mode;
-        
-        public ExecutionTask(Configuration config, String configName, String dataset, String id, ExecutionMode mode) {
+        private final String requestURL;
+
+        public ExecutionTask(Configuration config, String configName, String dataset, String id, ExecutionMode mode,
+                String requestURL) {
             this.config = config;
             this.dataset = dataset;
             this.id = id;
@@ -118,12 +141,13 @@ public class ExecuteServlet extends HttpServlet {
             this.listener = new Execution(id);
             this.isActive = false;
             this.mode = mode;
+            this.requestURL = requestURL;
         }
-        
+
         @Override
         public void run() {
             try {
-                final DatasetLoader loader = new MeasDatasetLoader();
+                final DatasetLoader loader = new MeasDatasetLoader(requestURL);
                 final Dataset ds = new Dataset(new File(new File("datasets"), dataset));
                 isActive = true;
                 File f = new File("runs");
@@ -131,8 +155,8 @@ public class ExecuteServlet extends HttpServlet {
                 long time = System.currentTimeMillis();
                 final Evaluate.EvaluationResults er;
                 final AlignmentSet alignment;
-                if(mode == ExecutionMode.EVALUATE) {
-                    alignment = Main.execute(ds.left(), ds.right(),
+                if (mode == ExecutionMode.EVALUATE) {
+                    alignment = Main.execute(id, ds.left(), ds.right(),
                             config, listener, loader);
                     if (alignment == null) {
                         return;
@@ -146,25 +170,25 @@ public class ExecuteServlet extends HttpServlet {
                     } else {
                         er = null;
                     }
-                } else if(mode == ExecutionMode.TRAIN) {
+                } else if (mode == ExecutionMode.TRAIN) {
                     Option<File> alignFile = ds.align();
-                    if(!alignFile.has()) {
+                    if (!alignFile.has()) {
                         throw new IllegalArgumentException("Training was requested on run with no gold standard alignments");
                     }
-                    Train.execute(ds.left(),
-                            ds.right(), 
+                    Train.execute(id, ds.left(),
+                            ds.right(),
                             alignFile.get(), 5.0, config, listener, loader);
                     time = System.currentTimeMillis() - time;
                     er = null;
                     alignment = null;
-                } else if(mode == ExecutionMode.CROSSFOLD) {
+                } else if (mode == ExecutionMode.CROSSFOLD) {
                     Option<File> alignFile = ds.align();
-                    if(!alignFile.has()) {
+                    if (!alignFile.has()) {
                         throw new IllegalArgumentException("Cross-fold was requesetd on run with no gold standard alignments");
                     }
-                    CrossFold.CrossFoldResult result = CrossFold.execute(
+                    CrossFold.CrossFoldResult result = CrossFold.execute(id,
                             ds.left(),
-                            ds.right(), 
+                            ds.right(),
                             alignFile.get(), 10, 5.0, config, listener, loader);
                     time = System.currentTimeMillis() - time;
                     er = result.results;
@@ -180,7 +204,7 @@ public class ExecuteServlet extends HttpServlet {
                         er == null ? -2.0 : er.correlation, time,
                         mode == ExecutionMode.TRAIN);
                 ManageServlet.completed.put(id, run);
-                if(alignment != null) {
+                if (alignment != null) {
                     listener.saveAligment(run, alignment);
                 }
                 Meas.data.runs.add(run);

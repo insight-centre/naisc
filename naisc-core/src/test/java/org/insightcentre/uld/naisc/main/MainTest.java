@@ -44,7 +44,7 @@ public class MainTest {
         File configuration = new File("src/test/resources/simple.json");
         File outputFile = null;
         boolean outputXML = false;
-        Main.execute(leftFile, rightFile, configuration, outputFile, outputXML, new Main.NoMonitor(), new DefaultDatasetLoader());
+        Main.execute("test", leftFile, rightFile, configuration, outputFile, outputXML, new Main.NoMonitor(), new DefaultDatasetLoader());
     }
 
     

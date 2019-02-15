@@ -108,16 +108,6 @@ public class Label implements LensFactory {
 
     }
 
-    private static Language getLang(RDFNode node) {
-        Literal lit = node.asLiteral();
-        String ls = lit.getLanguage();
-        if (ls == null || ls.equals("")) {
-            return null;
-        } else {
-            return Language.get(ls);
-        }
-    }
-
     public static final String RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label";
     public static final String SKOS_PREFLABEL = "http://www.w3.org/2004/02/skos/core#prefLabel";
 

@@ -50,6 +50,7 @@ public class Main {
     /**
      * Execute NAISC
      *
+     * @param name The identifier for this run
      * @param leftFile The left RDF dataset to align
      * @param rightFile The right RDF dataset to align
      * @param configuration The configuration file
@@ -59,13 +60,13 @@ public class Main {
      * @param loader The loader of datasets
      */
     @SuppressWarnings("UseSpecificCatch")
-    public static void execute(File leftFile, File rightFile, File configuration,
+    public static void execute(String name, File leftFile, File rightFile, File configuration,
             File outputFile, boolean outputXML, ExecuteListener monitor,
             DatasetLoader loader) {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading Configuration");
             final Configuration config = mapper.readValue(configuration, Configuration.class);
-            execute(leftFile, rightFile, config, outputFile, outputXML, monitor, loader);
+            execute(name, leftFile, rightFile, config, outputFile, outputXML, monitor, loader);
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
@@ -75,6 +76,7 @@ public class Main {
     /**
      * Execute NAISC
      *
+     * @param name The identifier for this run
      * @param leftFile The left RDF dataset to align
      * @param rightFile The right RDF dataset to align
      * @param config The configuration
@@ -84,10 +86,10 @@ public class Main {
      * @param loader The loader of datasets
      */
     @SuppressWarnings("UseSpecificCatch")
-    public static void execute(File leftFile, File rightFile, Configuration config,
+    public static void execute(String name, File leftFile, File rightFile, Configuration config,
             File outputFile, boolean outputXML, ExecuteListener monitor, DatasetLoader loader) {
         try {
-            AlignmentSet finalAlignment = execute(leftFile, rightFile, config, monitor, loader);
+            AlignmentSet finalAlignment = execute(name, leftFile, rightFile, config, monitor, loader);
             monitor.updateStatus(Stage.FINALIZING, "Saving");
             if (outputXML) {
                 finalAlignment.toXML(outputFile == null ? System.out : new PrintStream(outputFile));
@@ -104,6 +106,7 @@ public class Main {
 
     /**
      * Execute NAISC
+     * @param name The identifier for this run
      * @param leftFile The left RDF dataset to align
      * @param rightFile The right RDF dataset to align
      * @param config The configuration
@@ -112,16 +115,16 @@ public class Main {
      * @return The alignment
      */
     @SuppressWarnings("UseSpecificCatch")
-    public static AlignmentSet execute(File leftFile, File rightFile, Configuration config,
+    public static AlignmentSet execute(String name, File leftFile, File rightFile, Configuration config,
             ExecuteListener monitor, DatasetLoader loader) { 
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
-            Dataset leftModel = loader.fromFile(leftFile);
+            Dataset leftModel = loader.fromFile(leftFile, name + "/left");
 
             monitor.updateStatus(Stage.INITIALIZING, "Reading right dataset");
-            Dataset rightModel = loader.fromFile(rightFile);
+            Dataset rightModel = loader.fromFile(rightFile, name + "/right");
             
-            return execute(leftModel, rightModel, config, monitor, null, null, loader);
+            return execute(name, leftModel, rightModel, config, monitor, null, null, loader);
             
         } catch (Exception x) {
             x.printStackTrace();
@@ -131,7 +134,7 @@ public class Main {
     }
     
     @SuppressWarnings("UseSpecificCatch")
-    public static AlignmentSet execute(Dataset leftModel, Dataset rightModel, Configuration config,
+    public static AlignmentSet execute(String name, Dataset leftModel, Dataset rightModel, Configuration config,
             ExecuteListener monitor, Set<Resource> left, Set<Resource> right, DatasetLoader loader) {
         try {
             
@@ -139,7 +142,7 @@ public class Main {
             BlockingStrategy blocking = config.makeBlockingStrategy();
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading lenses");
-            Dataset combined = loader.combine(leftModel, rightModel);
+            Dataset combined = loader.combine(leftModel, rightModel, name +"/combined");
             List<Lens> lenses = config.makeLenses(combined);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Feature Extractors");
@@ -163,8 +166,8 @@ public class Main {
             AlignmentSet alignments = new AlignmentSet();
             for (Pair<Resource, Resource> block : blocks) {
                 if(block._1.getURI() == null || block._1.getURI().equals("") ||
-                        block._1.getURI() == null || block._1.getURI().equals("")) {
-                    throw new RuntimeException("Resource with URI");
+                        block._2.getURI() == null || block._2.getURI().equals("")) {
+                    throw new RuntimeException("Resource without URI");
                 }
                 monitor.addBlock(block._1, block._2);
                 if (++count % 1000 == 0) {
@@ -253,7 +256,7 @@ public class Main {
             //final boolean example = os.has("x");
             final boolean outputXML = os.has("xml");
             //final boolean hard = !os.has("easy");
-            execute(left, right, configuration, outputFile, outputXML,
+            execute("naisc", left, right, configuration, outputFile, outputXML,
                     os.valueOf("q").equals(Boolean.TRUE)
                     ? new NoMonitor() : new StdErrMonitor(),
                     new DefaultDatasetLoader());

@@ -30,14 +30,15 @@ import org.insightcentre.uld.naisc.util.Option;
  */
 public class ExamineFeature {
 
-    public static FeatureSet examineFeature(File leftFile, File rightFile, File configuration,
+    public static FeatureSet examineFeature(String name,
+            File leftFile, File rightFile, File configuration,
             String left, String right, ExecuteListener monitor, DatasetLoader loader) {
         try {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
             final Configuration config = mapper.readValue(configuration, Configuration.class);
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
-            Dataset leftDataset = loader.fromFile(leftFile);
+            Dataset leftDataset = loader.fromFile(leftFile, name + "/left");
             Model leftModel = leftDataset.asModel().get();
             Resource res1 = leftModel.createResource(left);
             if (!leftModel.listStatements(res1, null, (RDFNode) null).hasNext()) {
@@ -50,7 +51,7 @@ public class ExamineFeature {
             }
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
-            Dataset rightDataset = loader.fromFile(rightFile);
+            Dataset rightDataset = loader.fromFile(rightFile, name + "/right");
             Model rightModel = rightDataset.asModel().get();
             rightModel.read(new FileReader(rightFile), rightFile.toURI().toString(), "riot");
             Resource res2 = rightModel.createResource(right);
@@ -59,7 +60,7 @@ public class ExamineFeature {
             }
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading lenses");
-            Dataset combined = loader.combine(leftDataset, rightDataset);
+            Dataset combined = loader.combine(leftDataset, rightDataset, name + "/combined");
             List<Lens> lenses = config.makeLenses(combined);
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
@@ -148,7 +149,7 @@ public class ExamineFeature {
                 badOptions(p, "Configuration does not exist or not specified");
             }
 
-            FeatureSet fs = examineFeature(left, right, configuration, os.nonOptionArguments().get(2).toString(), os.nonOptionArguments().get(3).toString(),
+            FeatureSet fs = examineFeature("examine", left, right, configuration, os.nonOptionArguments().get(2).toString(), os.nonOptionArguments().get(3).toString(),
                     os.valueOf("q") != null && os.valueOf("q").equals(Boolean.TRUE)
                     ? new NoMonitor() : new StdErrMonitor(), new DefaultDatasetLoader());
 

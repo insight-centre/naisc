@@ -37,6 +37,7 @@ public class CrossFold {
      * @param leftFile The left dataset
      * @param rightFile The right dataset
      * @param gold The alignments
+     * @param name The name of the run
      * @param nFolds The number of folds to use
      * @param negativeSampling The rate of negative sampling
      * @param output The output file or null to write to STDOUT
@@ -45,15 +46,15 @@ public class CrossFold {
      * @param loader Dataset loader
      */
     @SuppressWarnings("UseSpecificCatch")
-    public static void execute(File leftFile, File rightFile, File gold, int nFolds, 
-            double negativeSampling, File output,
+    public static void execute(String name, File leftFile, File rightFile, File gold, 
+            int nFolds, double negativeSampling, File output,
             File configuration, ExecuteListener monitor, DatasetLoader loader) {
 
         try {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
             final Configuration config = mapper.readValue(configuration, Configuration.class);
 
-            CrossFoldResult cfr = execute(leftFile, rightFile, gold, nFolds, negativeSampling, config, monitor, loader);
+            CrossFoldResult cfr = execute(name, leftFile, rightFile, gold, nFolds, negativeSampling, config, monitor, loader);
 
             final PrintStream out;
             if (output != null) {
@@ -75,6 +76,7 @@ public class CrossFold {
      * @param leftFile The left dataset
      * @param rightFile The right dataset
      * @param gold The gold standard alignments
+     * @param name The name of this run
      * @param nFolds The number of folds to use
      * @param negativeSampling The rate of negative sampling
      * @param config The configuration
@@ -83,27 +85,28 @@ public class CrossFold {
      * @return The alignments and the evaluation scores
      * @throws IOException If a file cannot be read
      */
-    public static CrossFoldResult execute(File leftFile, File rightFile,
+    public static CrossFoldResult execute(String name, File leftFile, File rightFile,
             File gold,
             int nFolds, double negativeSampling,
             Configuration config, ExecuteListener monitor,
             DatasetLoader loader) throws IOException {
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
-        Dataset leftModel = loader.fromFile(leftFile);
+        Dataset leftModel = loader.fromFile(leftFile, name + "/left");
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
-        Dataset rightModel = loader.fromFile(rightFile);
+        Dataset rightModel = loader.fromFile(rightFile, name + "/right");
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading gold standard");
         final AlignmentSet goldAlignments = Train.readAlignments(gold);
 
-        return execute(leftModel, rightModel, goldAlignments, nFolds, negativeSampling, config, monitor, loader);
+        return execute(name, leftModel, rightModel, goldAlignments, nFolds, negativeSampling, config, monitor, loader);
 
     }
 
     /**
      * Execute a cross-fold validation
+     * @param name The name of the run
      * @param leftModel The left dataset
      * @param rightModel The right dataset
      * @param goldAlignments The gold standard alignments
@@ -115,7 +118,7 @@ public class CrossFold {
      * @return The alignment and evaluation score
      * @throws IOException If an error occurs reading a file
      */
-    public static CrossFoldResult execute(Dataset leftModel, Dataset rightModel,
+    public static CrossFoldResult execute(String name, Dataset leftModel, Dataset rightModel,
             AlignmentSet goldAlignments,
             int nFolds, double negativeSampling,
             Configuration config, ExecuteListener _monitor, DatasetLoader loader) throws IOException {
@@ -128,8 +131,8 @@ public class CrossFold {
         AlignmentSet as = new AlignmentSet();
         for (int i = 0; i < nFolds; i++) {
             monitor.foldNo++;
-            Train.execute(leftModel, rightModel, folds.train(goldAlignments, i), negativeSampling, config, monitor,loader);
-            as.addAll(Main.execute(leftModel, rightModel, config, monitor, folds.leftSplit.get(i), folds.rightSplit.get(i),loader));
+            Train.execute(name, leftModel, rightModel, folds.train(goldAlignments, i), negativeSampling, config, monitor,loader);
+            as.addAll(Main.execute(name, leftModel, rightModel, config, monitor, folds.leftSplit.get(i), folds.rightSplit.get(i),loader));
         }
         monitor.foldNo = 0;
 
@@ -216,7 +219,7 @@ public class CrossFold {
             }
             @SuppressWarnings("null")
             double negativeSampling = os.has("s")  ? (Double)os.valueOf("s") : 5.0;
-            execute(left, right, gold, nFolds, negativeSampling, outputFile, configuration,
+            execute("crossfold", left, right, gold, nFolds, negativeSampling, outputFile, configuration,
                     os.has("q") ? new Main.NoMonitor() : new Main.StdErrMonitor(), 
                     new DefaultDatasetLoader());
         } catch (Throwable x) {

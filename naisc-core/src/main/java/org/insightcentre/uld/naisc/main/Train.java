@@ -100,6 +100,7 @@ public class Train {
     /**
      * Execute NAISC
      *
+     * @param name The identifier for this run
      * @param leftFile The left RDF dataset to align
      * @param rightFile The right RDF dataset to align
      * @param alignment The alignments to learn
@@ -109,18 +110,19 @@ public class Train {
      * @param loader The dataset loader
      * @throws IOException If an IO error occurs
      */
-    public static void execute(File leftFile, File rightFile, File alignment,
+    public static void execute(String name, File leftFile, File rightFile, File alignment,
             double negativeSampling,
-            File configuration, ExecuteListener monitor, 
+            File configuration, ExecuteListener monitor,
             DatasetLoader loader) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
         final Configuration config = mapper.readValue(configuration, Configuration.class);
-        execute(leftFile, rightFile, alignment, negativeSampling, config, monitor, loader);
+        execute(name, leftFile, rightFile, alignment, negativeSampling, config, monitor, loader);
     }
 
     /**
      * Execute a NAISC training run
      *
+     * @param name The identifier for this run
      * @param leftFile The left RDF dataset to align
      * @param rightFile The right RDF dataset to align
      * @param alignment The alignments to learn
@@ -130,23 +132,24 @@ public class Train {
      * @param loader The dataset loader
      * @throws IOException If an IO error occurs
      */
-    public static void execute(File leftFile, File rightFile, File alignment,
+    public static void execute(String name, File leftFile, File rightFile, File alignment,
             double negativeSampling,
             Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
-        Dataset leftModel = loader.fromFile(leftFile);
+        Dataset leftModel = loader.fromFile(leftFile, name + "/left");
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
-        Dataset rightModel = loader.fromFile(rightFile);
+        Dataset rightModel = loader.fromFile(rightFile, name + "/right");
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading alignments");
         AlignmentSet goldAlignments = readAlignments(alignment);
-        execute(leftModel, rightModel, goldAlignments, negativeSampling, config, monitor, loader);
+        execute(name, leftModel, rightModel, goldAlignments, negativeSampling, config, monitor, loader);
     }
 
     /**
      * Train a NAISC model
      *
+     * @param name The name of the run
      * @param leftModel The left dataset
      * @param rightModel The right dataset
      * @param goldAlignments The gold standard alignments
@@ -157,7 +160,7 @@ public class Train {
      * @param loader The dataset loader
      * @throws IOException If an IO error occurs
      */
-    public static void execute(Dataset leftModel, Dataset rightModel,
+    public static void execute(String name, Dataset leftModel, Dataset rightModel,
             AlignmentSet goldAlignments, double negativeSampling,
             Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
 
@@ -165,7 +168,7 @@ public class Train {
         BlockingStrategy blocking = config.makeBlockingStrategy();
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading lenses");
-        Dataset combined = loader.combine(leftModel, rightModel);
+        Dataset combined = loader.combine(leftModel, rightModel, name + "/combined");
         List<Lens> lenses = config.makeLenses(combined);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
@@ -259,8 +262,8 @@ public class Train {
         //ArrayList<Scorer> trainedScorers = new ArrayList<>();
         for (ScorerTrainer tsf : scorers) {
             List<FeatureSetWithScore> data = trainingData.get(tsf.property());
-            monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Learning model (" + data.size() + " items)");
             if (data != null) {
+                monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Learning model (" + data.size() + " items)");
                 tsf.train(data);
             } else {
                 System.err.println(String.format("No data for %s so could not train model", tsf.property()));
@@ -293,6 +296,7 @@ public class Train {
         return featureSet;
     }
 
+    @SuppressWarnings("UseSpecificCatch")
     public static void main(String[] args) {
         try {
             final OptionParser p = new OptionParser() {
@@ -333,9 +337,10 @@ public class Train {
             final File configuration = (File) os.valueOf("c");
             if (configuration == null || !configuration.exists()) {
                 badOptions(p, "Configuration does not exist or not specified");
-            };
+            }
+            @SuppressWarnings("null")
             final double negativeSampling = os.has("n") ? (Double) os.valueOf("n") : 5.0;
-            execute(left, right, alignment, negativeSampling, configuration,
+            execute("train", left, right, alignment, negativeSampling, configuration,
                     os.has("q") ? new Main.NoMonitor() : new Main.StdErrMonitor(),
                     new DefaultDatasetLoader());
         } catch (Throwable x) {

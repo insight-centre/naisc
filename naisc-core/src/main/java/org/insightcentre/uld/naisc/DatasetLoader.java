@@ -12,10 +12,11 @@ public interface DatasetLoader {
     /**
      * Create a dataset from a RDF file
      * @param file The file to load
+     * @param name The name of the dataset
      * @return The dataset object
      * @throws IOException if the file cannot be loaded
      */
-    Dataset fromFile(File file) throws IOException;
+    Dataset fromFile(File file, String name) throws IOException;
     
     /**
      * Create a dataset from a SPARQL endpoint
@@ -28,8 +29,9 @@ public interface DatasetLoader {
      * Combine two datasets
      * @param dataset1 The first dataset
      * @param dataset2 The second dataset
+     * @param name The name of the combined dataset
      * @return The combination of the two datasets
      */
-    Dataset combine(Dataset dataset1, Dataset dataset2);
+    Dataset combine(Dataset dataset1, Dataset dataset2, String name);
 
 }

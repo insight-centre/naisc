@@ -20,7 +20,7 @@ import org.insightcentre.uld.naisc.util.Some;
 public class DefaultDatasetLoader implements DatasetLoader {
 
     @Override
-    public Dataset fromFile(File file) throws IOException {
+    public Dataset fromFile(File file, String name) throws IOException {
 
         final Model model = ModelFactory.createDefaultModel();
         model.read(new FileReader(file), file.toURI().toString(), "riot");
@@ -53,7 +53,7 @@ public class DefaultDatasetLoader implements DatasetLoader {
     }
 
     @Override
-    public Dataset combine(Dataset dataset1, Dataset dataset2) {
+    public Dataset combine(Dataset dataset1, Dataset dataset2, String name) {
         final Model combined = ModelFactory.createDefaultModel();
         final Model leftModel = dataset1.asModel().getOrExcept(new RuntimeException("Cannot combine SPARQL endpoints"));
         final Model rightModel = dataset2.asModel().getOrExcept(new RuntimeException("Cannot combine SPARQL endpoints"));
