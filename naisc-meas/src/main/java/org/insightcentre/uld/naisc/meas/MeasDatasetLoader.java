@@ -1,6 +1,5 @@
 package org.insightcentre.uld.naisc.meas;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -20,7 +19,7 @@ import org.insightcentre.uld.naisc.util.Some;
  * The Meas loader also creates a SPARQL endpoint for the datasets
  * @author John McCrae
  */
-public class MeasDatasetLoader implements DatasetLoader, Closeable {
+public class MeasDatasetLoader implements DatasetLoader, AutoCloseable {
     private Set<String> models = new HashSet<>();
     private final String requestURL;
 

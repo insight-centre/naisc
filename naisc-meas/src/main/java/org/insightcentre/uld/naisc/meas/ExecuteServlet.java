@@ -146,8 +146,7 @@ public class ExecuteServlet extends HttpServlet {
 
         @Override
         public void run() {
-            try {
-                final DatasetLoader loader = new MeasDatasetLoader(requestURL);
+            try(MeasDatasetLoader loader = new MeasDatasetLoader(requestURL)) {
                 final Dataset ds = new Dataset(new File(new File("datasets"), dataset));
                 isActive = true;
                 File f = new File("runs");
