@@ -206,7 +206,7 @@ public class Configuration {
         KeyWords.class,
         WordEmbeddings.class,
         WordNet.class,
-        Command.class
+        org.insightcentre.uld.naisc.feature.Command.class
     };
 
     /**
@@ -368,7 +368,8 @@ public class Configuration {
     }
 
     public static Class[] knownGraphFeatures = new Class[]{
-        PropertyOverlap.class
+        PropertyOverlap.class,
+        org.insightcentre.uld.naisc.graph.Command.class
     };
 
     /**
@@ -500,7 +501,8 @@ public class Configuration {
 
     public static Class[] knownScorers = new Class[]{
         Average.class,
-        LibSVM.class
+        LibSVM.class,
+        org.insightcentre.uld.naisc.scorer.Command.class
     };
 
     /**
@@ -613,7 +615,8 @@ public class Configuration {
         Threshold.class,
         UniqueAssignment.class,
         Greedy.class,
-        BeamSearch.class
+        BeamSearch.class,
+        org.insightcentre.uld.naisc.matcher.Command.class
     };
 
     /**
@@ -730,7 +733,8 @@ public class Configuration {
         Label.class,
         URI.class,
         SPARQL.class,
-        OntoLex.class
+        OntoLex.class,
+        org.insightcentre.uld.naisc.lens.Command.class
     };
 
     /**

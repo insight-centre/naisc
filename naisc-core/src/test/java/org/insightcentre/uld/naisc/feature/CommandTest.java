@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import org.insightcentre.uld.naisc.TextFeature;
+import org.insightcentre.uld.naisc.util.ExternalCommandException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -54,7 +55,7 @@ public class CommandTest {
             double[] expData = new double[]{0.2, 0.3};
             assertArrayEquals(expNames, feature.getFeatureNames());
             assertArrayEquals(expData, feature.extractFeatures(null), 0.0);
-        } catch (Exception x) {
+        } catch (ExternalCommandException x) {
             x.printStackTrace();
         }
     }

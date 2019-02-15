@@ -81,15 +81,9 @@ public class Alignment {
 
     @Override
     public String toString() {
-        if (mapper == null) {
-            mapper = new ObjectMapper();
-        }
-        try {
-            return mapper.writeValueAsString(this);
-        } catch (JsonProcessingException x) {
-            throw new RuntimeException(x);
-        }
+        return "Alignment{" + "entity1=" + entity1 + ", entity2=" + entity2 + ", score=" + score + ", relation=" + relation + ", valid=" + valid + '}';
     }
+
 
     @Override
     public int hashCode() {

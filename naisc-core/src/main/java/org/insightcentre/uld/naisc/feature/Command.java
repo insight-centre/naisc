@@ -12,6 +12,7 @@ import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.TextFeatureFactory;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
+import org.insightcentre.uld.naisc.util.ExternalCommandException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 
 /**
@@ -97,7 +98,7 @@ public class Command implements TextFeatureFactory {
                 }
                 features = mapper.readValue(line, mapper.getTypeFactory().constructArrayType(String.class));
             } catch (IOException x) {
-                throw new RuntimeException(x);
+                throw new ExternalCommandException(x);
             }
         }
 
@@ -110,12 +111,7 @@ public class Command implements TextFeatureFactory {
         public double[] extractFeatures(LangStringPair facet) {
             try {
                 out.println(mapper.writeValueAsString(facet));
-                Double[] d = mapper.readValue(in.readLine(), mapper.getTypeFactory().constructArrayType(Double.class));
-                double[] r = new double[d.length];
-                for(int i = 0; i < d.length; i++) {
-                    r[i] = d[i];
-                }
-                return r;
+                return mapper.readValue(in.readLine(), double[].class);
             } catch (IOException x) {
                 throw new RuntimeException();
             }

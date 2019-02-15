@@ -193,15 +193,10 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
 
     @Override
     public String toString() {
-        if(mapper == null) {
-            mapper = new ObjectMapper();
-        }
-        try {
-            return mapper.writeValueAsString(this);
-        } catch(JsonProcessingException x) {
-            throw new RuntimeException(x);
-        }
+        return "AlignmentSet{" + "alignments=" + alignments + '}';
     }
+
+   
 
 
     @Override

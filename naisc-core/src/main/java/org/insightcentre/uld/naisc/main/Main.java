@@ -266,7 +266,7 @@ public class Main {
         }
     }
 
-    static class StdErrMonitor implements ExecuteListener {
+    public static class StdErrMonitor implements ExecuteListener {
 
         @Override
         public void updateStatus(Stage stage, String message) {
@@ -279,7 +279,7 @@ public class Main {
 
     }
 
-    static class NoMonitor implements ExecuteListener {
+    public static class NoMonitor implements ExecuteListener {
 
         @Override
         public void updateStatus(Stage stage, String message) {
