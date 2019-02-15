@@ -17,7 +17,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.util.None;
+import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.util.Some;
 import org.insightcentre.uld.naisc.util.StringPair;
 
@@ -38,7 +40,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
     @JsonCreator public AlignmentSet(List<Alignment> alignments) {
         this.alignments = alignments;
     }
-    private Map<String, Map<StringPair, Alignment>> index;
+    private Map<String, Map<Pair<Resource,Resource>, Alignment>> index;
 
     /**
      * Get an alignment if it is in this set
@@ -47,22 +49,22 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
      * @param property The property to matche
      * @return The alignments between these elements
      */
-    public Option<Alignment> find(String id1, String id2, String property) {
+    public Option<Alignment> find(Resource id1, Resource id2, String property) {
         if(index == null) {
-            Map<String, Map<StringPair, Alignment>> map = new HashMap<>();
+            Map<String, Map<Pair<Resource,Resource>, Alignment>> map = new HashMap<>();
             for(Alignment alignment : alignments) {
                 if(!map.containsKey(alignment.relation)) {
                     map.put(alignment.relation, new HashMap<>());
                 }
-                map.get(alignment.relation).put(new StringPair(alignment.entity1,
+                map.get(alignment.relation).put(new Pair<>(alignment.entity1,
                             alignment.entity2), alignment);
             }
             index = map;
         }
-        Map<StringPair, Alignment> byPair = index.get(property);
+        Map<Pair<Resource, Resource>, Alignment> byPair = index.get(property);
         if(byPair == null)
             return new None<>();
-        final StringPair sp = new StringPair(id1, id2);
+        final Pair<Resource, Resource> sp = new Pair<>(id1, id2);
         return byPair.containsKey(sp) ? new Some<>(byPair.get(sp)) : new None<>();
 
     }
@@ -70,7 +72,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
     public boolean remove(Alignment alignment) {
         boolean rv = alignments.remove(alignment);
         if(index != null) {
-            index.get(alignment.relation).remove(new StringPair(alignment.entity1, alignment.entity2));
+            index.get(alignment.relation).remove(new Pair<>(alignment.entity1, alignment.entity2));
         }
         return rv;
         
@@ -87,9 +89,9 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
             public int compare(Alignment o1, Alignment o2) {
                 int i = Double.compare(o1.score, o2.score);
                 if(i != 0) return -i;
-                i = o1.entity1.compareTo(o2.entity1);
+                i = o1.entity1.toString().compareTo(o2.entity1.toString());
                 if(i != 0) return i;
-                i = o1.entity2.compareTo(o2.entity2);
+                i = o1.entity2.toString().compareTo(o2.entity2.toString());
                 if(i != 0) return i;
                 return o1.relation.compareTo(o2.relation);
             }
@@ -102,7 +104,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
         if(index != null) {
             if(!index.containsKey(alignment.relation))
                 index.put(alignment.relation, new HashMap<>());
-            index.get(alignment.relation).put(new StringPair(alignment.entity1, alignment.entity2), alignment);
+            index.get(alignment.relation).put(new Pair<>(alignment.entity1, alignment.entity2), alignment);
         }
         return rv;
     }
@@ -125,7 +127,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
             @Override
             public void remove() {
                 iter.remove();
-                if(index != null) index.get(next.relation).remove(new StringPair(next.entity1, next.entity2));
+                if(index != null) index.get(next.relation).remove(new Pair<>(next.entity1, next.entity2));
             }
         };
     }
@@ -165,8 +167,8 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
         for(Alignment alignment : alignments) {
             out.println("  <map>");
             out.println("    <Cell>");
-            out.println(String.format("      <entity1 rdf:resource=\"%s\"/>", StringEscapeUtils.escapeXml11(alignment.entity1)));
-            out.println(String.format("      <entity2 rdf:resource=\"%s\"/>", StringEscapeUtils.escapeXml11(alignment.entity2)));
+            out.println(String.format("      <entity1 rdf:resource=\"%s\"/>", StringEscapeUtils.escapeXml11(alignment.entity1.getURI())));
+            out.println(String.format("      <entity2 rdf:resource=\"%s\"/>", StringEscapeUtils.escapeXml11(alignment.entity2.getURI())));
             out.println(String.format("      <measure rdf:datatype=\"xsd:float\">%.6f</measure>", alignment.score));
             out.println(String.format("      <relation>%s</relation>", toXML(alignment.relation))); 
             out.println("    </Cell>");

@@ -2,13 +2,11 @@ package org.insightcentre.uld.naisc.constraint;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.lang.ref.SoftReference;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import static org.insightcentre.uld.naisc.constraint.Bijective.Surjection.bijective;
 import static org.insightcentre.uld.naisc.constraint.Bijective.Surjection.surjective;
@@ -96,7 +94,7 @@ public class Bijective implements ConstraintFactory {
                     (surjection == surjective || !rcontains(alignment.entity2));
         }
 
-        private boolean lcontains(String s) {
+        private boolean lcontains(Resource s) {
             if(alignment == null) {
                 return false;
             } else if (alignment.entity1.equals(s)) {
@@ -112,7 +110,7 @@ public class Bijective implements ConstraintFactory {
             }
         }
         
-        private boolean rcontains(String s) {
+        private boolean rcontains(Resource s) {
             if(alignment == null) {
                 return false;
             } else if (alignment.entity2.equals(s)) {
@@ -143,9 +141,9 @@ public class Bijective implements ConstraintFactory {
 
     private static class BijectiveCacheEntry {
         private final long id;
-        private final String text;
+        private final Resource text;
 
-        public BijectiveCacheEntry(long id, String text) {
+        public BijectiveCacheEntry(long id, Resource text) {
             this.id = id;
             this.text = text;
         }

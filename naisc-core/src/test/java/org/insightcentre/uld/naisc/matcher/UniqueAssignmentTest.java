@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import static org.apache.jena.sparql.vocabulary.TestManifest.result;
+import org.apache.jena.rdf.model.AnonId;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.Matcher;
@@ -52,6 +55,11 @@ public class UniqueAssignmentTest {
         assertEquals(expResult, result);
     }
 
+
+    private Model m = ModelFactory.createDefaultModel();
+    private Resource r(String s) {
+        return m.createResource(new AnonId(s));
+    }
     /**
      * Test of makeMatcher method, of class UniqueAssignment.
      */
@@ -62,23 +70,23 @@ public class UniqueAssignmentTest {
         UniqueAssignment instance = new UniqueAssignment();
         Matcher matcher = instance.makeMatcher(params);
         List<Alignment> alignments = new ArrayList<>();
-        alignments.add(new Alignment("id1", "id1", 0.5, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment("id1", "id2", 0.9, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment("id2", "id2", 0.7, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment("id3", "id3", 0.1, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment("id2", "id3", 0.0, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH));
         AlignmentSet result = matcher.align(new AlignmentSet(alignments));
         assert(result.size() == 3);
-        assert(result.contains(new Alignment("id1", "id1", 0.5, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment("id2", "id2", 0.7, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment("id3", "id3", 0.1, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH)));
         
         params.put("threshold", 0.5);
         matcher = instance.makeMatcher(params);
         result = matcher.align(new AlignmentSet(alignments));
         assert(result.size() == 2);
-        assert(result.contains(new Alignment("id1", "id1", 0.5, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment("id2", "id2", 0.7, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH)));
         
     }
 

@@ -12,6 +12,7 @@ import org.apache.jena.util.iterator.ExtendedIterator;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
+import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.Pair;
 
@@ -215,7 +216,9 @@ public class IDMatch implements BlockingStrategyFactory {
 
         @Override
         @SuppressWarnings("Convert2Lambda")
-        public Iterable<Pair<Resource, Resource>> block(final Model left, final Model right) {
+        public Iterable<Pair<Resource, Resource>> block(final Dataset _left, final Dataset _right) {
+            final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
+            final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
             return new Iterable<Pair<Resource, Resource>>() {
                 @Override
                 public Iterator<Pair<Resource, Resource>> iterator() {

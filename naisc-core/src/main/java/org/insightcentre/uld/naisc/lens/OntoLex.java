@@ -13,8 +13,8 @@ import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.StmtIterator;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
+import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.LensFactory;
 import static org.insightcentre.uld.naisc.lens.OntoLex.Dialect.ONTOLEX;
@@ -33,7 +33,8 @@ import org.insightcentre.uld.naisc.util.Some;
 public class OntoLex implements LensFactory {
 
     @Override
-    public Lens makeLens(String tag, Model sparqlData, Map<String, Object> params) {
+    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
+        final Model sparqlData = dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if(config.dialect == null) {
             config.dialect = ONTOLEX;

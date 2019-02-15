@@ -9,6 +9,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.lens.Label;
 import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
+import org.insightcentre.uld.naisc.main.ModelDataset;
 import org.junit.After;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
@@ -64,16 +65,16 @@ public class LabelMatchTest {
         right.add(right.createStatement(right.createResource("file:fuzz3"), right.createProperty(RDFS_LABEL), left.createLiteral("dog house", "en")));
         
         BlockingStrategy strategy = instance.makeBlockingStrategy(params);
-        assertEquals(3, count(strategy.block(left, right)));
+        assertEquals(3, count(strategy.block(new ModelDataset(left), new ModelDataset(right))));
         
         params.put("language", "en");
         strategy = instance.makeBlockingStrategy(params);
-        assertEquals(2, count(strategy.block(left, right)));
+        assertEquals(2, count(strategy.block(new ModelDataset(left), new ModelDataset(right))));
 
         
         params.put("mode", "lenient");
         strategy = instance.makeBlockingStrategy(params);
-        assertEquals(3, count(strategy.block(left, right)));
+        assertEquals(3, count(strategy.block(new ModelDataset(left), new ModelDataset(right))));
         
     }
     

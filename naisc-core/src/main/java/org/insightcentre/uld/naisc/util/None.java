@@ -22,6 +22,13 @@ public final class None<A> extends AbstractCollection<A> implements Option<A> {
     }
 
     @Override
+    public A getOrExcept(RuntimeException exception) {
+        throw exception;
+    }
+    
+    
+
+    @Override
     public A getOrElse(A a) {
         return a;
     }

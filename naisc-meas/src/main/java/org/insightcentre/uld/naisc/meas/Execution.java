@@ -125,9 +125,9 @@ public class Execution implements ExecuteListener {
             for (Alignment alignment : alignmentSet) {
                 Map<String, LangStringPair> m = lensResults.get(new Pair(alignment.entity1, alignment.entity2));
                 String lens = m == null ? "{}" : mapper.writeValueAsString(m);
-                pstat.setString(1, alignment.entity1);
+                pstat.setString(1, alignment.entity1.getURI());
                 pstat.setString(2, alignment.relation);
-                pstat.setString(3, alignment.entity2);
+                pstat.setString(3, alignment.entity2.getURI());
                 pstat.setString(4, lens);
                 pstat.setDouble(5, alignment.score);
                 pstat.setString(6, alignment.valid.toString());

@@ -12,6 +12,7 @@ import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching.PatriciaTrie;
 import static org.insightcentre.uld.naisc.blocking.ApproximateStringMatching.editDistance;
 import org.insightcentre.uld.naisc.lens.Label;
+import org.insightcentre.uld.naisc.main.ModelDataset;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -194,7 +195,7 @@ public class ApproximateStringMatchingTest {
             strings.add(right.createResource("file:tmp#" + s));
         }
         final List<Pair<Resource,Resource>> results = new ArrayList<>();
-        for(Pair<Resource,Resource> p : strat.block(left, right)) {
+        for(Pair<Resource,Resource> p : strat.block(new ModelDataset(left), new ModelDataset(right))) {
             results.add(p);
         }
         strings.sort(new Comparator<Resource>() {

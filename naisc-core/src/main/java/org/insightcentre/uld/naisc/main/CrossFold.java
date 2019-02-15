@@ -5,7 +5,6 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -16,11 +15,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
+import org.insightcentre.uld.naisc.Dataset;
+import org.insightcentre.uld.naisc.DatasetLoader;
 import static org.insightcentre.uld.naisc.main.Main.mapper;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -43,17 +42,18 @@ public class CrossFold {
      * @param output The output file or null to write to STDOUT
      * @param configuration The configuration object
      * @param monitor A listener for events in the execution
+     * @param loader Dataset loader
      */
     @SuppressWarnings("UseSpecificCatch")
     public static void execute(File leftFile, File rightFile, File gold, int nFolds, 
             double negativeSampling, File output,
-            File configuration, ExecuteListener monitor) {
+            File configuration, ExecuteListener monitor, DatasetLoader loader) {
 
         try {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
             final Configuration config = mapper.readValue(configuration, Configuration.class);
 
-            CrossFoldResult cfr = execute(leftFile, rightFile, gold, nFolds, negativeSampling, config, monitor);
+            CrossFoldResult cfr = execute(leftFile, rightFile, gold, nFolds, negativeSampling, config, monitor, loader);
 
             final PrintStream out;
             if (output != null) {
@@ -79,26 +79,26 @@ public class CrossFold {
      * @param negativeSampling The rate of negative sampling
      * @param config The configuration
      * @param monitor The listener for events
+     * @param loader The dataset loader
      * @return The alignments and the evaluation scores
      * @throws IOException If a file cannot be read
      */
     public static CrossFoldResult execute(File leftFile, File rightFile,
             File gold,
             int nFolds, double negativeSampling,
-            Configuration config, ExecuteListener monitor) throws IOException {
+            Configuration config, ExecuteListener monitor,
+            DatasetLoader loader) throws IOException {
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
-        Model leftModel = ModelFactory.createDefaultModel();
-        leftModel.read(new FileReader(leftFile), leftFile.toURI().toString(), "riot");
+        Dataset leftModel = loader.fromFile(leftFile);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
-        Model rightModel = ModelFactory.createDefaultModel();
-        rightModel.read(new FileReader(rightFile), rightFile.toURI().toString(), "riot");
+        Dataset rightModel = loader.fromFile(rightFile);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading gold standard");
         final AlignmentSet goldAlignments = Train.readAlignments(gold);
 
-        return execute(leftModel, rightModel, goldAlignments, nFolds, negativeSampling, config, monitor);
+        return execute(leftModel, rightModel, goldAlignments, nFolds, negativeSampling, config, monitor, loader);
 
     }
 
@@ -111,13 +111,14 @@ public class CrossFold {
      * @param negativeSampling The rate of negative sampling
      * @param config The alignment configuration
      * @param _monitor A listener for events
+     * @param loader The dataset loader
      * @return The alignment and evaluation score
      * @throws IOException If an error occurs reading a file
      */
-    public static CrossFoldResult execute(Model leftModel, Model rightModel,
+    public static CrossFoldResult execute(Dataset leftModel, Dataset rightModel,
             AlignmentSet goldAlignments,
             int nFolds, double negativeSampling,
-            Configuration config, ExecuteListener _monitor) throws IOException {
+            Configuration config, ExecuteListener _monitor, DatasetLoader loader) throws IOException {
 
         _monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Creating data folds");
         Folds folds = splitDataset(goldAlignments, nFolds);
@@ -127,8 +128,8 @@ public class CrossFold {
         AlignmentSet as = new AlignmentSet();
         for (int i = 0; i < nFolds; i++) {
             monitor.foldNo++;
-            Train.execute(leftModel, rightModel, folds.train(goldAlignments, i), negativeSampling, config, monitor);
-            as.addAll(Main.execute(leftModel, rightModel, config, monitor, folds.leftSplit.get(i), folds.rightSplit.get(i)));
+            Train.execute(leftModel, rightModel, folds.train(goldAlignments, i), negativeSampling, config, monitor,loader);
+            as.addAll(Main.execute(leftModel, rightModel, config, monitor, folds.leftSplit.get(i), folds.rightSplit.get(i),loader));
         }
         monitor.foldNo = 0;
 
@@ -213,9 +214,11 @@ public class CrossFold {
             if (configuration == null || !configuration.exists()) {
                 badOptions(p, "Configuration does not exist or not specified");
             }
-            double negativeSampling = os.has("s") ? (Double)os.valueOf("s") : 5.0;
+            @SuppressWarnings("null")
+            double negativeSampling = os.has("s")  ? (Double)os.valueOf("s") : 5.0;
             execute(left, right, gold, nFolds, negativeSampling, outputFile, configuration,
-                    os.has("q") ? new Main.NoMonitor() : new Main.StdErrMonitor());
+                    os.has("q") ? new Main.NoMonitor() : new Main.StdErrMonitor(), 
+                    new DefaultDatasetLoader());
         } catch (Throwable x) {
             x.printStackTrace();
             System.exit(-1);
@@ -225,8 +228,8 @@ public class CrossFold {
     /** The maximum number of iterations to use in finding a good split */
     public static final int MAX_ITERS = 10;
 
-    private static List<Pair<String, String>> getAllPairs(AlignmentSet alignments) {
-        List<Pair<String, String>> pairs = new ArrayList<>();
+    private static List<Pair<Resource, Resource>> getAllPairs(AlignmentSet alignments) {
+        List<Pair<Resource, Resource>> pairs = new ArrayList<>();
         for (Alignment a : alignments) {
             pairs.add(new Pair(a.entity1, a.entity2));
         }
@@ -246,15 +249,15 @@ public class CrossFold {
      * right (object) side
      */
     public static Folds splitDataset(AlignmentSet alignments, int folds) {
-        final List<Pair<String, String>> allPairs = getAllPairs(alignments);
-        final List<String> leftEntities = new ArrayList<>(allPairs.stream().map(x -> x._1).collect(Collectors.toSet()));
-        final List<String> rightEntities = new ArrayList<>(allPairs.stream().map(x -> x._2).collect(Collectors.toSet()));
+        final List<Pair<Resource, Resource>> allPairs = getAllPairs(alignments);
+        final List<Resource> leftEntities = new ArrayList<>(allPairs.stream().map(x -> x._1).collect(Collectors.toSet()));
+        final List<Resource> rightEntities = new ArrayList<>(allPairs.stream().map(x -> x._2).collect(Collectors.toSet()));
 
         Collections.shuffle(leftEntities);
         Collections.shuffle(rightEntities);
 
-        final Object2IntMap<String> leftIdx = reverseMap(leftEntities);
-        final Object2IntMap<String> rightIdx = reverseMap(rightEntities);
+        final Object2IntMap<Resource> leftIdx = reverseMap(leftEntities);
+        final Object2IntMap<Resource> rightIdx = reverseMap(rightEntities);
 
         final IntSet[] leftFolds = new IntSet[folds];
         final IntSet[] rightFolds = new IntSet[folds];
@@ -278,19 +281,19 @@ public class CrossFold {
             byRightFold[i] = i % folds;
         }
 
-        for (Pair<String, String> p : allPairs) {
+        for (Pair<Resource, Resource> p : allPairs) {
             forward[leftIdx.getInt(p._1)].add(rightIdx.getInt(p._2));
             backward[rightIdx.getInt(p._2)].add(leftIdx.getInt(p._1));
         }
 
-        final int[] lsize = new int[folds];
-        final int[] rsize = new int[folds];
+        //final int[] lsize = new int[folds];
+        //final int[] rsize = new int[folds];
         int inlinks = 0;
         final int alllinks = allPairs.size();
 
         for (int i = 0; i < folds; i++) {
-            lsize[i] = leftFolds[i].size();
-            rsize[i] = rightFolds[i].size();
+            //lsize[i] = leftFolds[i].size();
+            //rsize[i] = rightFolds[i].size();
             for (int l : leftFolds[i]) {
                 for (int r : forward[l]) {
                     if (rightFolds[i].contains(r)) {
@@ -333,7 +336,7 @@ public class CrossFold {
 
     }
 
-    private static StepResult step(final List<String> entities, final IntSet[] links,
+    private static StepResult step(final List<Resource> entities, final IntSet[] links,
             final IntSet[] reverseFolds, final int[] byFold,
             int inlinks, final int alllinks,
             final IntSet[] leftFolds) {
@@ -389,7 +392,7 @@ public class CrossFold {
 
     }
 
-    private static List<Set<String>> mapSplit(IntSet[] left, List<String> entities) {
+    private static List<Set<Resource>> mapSplit(IntSet[] left, List<Resource> entities) {
         return Arrays.asList(left).stream().map(x -> x.stream().map(y -> entities.get(y)).collect(Collectors.toSet())).collect(Collectors.toList());
     }
 
@@ -405,8 +408,8 @@ public class CrossFold {
         return i;
     }
 
-    private static Object2IntMap<String> reverseMap(List<String> leftEntities) {
-        Object2IntMap<String> m = new Object2IntOpenHashMap<>();
+    private static Object2IntMap<Resource> reverseMap(List<Resource> leftEntities) {
+        Object2IntMap<Resource> m = new Object2IntOpenHashMap<>();
         for (int i = 0; i < leftEntities.size(); i++) {
             m.put(leftEntities.get(i), i);
         }
@@ -421,9 +424,9 @@ public class CrossFold {
         /**
          * The left and right split
          */
-        public final List<Set<String>> leftSplit, rightSplit;
+        public final List<Set<Resource>> leftSplit, rightSplit;
 
-        public Folds(List<Set<String>> leftSplit, List<Set<String>> rightSplit) {
+        public Folds(List<Set<Resource>> leftSplit, List<Set<Resource>> rightSplit) {
             this.leftSplit = leftSplit;
             this.rightSplit = rightSplit;
         }

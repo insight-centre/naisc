@@ -27,6 +27,7 @@ import java.util.Set;
 import org.apache.jena.rdf.model.Model;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
+import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.LensFactory;
 import org.insightcentre.uld.naisc.Matcher;
@@ -133,7 +134,7 @@ public class Configuration {
         this.description = description;
     }
 
-    public List<GraphFeature> makeDataFeatures(Model model) {
+    public List<GraphFeature> makeDataFeatures(Dataset model) {
         List<GraphFeature> extractors = new ArrayList<>();
         for (GraphFeatureConfiguration config : dataFeatures) {
             GraphFeatureFactory extractor = Services.get(GraphFeatureFactory.class, config.name);
@@ -155,7 +156,7 @@ public class Configuration {
         return extractors;
     }
 
-    public List<Lens> makeLenses(Model model) {
+    public List<Lens> makeLenses(Dataset model) {
         List<Lens> ls = new ArrayList<>();
         for (LensConfiguration config : lenses) {
             LensFactory lens = Services.get(LensFactory.class, config.name);

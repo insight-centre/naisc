@@ -15,5 +15,5 @@ public interface GraphFeatureFactory {
      * @param params Configuration parameters for this lens
      * @return The graph feature
      */
-    GraphFeature makeFeature(Model sparqlData, Map<String, Object> params);
+    GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params);
 }

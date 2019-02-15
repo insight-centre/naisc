@@ -3,7 +3,6 @@ package org.insightcentre.uld.naisc.main;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Iterator;
@@ -12,12 +11,12 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.BlockingStrategy;
+import org.insightcentre.uld.naisc.Dataset;
+import org.insightcentre.uld.naisc.DatasetLoader;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.Matcher;
@@ -57,13 +56,16 @@ public class Main {
      * @param outputFile The output file to write to (null for STDOUT)
      * @param outputXML If true output XML
      * @param monitor Listener for status updates
+     * @param loader The loader of datasets
      */
+    @SuppressWarnings("UseSpecificCatch")
     public static void execute(File leftFile, File rightFile, File configuration,
-            File outputFile, boolean outputXML, ExecuteListener monitor) {
+            File outputFile, boolean outputXML, ExecuteListener monitor,
+            DatasetLoader loader) {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading Configuration");
             final Configuration config = mapper.readValue(configuration, Configuration.class);
-            execute(leftFile, rightFile, config, outputFile, outputXML, monitor);
+            execute(leftFile, rightFile, config, outputFile, outputXML, monitor, loader);
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
@@ -79,11 +81,13 @@ public class Main {
      * @param outputFile The output file to write to (null for STDOUT)
      * @param outputXML If true output XML
      * @param monitor Listener for status updates
+     * @param loader The loader of datasets
      */
+    @SuppressWarnings("UseSpecificCatch")
     public static void execute(File leftFile, File rightFile, Configuration config,
-            File outputFile, boolean outputXML, ExecuteListener monitor) {
+            File outputFile, boolean outputXML, ExecuteListener monitor, DatasetLoader loader) {
         try {
-            AlignmentSet finalAlignment = execute(leftFile, rightFile, config, monitor);
+            AlignmentSet finalAlignment = execute(leftFile, rightFile, config, monitor, loader);
             monitor.updateStatus(Stage.FINALIZING, "Saving");
             if (outputXML) {
                 finalAlignment.toXML(outputFile == null ? System.out : new PrintStream(outputFile));
@@ -104,20 +108,20 @@ public class Main {
      * @param rightFile The right RDF dataset to align
      * @param config The configuration
      * @param monitor Listener for status updates
+     * @param loader The loader of datasets
      * @return The alignment
      */
+    @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute(File leftFile, File rightFile, Configuration config,
-            ExecuteListener monitor) { 
+            ExecuteListener monitor, DatasetLoader loader) { 
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
-            Model leftModel = ModelFactory.createDefaultModel();
-            leftModel.read(new FileReader(leftFile), leftFile.toURI().toString(), "riot");
+            Dataset leftModel = loader.fromFile(leftFile);
 
             monitor.updateStatus(Stage.INITIALIZING, "Reading right dataset");
-            Model rightModel = ModelFactory.createDefaultModel();
-            rightModel.read(new FileReader(rightFile), rightFile.toURI().toString(), "riot");
+            Dataset rightModel = loader.fromFile(rightFile);
             
-            return execute(leftModel, rightModel, config, monitor, null, null);
+            return execute(leftModel, rightModel, config, monitor, null, null, loader);
             
         } catch (Exception x) {
             x.printStackTrace();
@@ -126,17 +130,16 @@ public class Main {
         }
     }
     
-    public static AlignmentSet execute(Model leftModel, Model rightModel, Configuration config,
-            ExecuteListener monitor, Set<String> left, Set<String> right) {
+    @SuppressWarnings("UseSpecificCatch")
+    public static AlignmentSet execute(Dataset leftModel, Dataset rightModel, Configuration config,
+            ExecuteListener monitor, Set<Resource> left, Set<Resource> right, DatasetLoader loader) {
         try {
             
             monitor.updateStatus(Stage.INITIALIZING, "Loading blocking strategy");
             BlockingStrategy blocking = config.makeBlockingStrategy();
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading lenses");
-            Model combined = ModelFactory.createDefaultModel();
-            combined.add(leftModel);
-            combined.add(rightModel);
+            Dataset combined = loader.combine(leftModel, rightModel);
             List<Lens> lenses = config.makeLenses(combined);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Feature Extractors");
@@ -252,7 +255,8 @@ public class Main {
             //final boolean hard = !os.has("easy");
             execute(left, right, configuration, outputFile, outputXML,
                     os.valueOf("q").equals(Boolean.TRUE)
-                    ? new NoMonitor() : new StdErrMonitor());
+                    ? new NoMonitor() : new StdErrMonitor(),
+                    new DefaultDatasetLoader());
         } catch (Throwable x) {
             x.printStackTrace();
             System.exit(-1);
@@ -286,9 +290,9 @@ public class Main {
     
     private static class FilterBlocks implements Iterable<Pair<Resource, Resource>> {
         private final Iterable<Pair<Resource, Resource>> iter;
-        private final Set<String> left, right;
+        private final Set<Resource> left, right;
 
-        public FilterBlocks(Iterable<Pair<Resource, Resource>> iter, Set<String> left, Set<String> right) {
+        public FilterBlocks(Iterable<Pair<Resource, Resource>> iter, Set<Resource> left, Set<Resource> right) {
             this.iter = iter;
             this.left = left;
             this.right = right;
@@ -316,7 +320,7 @@ public class Main {
                 private Pair<Resource, Resource> advance() {
                     while(i.hasNext()) {
                         Pair<Resource, Resource> x = i.next();
-                        if(left.contains(x._1.getURI()) && right.contains(x._2.getURI())) {
+                        if(left.contains(x._1) && right.contains(x._2)) {
                             return x;
                         }
                     }

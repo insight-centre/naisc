@@ -6,12 +6,11 @@ import eu.monnetproject.lang.Language;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
+import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.LensFactory;
 import org.insightcentre.uld.naisc.util.LangStringPair;
@@ -32,7 +31,8 @@ public class URI implements LensFactory {
     }
 
     @Override
-    public Lens makeLens(String tag, Model sparqlData, Map<String, Object> params) {
+    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
+        final Model sparqlData = dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         return new URIImpl(tag, config.location, config.form, config.separator);
     }

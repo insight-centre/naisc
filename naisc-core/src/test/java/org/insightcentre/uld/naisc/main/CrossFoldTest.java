@@ -9,9 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import org.apache.jena.rdf.model.AnonId;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.insightcentre.uld.naisc.Alignment;
 import static org.insightcentre.uld.naisc.Alignment.SKOS_EXACT_MATCH;
@@ -48,6 +50,10 @@ public class CrossFoldTest {
     public void tearDown() {
     }
 
+    private Model m = ModelFactory.createDefaultModel();
+    private Resource r(String s) {
+        return m.createResource(s);
+    }
     /**
      * Test of splitDataset method, of class CrossFold.
      */
@@ -57,10 +63,10 @@ public class CrossFoldTest {
         Model model = ModelFactory.createDefaultModel();
         Property p = model.createProperty(Alignment.SKOS_EXACT_MATCH);
         AlignmentSet alignments = new AlignmentSet();
-        alignments.add(new Alignment("file:left#e1", "file:right#e1", 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment("file:left#e2", "file:right#e2", 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment("file:left#e3", "file:right#e3", 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment("file:left#e4", "file:right#e4", 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("file:left#e1"), r("file:right#e1"), 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("file:left#e2"), r("file:right#e2"), 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("file:left#e3"), r("file:right#e3"), 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("file:left#e4"), r("file:right#e4"), 1.0, SKOS_EXACT_MATCH));
         int folds = 4;
         CrossFold.Folds result = CrossFold.splitDataset(alignments, folds);
         assertEquals(folds,result.leftSplit.size());
@@ -80,7 +86,7 @@ public class CrossFoldTest {
         for(int i = 0; i < 1000; i++) {
             int l = rand.nextInt(100);
             int r = rand.nextInt(100);
-            alignments.add(new Alignment("file:left#e" + l, "file:right#e" + r, 1.0, SKOS_EXACT_MATCH));
+            alignments.add(new Alignment(r("file:left#e" + l), r("file:right#e" + r), 1.0, SKOS_EXACT_MATCH));
             
         }
         int folds = 10;
@@ -103,25 +109,25 @@ public class CrossFoldTest {
         System.out.println("testResult");
         Model model = ModelFactory.createDefaultModel();
         AlignmentSet alignments = new AlignmentSet();
-        alignments.add(new Alignment("file:left#e1", "file:right#e1", 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment("file:left#e2", "file:right#e2", 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment("file:left#e2", "file:right#e3", 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment("file:left#e3", "file:right#e3", 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment("file:left#e4", "file:right#e4", 1.0, SKOS_EXACT_MATCH));
-        List<Set<String>> leftSplit = new ArrayList<>();
+        alignments.add(new Alignment(r("file:left#e1"), r("file:right#e1"), 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("file:left#e2"), r("file:right#e2"), 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("file:left#e2"), r("file:right#e3"), 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("file:left#e3"), r("file:right#e3"), 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("file:left#e4"), r("file:right#e4"), 1.0, SKOS_EXACT_MATCH));
+        List<Set<Resource>> leftSplit = new ArrayList<>();
         leftSplit.add(new HashSet<>());
-        leftSplit.get(0).add("file:left#e1");
-        leftSplit.get(0).add("file:left#e2");
+        leftSplit.get(0).add(r("file:left#e1"));
+        leftSplit.get(0).add(r("file:left#e2"));
         leftSplit.add(new HashSet<>());
-        leftSplit.get(0).add("file:left#e3");
-        leftSplit.get(0).add("file:left#e4");
-        List<Set<String>> rightSplit = new ArrayList<>();
+        leftSplit.get(0).add(r("file:left#e3"));
+        leftSplit.get(0).add(r("file:left#e4"));
+        List<Set<Resource>> rightSplit = new ArrayList<>();
         rightSplit.add(new HashSet<>());
-        rightSplit.get(0).add("file:right#e1");
-        rightSplit.get(0).add("file:right#e2");
+        rightSplit.get(0).add(r("file:right#e1"));
+        rightSplit.get(0).add(r("file:right#e2"));
         rightSplit.add(new HashSet<>());
-        rightSplit.get(0).add("file:right#e3");
-        rightSplit.get(0).add("file:right#e4");
+        rightSplit.get(0).add(r("file:right#e3"));
+        rightSplit.get(0).add(r("file:right#e4"));
         CrossFold.Folds result = new CrossFold.Folds(leftSplit, rightSplit);
         AlignmentSet fold1 = result.train(alignments, 0);
         AlignmentSet fold2 = result.test(alignments, 1);

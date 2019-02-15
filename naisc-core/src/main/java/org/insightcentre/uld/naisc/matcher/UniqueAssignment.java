@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
@@ -105,10 +106,10 @@ public class UniqueAssignment implements MatcherFactory {
                 relations.add(alignment.relation);
             }
             for (String rel : relations) {
-                Object2IntMap<String> lefts = new Object2IntOpenHashMap<>();
-                Object2IntMap<String> rights = new Object2IntOpenHashMap<>();
-                Int2ObjectMap<String> linv = new Int2ObjectArrayMap<>();
-                Int2ObjectMap<String> rinv = new Int2ObjectArrayMap<>();
+                Object2IntMap<Resource> lefts = new Object2IntOpenHashMap<>();
+                Object2IntMap<Resource> rights = new Object2IntOpenHashMap<>();
+                Int2ObjectMap<Resource> linv = new Int2ObjectArrayMap<>();
+                Int2ObjectMap<Resource> rinv = new Int2ObjectArrayMap<>();
                 Object2DoubleMap<IntStringTriple> scores = new Object2DoubleLinkedOpenHashMap<>();
 
                 for (Alignment alignment : matches.getAlignments()) {

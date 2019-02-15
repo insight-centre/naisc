@@ -7,6 +7,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.BlockingStrategy;
+import org.insightcentre.uld.naisc.main.ModelDataset;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -63,7 +64,7 @@ public class AllTest {
         right.add(right.createStatement(right.createResource("file:fuzz3"), right.createProperty("file:bar"), right.createResource("file:baz")));
         right.add(right.createStatement(right.createResource(new AnonId()), right.createProperty("file:bar"), right.createResource("file:baz")));
         
-        final Iterable<Pair<Resource, Resource>> block = strategy.block(left, right);
+        final Iterable<Pair<Resource, Resource>> block = strategy.block(new ModelDataset(left), new ModelDataset(right));
         int i = 0;
         for(Pair<Resource, Resource> r : block) { 
             System.err.println(String.format("%s <-> %s", r._1, r._2));

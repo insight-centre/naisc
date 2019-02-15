@@ -15,6 +15,7 @@ import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
+import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.LensFactory;
 import org.insightcentre.uld.naisc.util.Labels;
@@ -33,7 +34,8 @@ public class Label implements LensFactory {
     private ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
-    public Lens makeLens(String tag, Model sparqlData, Map<String, Object> params) {
+    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
+        final Model sparqlData = dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = mapper.convertValue(params, Configuration.class);
         return new LabelImpl(config.property, config.language, tag, sparqlData);
     }
@@ -72,7 +74,6 @@ public class Label implements LensFactory {
                 NodeIterator iter1 = model.listObjectsOfProperty(entity1, lproperty);
                 while (iter1.hasNext()) {
                     RDFNode node1 = iter1.next();
-                    Language l1 = getLang(node1);
                     if (node1.isLiteral()) {
                         lit1.add(node1.asLiteral());
                     }
@@ -84,7 +85,6 @@ public class Label implements LensFactory {
                 NodeIterator iter2 = model.listObjectsOfProperty(entity2, rproperty);
                 while (iter2.hasNext()) {
                     RDFNode node2 = iter2.next();
-                    Language l2 = getLang(node2);
                     if (node2.isLiteral()) {
                         lit2.add(node2.asLiteral());
                     }
@@ -92,9 +92,9 @@ public class Label implements LensFactory {
                 }
             }
             List<LangStringPair> labels = Labels.closestLabelsByLang(lit1, lit2);
-            
-            for(LangStringPair label : labels) {
-                if(language == null || label.lang1.equals(language)) {
+
+            for (LangStringPair label : labels) {
+                if (language == null || label.lang1.equals(language)) {
                     return new Some<>(label);
                 }
             }

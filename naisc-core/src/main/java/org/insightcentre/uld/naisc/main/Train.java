@@ -27,6 +27,8 @@ import org.apache.jena.riot.RiotException;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.BlockingStrategy;
+import org.insightcentre.uld.naisc.Dataset;
+import org.insightcentre.uld.naisc.DatasetLoader;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.FeatureSetWithScore;
 import org.insightcentre.uld.naisc.Lens;
@@ -104,14 +106,16 @@ public class Train {
      * @param negativeSampling The rate at which to generate negative examples
      * @param configuration The configuration file
      * @param monitor The listener for events
+     * @param loader The dataset loader
      * @throws IOException If an IO error occurs
      */
     public static void execute(File leftFile, File rightFile, File alignment,
             double negativeSampling,
-            File configuration, ExecuteListener monitor) throws IOException {
+            File configuration, ExecuteListener monitor, 
+            DatasetLoader loader) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
         final Configuration config = mapper.readValue(configuration, Configuration.class);
-        execute(leftFile, rightFile, alignment, negativeSampling, config, monitor);
+        execute(leftFile, rightFile, alignment, negativeSampling, config, monitor, loader);
     }
 
     /**
@@ -122,23 +126,22 @@ public class Train {
      * @param alignment The alignments to learn
      * @param negativeSampling The rate at which to generate negative examples
      * @param config The configuration object
-     * @param monitor The listener for events
+     * @param monitor The listener for eventsDataset
+     * @param loader The dataset loader
      * @throws IOException If an IO error occurs
      */
     public static void execute(File leftFile, File rightFile, File alignment,
             double negativeSampling,
-            Configuration config, ExecuteListener monitor) throws IOException {
+            Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
-        Model leftModel = ModelFactory.createDefaultModel();
-        leftModel.read(new FileReader(leftFile), leftFile.toURI().toString(), "riot");
+        Dataset leftModel = loader.fromFile(leftFile);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
-        Model rightModel = ModelFactory.createDefaultModel();
-        rightModel.read(new FileReader(rightFile), rightFile.toURI().toString(), "riot");
+        Dataset rightModel = loader.fromFile(rightFile);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading alignments");
         AlignmentSet goldAlignments = readAlignments(alignment);
-        execute(leftModel, rightModel, goldAlignments, negativeSampling, config, monitor);
+        execute(leftModel, rightModel, goldAlignments, negativeSampling, config, monitor, loader);
     }
 
     /**
@@ -151,19 +154,18 @@ public class Train {
      * @param negativeSampling The rate at which to generate negative examples
      * (zero for no negative sampling)
      * @param monitor The listener for events
+     * @param loader The dataset loader
      * @throws IOException If an IO error occurs
      */
-    public static void execute(Model leftModel, Model rightModel,
+    public static void execute(Dataset leftModel, Dataset rightModel,
             AlignmentSet goldAlignments, double negativeSampling,
-            Configuration config, ExecuteListener monitor) throws IOException {
+            Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading blocking strategy");
         BlockingStrategy blocking = config.makeBlockingStrategy();
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading lenses");
-        Model combined = ModelFactory.createDefaultModel();
-        combined.add(leftModel);
-        combined.add(rightModel);
+        Dataset combined = loader.combine(leftModel, rightModel);
         List<Lens> lenses = config.makeLenses(combined);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
@@ -210,7 +212,7 @@ public class Train {
                         String.format("Generating Features (%.2f%%)", (double) count / estimatedSize * 100.0));
             }
             for (String prop : goldProps) {
-                Option<Alignment> a = goldAlignments.find(block._1.getURI(), block._2.getURI(), prop);
+                Option<Alignment> a = goldAlignments.find(block._1, block._2, prop);
 
                 if (a.has()) {
                     FeatureSet featureSet = makeFeatures(block._1, block._2, lenses, monitor, textFeatures, dataFeatures);
@@ -229,8 +231,8 @@ public class Train {
 
         int unblockedGold = 0;
         for (Alignment a : goldAlignments) {
-            FeatureSet featureSet = makeFeatures(leftModel.createResource(a.entity1),
-                    rightModel.createResource(a.entity2), lenses, monitor, textFeatures, dataFeatures);
+            FeatureSet featureSet = makeFeatures(a.entity1,
+                    a.entity2, lenses, monitor, textFeatures, dataFeatures);
             trainingData.get(a.relation).add(featureSet.withScore(a.score));
             unblockedGold++;
         }
@@ -334,7 +336,8 @@ public class Train {
             };
             final double negativeSampling = os.has("n") ? (Double) os.valueOf("n") : 5.0;
             execute(left, right, alignment, negativeSampling, configuration,
-                    os.has("q") ? new Main.NoMonitor() : new Main.StdErrMonitor());
+                    os.has("q") ? new Main.NoMonitor() : new Main.StdErrMonitor(),
+                    new DefaultDatasetLoader());
         } catch (Throwable x) {
             x.printStackTrace();
             System.exit(-1);

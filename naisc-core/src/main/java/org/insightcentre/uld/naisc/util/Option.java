@@ -21,6 +21,12 @@ public interface Option<A> extends Collection<A> {
      */
     A getOrElse(A a);
     /**
+     * Get the value of raise an exception
+     * @param exception The exception to raise
+     * @returns A if this value is some
+     */
+    A getOrExcept(RuntimeException exception);
+    /**
      * Is this Some
      * @return True if Some, false if None
      */

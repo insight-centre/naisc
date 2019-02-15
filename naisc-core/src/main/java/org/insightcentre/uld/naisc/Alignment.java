@@ -18,11 +18,11 @@ public class Alignment {
     /**
      * The first entity that is aligned
      */
-    public final String entity1;
+    public final Resource entity1;
     /**
      * The second entity that is aligned
      */
-    public final String entity2;
+    public final Resource entity2;
     /**
      * The score (between 0 and 1) of the alignment
      */
@@ -41,8 +41,8 @@ public class Alignment {
     public Alignment(Resource entity1,
             Resource entity2,
             double score) {
-        this.entity1 = entity1.getURI();
-        this.entity2 = entity2.getURI();
+        this.entity1 = entity1;
+        this.entity2 = entity2;
         this.score = score;
         this.relation = SKOS_EXACT_MATCH;
         assert (score >= 0 && score <= 1);
@@ -51,8 +51,8 @@ public class Alignment {
     public Alignment(Resource entity1,
             Resource entity2,
             double score, String relation) {
-        this.entity1 = entity1.getURI();
-        this.entity2 = entity2.getURI();
+        this.entity1 = entity1;
+        this.entity2 = entity2;
         this.score = score;
         this.relation = relation;
         assert (score >= 0 && score <= 1);
@@ -67,22 +67,11 @@ public class Alignment {
         assert (score >= 0 && score <= 1);
     }
 
-    @JsonCreator
-    public Alignment(@JsonProperty("entity1") String entity1,
-            @JsonProperty("entity2") String entity2,
-            @JsonProperty("score") double score,
-            @JsonProperty("relation") String relation) {
-        this.entity1 = entity1;
-        this.entity2 = entity2;
-        this.score = score;
-        this.relation = relation;
-        assert (score >= 0 && score <= 1);
-    }
 
     public Alignment(Statement statement, double score) {
         assert(statement.getSubject().isURIResource() && statement.getObject().isURIResource());
-        this.entity1 = statement.getSubject().getURI();
-        this.entity2 = statement.getObject().asResource().getURI();
+        this.entity1 = statement.getSubject();
+        this.entity2 = statement.getObject().asResource();
         this.score = score;
         this.relation = statement.getPredicate().getURI();
         assert (score >= 0 && score <= 1);

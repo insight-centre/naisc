@@ -183,19 +183,35 @@ public final class Labels {
                 map.get(lang)._2.add(l.getString());
             }
         }
-        
+
         for (Literal l : ss1) {
             if (l.getLanguage() == null || l.getLanguage().equals("")) {
-                for(Language lang : map.keySet()) {
-                    map.get(lang)._1.add(l.getString());
+                if (map.isEmpty()) {
+                    if (!map.containsKey(Language.UNDEFINED)) {
+                        map.put(Language.UNDEFINED, new Pair<>(new ArrayList<>(), new ArrayList<>()));
+                    }
+                    map.get(Language.UNDEFINED)._1.add(l.getString());
+
+                } else {
+                    for (Language lang : map.keySet()) {
+                        map.get(lang)._1.add(l.getString());
+                    }
                 }
             }
         }
-        
+
         for (Literal l : ss2) {
             if (l.getLanguage() == null || l.getLanguage().equals("")) {
-                for(Language lang : map.keySet()) {
-                    map.get(lang)._2.add(l.getString());
+                if (map.isEmpty()) {
+                    if (!map.containsKey(Language.UNDEFINED)) {
+                        map.put(Language.UNDEFINED, new Pair<>(new ArrayList<>(), new ArrayList<>()));
+                    }
+                    map.get(Language.UNDEFINED)._2.add(l.getString());
+
+                } else {
+                    for (Language lang : map.keySet()) {
+                        map.get(lang)._2.add(l.getString());
+                    }
                 }
             }
         }

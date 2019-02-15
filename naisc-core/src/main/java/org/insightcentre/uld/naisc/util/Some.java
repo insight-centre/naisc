@@ -29,6 +29,11 @@ public final class Some<A> extends AbstractCollection<A> implements Option<A> {
     }
 
     @Override
+    public A getOrExcept(RuntimeException exception) {
+        return a;
+    }
+
+    @Override
     public Option<A> or(Option<A> a) {
         return this;
     }

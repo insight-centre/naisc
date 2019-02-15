@@ -8,6 +8,7 @@ import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
@@ -43,6 +44,10 @@ public class EvaluateTest {
     public void tearDown() {
     }
 
+    private Model m = ModelFactory.createDefaultModel();
+    private Resource r(String s) {
+        return m.createResource(s);
+    }
     /**
      * Test of evaluate method, of class Evaluate.
      */
@@ -50,14 +55,14 @@ public class EvaluateTest {
     public void testEvaluate() {
         System.out.println("evaluate");
         AlignmentSet output = new AlignmentSet();
-        output.add(new Alignment("file:id1", "file:id2", 0.0, Alignment.SKOS_EXACT_MATCH));
-        output.add(new Alignment("file:id2", "file:id3", 0.56, Alignment.SKOS_EXACT_MATCH));
-        output.add(new Alignment("file:id3", "file:id1", 1.0, Alignment.SKOS_EXACT_MATCH));
-        output.add(new Alignment("file:id1", "file:id2", 0.3, "file:customProp"));
+        output.add(new Alignment(r("file:id1"), r("file:id2"), 0.0, Alignment.SKOS_EXACT_MATCH));
+        output.add(new Alignment(r("file:id2"), r("file:id3"), 0.56, Alignment.SKOS_EXACT_MATCH));
+        output.add(new Alignment(r("file:id3"), r("file:id1"), 1.0, Alignment.SKOS_EXACT_MATCH));
+        output.add(new Alignment(r("file:id1"), r("file:id2"), 0.3, "file:customProp"));
         AlignmentSet gold = new AlignmentSet();
-        gold.add(new Alignment("file:id1", "file:id2", 0.5, Alignment.SKOS_EXACT_MATCH));
-        gold.add(new Alignment("file:id2", "file:id1", 0.3, Alignment.SKOS_EXACT_MATCH));
-        gold.add(new Alignment("file:id1","file:id2", 0.3, "file:redHerring"));
+        gold.add(new Alignment(r("file:id1"), r("file:id2"), 0.5, Alignment.SKOS_EXACT_MATCH));
+        gold.add(new Alignment(r("file:id2"), r("file:id1"), 0.3, Alignment.SKOS_EXACT_MATCH));
+        gold.add(new Alignment(r("file:id1"),r("file:id2"), 0.3, "file:redHerring"));
         
         Evaluate.EvaluationResults expResult = new Evaluate.EvaluationResults();
         expResult.tp = 1;

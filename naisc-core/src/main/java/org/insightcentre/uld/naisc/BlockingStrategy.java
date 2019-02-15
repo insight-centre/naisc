@@ -21,7 +21,7 @@ public interface BlockingStrategy {
      * @return A list of all of the pairs where the first element is in left and
      * the right element is in right
      */
-    Iterable<Pair<Resource, Resource>> block(Model left, Model right);
+    Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right);
 
     /**
      * Estimate the number of results that blocking will return. Default implementation
@@ -31,7 +31,7 @@ public interface BlockingStrategy {
      * @param right The right RDF document to match
      * @return The estimated size
      */
-    default int estimateSize(Model left, Model right) {
+    default int estimateSize(Dataset left, Dataset right) {
         Iterator<Pair<Resource, Resource>> i = block(left, right).iterator();
         int n = 0;
         while (i.hasNext()) {

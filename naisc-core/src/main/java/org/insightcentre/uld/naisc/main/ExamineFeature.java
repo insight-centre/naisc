@@ -13,6 +13,8 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
+import org.insightcentre.uld.naisc.Dataset;
+import org.insightcentre.uld.naisc.DatasetLoader;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.Lens;
@@ -29,14 +31,14 @@ import org.insightcentre.uld.naisc.util.Option;
 public class ExamineFeature {
 
     public static FeatureSet examineFeature(File leftFile, File rightFile, File configuration,
-            String left, String right, ExecuteListener monitor) {
+            String left, String right, ExecuteListener monitor, DatasetLoader loader) {
         try {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
             final Configuration config = mapper.readValue(configuration, Configuration.class);
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
-            Model leftModel = ModelFactory.createDefaultModel();
-            leftModel.read(new FileReader(leftFile), leftFile.toURI().toString(), "riot");
+            Dataset leftDataset = loader.fromFile(leftFile);
+            Model leftModel = leftDataset.asModel().get();
             Resource res1 = leftModel.createResource(left);
             if (!leftModel.listStatements(res1, null, (RDFNode) null).hasNext()) {
                 System.err.printf("%s is not in model\n", res1);
@@ -48,7 +50,8 @@ public class ExamineFeature {
             }
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
-            Model rightModel = ModelFactory.createDefaultModel();
+            Dataset rightDataset = loader.fromFile(rightFile);
+            Model rightModel = rightDataset.asModel().get();
             rightModel.read(new FileReader(rightFile), rightFile.toURI().toString(), "riot");
             Resource res2 = rightModel.createResource(right);
             if (!rightModel.listStatements(res2, null, (RDFNode) null).hasNext()) {
@@ -56,9 +59,7 @@ public class ExamineFeature {
             }
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading lenses");
-            Model combined = ModelFactory.createDefaultModel();
-            combined.add(leftModel);
-            combined.add(rightModel);
+            Dataset combined = loader.combine(leftDataset, rightDataset);
             List<Lens> lenses = config.makeLenses(combined);
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
@@ -149,7 +150,7 @@ public class ExamineFeature {
 
             FeatureSet fs = examineFeature(left, right, configuration, os.nonOptionArguments().get(2).toString(), os.nonOptionArguments().get(3).toString(),
                     os.valueOf("q") != null && os.valueOf("q").equals(Boolean.TRUE)
-                    ? new NoMonitor() : new StdErrMonitor());
+                    ? new NoMonitor() : new StdErrMonitor(), new DefaultDatasetLoader());
 
             ObjectMapper mapper = new ObjectMapper();
             if (outputFile == null) {

@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.insightcentre.uld.naisc.AlignmentSet;
+import org.insightcentre.uld.naisc.DatasetLoader;
 import org.insightcentre.uld.naisc.main.Configuration;
 import org.insightcentre.uld.naisc.main.CrossFold;
 import org.insightcentre.uld.naisc.main.Evaluate;
@@ -122,6 +123,7 @@ public class ExecuteServlet extends HttpServlet {
         @Override
         public void run() {
             try {
+                final DatasetLoader loader = new MeasDatasetLoader();
                 final Dataset ds = new Dataset(new File(new File("datasets"), dataset));
                 isActive = true;
                 File f = new File("runs");
@@ -131,7 +133,7 @@ public class ExecuteServlet extends HttpServlet {
                 final AlignmentSet alignment;
                 if(mode == ExecutionMode.EVALUATE) {
                     alignment = Main.execute(ds.left(), ds.right(),
-                            config, listener);
+                            config, listener, loader);
                     if (alignment == null) {
                         return;
                     }
@@ -151,7 +153,7 @@ public class ExecuteServlet extends HttpServlet {
                     }
                     Train.execute(ds.left(),
                             ds.right(), 
-                            alignFile.get(), 5.0, config, listener);
+                            alignFile.get(), 5.0, config, listener, loader);
                     time = System.currentTimeMillis() - time;
                     er = null;
                     alignment = null;
@@ -163,7 +165,7 @@ public class ExecuteServlet extends HttpServlet {
                     CrossFold.CrossFoldResult result = CrossFold.execute(
                             ds.left(),
                             ds.right(), 
-                            alignFile.get(), 10, 5.0, config, listener);
+                            alignFile.get(), 10, 5.0, config, listener, loader);
                     time = System.currentTimeMillis() - time;
                     er = result.results;
                     alignment = result.alignments;

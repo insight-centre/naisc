@@ -6,6 +6,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
+import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.util.Pair;
 
 /**
@@ -24,7 +25,9 @@ public class All implements BlockingStrategyFactory {
     private static class AllImpl implements BlockingStrategy {
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Model left, Model right) {
+        public Iterable<Pair<Resource, Resource>> block(Dataset _left, Dataset _right) {
+            final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
+            final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
             return new Iterable<Pair<Resource, Resource>>() {
                 @Override
                 public Iterator<Pair<Resource, Resource>> iterator() {
@@ -34,7 +37,9 @@ public class All implements BlockingStrategyFactory {
         }
 
         @Override
-        public int estimateSize(Model left, Model right) {
+        public int estimateSize(Dataset _left, Dataset _right) {
+            final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
+            final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
             Iterator<Resource> i1 = left.listSubjects();
             Iterator<Resource> i2 = right.listSubjects();
             int n = 0;
