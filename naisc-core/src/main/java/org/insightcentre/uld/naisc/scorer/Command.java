@@ -117,7 +117,7 @@ public class Command implements ScorerFactory {
                 in = new BufferedReader(new InputStreamReader(pr.getInputStream()));
 
             } catch (IOException x) {
-                throw new RuntimeException(x);
+                throw new ExternalCommandException(x);
             }
         }
 
