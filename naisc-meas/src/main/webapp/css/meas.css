@@ -146,10 +146,6 @@ input:invalid {
     width: 100%;
 }
 
-.btn-primary {
-    margin: 6px;
-}
-
-.btn-success {
+.btn-user {
     margin: 6px;
 }

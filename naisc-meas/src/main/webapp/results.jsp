@@ -94,10 +94,10 @@
                     </tr>
                 </table>
                 <div class="row spaced-buttons">
-                <button type="button" class="btn btn-success" v-on:click.prevent="rerun()" data-toggle="tooltip" data-placement="top" title="Rerun the system including the correct links"><i class="fas fa-redo"></i> Rerun</button>
-                <button type="button" class="btn btn-success" v-on:click.prevent="retrain()" data-toggle="tooltip" data-placement="top" title="Retrain the model using the marked data"><i class="fas fa-dumbbell"></i> Retrain</button>
-                <a href="/manage/download_all/<%= request.getParameter("id") %>"><button type="button" class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' or 'No'"><i class="fas fa-download"></i> Download output links</button></a>
-                <a href="/manage/download_valid/<%= request.getParameter("id") %>"><button type="button" class="btn btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' and new links"><i class="fas fa-check-double"></i> Download validated</button></a>
+                <button type="button" class="btn btn-user btn-success" v-on:click.prevent="rerun()" data-toggle="tooltip" data-placement="top" title="Rerun the system including the correct links"><i class="fas fa-redo"></i> Rerun</button>
+                <button type="button" class="btn btn-user btn-success" v-on:click.prevent="retrain()" data-toggle="tooltip" data-placement="top" title="Retrain the model using the marked data"><i class="fas fa-dumbbell"></i> Retrain</button>
+                <a href="/manage/download_all/<%= request.getParameter("id") %>"><button type="button" class="btn btn-user btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' or 'No'"><i class="fas fa-download"></i> Download output links</button></a>
+                <a href="/manage/download_valid/<%= request.getParameter("id") %>"><button type="button" class="btn btn-user btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' and new links"><i class="fas fa-check-double"></i> Download validated</button></a>
                 </div>
 
                 <div class="modal fade" id="updateElement" tabindex="-1" role="dialog"  aria-hidden="true">
@@ -332,6 +332,7 @@ var app = new Vue({
         alert("TODO");
     },
     prevResults() {
+        if(this.offset > 0) {
         var self = this;
         jQuery.ajax({
             url: "/manage/results?id=<%= request.getParameter("id") %>&offset=" + (this.offset-<%=limit%>) + "&limit=<%=limit%>",
@@ -341,8 +342,10 @@ var app = new Vue({
             }, 
             error: function(er){ document.write(er.responseText); }
         });
+        }
     },
     nextResults() {
+        if(this.offset + <%=limit%> < this.totalResults) {
         var self = this;
         jQuery.ajax({
             url: "/manage/results?id=<%= request.getParameter("id") %>&offset=" + (this.offset+<%=limit%>) + "&limit=<%=limit%>",
@@ -352,6 +355,7 @@ var app = new Vue({
             }, 
             error: function(er){ document.write(er.responseText); }
         });
+        } 
     }
   }
 });

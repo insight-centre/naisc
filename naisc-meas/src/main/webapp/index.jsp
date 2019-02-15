@@ -100,10 +100,10 @@
                         <select class="form-control" v-model="datasetName">
                             <option v-for="dataset in datasetNames" v-bind:value="dataset">{{dataset}}</option>
                         </select>
-                        <button type="button" class="btn btn-primary float-right" data-toggle="modal" data-target="#addDataset">
+                        <button type="button" class="btn btn-user btn-primary float-right" data-toggle="modal" data-target="#addDataset">
                             <i class="fas fa-upload"></i> Add dataset
                         </button>
-                        <button type="button" class="btn btn-primary float-right" data-toggle="modal" data-target="#downloadDataset" style="margin-right:6px;">
+                        <button type="button" class="btn btn-user btn-primary float-right" data-toggle="modal" data-target="#downloadDataset" style="margin-right:6px;">
                             <i class="fas fa-cloud-download-alt"></i> Download dataset
                         </button>
                     </div>
@@ -112,12 +112,12 @@
                         <select class="form-control" v-model="configName" @change="setConfig()">
                             <option v-for="(c,config) in configs" v-bind:value="config">{{config}}<span v-if="c.description"> - {{c.description}}</span></option>
                         </select>
-                        <button type="button" class="btn btn-primary float-right" data-toggle="modal" data-target="#addConfig">
+                        <button type="button" class="btn btn-user btn-primary float-right" data-toggle="modal" data-target="#addConfig">
                             <i class="fas fa-edit"></i>New Configuration</button>
                     </div>
-                    <button class="btn btn-success" type="button" v-on:click.prevent="startRun()"><i class="fas fa-play"></i> Start Run</button>
-                    <button class="btn btn-success" type="button" v-on:click.prevent="train()"><i class="fas fa-dumbbell"></i> Train Model</button>
-                    <button class="btn btn-success" type="button" v-on:click.prevent="crossfold()"><i class="fas fa-flask"></i> Cross-fold Evaluation</button>
+                    <button class="btn btn-user btn-success" type="button" v-on:click.prevent="startRun()"><i class="fas fa-play"></i> Start Run</button>
+                    <button class="btn btn-user btn-success" type="button" v-on:click.prevent="train()"><i class="fas fa-dumbbell"></i> Train Model</button>
+                    <button class="btn btn-user btn-success" type="button" v-on:click.prevent="crossfold()"><i class="fas fa-flask"></i> Cross-fold Evaluation</button>
                     <div v-if="configName" class="config">
                         <a v-on:click="toggleConfig()" ><i class="fas fa-angle-right" v-if="!showConfig"></i><i class="fas fa-angle-down" v-if="showConfig"></i> Show/hide configuration</a>
                     </div>
