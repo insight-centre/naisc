@@ -136,10 +136,10 @@
     <script src="/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
     <script src="/js/vue.js"></script>
 <script>
-var data = {"results":<%= Meas.loadRunResult(request.getParameter("id"), 0, limit) %>};
+var data = {"results":<%= Meas.loadRunResult(request.getParameter("id"), request.getParameter("offset") == null ? 0  : Integer.parseInt(request.getParameter("offset")), limit) %>};
 
 data.totalResults = <%= Execution.noResults(request.getParameter("id")) %>;
-data.offset = 0;
+data.offset = <%= request.getParameter("offset") == null ? 0  : Integer.parseInt(request.getParameter("offset")) %>;
 data.tp = <%= Execution.truePositives(request.getParameter("id")) %>;
 data.fp = <%= Execution.falsePositives(request.getParameter("id")) %>;
 data.fn = <%= Execution.falseNegatives(request.getParameter("id")) %>;
@@ -187,10 +187,11 @@ var app = new Vue({
             }
         }
         this.results[idx].valid = value;
+        var remoteIdx = this.results[idx].idx;
         jQuery.ajax({
             "url": "/manage/update/<%= request.getParameter("id") %>",
             data: JSON.stringify({
-                "idx": idx + this.offset,
+                "idx": remoteIdx,
                 "valid": value,
                 "data": {"identifier":"<%= request.getParameter("id") %>", "precision": this.precnum(), "recall": this.recnum(), "fmeasure": this.fmnum()}}),
             method: "POST",
@@ -262,6 +263,7 @@ var app = new Vue({
         });
     },
     changeLeft(idx, currentValue) {
+        var remoteIdx = this.results[idx].idx;
         var self = this;
         jQuery.ajax({
             url: '/manage/alternatives?id=<%=request.getParameter("id")%>&right=' + self.results[idx].object,
@@ -299,10 +301,11 @@ var app = new Vue({
             this.fn++;
         }
         $('#updateElement').modal('hide');
+        var remoteIdx = this.results[this.updateIdx].idx;
         jQuery.ajax({
             "url": "/manage/add/<%= request.getParameter("id") %>",
             data: JSON.stringify({
-                idx: this.updateIdx,
+                idx: remoteIdx,
                 subject: newRow.subject,
                 object: newRow.object,
                 property: newRow.property,
@@ -313,12 +316,14 @@ var app = new Vue({
         }); 
     },
     removeLink(idx) {
+        var remoteIdx = this.results[idx].idx;
+        alert(remoteIdx);
         this.results.splice(idx,1);
         this.fn--;
         jQuery.ajax({
             url: "/manage/remove/<%= request.getParameter("id") %>",
             data: JSON.stringify({
-                "idx": idx,
+                "idx": remoteIdx,
                 "data": {"identifier":"<%= request.getParameter("id") %>", "precision": this.precnum(), "recall": this.recnum(), "fmeasure": this.fmnum()}}),
             method: "POST",
             processData: false,
@@ -331,7 +336,7 @@ var app = new Vue({
     retrain() {
         alert("TODO");
     },
-    prevResults() {
+    prevResults($router) {
         if(this.offset > 0) {
         var self = this;
         jQuery.ajax({
@@ -339,12 +344,13 @@ var app = new Vue({
             success: function(d) {
                 self.results = d;
                 self.offset -= <%=limit%>;
+                $router.push({ "path": "/results.jsp", "query": { "id": "<%= request.getParameter("id") %>", "offset": offset }});
             }, 
             error: function(er){ document.write(er.responseText); }
         });
         }
     },
-    nextResults() {
+    nextResults($router) {
         if(this.offset + <%=limit%> < this.totalResults) {
         var self = this;
         jQuery.ajax({
@@ -352,6 +358,7 @@ var app = new Vue({
             success: function(d) {
                 self.results = d;
                 self.offset += <%=limit%>;
+                $router.push({ "path": "/results.jsp", "query": { "id": "<%= request.getParameter("id") %>", "offset": offset }});
             }, 
             error: function(er){ document.write(er.responseText); }
         });

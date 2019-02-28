@@ -29,7 +29,7 @@ import org.insightcentre.uld.naisc.util.ExternalCommandException;
  *
  * Input:  <code>
  * http://www.example.com/uri1  http://www.w3.org/2004/02/skos/core#exactMatch  http://www.example.com/uri2 0.5
- * * http://www.example.com/uri3  http://www.w3.org/2004/02/skos/core#exactMatch  http://www.example.com/uri4 0.7
+ * http://www.example.com/uri3  http://www.w3.org/2004/02/skos/core#exactMatch  http://www.example.com/uri4 0.7
  * </code>
  *
  * The command is expected to print only those lines that are in the final
