@@ -47,7 +47,7 @@ public class DatasetDownloadServlet extends HttpServlet {
         }
     }
 
-    private final void downloadRDF(String urlBase, File directory, String name) throws IOException {
+    private void downloadRDF(String urlBase, File directory, String name) throws IOException {
         try {
             downloadURL(urlBase + ".nt", new File(directory, name + ".nt"));
         } catch (IOException x) {
@@ -63,7 +63,7 @@ public class DatasetDownloadServlet extends HttpServlet {
         }
     }
 
-    private final void downloadURL(String url, File file) throws IOException {
+    private void downloadURL(String url, File file) throws IOException {
         System.err.println("Downloading " + url);
         try (BufferedInputStream in = new BufferedInputStream(new URL(url).openStream());
                 FileOutputStream fileOutputStream = new FileOutputStream(file)) {
