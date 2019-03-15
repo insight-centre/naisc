@@ -51,14 +51,12 @@ public class Predefined implements BlockingStrategyFactory {
 
         @Override
         public Iterable<Pair<Resource, Resource>> block(final Dataset _left, final Dataset _right) {
-            final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
-            final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
             try {
                 final AlignmentSet as = Train.readAlignments(links);
                 return new Iterable<Pair<Resource, Resource>>() {
                     @Override
                     public Iterator<Pair<Resource, Resource>> iterator() {
-                        return new AlignmentSetIterator(as.iterator(), left, right);
+                        return new AlignmentSetIterator(as.iterator());
                     }
                 };
             } catch(IOException x) {
@@ -69,12 +67,9 @@ public class Predefined implements BlockingStrategyFactory {
     
     private static class AlignmentSetIterator implements Iterator<Pair<Resource, Resource>> {
         private final Iterator<Alignment> iter;
-        private final Model left, right;
 
-        public AlignmentSetIterator(Iterator<Alignment> iter, Model left, Model right) {
+        public AlignmentSetIterator(Iterator<Alignment> iter) {
             this.iter = iter;
-            this.left = left;
-            this.right = right;
         }
         @Override
         public boolean hasNext() {
@@ -84,7 +79,7 @@ public class Predefined implements BlockingStrategyFactory {
         @Override
         public Pair<Resource, Resource> next() {
             Alignment a = iter.next();
-            return new Pair<>(left.createResource(a.entity1), right.createResource(a.entity2));
+            return new Pair<>(a.entity1, a.entity2);
         }
         
         

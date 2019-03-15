@@ -144,7 +144,10 @@ public class ManageServlet extends HttpServlet {
                     Run run = new Meas.Run(data.data.identifier, oldRun.configName, oldRun.datasetName, data.data.precision, data.data.recall, data.data.fmeasure, -2, oldRun.time, oldRun.isTrain);
                     completed.put(data.data.identifier, run);
                     Meas.updateRun(data.data.identifier, run);
-                    new Execution(id).addAlignment(run, data.idx, data.subject, data.property, data.object);
+                    int newId = new Execution(id).addAlignment(run, data.idx, data.subject, data.property, data.object);
+                    try(PrintWriter out = resp.getWriter()) {
+                        out.println(newId);
+                    }
                 }
             }
         } else if (path.startsWith("/remove/")) {

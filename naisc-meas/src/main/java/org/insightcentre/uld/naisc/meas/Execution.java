@@ -98,7 +98,14 @@ public class Execution implements ExecuteListener {
                         + "correlation REAL,\n"
                         + "time BIGINT)");
 
-                stat.execute("CREATE TABLE results (id INTEGER PRIMARY KEY AUTOINCREMENT, res1 TEXT, prop TEXT, res2 TEXT, lens TEXT, score REAL, valid TEXT)");
+                stat.execute("CREATE TABLE results (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        + "res1 TEXT, "
+                        + "prop TEXT, "
+                        + "res2 TEXT, "
+                        + "lens TEXT, "
+                        + "score REAL, "
+                        + "valid TEXT,"
+                        + "list_order INTEGER)");
                 stat.execute("CREATE TABLE blocks (res1 TEXT, res2 TEXT)");
             }
             tablesCreated = true;
@@ -124,6 +131,9 @@ public class Execution implements ExecuteListener {
         alignmentSet.sortAlignments();
         ObjectMapper mapper = new ObjectMapper();
         connection.setAutoCommit(false);
+        try (Statement stat = connection.createStatement()) {
+            stat.execute("UPDATE results SET list_order = id WHERE list_order = 0");
+        }
         try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,score,valid) VALUES (?,?,?,?,?,?)")) {
             for (Alignment alignment : alignmentSet) {
                 Map<String, LangStringPair> m = lensResults.get(new Pair(alignment.entity1, alignment.entity2));
@@ -242,7 +252,7 @@ public class Execution implements ExecuteListener {
         synchronized (databaseLock) {
             try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
                 try (Statement stat = connection.createStatement()) {
-                    try (ResultSet rs = stat.executeQuery("SELECT res1, prop, res2, lens, score, valid FROM results")) {
+                    try (ResultSet rs = stat.executeQuery("SELECT res1, prop, res2, lens, score, valid FROM results ORDER BY list_order")) {
                         List<RunResultRow> rrrs = new ArrayList<>();
                         while (rs.next()) {
                             RunResultRow rrr = new RunResultRow();
@@ -272,7 +282,7 @@ public class Execution implements ExecuteListener {
             try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
                 List<RunResultRow> rrrs = new ArrayList<>();
                 try (Statement stat = connection.createStatement()) {
-                    try (ResultSet rs = stat.executeQuery("SELECT res1, prop, res2, lens, score, valid, id FROM results LIMIT " + limit + " OFFSET " + offset)) {
+                    try (ResultSet rs = stat.executeQuery("SELECT res1, prop, res2, lens, score, valid, id FROM results ORDER BY list_order LIMIT " + limit + " OFFSET " + offset)) {
                         while (rs.next()) {
                             RunResultRow rrr = new RunResultRow();
                             rrr.subject = rs.getString(1);
@@ -347,10 +357,11 @@ public class Execution implements ExecuteListener {
         return -1;
     }
 
-    public void addAlignment(Run run, int idx, String subject, String property, String object) {
-
+    public int addAlignment(Run run, int idx, String subject, String property, String object) {
+        final int max;
         synchronized (databaseLock) {
             try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+                connection.setAutoCommit(false);
                 try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time) VALUES (?,?,?,?,?,?,?,?)")) {
                     pstat.setString(1, run.identifier);
                     pstat.setString(2, run.configName);
@@ -365,29 +376,29 @@ public class Execution implements ExecuteListener {
 
                 try (Statement stat = connection.createStatement()) {
                     final ResultSet res = stat.executeQuery("SELECT max(id) FROM results");
-                    int max = res.getInt(1);
-                    for (int i = max; i >= idx + 1; i--) {
-                        stat.execute("UPDATE results SET id = id + 1 WHERE id = " + i);
-                    }
+                    max = res.getInt(1);
                 }
+                connection.commit();
 
-                try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(id,res1,prop,res2,lens,score,valid) VALUES (?,?,?,?,?,?,?)")) {
+                try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,score,valid,list_order) VALUES (?,?,?,?,?,?,?)")) {
 
                     String lens = "{}";
-                    pstat.setInt(1, idx + 1);
-                    pstat.setString(2, subject);
-                    pstat.setString(3, property);
-                    pstat.setString(4, object);
-                    pstat.setString(5, lens);
-                    pstat.setDouble(6, 1.0);
-                    pstat.setString(7, "novel");
+                    pstat.setString(1, subject);
+                    pstat.setString(2, property);
+                    pstat.setString(3, object);
+                    pstat.setString(4, lens);
+                    pstat.setDouble(5, 1.0);
+                    pstat.setString(6, "novel");
+                    pstat.setInt(7, idx);
                     pstat.execute();
                     pstat.close();
                 }
+                connection.commit();
             } catch (SQLException x) {
                 throw new RuntimeException(x);
             }
         }
+        return max;
     }
 
     void removeAlignment(Run run, int idx) {

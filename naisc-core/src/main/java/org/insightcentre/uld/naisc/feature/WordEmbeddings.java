@@ -66,7 +66,7 @@ public class WordEmbeddings implements TextFeatureFactory {
         @ConfigurationParameter(description = "The path to the embeddings file")
         public String embeddingPath;
         /**
-         * The features to use.
+         * The features to use. Values include "fp", "bp", "ham", "max", "max2", "max.5", "max.1", "collp2", "collp10", "Hg"
          */
         @ConfigurationParameter(description = "The features to use; values include \"fp\", \"bp\", \"ham\", \"max\", \"max2\", \"max.5\",\n" +
 "        \"max.1\", \"collp2\", \"collp10\", \"Hg\"")
@@ -98,7 +98,7 @@ public class WordEmbeddings implements TextFeatureFactory {
         if (config.features == null) {
             throw new ConfigurationException("Features can't be null");
         }
-        StandardWordAlignmentFeatureExtractor wafe = new StandardWordAlignmentFeatureExtractor(config.features, saliencyFeatures);
+        StandardWordAlignmentFeatureExtractor wafe = new StandardWordAlignmentFeatureExtractor(config.features == null ? Arrays.asList(DEFAULT_FEATURES) : config.features, saliencyFeatures);
 
         return new DefaultFeatureExtractor(aligner, wafe, config.stopwords, tags);
     }

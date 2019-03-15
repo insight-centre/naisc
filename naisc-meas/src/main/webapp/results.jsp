@@ -256,7 +256,7 @@ var app = new Vue({
                     self.elems.push(e);
                 }
                 self.currentElem = currentValue;
-                self.left = true;
+                self.left = false;
                 self.updateIdx = idx;
                 $('#updateElement').modal('show');
             }
@@ -312,6 +312,7 @@ var app = new Vue({
                 data: {"identifier":"<%= request.getParameter("id") %>", "precision": this.precnum(), "recall": this.recnum(), "fmeasure": this.fmnum()}}),
             method: "POST",
             processData: false,
+            success: function(er) { newRow.idx = er.data; },
             error: function(er){ document.write(er.responseText); }
         }); 
     },

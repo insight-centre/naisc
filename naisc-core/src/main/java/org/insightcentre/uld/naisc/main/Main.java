@@ -167,6 +167,8 @@ public class Main {
             for (Pair<Resource, Resource> block : blocks) {
                 if(block._1.getURI() == null || block._1.getURI().equals("") ||
                         block._2.getURI() == null || block._2.getURI().equals("")) {
+                    System.err.println(block._1);
+                    System.err.println(block._2);
                     throw new RuntimeException("Resource without URI");
                 }
                 monitor.addBlock(block._1, block._2);
