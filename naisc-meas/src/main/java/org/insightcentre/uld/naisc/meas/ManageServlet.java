@@ -56,7 +56,7 @@ public class ManageServlet extends HttpServlet {
             if (id.matches(VALID_ID)) {
                 final List<Meas.RunResultRow> data = Execution.loadData(id);
                 if (data != null) {
-                    resp.setContentType("application/n-triples");
+                    resp.setContentType("application/n-triples; charset=utf-8");
                     try (PrintWriter out = resp.getWriter()) {
                         for (Meas.RunResultRow rrr : data) {
                             if (rrr.valid == Valid.yes || rrr.valid == Valid.no) {
