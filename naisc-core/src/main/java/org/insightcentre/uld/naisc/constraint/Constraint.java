@@ -17,7 +17,7 @@ public abstract class Constraint {
     public final double score;
     /** The alignments that this score is calculated from 
      * @param alignments The list to add all alignments to
-     * @returns The list passed
+     * @return The list passed
      */
     public abstract List<Alignment> alignments(List<Alignment> alignments);
     
