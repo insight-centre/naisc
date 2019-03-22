@@ -37,3 +37,5 @@ The following basic configurations are available:
 ## Documentation
 
 Javadoc for Naisc is available at https://uld.pages.insight-centre.org/naisc
+
+There is an overview of the tool available [here](https://docs.google.com/presentation/d/1bWThA0umgkZY1CcUguNTHspNQQt3tAvOMKUaS2i0M-U/edit?usp=sharing)
