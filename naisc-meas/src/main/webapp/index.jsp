@@ -113,20 +113,38 @@
                             <option v-for="(c,config) in configs" v-bind:value="config">{{config}}<span v-if="c.description"> - {{c.description}}</span></option>
                         </select>
                         <button type="button" class="btn btn-user btn-primary float-right" data-toggle="modal" data-target="#addConfig">
-                            <i class="fas fa-edit"></i>New Configuration</button>
+                            <i class="fas fa-plus-circle"></i>New Configuration</button>
+                        <button type="button" class="btn btn-user btn-primary float-right" data-toggle="modal" data-target="#configure" v-show="configName">
+                            <i class="fas fa-edit"></i>Edit Configuration</button>
                     </div>
                     <button class="btn btn-user btn-success" type="button" v-on:click.prevent="startRun()"><i class="fas fa-play"></i> Start Run</button>
                     <button class="btn btn-user btn-success" type="button" v-on:click.prevent="train()"><i class="fas fa-dumbbell"></i> Train Model</button>
                     <button class="btn btn-user btn-success" type="button" v-on:click.prevent="crossfold()"><i class="fas fa-flask"></i> Cross-fold Evaluation</button>
-                    <div v-if="configName" class="config">
-                        <a v-on:click="toggleConfig()" ><i class="fas fa-angle-right" v-if="!showConfig"></i><i class="fas fa-angle-down" v-if="showConfig"></i> Show/hide configuration</a>
+                 </form>
+                 <div class="modal fade" id="configure" tabindex="-1" role="dialog" aria-labelledby="configModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-wide" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="configModalLabel">Configuration</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label for="configName">Configuration Name</label>
+                                    <input type="text" class="form-control" id="configNameInput" v-model="configName">
+                                </div>
+                                <div v-if="configName" id="configMain">
+                                    <%= Java2Vue.java2vue(Configuration.class) %>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal" v-on:click="saveConfig">Save</button>
+                            </div>
+                        </div>
                     </div>
-                    <transition name="slide-fade">
-                    <div v-if="configName" class="collapse" v-bind:class="{show:showConfig}" id="configMain">
-                    <%= Java2Vue.java2vue(Configuration.class) %>
-                    </div>
-                    </transition>
-                </form>
+                </div>
                 <div class="modal fade" id="addDataset" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">
@@ -194,11 +212,11 @@
                     </div>
                 </div>
 
-                <div class="modal fade" id="addConfig" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal fade" id="addConfig" tabindex="-1" role="dialog" aria-labelledby="addConfigLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="exampleModalLabel">Upload a dataset</h5>
+                                <h5 class="modal-title" id="addConfigLabel">Add a config</h5>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                     <span aria-hidden="true">&times;</span>
                                 </button>
@@ -530,7 +548,14 @@ var app = new Vue({
                 }
             });
         }
-    }                
+    },
+    saveConfig() {
+        jQuery.ajax({
+            url: "/manage/save_config/" + this.configName,
+            method: "POST",
+            data: JSON.stringify(unflatten_config(this.config))
+        });
+    }       
   },
   beforeDestroy() {
     clearInterval(this.polling);

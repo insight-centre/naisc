@@ -149,3 +149,7 @@ input:invalid {
 .btn-user {
     margin: 6px;
 }
+
+.modal-wide {
+    max-width: 750px;
+}

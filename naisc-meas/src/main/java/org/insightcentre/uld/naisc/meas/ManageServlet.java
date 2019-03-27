@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.insightcentre.uld.naisc.Alignment.Valid;
+import org.insightcentre.uld.naisc.main.Configuration;
 import static org.insightcentre.uld.naisc.meas.ExecuteServlet.VALID_ID;
 import org.insightcentre.uld.naisc.meas.Meas.Run;
 
@@ -126,6 +127,7 @@ public class ManageServlet extends HttpServlet {
                 x.printStackTrace();
                 throw new ServletException(x);
             }
+
         } else {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
@@ -145,7 +147,7 @@ public class ManageServlet extends HttpServlet {
                     completed.put(data.data.identifier, run);
                     Meas.updateRun(data.data.identifier, run);
                     int newId = new Execution(id).addAlignment(run, data.idx, data.subject, data.property, data.object);
-                    try(PrintWriter out = resp.getWriter()) {
+                    try (PrintWriter out = resp.getWriter()) {
                         out.println(newId);
                     }
                 }
@@ -175,7 +177,17 @@ public class ManageServlet extends HttpServlet {
                     new Execution(id).changeStatus(run, data.idx, data.valid);
                 }
             }
-
+        } else if (path.startsWith("/save_config/")) {
+            try {
+                String configId = path.substring("/save_config/".length());
+                Configuration config = mapper.readValue(req.getInputStream(), Configuration.class);
+                try (PrintWriter out = new PrintWriter("configs/" + configId + ".json")) {
+                    mapper.writeValue(out, config);
+                }
+            } catch (IOException x) {
+                x.printStackTrace();
+                throw new ServletException(x);
+            }
         } else if (path.startsWith("/rerun/")) {
             throw new UnsupportedOperationException("TODO");
         } else if (path.startsWith("/retrain/")) {
@@ -208,8 +220,7 @@ public class ManageServlet extends HttpServlet {
         public String toString() {
             return "AddRemoveData{" + "idx=" + idx + ", subject=" + subject + ", property=" + property + ", object=" + object + ", valid=" + valid + ", data=" + data + '}';
         }
-        
-        
+
     }
 
 }
