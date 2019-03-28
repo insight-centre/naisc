@@ -11,6 +11,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.Matcher;
+import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -107,4 +108,30 @@ public class GreedyTest {
         assertEquals(expResult, result);
     }
 
+    
+    
+    @Test
+    public void testAlignWith() {
+        System.out.println("makeMatcher");
+        Map<String, Object> params = new HashMap<>();
+        params.put("constraint", new HashMap<String,String>());
+        ((HashMap<String,String>)params.get("constraint")).put("name", "constraint.Bijective");
+        Greedy instance = new Greedy();
+        Matcher matcher = instance.makeMatcher(params);
+        List<Alignment> alignments = new ArrayList<>();
+        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id3"), r("id1"), 0.1, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH));
+        AlignmentSet initial = new AlignmentSet();
+        initial.add(new Alignment(r("id1"), r("id2"), 1.0, Alignment.SKOS_EXACT_MATCH));
+        AlignmentSet result = matcher.alignWith(new AlignmentSet(alignments), initial, NONE);
+        assert(result.size() == 3);
+        assert(result.contains(new Alignment(r("id1"), r("id2"), 1.0, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id3"), r("id1"), 0.1, Alignment.SKOS_EXACT_MATCH)));
+        
+    }
 }

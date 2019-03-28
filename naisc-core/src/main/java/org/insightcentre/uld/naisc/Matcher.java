@@ -1,6 +1,8 @@
 package org.insightcentre.uld.naisc;
 
 import org.insightcentre.uld.naisc.main.ExecuteListener;
+import org.insightcentre.uld.naisc.main.ExecuteListeners;
+import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
 
 /**
  * An aligner between two schemas
@@ -12,7 +14,9 @@ public interface Matcher {
      * @param matches The set of all scored matches
      * @return A subset of matches optimized according to the rules of this matcher
      */
-    AlignmentSet align(AlignmentSet matches);
+    default AlignmentSet align(AlignmentSet matches) {
+        return alignWith(matches, new AlignmentSet(), ExecuteListeners.NONE);
+    }
     
     /**
      * Match two schemas
@@ -21,6 +25,15 @@ public interface Matcher {
      * @return A subset of matches optimized according to the rules of this matcher
      */
     default AlignmentSet align(AlignmentSet matches, ExecuteListener listener) {
-        return align(matches);
+        return alignWith(matches, new AlignmentSet(), NONE);
     }
+    
+    /**
+     * Match two schemas with a fixed list of known matches
+     * @param matches The set of all scored matches
+     * @param partialAlign The partial solution that must appear in the complete solution
+     * @param listener The listener to use
+     * @return  A subset of matches and partial align optimized according to the rules of this matcher
+     */
+    AlignmentSet alignWith(AlignmentSet matches, AlignmentSet partialAlign, ExecuteListener listener);
 }

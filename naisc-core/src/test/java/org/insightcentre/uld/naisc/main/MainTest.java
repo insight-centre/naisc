@@ -1,12 +1,13 @@
 package org.insightcentre.uld.naisc.main;
 
 import java.io.File;
+import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
+import org.insightcentre.uld.naisc.util.None;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -44,7 +45,7 @@ public class MainTest {
         File configuration = new File("src/test/resources/simple.json");
         File outputFile = null;
         boolean outputXML = false;
-        Main.execute("test", leftFile, rightFile, configuration, outputFile, outputXML, new Main.NoMonitor(), new DefaultDatasetLoader());
+        Main.execute("test", leftFile, rightFile, configuration, outputFile, new None<>(), outputXML, NONE, new DefaultDatasetLoader());
     }
 
     

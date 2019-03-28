@@ -10,6 +10,7 @@ import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Matcher;
 import org.insightcentre.uld.naisc.MatcherFactory;
+import org.insightcentre.uld.naisc.main.ExecuteListener;
 
 /**
  * Simply extract all links whose score is over a given threshold
@@ -49,13 +50,15 @@ public class Threshold implements MatcherFactory {
         }
         
         @Override
-        public AlignmentSet align(AlignmentSet matches) {
+        public AlignmentSet alignWith(AlignmentSet matches, AlignmentSet initial, ExecuteListener monitor) {
+            matches.addAll(initial);
             Iterator<Alignment> iter = matches.iterator();
             while(iter.hasNext()) {
                 final double score = iter.next().score;
                 if(score < threshold)
                     iter.remove();
             }
+            
             return matches;
         }
 

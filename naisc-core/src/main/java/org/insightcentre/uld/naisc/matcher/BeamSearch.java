@@ -94,14 +94,15 @@ public class BeamSearch implements MatcherFactory {
         }
 
         @Override
-        public AlignmentSet align(AlignmentSet matches) {
-            return align(matches, null);
-        }
-
-        @Override
-        public AlignmentSet align(AlignmentSet matches, ExecuteListener listener) {
+        public AlignmentSet alignWith(AlignmentSet matches, AlignmentSet initial, ExecuteListener listener) {
             matches.sortAlignments();
             Constraint score = initialScore;
+            for(Alignment init : initial) {
+                if(!score.canAdd(init)) {
+                    listener.updateStatus(ExecuteListener.Stage.MATCHING, "A link from the initial set is not valid with the constraint.");
+                }
+                score = score.add(init);
+            }
             Beam<Constraint> beam = new Beam<>(beamSize);
             Constraint bestValid = initialScore.complete() ? initialScore : null;
             beam.insert(score, score.score);

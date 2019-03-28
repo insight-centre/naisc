@@ -15,6 +15,8 @@ import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.AlignmentSet;
+import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
+import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Pair;
 
@@ -185,7 +187,7 @@ public class Evaluate {
             final File outputFile = (File)os.valueOf("o");
             
             Evaluate.evaluate(test, gold, outputFile,
-                    os.has("q") ? new Main.NoMonitor() : new Main.StdErrMonitor());
+                    os.has("q") ? NONE : STDERR);
 
         } catch (Exception x) {
             x.printStackTrace();

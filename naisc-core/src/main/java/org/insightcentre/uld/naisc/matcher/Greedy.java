@@ -13,6 +13,7 @@ import org.insightcentre.uld.naisc.Matcher;
 import org.insightcentre.uld.naisc.MatcherFactory;
 import org.insightcentre.uld.naisc.main.Configuration.ConstraintConfiguration;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
+import org.insightcentre.uld.naisc.main.ExecuteListener;
 
 /**
  * Solve the alignment problem greedily
@@ -56,15 +57,22 @@ public class Greedy implements MatcherFactory {
     private static class GreedySearch implements Matcher {
 
         private final double threshold;
-        private Constraint constraint;
+        private Constraint initialScore;
 
         public GreedySearch(double threshold, Constraint initialScore) {
             this.threshold = threshold;
-            this.constraint = initialScore;
+            this.initialScore = initialScore;
         }
 
         @Override
-        public AlignmentSet align(AlignmentSet matches) {
+        public AlignmentSet alignWith(AlignmentSet matches, AlignmentSet initial, ExecuteListener listener) {
+            Constraint constraint = initialScore;
+            for(Alignment init : initial) {
+                if(!constraint.canAdd(init)) {
+                    listener.updateStatus(ExecuteListener.Stage.MATCHING, "A link from the initial set is not valid with the constraint.");
+                }
+                constraint = constraint.add(init);
+            }
             Constraint lastComplete = constraint.complete() ? constraint : null;
             matches.sortAlignments();
             for(Alignment alignment : matches.getAlignments()) {

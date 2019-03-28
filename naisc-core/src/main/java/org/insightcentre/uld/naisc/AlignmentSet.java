@@ -2,7 +2,6 @@ package org.insightcentre.uld.naisc;
 
 import org.insightcentre.uld.naisc.util.Option;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.PrintStream;
 import java.util.AbstractCollection;
@@ -21,7 +20,6 @@ import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.util.Some;
-import org.insightcentre.uld.naisc.util.StringPair;
 
 /**
  * A set of alignments
@@ -67,6 +65,15 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
         final Pair<Resource, Resource> sp = new Pair<>(id1, id2);
         return byPair.containsKey(sp) ? new Some<>(byPair.get(sp)) : new None<>();
 
+    }
+    
+    /**
+     * Does this set contain a particular alignment
+     * @param alignment The alignment
+     * @return True if the alignment is in the set
+     */
+    public boolean contains(Alignment alignment) {
+        return find(alignment.entity1, alignment.entity2, alignment.relation).has();
     }
     
     public boolean remove(Alignment alignment) {

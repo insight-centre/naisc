@@ -4,11 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.URL;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.Alignment;
@@ -19,7 +15,6 @@ import org.insightcentre.uld.naisc.MatcherFactory;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
-import org.insightcentre.uld.naisc.main.Main.NoMonitor;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
 
 /**
@@ -30,10 +25,11 @@ import org.insightcentre.uld.naisc.util.ExternalCommandException;
  * Input:  <code>
  * http://www.example.com/uri1  http://www.w3.org/2004/02/skos/core#exactMatch  http://www.example.com/uri2 0.5
  * http://www.example.com/uri3  http://www.w3.org/2004/02/skos/core#exactMatch  http://www.example.com/uri4 0.7
+ * http://www.example.com/uri5  http://www.w3.org/2004/02/skos/core#exactMatch  http://www.example.com/uri6 Infinity
  * </code>
  *
  * The command is expected to print only those lines that are in the final
- * matching
+ * matching. A score of Infinity means that the match must be included
  *
  * @author John McCrae
  */
@@ -73,13 +69,9 @@ public class Command implements MatcherFactory {
             this.command = command;
         }
 
-        @Override
-        public AlignmentSet align(AlignmentSet matches) {
-            return align(matches, new NoMonitor());
-        }
 
         @Override
-        public AlignmentSet align(AlignmentSet matches, ExecuteListener listener) {
+        public AlignmentSet alignWith(AlignmentSet matches, AlignmentSet partialMatches, ExecuteListener listener) {
 
             Runtime rt = Runtime.getRuntime();
             try {
@@ -93,7 +85,12 @@ public class Command implements MatcherFactory {
                     public void run() {
                         try (PrintWriter out = new PrintWriter(pr.getOutputStream())) {
                             for (Alignment as : matches) {
-                                out.println(as.entity1 + "\t" + as.relation + "\t" + as.entity2 + "\t" + as.score);
+                                if(partialMatches.contains(as)) {
+                                    out.println(as.entity1 + "\t" + as.relation + "\t" + as.entity2 + "\tInfinity");
+                                    
+                                } else {
+                                    out.println(as.entity1 + "\t" + as.relation + "\t" + as.entity2 + "\t" + as.score);
+                                }
                             }
                             out.flush();
                         }

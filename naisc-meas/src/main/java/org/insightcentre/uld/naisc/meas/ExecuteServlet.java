@@ -12,7 +12,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.DatasetLoader;
 import org.insightcentre.uld.naisc.main.Configuration;
 import org.insightcentre.uld.naisc.main.CrossFold;
 import org.insightcentre.uld.naisc.main.Evaluate;
@@ -20,6 +19,7 @@ import org.insightcentre.uld.naisc.main.ExecuteListener.Stage;
 import org.insightcentre.uld.naisc.main.Main;
 import org.insightcentre.uld.naisc.main.Train;
 import org.insightcentre.uld.naisc.meas.Meas.Run;
+import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
 
 /**
@@ -156,7 +156,7 @@ public class ExecuteServlet extends HttpServlet {
                 final AlignmentSet alignment;
                 if (mode == ExecutionMode.EVALUATE) {
                     alignment = Main.execute(id, ds.left(), ds.right(),
-                            config, listener, loader);
+                            config, new None<>(), listener, loader);
                     if (alignment == null) {
                         return;
                     }

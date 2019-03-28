@@ -37,6 +37,7 @@ import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Matcher;
 import org.insightcentre.uld.naisc.MatcherFactory;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
+import org.insightcentre.uld.naisc.main.ExecuteListener;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
@@ -98,7 +99,7 @@ public class UniqueAssignment implements MatcherFactory {
         }
 
         @Override
-        public AlignmentSet align(AlignmentSet matches) {
+        public AlignmentSet alignWith(AlignmentSet matches, AlignmentSet initial, ExecuteListener monitor) {
             Set<String> relations = new HashSet<>();
             final List<Alignment> alignmentSet = new ArrayList<>();
 
@@ -106,6 +107,16 @@ public class UniqueAssignment implements MatcherFactory {
                 relations.add(alignment.relation);
             }
             for (String rel : relations) {
+                Set<Resource> leftExclusion = new HashSet<>();
+                Set<Resource> rightExclusion = new HashSet<>();
+                
+                for(Alignment init : initial) {
+                    if(init.relation.equals(rel)) {
+                        leftExclusion.add(init.entity1);
+                        rightExclusion.add(init.entity2);
+                    }
+                }
+                
                 Object2IntMap<Resource> lefts = new Object2IntOpenHashMap<>();
                 Object2IntMap<Resource> rights = new Object2IntOpenHashMap<>();
                 Int2ObjectMap<Resource> linv = new Int2ObjectArrayMap<>();
@@ -113,7 +124,9 @@ public class UniqueAssignment implements MatcherFactory {
                 Object2DoubleMap<IntStringTriple> scores = new Object2DoubleLinkedOpenHashMap<>();
 
                 for (Alignment alignment : matches.getAlignments()) {
-                    if (rel.equals(alignment.relation) && alignment.score >= threshold) {
+                    if (rel.equals(alignment.relation) && alignment.score >= threshold &&
+                            !leftExclusion.contains(alignment.entity1) &&
+                            !rightExclusion.contains(alignment.entity2)) {
                         if (!lefts.containsKey(alignment.entity1)) {
                             linv.put(lefts.size(), alignment.entity1);
                             lefts.put(alignment.entity1, lefts.size());
@@ -148,6 +161,7 @@ public class UniqueAssignment implements MatcherFactory {
                 }
                 //System.err.printf("Produced %d matches from %d x %d (%s)\n", alignmentSet.size(), lefts.size(), rights.size(), rel);
             }
+            alignmentSet.addAll(initial);
             return new AlignmentSet(alignmentSet);
         }
 

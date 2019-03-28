@@ -27,6 +27,8 @@ import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.main.ExecuteListener.Stage;
+import org.insightcentre.uld.naisc.util.None;
+import org.insightcentre.uld.naisc.util.Some;
 
 /**
  * Create a mapping between two schemas
@@ -55,18 +57,19 @@ public class Main {
      * @param rightFile The right RDF dataset to align
      * @param configuration The configuration file
      * @param outputFile The output file to write to (null for STDOUT)
+     * @param partialSoln A partial solution
      * @param outputXML If true output XML
      * @param monitor Listener for status updates
      * @param loader The loader of datasets
      */
     @SuppressWarnings("UseSpecificCatch")
     public static void execute(String name, File leftFile, File rightFile, File configuration,
-            File outputFile, boolean outputXML, ExecuteListener monitor,
+            File outputFile, Option<File> partialSoln, boolean outputXML, ExecuteListener monitor,
             DatasetLoader loader) {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading Configuration");
             final Configuration config = mapper.readValue(configuration, Configuration.class);
-            execute(name, leftFile, rightFile, config, outputFile, outputXML, monitor, loader);
+            execute(name, leftFile, rightFile, config, outputFile, partialSoln, outputXML, monitor, loader);
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
@@ -81,15 +84,16 @@ public class Main {
      * @param rightFile The right RDF dataset to align
      * @param config The configuration
      * @param outputFile The output file to write to (null for STDOUT)
+     * @param partialSoln A partial solution
      * @param outputXML If true output XML
      * @param monitor Listener for status updates
      * @param loader The loader of datasets
      */
     @SuppressWarnings("UseSpecificCatch")
     public static void execute(String name, File leftFile, File rightFile, Configuration config,
-            File outputFile, boolean outputXML, ExecuteListener monitor, DatasetLoader loader) {
+            File outputFile, Option<File> partialSoln, boolean outputXML, ExecuteListener monitor, DatasetLoader loader) {
         try {
-            AlignmentSet finalAlignment = execute(name, leftFile, rightFile, config, monitor, loader);
+            AlignmentSet finalAlignment = execute(name, leftFile, rightFile, config, partialSoln, monitor, loader);
             monitor.updateStatus(Stage.FINALIZING, "Saving");
             if (outputXML) {
                 finalAlignment.toXML(outputFile == null ? System.out : new PrintStream(outputFile));
@@ -110,13 +114,14 @@ public class Main {
      * @param leftFile The left RDF dataset to align
      * @param rightFile The right RDF dataset to align
      * @param config The configuration
+     * @param partialSoln A partial solution
      * @param monitor Listener for status updates
      * @param loader The loader of datasets
      * @return The alignment
      */
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute(String name, File leftFile, File rightFile, Configuration config,
-            ExecuteListener monitor, DatasetLoader loader) { 
+            Option<File> partialSoln, ExecuteListener monitor, DatasetLoader loader) { 
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
             Dataset leftModel = loader.fromFile(leftFile, name + "/left");
@@ -124,7 +129,15 @@ public class Main {
             monitor.updateStatus(Stage.INITIALIZING, "Reading right dataset");
             Dataset rightModel = loader.fromFile(rightFile, name + "/right");
             
-            return execute(name, leftModel, rightModel, config, monitor, null, null, loader);
+            final Option<AlignmentSet> partial;
+            if(partialSoln.has()) {
+                monitor.updateStatus(Stage.INITIALIZING, "Loading partial solution");
+                partial = new Some<>(Train.readAlignments(partialSoln.get()));
+            } else {
+                partial = new None<>();
+            }
+            
+            return execute(name, leftModel, rightModel, config, partial, monitor, null, null, loader);
             
         } catch (Exception x) {
             x.printStackTrace();
@@ -135,7 +148,7 @@ public class Main {
     
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute(String name, Dataset leftModel, Dataset rightModel, Configuration config,
-            ExecuteListener monitor, Set<Resource> left, Set<Resource> right, DatasetLoader loader) {
+            Option<AlignmentSet> partialSoln, ExecuteListener monitor, Set<Resource> left, Set<Resource> right, DatasetLoader loader) {
         try {
             
             monitor.updateStatus(Stage.INITIALIZING, "Loading blocking strategy");
@@ -208,7 +221,11 @@ public class Main {
             }
 
             monitor.updateStatus(Stage.MATCHING, "Matching");
-            return matcher.align(alignments,monitor);
+            if(partialSoln.has()) {
+                return matcher.alignWith(alignments, partialSoln.get(), monitor);
+            } else {
+                return matcher.align(alignments, monitor);
+            } 
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
@@ -223,6 +240,7 @@ public class Main {
                 {
                     accepts("o", "The file to write the output dataset to (STDOUT if omitted)").withRequiredArg().ofType(File.class);
                     accepts("c", "The configuration to use").withRequiredArg().ofType(File.class);
+                    accepts("p", "A partial matching that will be used as the basis for matching").withRequiredArg().ofType(File.class);
                     accepts("xml", "Output as XML");
                     accepts("q", "Suppress output");
                     nonOptions("Two RDF files");
@@ -255,12 +273,14 @@ public class Main {
             if (configuration == null || !configuration.exists()) {
                 badOptions(p, "Configuration does not exist or not specified");
             }
+            final Option<File> partialSoln = os.valueOf("p") == null ? new None<>() : new Some<>((File)os.valueOf("p"));
             //final boolean example = os.has("x");
             final boolean outputXML = os.has("xml");
             //final boolean hard = !os.has("easy");
-            execute("naisc", left, right, configuration, outputFile, outputXML,
+            execute("naisc", left, right, configuration, outputFile,
+                    partialSoln, outputXML,
                     os.valueOf("q").equals(Boolean.TRUE)
-                    ? new NoMonitor() : new StdErrMonitor(),
+                    ? ExecuteListeners.NONE : ExecuteListeners.STDERR,
                     new DefaultDatasetLoader());
         } catch (Throwable x) {
             x.printStackTrace();
@@ -268,30 +288,6 @@ public class Main {
         }
     }
 
-    public static class StdErrMonitor implements ExecuteListener {
-
-        @Override
-        public void updateStatus(Stage stage, String message) {
-            System.err.println("[" + stage + "]" + message);
-        }
-
-        @Override
-        public void addLensResult(Resource id1, Resource id2, String lensId, LangStringPair res) {
-        }
-
-    }
-
-    public static class NoMonitor implements ExecuteListener {
-
-        @Override
-        public void updateStatus(Stage stage, String message) {
-        }
-
-        @Override
-        public void addLensResult(Resource id1, Resource id2, String lensId, LangStringPair res) {
-        }
-
-    }
     
     private static class FilterBlocks implements Iterable<Pair<Resource, Resource>> {
         private final Iterable<Pair<Resource, Resource>> iter;

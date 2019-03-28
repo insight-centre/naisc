@@ -38,6 +38,8 @@ import org.insightcentre.uld.naisc.ScorerTrainer;
 import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.GraphFeature;
+import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
+import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
 
 /**
  *
@@ -341,7 +343,7 @@ public class Train {
             @SuppressWarnings("null")
             final double negativeSampling = os.has("n") ? (Double) os.valueOf("n") : 5.0;
             execute("train", left, right, alignment, negativeSampling, configuration,
-                    os.has("q") ? new Main.NoMonitor() : new Main.StdErrMonitor(),
+                    os.has("q") ? NONE : STDERR,
                     new DefaultDatasetLoader());
         } catch (Throwable x) {
             x.printStackTrace();

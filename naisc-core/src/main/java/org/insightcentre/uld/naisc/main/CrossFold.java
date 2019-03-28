@@ -20,8 +20,11 @@ import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.DatasetLoader;
+import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
+import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
 import static org.insightcentre.uld.naisc.main.Main.mapper;
 import org.insightcentre.uld.naisc.util.LangStringPair;
+import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Pair;
 
 /**
@@ -132,7 +135,7 @@ public class CrossFold {
         for (int i = 0; i < nFolds; i++) {
             monitor.foldNo++;
             Train.execute(name, leftModel, rightModel, folds.train(goldAlignments, i), negativeSampling, config, monitor,loader);
-            as.addAll(Main.execute(name, leftModel, rightModel, config, monitor, folds.leftSplit.get(i), folds.rightSplit.get(i),loader));
+            as.addAll(Main.execute(name, leftModel, rightModel, config, new None<>(), monitor, folds.leftSplit.get(i), folds.rightSplit.get(i),loader));
         }
         monitor.foldNo = 0;
 
@@ -220,7 +223,7 @@ public class CrossFold {
             @SuppressWarnings("null")
             double negativeSampling = os.has("s")  ? (Double)os.valueOf("s") : 5.0;
             execute("crossfold", left, right, gold, nFolds, negativeSampling, outputFile, configuration,
-                    os.has("q") ? new Main.NoMonitor() : new Main.StdErrMonitor(), 
+                    os.has("q") ? NONE : STDERR, 
                     new DefaultDatasetLoader());
         } catch (Throwable x) {
             x.printStackTrace();

@@ -1,17 +1,11 @@
 package org.insightcentre.uld.naisc.main;
 
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
-import java.util.HashMap;
-import java.util.Map;
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.Statement;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
+import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -68,7 +62,7 @@ public class EvaluateTest {
         expResult.tp = 1;
         expResult.fp = 3;
         expResult.fn = 2;
-        Evaluate.EvaluationResults result = Evaluate.evaluate(output, gold, new Main.StdErrMonitor());
+        Evaluate.EvaluationResults result = Evaluate.evaluate(output, gold, STDERR);
         assertEquals(expResult.tp, result.tp);
         assertEquals(expResult.fp, result.fp);
         assertEquals(expResult.fn, result.fn);

@@ -1,12 +1,12 @@
 package org.insightcentre.uld.naisc.main;
 
 import java.io.File;
+import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -43,7 +43,7 @@ public class TrainTest {
         File rightFile = new File("src/test/resources/right.nt");
         File alignment = new File("src/test/resources/align.nt");
         File configuration = new File("src/test/resources/simple.json");
-        Train.execute("test", leftFile, rightFile, alignment, 5.0, configuration, new Main.StdErrMonitor(), new DefaultDatasetLoader());
+        Train.execute("test", leftFile, rightFile, alignment, 5.0, configuration, STDERR, new DefaultDatasetLoader());
     }
 
 }
