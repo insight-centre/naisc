@@ -137,14 +137,32 @@ public class Train {
     public static void execute(String name, File leftFile, File rightFile, File alignment,
             double negativeSampling,
             Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading alignments");
+        AlignmentSet goldAlignments = readAlignments(alignment);
+        execute(name, leftFile, rightFile, goldAlignments, negativeSampling, config, monitor, loader);
+    }
+    
+        /**
+     * Execute a NAISC training run
+     *
+     * @param name The identifier for this run
+     * @param leftFile The left RDF dataset to align
+     * @param rightFile The right RDF dataset to align
+     * @param alignment The alignments to learn
+     * @param negativeSampling The rate at which to generate negative examples
+     * @param config The configuration object
+     * @param monitor The listener for eventsDataset
+     * @param loader The dataset loader
+     * @throws IOException If an IO error occurs
+     */
+    public static void execute(String name, File leftFile, File rightFile, AlignmentSet goldAlignments,
+            double negativeSampling,
+            Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
         Dataset leftModel = loader.fromFile(leftFile, name + "/left");
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
         Dataset rightModel = loader.fromFile(rightFile, name + "/right");
-
-        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading alignments");
-        AlignmentSet goldAlignments = readAlignments(alignment);
         execute(name, leftModel, rightModel, goldAlignments, negativeSampling, config, monitor, loader);
     }
 

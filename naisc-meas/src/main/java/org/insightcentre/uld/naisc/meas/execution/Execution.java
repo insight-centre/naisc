@@ -1,4 +1,4 @@
-package org.insightcentre.uld.naisc.meas;
+package org.insightcentre.uld.naisc.meas.execution;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,19 +20,21 @@ import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
+import org.insightcentre.uld.naisc.meas.ExecuteServlet;
 import org.insightcentre.uld.naisc.meas.Meas.Run;
 import org.insightcentre.uld.naisc.meas.Meas.RunResultRow;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Pair;
 
 /**
- *
+ * Manages the execution and how it is saved to the database
+ * 
  * @author John McCrae
  */
 public class Execution implements ExecuteListener {
 
-    ListenerResponse response = new ListenerResponse();
-    boolean aborted = false;
+    public ListenerResponse response = new ListenerResponse();
+    public boolean aborted = false;
     private final String id;
     private final HashMap<Pair<Resource, Resource>, Map<String, LangStringPair>> lensResults = new HashMap<>();
     private final List<Pair<Resource, Resource>> blocks = new ArrayList<>();
@@ -111,6 +113,19 @@ public class Execution implements ExecuteListener {
             tablesCreated = true;
         }
 
+    }
+    
+    public void clearAlignments() throws SQLException {
+        synchronized (databaseLock) {
+            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+                try(Statement stat = connection.createStatement()) {
+                    stat.execute("DELETE FROM results");
+                    stat.execute("DELETE FROM blocks");
+                    tablesCreated = true;
+                }
+            } 
+        }
+        
     }
 
     private void saveStats(Connection connection, Run run) throws SQLException {
@@ -401,7 +416,7 @@ public class Execution implements ExecuteListener {
         return max;
     }
 
-    void removeAlignment(Run run, int idx) {
+    public void removeAlignment(Run run, int idx) {
 
         synchronized (databaseLock) {
             try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
@@ -426,7 +441,7 @@ public class Execution implements ExecuteListener {
         }
     }
 
-    void changeStatus(Run run, int idx, Valid valid) {
+    public void changeStatus(Run run, int idx, Valid valid) {
 
         synchronized (databaseLock) {
             try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
@@ -453,7 +468,7 @@ public class Execution implements ExecuteListener {
         }
     }
 
-    List<Pair<String, Map<String, String>>> getAlternatives(String entityid, boolean left) {
+    public List<Pair<String, Map<String, String>>> getAlternatives(String entityid, boolean left) {
 
         ObjectMapper mapper = new ObjectMapper();
         final MapType mapType = mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class);

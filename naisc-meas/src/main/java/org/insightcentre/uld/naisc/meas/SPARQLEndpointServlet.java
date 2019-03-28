@@ -21,7 +21,7 @@ import org.apache.jena.rdf.model.Model;
  *
  * @author John McCrae
  */
-public class SPARQLEndpoint extends HttpServlet {
+public class SPARQLEndpointServlet extends HttpServlet {
 
     private static final Map<String, Model> models = new HashMap<>();
 

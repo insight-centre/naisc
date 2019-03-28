@@ -107,8 +107,7 @@ public class Main {
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
         }
     }
-
-    /**
+  /**
      * Execute NAISC
      * @param name The identifier for this run
      * @param leftFile The left RDF dataset to align
@@ -123,12 +122,7 @@ public class Main {
     public static AlignmentSet execute(String name, File leftFile, File rightFile, Configuration config,
             Option<File> partialSoln, ExecuteListener monitor, DatasetLoader loader) { 
         try {
-            monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
-            Dataset leftModel = loader.fromFile(leftFile, name + "/left");
-
-            monitor.updateStatus(Stage.INITIALIZING, "Reading right dataset");
-            Dataset rightModel = loader.fromFile(rightFile, name + "/right");
-            
+    
             final Option<AlignmentSet> partial;
             if(partialSoln.has()) {
                 monitor.updateStatus(Stage.INITIALIZING, "Loading partial solution");
@@ -137,7 +131,36 @@ public class Main {
                 partial = new None<>();
             }
             
-            return execute(name, leftModel, rightModel, config, partial, monitor, null, null, loader);
+            return execute2(name, leftFile, rightFile, config, partial, monitor, loader);
+        } catch (Exception x) {
+            x.printStackTrace();
+            monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
+            return null;
+        }
+    }
+    /**
+     * Execute NAISC
+     * @param name The identifier for this run
+     * @param leftFile The left RDF dataset to align
+     * @param rightFile The right RDF dataset to align
+     * @param config The configuration
+     * @param partialSoln A partial solution
+     * @param monitor Listener for status updates
+     * @param loader The loader of datasets
+     * @return The alignment
+     */
+    @SuppressWarnings("UseSpecificCatch")
+    public static AlignmentSet execute2(String name, File leftFile, File rightFile, Configuration config,
+            Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) { 
+        try {
+            monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
+            Dataset leftModel = loader.fromFile(leftFile, name + "/left");
+
+            monitor.updateStatus(Stage.INITIALIZING, "Reading right dataset");
+            Dataset rightModel = loader.fromFile(rightFile, name + "/right");
+            
+                        
+            return execute(name, leftModel, rightModel, config, partialSoln, monitor, null, null, loader);
             
         } catch (Exception x) {
             x.printStackTrace();

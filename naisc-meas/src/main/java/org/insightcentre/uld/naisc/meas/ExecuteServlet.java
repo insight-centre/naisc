@@ -1,26 +1,34 @@
 package org.insightcentre.uld.naisc.meas;
 
+import org.insightcentre.uld.naisc.meas.execution.ExecutionMode;
+import org.insightcentre.uld.naisc.meas.execution.ExecutionTask;
+import org.insightcentre.uld.naisc.meas.execution.Execution;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.insightcentre.uld.naisc.Alignment;
+import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.main.Configuration;
-import org.insightcentre.uld.naisc.main.CrossFold;
-import org.insightcentre.uld.naisc.main.Evaluate;
-import org.insightcentre.uld.naisc.main.ExecuteListener.Stage;
-import org.insightcentre.uld.naisc.main.Main;
-import org.insightcentre.uld.naisc.main.Train;
+import org.insightcentre.uld.naisc.meas.Meas.ActiveRun;
 import org.insightcentre.uld.naisc.meas.Meas.Run;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
+import org.insightcentre.uld.naisc.util.Some;
 
 /**
  *
@@ -28,7 +36,7 @@ import org.insightcentre.uld.naisc.util.Option;
  */
 public class ExecuteServlet extends HttpServlet {
 
-    private HashMap<String, ExecutionTask> executions = new HashMap<>();
+    private static final HashMap<String, ExecutionTask> executions = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
 
     final static public String VALID_ID = "[A-Za-z0-9][A-Za-z0-9_\\-]*";
@@ -78,7 +86,7 @@ public class ExecuteServlet extends HttpServlet {
                     throw new RuntimeException("Unreachable");
                 }
                 ExecutionTask execution = new ExecutionTask(er.config, er.configName, er.dataset, id, mode,
-                        getURL(req));
+                        getURL(req), new None<>());
                 executions.put(id, execution);
                 Thread t = new Thread(execution);
                 t.start();
@@ -94,6 +102,7 @@ public class ExecuteServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String path = req.getPathInfo();
+        System.err.println(path);
         if (path != null && path.startsWith("/status/") && executions.containsKey(path.substring(8))) {
             try (PrintWriter out = resp.getWriter()) {
                 mapper.writeValue(out, executions.get(path.substring(8)).listener.response);
@@ -104,9 +113,51 @@ public class ExecuteServlet extends HttpServlet {
             try (PrintWriter out = resp.getWriter()) {
                 mapper.writeValue(out, ManageServlet.completed.get(path.substring(11)));
             }
+        } else if (path != null && (path.startsWith("/rerun/") || path.startsWith("/retrain/"))) {
+            String id = path.substring(path.startsWith("/retrain/") ? 9 : 7);
+            if (id.matches(VALID_ID)) {
+                Run r = ManageServlet.completed.containsKey(id)
+                        ? ManageServlet.completed.get(id)
+                        : Execution.loadRun(id);
+
+                File configFile = new File("configs/" + r.configName + ".json");
+                if (!configFile.exists()) {
+                    throw new ServletException("The configuration was removed, cannot rerun");
+                }
+                Configuration config = mapper.readValue(configFile, Configuration.class);
+
+                AlignmentSet gold = convertToAlignmentSet(Execution.loadData(id));
+
+                ExecutionTask execution = new ExecutionTask(config, r.configName, r.datasetName, id,
+                        path.startsWith("/retrain/") ? ExecutionMode.TRAIN : ExecutionMode.EVALUATE,
+                        getURL(req), new Some<>(gold));
+                executions.put(id, execution);
+                Thread t = new Thread(execution);
+                t.start();
+                Iterator<Run> riter = Meas.data.runs.iterator();
+                while(riter.hasNext()) {
+                    if(riter.next().identifier.equals(id)) {
+                        riter.remove();
+                    }
+                }
+                try (PrintWriter out = resp.getWriter()) {
+                    out.print(id);
+                }
+            }
         } else {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
+    }
+
+    private AlignmentSet convertToAlignmentSet(List<Meas.RunResultRow> data) {
+        AlignmentSet as = new AlignmentSet();
+        Model model = ModelFactory.createDefaultModel();
+        for (Meas.RunResultRow rrr : data) {
+            if (rrr.valid == Valid.yes || rrr.valid == Valid.novel) {
+                as.add(new Alignment(model.createResource(rrr.subject), model.createResource(rrr.object), rrr.score, rrr.property));
+            }
+        }
+        return as;
     }
 
     private static class ExecuteRequest {
@@ -117,103 +168,109 @@ public class ExecuteServlet extends HttpServlet {
         public String runId;
     }
 
-    private static enum ExecutionMode {
-        EVALUATE,
-        TRAIN,
-        CROSSFOLD
-    }
 
-    private static class ExecutionTask implements Runnable {
 
-        private final Configuration config;
-        private final String dataset, id, configName;
-        public final Execution listener;
-        public boolean isActive;
-        private final ExecutionMode mode;
-        private final String requestURL;
-
-        public ExecutionTask(Configuration config, String configName, String dataset, String id, ExecutionMode mode,
-                String requestURL) {
-            this.config = config;
-            this.dataset = dataset;
-            this.id = id;
-            this.configName = configName;
-            this.listener = new Execution(id);
-            this.isActive = false;
-            this.mode = mode;
-            this.requestURL = requestURL;
-        }
-
-        @Override
-        public void run() {
-            try(MeasDatasetLoader loader = new MeasDatasetLoader(requestURL)) {
-                final Dataset ds = new Dataset(new File(new File("datasets"), dataset));
-                isActive = true;
-                File f = new File("runs");
-                f.mkdirs();
-                long time = System.currentTimeMillis();
-                final Evaluate.EvaluationResults er;
-                final AlignmentSet alignment;
-                if (mode == ExecutionMode.EVALUATE) {
-                    alignment = Main.execute(id, ds.left(), ds.right(),
-                            config, new None<>(), listener, loader);
-                    if (alignment == null) {
-                        return;
-                    }
-                    time = System.currentTimeMillis() - time;
-                    Option<File> alignFile = ds.align();
-                    if (alignFile.has()) {
-                        listener.updateStatus(Stage.EVALUATION, "Evaluating");
-                        AlignmentSet gold = Train.readAlignments(alignFile.get());
-                        er = Evaluate.evaluate(alignment, gold, listener);
-                    } else {
-                        er = null;
-                    }
-                } else if (mode == ExecutionMode.TRAIN) {
-                    Option<File> alignFile = ds.align();
-                    if (!alignFile.has()) {
-                        throw new IllegalArgumentException("Training was requested on run with no gold standard alignments");
-                    }
-                    Train.execute(id, ds.left(),
-                            ds.right(),
-                            alignFile.get(), 5.0, config, listener, loader);
-                    time = System.currentTimeMillis() - time;
-                    er = null;
-                    alignment = null;
-                } else if (mode == ExecutionMode.CROSSFOLD) {
-                    Option<File> alignFile = ds.align();
-                    if (!alignFile.has()) {
-                        throw new IllegalArgumentException("Cross-fold was requesetd on run with no gold standard alignments");
-                    }
-                    CrossFold.CrossFoldResult result = CrossFold.execute(id,
-                            ds.left(),
-                            ds.right(),
-                            alignFile.get(), 10, 5.0, config, listener, loader);
-                    time = System.currentTimeMillis() - time;
-                    er = result.results;
-                    alignment = result.alignments;
-                } else {
-                    throw new RuntimeException("Unreachable");
-                }
-                listener.updateStatus(Stage.COMPLETED, "Completed");
-                Run run = new Run(id, configName, dataset,
-                        er == null ? -1.0 : er.precision(),
-                        er == null ? -1.0 : er.recall(),
-                        er == null ? -1.0 : er.fmeasure(),
-                        er == null ? -2.0 : er.correlation, time,
-                        mode == ExecutionMode.TRAIN);
-                ManageServlet.completed.put(id, run);
-                if (alignment != null) {
-                    listener.saveAligment(run, alignment);
-                }
-                Meas.data.runs.add(run);
-            } catch (Exception x) {
-                x.printStackTrace();
-                listener.response.stage = Stage.FAILED;
-                listener.response.lastMessage = x.getClass().getSimpleName() + ": " + x.getMessage();
-            } finally {
-                isActive = false;
+    /**
+     * Get all the runs that are in progress at the moment
+     *
+     * @return The list of active runs
+     */
+    public static List<ActiveRun> activeRuns() {
+        List<ActiveRun> runs = new ArrayList<>();
+        for (ExecutionTask et : executions.values()) {
+            if (et.isActive) {
+                runs.add(new ActiveRun(et.id, et.configName, et.dataset, et.listener.response.stage, et.listener.response.lastMessage, true));
             }
         }
+        return runs;
     }
+
+    /**
+     * A dataset that consists of
+     *
+     * <ul>
+     * <li>A left dataset</li>
+     * <li>A right dataset</li>
+     * <li>(Optional) A gold standard alignment</li>
+     * <ul>
+     *
+     * @author John McCrae
+     */
+    public static class Dataset {
+
+        private final File folder;
+
+        /**
+         * Create a dataset from a folder
+         *
+         * @param folder The folder contains left.rdf and right.rdf
+         */
+        public Dataset(File folder) {
+            this.folder = folder;
+            if (!folder.exists() && !folder.isDirectory()) {
+                throw new DatasetException("Dataset folder not available");
+            }
+        }
+
+        /**
+         * The left dataset
+         *
+         * @return The left dataset file
+         * @throws DatasetException If no left dataset is available
+         */
+        public File left() {
+            for (String suffix : Arrays.asList(".rdf", ".nt", ".ttl", ".xml")) {
+                final File f = new File(folder, "left" + suffix);
+                if (f.exists()) {
+                    return f;
+                }
+            }
+            throw new DatasetException("No left file");
+        }
+
+        /**
+         * The right dataset
+         *
+         * @return The right dataset file
+         * @throws DatasetException If no right dataset is available
+         */
+        public File right() {
+            for (String suffix : Arrays.asList(".rdf", ".nt", ".ttl", ".xml")) {
+                final File f = new File(folder, "right" + suffix);
+                if (f.exists()) {
+                    return f;
+                }
+            }
+            throw new DatasetException("No left file");
+        }
+
+        /**
+         * Get the alignment file
+         *
+         * @return Some if the file exists or none if there is no alignment in
+         * this dataset
+         */
+        public Option<File> align() {
+            for (String suffix : Arrays.asList(".rdf", ".nt", ".ttl", ".xml")) {
+                final File f = new File(folder, "align" + suffix);
+                if (f.exists()) {
+                    return new Some<>(f);
+                }
+            }
+            return new None<>();
+        }
+
+        /**
+         * Checks if the required dataset files are present
+         *
+         * @param f The folder to check
+         * @return True if this folder is a dataset
+         */
+        public static boolean isDataset(File f) {
+            return f.exists() && f.isDirectory()
+                    && (new File(f, "left.rdf").exists() || new File(f, "left.nt").exists() || new File(f, "left.ttl").exists() || new File(f, "left.xml").exists())
+                    && (new File(f, "right.rdf").exists() || new File(f, "right.nt").exists() || new File(f, "right.ttl").exists() || new File(f, "right.xml").exists());
+        }
+    }
+
 }

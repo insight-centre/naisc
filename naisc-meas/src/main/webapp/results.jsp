@@ -1,4 +1,5 @@
 <%@ page import="org.insightcentre.uld.naisc.meas.*" %>
+<%@ page import="org.insightcentre.uld.naisc.meas.execution.*" %>
 <%@ page import="org.insightcentre.uld.naisc.main.Configuration" %>
 <% int limit = 50; %>
 <!doctype html>
@@ -332,10 +333,18 @@ var app = new Vue({
         }); 
     },
     rerun() {
-        alert("TODO");
+        jQuery.ajax({
+            url: "/execute/rerun/<%= request.getParameter("id") %>",
+            success: function() { window.location = "/index.jsp"; },
+            error: function(er) { document.write(er.responseText); }
+        });
     },
     retrain() {
-        alert("TODO");
+        jQuery.ajax({
+            url: "/execute/retrain/<%= request.getParameter("id") %>",
+            success: function() { window.location = "/index.jsp"; },
+            error: function(er) { document.write(er.responseText); }
+        });
     },
     prevResults($router) {
         if(this.offset > 0) {

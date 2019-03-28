@@ -31,7 +31,7 @@ public class MeasDatasetLoader implements DatasetLoader, AutoCloseable {
     public Dataset fromFile(File file, String name) throws IOException {
         final Model model = ModelFactory.createDefaultModel();
         model.read(new FileReader(file), file.toURI().toString(), "riot");
-        SPARQLEndpoint.registerModel(name, model);
+        SPARQLEndpointServlet.registerModel(name, model);
         models.add(name);
         return new Dataset() {
             @Override
@@ -72,7 +72,7 @@ public class MeasDatasetLoader implements DatasetLoader, AutoCloseable {
         final Model rightModel = dataset2.asModel().getOrExcept(new RuntimeException("Cannot combine SPARQL endpoints"));
         combined.add(leftModel);
         combined.add(rightModel);
-        SPARQLEndpoint.registerModel(name, combined);
+        SPARQLEndpointServlet.registerModel(name, combined);
         models.add(name);
         return new Dataset() {
             @Override
@@ -94,7 +94,7 @@ public class MeasDatasetLoader implements DatasetLoader, AutoCloseable {
     @Override
     public void close() throws IOException {
         for(String model : models) {
-            SPARQLEndpoint.deregisterModel(model);
+            SPARQLEndpointServlet.deregisterModel(model);
         }
     }
     

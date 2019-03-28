@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.meas;
 
+import org.insightcentre.uld.naisc.meas.execution.Execution;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -13,6 +14,7 @@ import java.util.Map;
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.main.Configuration;
 import org.insightcentre.uld.naisc.main.ExecuteListener.Stage;
+import org.insightcentre.uld.naisc.meas.ExecuteServlet.Dataset;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 
 /**
@@ -23,7 +25,7 @@ import org.insightcentre.uld.naisc.util.LangStringPair;
 public class Meas {
 
     static ObjectMapper mapper = new ObjectMapper();
-    static Data data = new Data();
+    public static Data data = new Data();
 
     static {
         data.runs = runs();
@@ -33,6 +35,7 @@ public class Meas {
 
     public static String json() {
         try {
+            data.activeRuns = ExecuteServlet.activeRuns();
             return mapper.writeValueAsString(data);
         } catch (JsonProcessingException x) {
             throw new RuntimeException(x);
@@ -170,6 +173,20 @@ public class Meas {
         public Stage stage;
         public String status;
         public boolean active;
+
+        public ActiveRun(String identifier, String configName, String datasetName, Stage stage, String status, boolean active) {
+            this.identifier = identifier;
+            this.configName = configName;
+            this.datasetName = datasetName;
+            this.stage = stage;
+            this.status = status;
+            this.active = active;
+        }
+
+        public ActiveRun() {
+        }
+        
+        
     }
 
     public static String loadRunResult(String id, int offset, int limit) throws JsonProcessingException, IOException {
