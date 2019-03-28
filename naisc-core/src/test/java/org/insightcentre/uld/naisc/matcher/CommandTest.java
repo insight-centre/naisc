@@ -55,7 +55,7 @@ public class CommandTest {
     /**
      * Test of makeMatcher method, of class Command.
      */
-    @Test
+    //@Test
     public void testMakeMatcher() {
         try {
         System.out.println("makeMatcher");

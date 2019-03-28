@@ -41,7 +41,7 @@ public class CommandTest {
     /**
      * Test of makeFeatureExtractor method, of class Command.
      */
-    @Test
+    //@Test
     public void testMakeFeatureExtractor() {
         System.out.println("makeFeatureExtractor");
         try {
