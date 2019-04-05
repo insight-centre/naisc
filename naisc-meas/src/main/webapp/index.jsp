@@ -9,16 +9,16 @@
 
     <link href="https://fonts.googleapis.com/css?family=Patua+One|Unica+One|Rokkitt" rel="stylesheet">
 
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/all.min.css">
-    <link rel="stylesheet" href="/css/meas.css">
+    <link rel="stylesheet" href="<%= System.getProperties().getProperty("base.url", "")  %>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%= System.getProperties().getProperty("base.url", "")  %>/css/all.min.css">
+    <link rel="stylesheet" href="<%= System.getProperties().getProperty("base.url", "")  %>/css/meas.css">
 
     <title>Meas - The Naisc Evaluation and Analysis Suite</title>
     </head>
     <body>
         <div class="container" id="app">
             <div class="row">
-                <h1><img src= "/imgs/logo.png" height="90px"/><br>Meas - The Naisc Evaluation and Analysis Suite</h1>
+                <h1><img src= "<%= System.getProperties().getProperty("base.url", "")  %>/imgs/logo.png" height="90px"/><br>Meas - The Naisc Evaluation and Analysis Suite</h1>
             </div>
             <div class="row" v-if="activeRuns.length > 0 ">
                 <h3>Active runs</h3>
@@ -154,7 +154,7 @@
                                     <span aria-hidden="true">&times;</span>
                                 </button>
                             </div>
-                            <form action="/upload_dataset" method="post" enctype="multipart/form-data" id="addDatasetForm">
+                            <form action="<%= System.getProperties().getProperty("base.url", "")  %>/upload_dataset" method="post" enctype="multipart/form-data" id="addDatasetForm">
                                 <div class="modal-body">
                                     <div class="form-group">
                                         <label for="datasetName">Name</label>
@@ -194,7 +194,7 @@
                                 </button>
                             </div>
                             
-                            <form action="/download_dataset" enctype="multipart/form-data" id="downloadDatasetForm">
+                            <form action="<%= System.getProperties().getProperty("base.url", "")  %>/download_dataset" enctype="multipart/form-data" id="downloadDatasetForm">
                                 <div class="modal-body">
                                     The list of available datasets is on the <a href="http://server1.nlp.insight-centre.org/naisc-datasets/" target="_blank">NUIG Server</a>
                                     <div class="form-group">
@@ -254,12 +254,12 @@
         </div>
 
     <script
-  src="/js/jquery-3.3.1.min.js"
+  src="<%= System.getProperties().getProperty("base.url", "")  %>/js/jquery-3.3.1.min.js"
   integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
   crossorigin="anonymous"></script>
-    <script src="/js/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
-    <script src="/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
-    <script src="/js/vue.js"></script>
+    <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/vue.js"></script>
 
     <script>var data = <%= Meas.json() %>;</script>
     <script>
@@ -372,7 +372,7 @@ var app = new Vue({
         var name = $('#datasetName').val();
         var data = this;
         jQuery.ajax({
-            url: "/upload_dataset",
+            url: "<%= System.getProperties().getProperty("base.url", "") %>/upload_dataset",
             method: "POST",
             data: form,
             processData: false,
@@ -393,7 +393,7 @@ var app = new Vue({
         var name = $('#downloadDatasetName').val();
         var data = this;
         jQuery.ajax({
-            url: "/download_dataset?dataset=" + name,
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/download_dataset?dataset=" + name,
             success: function(result){ 
                 $('#downloadDataset').modal('hide');
                 data.datasetNames.push(name);
@@ -411,7 +411,7 @@ var app = new Vue({
         var datasetName = this.datasetName;
         var data = this;
         jQuery.ajax({
-            url: "/execute/start",
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/start",
             method: "POST",
             data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier }),
             processData: false,
@@ -437,7 +437,7 @@ var app = new Vue({
         var datasetName = this.datasetName;
         var data = this;
         jQuery.ajax({
-            url: "/execute/train",
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/train",
             method: "POST",
             data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier }),
             processData: false,
@@ -463,7 +463,7 @@ var app = new Vue({
         var datasetName = this.datasetName;
         var data = this;
         jQuery.ajax({
-            url: "/execute/crossfold",
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/crossfold",
             method: "POST",
             data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier }),
             processData: false,
@@ -491,7 +491,7 @@ var app = new Vue({
                     var elem = this.activeRuns[i];
                     var id = this.activeRuns[i].identifier;
                     jQuery.ajax({
-                        url: "/execute/status/" + id,
+                        url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/status/" + id,
                         method: "GET",
                         success: function(result) {
                             var data = JSON.parse(result);
@@ -500,7 +500,7 @@ var app = new Vue({
                             elem.active = data.stage !== "FAILED" && data.stage !== "COMPLETED";
                             if(data.stage === "COMPLETED") {
                                 jQuery.ajax({
-                                    url: "/execute/completed/" + id,
+                                    url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/completed/" + id,
                                     method: "GET",
                                     success: function(result2) {
                                         var data2 = JSON.parse(result2);
@@ -521,7 +521,7 @@ var app = new Vue({
     },
     abortRun(runId) {
         jQuery.ajax({
-            url: "/execute/kill/" + runId,
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/kill/" + runId,
             method: "GET",
             success: function(result) {
                 for(i = 0; i < app.activeRuns.length; i++) {
@@ -536,7 +536,7 @@ var app = new Vue({
     delRun(runId) {
         if(confirm("Are you sure you want to delete this run?")) {
             jQuery.ajax({
-                url: "/manage/remove/" + runId,
+                url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/remove/" + runId,
                 method: "GET",
                 success: function(result) {
                     for(i = 0; i < app.runs.length; i++) {
@@ -551,7 +551,7 @@ var app = new Vue({
     },
     saveConfig() {
         jQuery.ajax({
-            url: "/manage/save_config/" + this.configName,
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/save_config/" + this.configName,
             method: "POST",
             data: JSON.stringify(unflatten_config(this.config))
         });

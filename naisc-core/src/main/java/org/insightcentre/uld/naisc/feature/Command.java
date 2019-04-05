@@ -16,18 +16,18 @@ import org.insightcentre.uld.naisc.util.ExternalCommandException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 
 /**
- * Use an external command for text feature extraction. The input to this will be 
- * a single line with a JSON object of the form:
- * 
+ * Use an external command for text feature extraction. The input to this will
+ * be a single line with a JSON object of the form:
+ *
  * <code>
  * {"lang1":"en","lang2":"en","_1":"Label 1","_2":"Label 2"}
  * </code>
- * 
+ *
  * The output should be as follows. The first line should be an array of strings
- * giving the feature names, and every value after should be an array of number 
- * of the same length. There should be precisely one response for each line of input
- * , e.g.,
- * 
+ * giving the feature names, and every value after should be an array of number
+ * of the same length. There should be precisely one response for each line of
+ * input , e.g.,
+ *
  * <code>
  * ["feature1","feature2"]
  * [0.2,0.3]
@@ -72,34 +72,54 @@ public class Command implements TextFeatureFactory {
 
         private final String id;
         private final Set<String> tags;
-        private final String[] features;
-        Process pr;
-        PrintWriter out;
-        BufferedReader in;
+        private String[] features;
+        private final ThreadLocal<Process> pr;
+        private final ThreadLocal<PrintWriter> out;
+        private final ThreadLocal<BufferedReader> in;
         private final ObjectMapper mapper = new ObjectMapper();
 
         public CommandImpl(String id, Set<String> tags, String command) {
             this.id = id;
             this.tags = tags;
-            Runtime rt = Runtime.getRuntime();
-            try {
-                pr = rt.exec(command);
-                out = new PrintWriter(pr.getOutputStream());
-                in = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-                BufferedReader err = new BufferedReader(new InputStreamReader(pr.getErrorStream()));
-                String line = in.readLine();
-                if (line == null) {
-                    String eline = err.readLine();
-                    while (eline != null) {
-                        System.err.println(eline);
-                        eline = err.readLine();
+            pr = new ThreadLocal<Process>() {
+                @Override
+                protected Process initialValue() {
+                    try {
+                        final Runtime rt = Runtime.getRuntime();
+                        return rt.exec(command);
+                    } catch (IOException x) {
+                        throw new ExternalCommandException(x);
                     }
-                    throw new RuntimeException("Command failed to start");
                 }
-                features = mapper.readValue(line, mapper.getTypeFactory().constructArrayType(String.class));
-            } catch (IOException x) {
-                throw new ExternalCommandException(x);
-            }
+            };
+            out = new ThreadLocal<PrintWriter>() {
+                @Override
+                protected PrintWriter initialValue() {
+                    return new PrintWriter(pr.get().getOutputStream());
+                }
+            };
+            in = new ThreadLocal<BufferedReader>() {
+                @Override
+                protected BufferedReader initialValue() {
+                    BufferedReader input = new BufferedReader(new InputStreamReader(pr.get().getInputStream()));
+                    BufferedReader err = new BufferedReader(new InputStreamReader(pr.get().getErrorStream()));
+                    try {
+                        String line = input.readLine();
+                        if (line == null) {
+                            String eline = err.readLine();
+                            while (eline != null) {
+                                System.err.println(eline);
+                                eline = err.readLine();
+                            }
+                            throw new RuntimeException("Command failed to start");
+                        }
+                        features = mapper.readValue(line, mapper.getTypeFactory().constructArrayType(String.class));
+                    } catch (IOException x) {
+                        throw new ExternalCommandException(x);
+                    }
+                    return input;
+                }
+            };
         }
 
         @Override
@@ -110,8 +130,8 @@ public class Command implements TextFeatureFactory {
         @Override
         public double[] extractFeatures(LangStringPair facet) {
             try {
-                out.println(mapper.writeValueAsString(facet));
-                return mapper.readValue(in.readLine(), double[].class);
+                out.get().println(mapper.writeValueAsString(facet));
+                return mapper.readValue(in.get().readLine(), double[].class);
             } catch (IOException x) {
                 throw new RuntimeException();
             }
@@ -119,6 +139,7 @@ public class Command implements TextFeatureFactory {
 
         @Override
         public String[] getFeatureNames() {
+            in.get();
             return features;
         }
 
@@ -129,7 +150,7 @@ public class Command implements TextFeatureFactory {
 
         @Override
         public void close() throws IOException {
-            pr.destroy();
+            pr.get().destroy();
         }
 
     }

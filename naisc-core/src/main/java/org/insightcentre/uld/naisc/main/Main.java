@@ -9,6 +9,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.jena.rdf.model.Resource;
@@ -107,8 +113,10 @@ public class Main {
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
         }
     }
-  /**
+
+    /**
      * Execute NAISC
+     *
      * @param name The identifier for this run
      * @param leftFile The left RDF dataset to align
      * @param rightFile The right RDF dataset to align
@@ -120,17 +128,17 @@ public class Main {
      */
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute(String name, File leftFile, File rightFile, Configuration config,
-            Option<File> partialSoln, ExecuteListener monitor, DatasetLoader loader) { 
+            Option<File> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
         try {
-    
+
             final Option<AlignmentSet> partial;
-            if(partialSoln.has()) {
+            if (partialSoln.has()) {
                 monitor.updateStatus(Stage.INITIALIZING, "Loading partial solution");
                 partial = new Some<>(Train.readAlignments(partialSoln.get()));
             } else {
                 partial = new None<>();
             }
-            
+
             return execute2(name, leftFile, rightFile, config, partial, monitor, loader);
         } catch (Exception x) {
             x.printStackTrace();
@@ -138,8 +146,10 @@ public class Main {
             return null;
         }
     }
+
     /**
      * Execute NAISC
+     *
      * @param name The identifier for this run
      * @param leftFile The left RDF dataset to align
      * @param rightFile The right RDF dataset to align
@@ -151,34 +161,33 @@ public class Main {
      */
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute2(String name, File leftFile, File rightFile, Configuration config,
-            Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) { 
+            Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
             Dataset leftModel = loader.fromFile(leftFile, name + "/left");
 
             monitor.updateStatus(Stage.INITIALIZING, "Reading right dataset");
             Dataset rightModel = loader.fromFile(rightFile, name + "/right");
-            
-                        
+
             return execute(name, leftModel, rightModel, config, partialSoln, monitor, null, null, loader);
-            
+
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
             return null;
         }
     }
-    
+
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute(String name, Dataset leftModel, Dataset rightModel, Configuration config,
             Option<AlignmentSet> partialSoln, ExecuteListener monitor, Set<Resource> left, Set<Resource> right, DatasetLoader loader) {
         try {
-            
+
             monitor.updateStatus(Stage.INITIALIZING, "Loading blocking strategy");
             BlockingStrategy blocking = config.makeBlockingStrategy();
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading lenses");
-            Dataset combined = loader.combine(leftModel, rightModel, name +"/combined");
+            Dataset combined = loader.combine(leftModel, rightModel, name + "/combined");
             List<Lens> lenses = config.makeLenses(combined);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Feature Extractors");
@@ -193,69 +202,85 @@ public class Main {
 
             monitor.updateStatus(Stage.BLOCKING, "Blocking");
             Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel);
-            if(left != null && right != null) {
+            if (left != null && right != null) {
                 blocks = new FilterBlocks(blocks, left, right);
             }
 
             monitor.updateStatus(Stage.SCORING, "Scoring");
-            int count = 0;
-            AlignmentSet alignments = new AlignmentSet();
+            //int count = 0;
+            final AtomicInteger count = new AtomicInteger(0);
+            ConcurrentLinkedQueue<Alignment> alignments = new ConcurrentLinkedQueue<>();
+            ExecutorService executor = new ThreadPoolExecutor(config.nThreads, config.nThreads, 0,
+                    TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(1000),
+                    new ThreadPoolExecutor.CallerRunsPolicy());
             for (Pair<Resource, Resource> block : blocks) {
-                if(block._1.getURI() == null || block._1.getURI().equals("") ||
-                        block._2.getURI() == null || block._2.getURI().equals("")) {
-                    System.err.println(block._1);
-                    System.err.println(block._2);
-                    throw new RuntimeException("Resource without URI");
-                }
-                monitor.addBlock(block._1, block._2);
-                if (++count % 1000 == 0) {
-                    monitor.updateStatus(Stage.SCORING, "Scoring (" + count + " done)");
-                }
-                FeatureSet featureSet = new FeatureSet(block._1, block._2);
-                for (Lens lens : lenses) {
-                    Option<LangStringPair> oFacet = lens.extract(block._1, block._2);
-                    if (!oFacet.has()) {
-                        monitor.updateStatus(Stage.SCORING, String.format("Lens produced no label for %s %s", block._1, block._2));
-                    } else {
-                        monitor.addLensResult(block._1, block._2, lens.id(), oFacet.get());
-                    }
-                    LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
-                    for (TextFeature featureExtractor : textFeatures) {
-                        if (featureExtractor.tags() == null || lens.tag() == null
-                                || featureExtractor.tags().contains(lens.tag())) {
-                            double[] features = featureExtractor.extractFeatures(facet);
-                            featureSet = featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
-                                    lens.id(), features, block._1, block._2));
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (block._1.getURI() == null || block._1.getURI().equals("")
+                                || block._2.getURI() == null || block._2.getURI().equals("")) {
+                            System.err.println(block._1);
+                            System.err.println(block._2);
+                            throw new RuntimeException("Resource without URI");
                         }
+                        monitor.addBlock(block._1, block._2);
+                        int c = count.incrementAndGet();
+                        if (c % 1000 == 0) {
+                            monitor.updateStatus(Stage.SCORING, "Scoring (" + c + " done)");
+                        }
+                        FeatureSet featureSet = new FeatureSet(block._1, block._2);
+                        for (Lens lens : lenses) {
+                            Option<LangStringPair> oFacet = lens.extract(block._1, block._2);
+                            if (!oFacet.has()) {
+                                monitor.updateStatus(Stage.SCORING, String.format("Lens produced no label for %s %s", block._1, block._2));
+                            } else {
+                                monitor.addLensResult(block._1, block._2, lens.id(), oFacet.get());
+                            }
+                            LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
+                            for (TextFeature featureExtractor : textFeatures) {
+                                if (featureExtractor.tags() == null || lens.tag() == null
+                                        || featureExtractor.tags().contains(lens.tag())) {
+                                    double[] features = featureExtractor.extractFeatures(facet);
+                                    featureSet = featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
+                                            lens.id(), features, block._1, block._2));
+                                }
+                            }
+                        }
+                        for (GraphFeature feature : dataFeatures) {
+                            double[] features = feature.extractFeatures(block._1, block._2);
+                            featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
+                        }
+                        for (Scorer scorer : scorers) {
+                            double score = scorer.similarity(featureSet);
+                            alignments.add(new Alignment(block._1, block._2, score, scorer.relation()));
+                        }
+
                     }
-                }
-                for (GraphFeature feature : dataFeatures) {
-                    double[] features = feature.extractFeatures(block._1, block._2);
-                    featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
-                }
-                for (Scorer scorer : scorers) {
-                    double score = scorer.similarity(featureSet);
-                    alignments.add(new Alignment(block._1, block._2, score, scorer.relation()));
-                }
+                });
             }
+            executor.shutdown();
+            executor.awaitTermination(30, TimeUnit.DAYS);
 
             for (Scorer scorer : scorers) {
                 scorer.close();
             }
 
+            AlignmentSet alignmentSet = new AlignmentSet();
+            alignmentSet.addAll(alignments);
+            
             monitor.updateStatus(Stage.MATCHING, "Matching");
-            if(partialSoln.has()) {
-                return matcher.alignWith(alignments, partialSoln.get(), monitor);
+            if (partialSoln.has()) {
+                return matcher.alignWith(alignmentSet, partialSoln.get(), monitor);
             } else {
-                return matcher.align(alignments, monitor);
-            } 
+                return matcher.align(alignmentSet, monitor);
+            }
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
             return null;
         }
     }
-    
+
     @SuppressWarnings("UseSpecificCatch")
     public static void main(String[] args) {
         try {
@@ -296,7 +321,7 @@ public class Main {
             if (configuration == null || !configuration.exists()) {
                 badOptions(p, "Configuration does not exist or not specified");
             }
-            final Option<File> partialSoln = os.valueOf("p") == null ? new None<>() : new Some<>((File)os.valueOf("p"));
+            final Option<File> partialSoln = os.valueOf("p") == null ? new None<>() : new Some<>((File) os.valueOf("p"));
             //final boolean example = os.has("x");
             final boolean outputXML = os.has("xml");
             //final boolean hard = !os.has("easy");
@@ -311,8 +336,8 @@ public class Main {
         }
     }
 
-    
     private static class FilterBlocks implements Iterable<Pair<Resource, Resource>> {
+
         private final Iterable<Pair<Resource, Resource>> iter;
         private final Set<Resource> left, right;
 
@@ -327,6 +352,7 @@ public class Main {
             final Iterator<Pair<Resource, Resource>> i = iter.iterator();
             return new Iterator<Pair<Resource, Resource>>() {
                 Pair<Resource, Resource> p = advance();
+
                 @Override
                 public boolean hasNext() {
                     return p != null;
@@ -334,17 +360,18 @@ public class Main {
 
                 @Override
                 public Pair<Resource, Resource> next() {
-                    if(p == null)
+                    if (p == null) {
                         throw new NoSuchElementException();
+                    }
                     Pair<Resource, Resource> rval = p;
                     p = advance();
                     return rval;
                 }
-                
+
                 private Pair<Resource, Resource> advance() {
-                    while(i.hasNext()) {
+                    while (i.hasNext()) {
                         Pair<Resource, Resource> x = i.next();
-                        if(left.contains(x._1) && right.contains(x._2)) {
+                        if (left.contains(x._1) && right.contains(x._2)) {
                             return x;
                         }
                     }
@@ -352,7 +379,6 @@ public class Main {
                 }
             };
         }
-        
-        
+
     }
 }

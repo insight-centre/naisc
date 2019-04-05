@@ -81,22 +81,37 @@ public class Command implements LensFactory {
 
     private static class CommandImpl implements Lens {
         private final String id, tag;
-        Process pr;
-        PrintWriter out;
-        BufferedReader in;
+        private final ThreadLocal<Process> pr;
+        private final ThreadLocal<PrintWriter> out;
+        private final ThreadLocal<BufferedReader> in;
         private final ObjectMapper mapper = new ObjectMapper();
 
         public CommandImpl(String id, String tag, String command) {
             this.id = id;
             this.tag = tag;
-            Runtime rt = Runtime.getRuntime();
-            try {
-                pr = rt.exec(command);
-                out = new PrintWriter(pr.getOutputStream());
-                in = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-            } catch (IOException x) {
-                throw new ExternalCommandException(x);
-            }
+            pr = new ThreadLocal<Process>() {
+                @Override
+                protected Process initialValue() {
+                    try {
+                        final Runtime rt = Runtime.getRuntime();
+                        return rt.exec(command);
+                    } catch (IOException x) {
+                        throw new ExternalCommandException(x);
+                    }
+                }
+            };
+            out = new ThreadLocal<PrintWriter>() {
+                @Override
+                protected PrintWriter initialValue() {
+                    return new PrintWriter(pr.get().getOutputStream());
+                }
+            };
+            in = new ThreadLocal<BufferedReader>() {
+                @Override
+                protected BufferedReader initialValue() {
+                    return new BufferedReader(new InputStreamReader(pr.get().getInputStream()));
+                }
+            };
         }
 
         @Override
@@ -106,13 +121,13 @@ public class Command implements LensFactory {
 
         @Override
         public Option<LangStringPair> extract(Resource entity1, Resource entity2) {
-            out.println(entity1.getURI() + "\t" + entity2.getURI());
-            out.flush();
+            out.get().println(entity1.getURI() + "\t" + entity2.getURI());
+            out.get().flush();
             try {
-                String line = in.readLine();
+                String line = in.get().readLine();
             
                 if (line == null) {
-                    BufferedReader err = new BufferedReader(new InputStreamReader(pr.getErrorStream()));
+                    BufferedReader err = new BufferedReader(new InputStreamReader(pr.get().getErrorStream()));
                     String eline = err.readLine();
                     while (eline != null) {
                         System.err.println(eline);

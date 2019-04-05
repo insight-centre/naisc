@@ -55,8 +55,9 @@ public class CommandTest {
     /**
      * Test of makeMatcher method, of class Command.
      */
-    //@Test
+    @Test
     public void testMakeMatcher() {
+        if(System.getProperty("command.test") != null) {
         try {
         System.out.println("makeMatcher");
         Model model = ModelFactory.createDefaultModel();
@@ -75,6 +76,7 @@ public class CommandTest {
         assertEquals(expResult, result);
         } catch(ExternalCommandException x) {
             x.printStackTrace();
+        }
         }
     }
 

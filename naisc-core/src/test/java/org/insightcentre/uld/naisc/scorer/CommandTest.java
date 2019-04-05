@@ -57,10 +57,11 @@ public class CommandTest {
     /**
      * Test of makeScorer method, of class Command.
      */
-    //@Test
+    @Test
     public void testMakeScorer() {
+        if(System.getProperty("command.test") != null) {
         try {
-            System.out.println("makeScorer");
+            System.out.println("Command.makeScorer");
             Model model = ModelFactory.createDefaultModel();
             Map<String, Object> params = new HashMap<>();
             params.put("command", "python3 src/test/resources/test-scorer.py");
@@ -73,6 +74,7 @@ public class CommandTest {
             assertEquals(expResult, result, 0.0);
         } catch (ExternalCommandException x) {
             x.printStackTrace();
+        }
         }
     }
 

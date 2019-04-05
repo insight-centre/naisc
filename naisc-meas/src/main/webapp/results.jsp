@@ -11,16 +11,16 @@
 
     <link href="https://fonts.googleapis.com/css?family=Patua+One|Unica+One|Rokkitt" rel="stylesheet">
 
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/all.min.css">
-    <link rel="stylesheet" href="/css/meas.css">
+    <link rel="stylesheet" href="<%= System.getProperties().getProperty("base.url", "")  %>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%= System.getProperties().getProperty("base.url", "")  %>/css/all.min.css">
+    <link rel="stylesheet" href="<%= System.getProperties().getProperty("base.url", "")  %>/css/meas.css">
 
     <title>Meas - The Naisc Evaluation and Analysis Suite</title>
     </head>
     <body>
         <div class="container" id="app">
             <div class="row">
-                <h1><a href="/"><img src= "/imgs/logo.png" height="90px"/></a><br>Results for <%= request.getParameter("id") %></h1>
+                <h1><a href="<%= System.getProperties().getProperty("base.url", "")  %>/"><img src= "<%= System.getProperties().getProperty("base.url", "")  %>/imgs/logo.png" height="90px"/></a><br>Results for <%= request.getParameter("id") %></h1>
             </div>
             <div class="row">
                 <div class="col percentage percentage-bordered">
@@ -97,8 +97,8 @@
                 <div class="row spaced-buttons">
                 <button type="button" class="btn btn-user btn-success" v-on:click.prevent="rerun()" data-toggle="tooltip" data-placement="top" title="Rerun the system including the correct links"><i class="fas fa-redo"></i> Rerun</button>
                 <button type="button" class="btn btn-user btn-success" v-on:click.prevent="retrain()" data-toggle="tooltip" data-placement="top" title="Retrain the model using the marked data"><i class="fas fa-dumbbell"></i> Retrain</button>
-                <a href="/manage/download_all/<%= request.getParameter("id") %>"><button type="button" class="btn btn-user btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' or 'No'"><i class="fas fa-download"></i> Download output links</button></a>
-                <a href="/manage/download_valid/<%= request.getParameter("id") %>"><button type="button" class="btn btn-user btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' and new links"><i class="fas fa-check-double"></i> Download validated</button></a>
+                <a href="<%= System.getProperties().getProperty("base.url", "")  %>/manage/download_all/<%= request.getParameter("id") %>"><button type="button" class="btn btn-user btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' or 'No'"><i class="fas fa-download"></i> Download output links</button></a>
+                <a href="<%= System.getProperties().getProperty("base.url", "")  %>/manage/download_valid/<%= request.getParameter("id") %>"><button type="button" class="btn btn-user btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' and new links"><i class="fas fa-check-double"></i> Download validated</button></a>
                 </div>
 
                 <div class="modal fade" id="updateElement" tabindex="-1" role="dialog"  aria-hidden="true">
@@ -130,12 +130,12 @@
                 </div>                  
             </div>
         </div>
-    <script src="/js/jquery-3.3.1.min.js"
+    <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/jquery-3.3.1.min.js"
   integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
   crossorigin="anonymous"></script>
-    <script src="/js/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
-    <script src="/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
-    <script src="/js/vue.js"></script>
+    <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/vue.js"></script>
 <script>
 var data = {"results":<%= Meas.loadRunResult(request.getParameter("id"), request.getParameter("offset") == null ? 0  : Integer.parseInt(request.getParameter("offset")), limit) %>};
 
@@ -190,7 +190,7 @@ var app = new Vue({
         this.results[idx].valid = value;
         var remoteIdx = this.results[idx].idx;
         jQuery.ajax({
-            "url": "/manage/update/<%= request.getParameter("id") %>",
+            "url": "<%= System.getProperties().getProperty("base.url", "")  %>/manage/update/<%= request.getParameter("id") %>",
             data: JSON.stringify({
                 "idx": remoteIdx,
                 "valid": value,
@@ -304,7 +304,7 @@ var app = new Vue({
         $('#updateElement').modal('hide');
         var remoteIdx = this.results[this.updateIdx].idx;
         jQuery.ajax({
-            "url": "/manage/add/<%= request.getParameter("id") %>",
+            "url": "<%= System.getProperties().getProperty("base.url", "")  %>/manage/add/<%= request.getParameter("id") %>",
             data: JSON.stringify({
                 idx: remoteIdx,
                 subject: newRow.subject,
@@ -323,7 +323,7 @@ var app = new Vue({
         this.results.splice(idx,1);
         this.fn--;
         jQuery.ajax({
-            url: "/manage/remove/<%= request.getParameter("id") %>",
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/remove/<%= request.getParameter("id") %>",
             data: JSON.stringify({
                 "idx": remoteIdx,
                 "data": {"identifier":"<%= request.getParameter("id") %>", "precision": this.precnum(), "recall": this.recnum(), "fmeasure": this.fmnum()}}),
@@ -334,15 +334,15 @@ var app = new Vue({
     },
     rerun() {
         jQuery.ajax({
-            url: "/execute/rerun/<%= request.getParameter("id") %>",
-            success: function() { window.location = "/index.jsp"; },
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/rerun/<%= request.getParameter("id") %>",
+            success: function() { window.location = "<%= System.getProperties().getProperty("base.url", "")  %>/index.jsp"; },
             error: function(er) { document.write(er.responseText); }
         });
     },
     retrain() {
         jQuery.ajax({
-            url: "/execute/retrain/<%= request.getParameter("id") %>",
-            success: function() { window.location = "/index.jsp"; },
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/retrain/<%= request.getParameter("id") %>",
+            success: function() { window.location = "<%= System.getProperties().getProperty("base.url", "")  %>/index.jsp"; },
             error: function(er) { document.write(er.responseText); }
         });
     },
@@ -350,11 +350,11 @@ var app = new Vue({
         if(this.offset > 0) {
         var self = this;
         jQuery.ajax({
-            url: "/manage/results?id=<%= request.getParameter("id") %>&offset=" + (this.offset-<%=limit%>) + "&limit=<%=limit%>",
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/results?id=<%= request.getParameter("id") %>&offset=" + (this.offset-<%=limit%>) + "&limit=<%=limit%>",
             success: function(d) {
                 self.results = d;
                 self.offset -= <%=limit%>;
-                $router.push({ "path": "/results.jsp", "query": { "id": "<%= request.getParameter("id") %>", "offset": offset }});
+                $router.push({ "path": "<%= System.getProperties().getProperty("base.url", "")  %>/results.jsp", "query": { "id": "<%= request.getParameter("id") %>", "offset": offset }});
             }, 
             error: function(er){ document.write(er.responseText); }
         });
@@ -364,11 +364,11 @@ var app = new Vue({
         if(this.offset + <%=limit%> < this.totalResults) {
         var self = this;
         jQuery.ajax({
-            url: "/manage/results?id=<%= request.getParameter("id") %>&offset=" + (this.offset+<%=limit%>) + "&limit=<%=limit%>",
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/results?id=<%= request.getParameter("id") %>&offset=" + (this.offset+<%=limit%>) + "&limit=<%=limit%>",
             success: function(d) {
                 self.results = d;
                 self.offset += <%=limit%>;
-                $router.push({ "path": "/results.jsp", "query": { "id": "<%= request.getParameter("id") %>", "offset": offset }});
+                $router.push({ "path": "<%= System.getProperties().getProperty("base.url", "")  %>/results.jsp", "query": { "id": "<%= request.getParameter("id") %>", "offset": offset }});
             }, 
             error: function(er){ document.write(er.responseText); }
         });

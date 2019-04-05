@@ -48,8 +48,9 @@ public class CommandTest {
     /**
      * Test of makeLens method, of class Command.
      */
-    //@Test
+    @Test
     public void testMakeLens() {
+        if(System.getProperty("command.test") != null) {
         try {
             System.out.println("makeLens");
             Model model = ModelFactory.createDefaultModel();
@@ -82,6 +83,7 @@ public class CommandTest {
             assertEquals(expResult, result);
         } catch (ExternalCommandException x) {
             x.printStackTrace();
+        }
         }
     }
 

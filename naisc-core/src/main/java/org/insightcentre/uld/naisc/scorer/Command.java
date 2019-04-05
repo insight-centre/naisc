@@ -104,29 +104,43 @@ public class Command implements ScorerFactory {
     private static class CommandImpl implements Scorer {
 
         private final String relation;
-        PrintWriter out;
-        BufferedReader in;
+        private final ThreadLocal<PrintWriter> out;
+        private final ThreadLocal<BufferedReader> in;
         private final ObjectMapper mapper = new ObjectMapper();
 
         public CommandImpl(String command, String relation) {
             this.relation = relation;
-            Runtime rt = Runtime.getRuntime();
-            try {
-                Process pr = rt.exec(command);
-                out = new PrintWriter(pr.getOutputStream());
-                in = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-
-            } catch (IOException x) {
-                throw new ExternalCommandException(x);
-            }
+            final ThreadLocal<Process> pr = new ThreadLocal<Process>() {
+                @Override
+                protected Process initialValue() {
+                    try {
+                        final Runtime rt = Runtime.getRuntime();
+                        return rt.exec(command);
+                    } catch (IOException x) {
+                        throw new ExternalCommandException(x);
+                    }
+                }
+            };
+            out = new ThreadLocal<PrintWriter>() {
+                @Override
+                protected PrintWriter initialValue() {
+                    return new PrintWriter(pr.get().getOutputStream());
+                }
+            };
+            in = new ThreadLocal<BufferedReader>() {
+                @Override
+                protected BufferedReader initialValue() {
+                    return new BufferedReader(new InputStreamReader(pr.get().getInputStream()));
+                }
+            };
         }
 
         @Override
         public double similarity(FeatureSet features) {
             try {
-                out.println(mapper.writeValueAsString(features.values));
-                out.flush();
-                String line = in.readLine();
+                out.get().println(mapper.writeValueAsString(features.values));
+                out.get().flush();
+                String line = in.get().readLine();
                 return Double.parseDouble(line.trim());
             } catch (IOException x) {
                 throw new RuntimeException(x);
@@ -140,8 +154,8 @@ public class Command implements ScorerFactory {
 
         @Override
         public void close() throws IOException {
-            in.close();
-            out.close();
+            in.get().close();
+            out.get().close();
         }
 
     }

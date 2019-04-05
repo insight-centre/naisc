@@ -77,33 +77,61 @@ public class Command implements GraphFeatureFactory {
     private static class CommandImpl implements GraphFeature {
 
         private final String id;
-        Process pr;
-        PrintWriter out;
-        BufferedReader in, err;
+        private final ThreadLocal<Process> pr;
+        private final ThreadLocal<PrintWriter> out;
+        private final ThreadLocal<BufferedReader> in, err;
         private final ObjectMapper mapper = new ObjectMapper();
-        private final String[] features;
+        private String[] features;
 
         public CommandImpl(String id, String command) {
             this.id = id;
-            Runtime rt = Runtime.getRuntime();
-            try {
-                pr = rt.exec(command);
-                out = new PrintWriter(pr.getOutputStream());
-                in = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-                err = new BufferedReader(new InputStreamReader(pr.getErrorStream()));
-                String line = in.readLine();
-                if (line == null) {
-                    String eline = err.readLine();
-                    while (eline != null) {
-                        System.err.println(eline);
-                        eline = err.readLine();
+            
+            
+            pr = new ThreadLocal<Process>() {
+                @Override
+                protected Process initialValue() {
+                    try {
+                        final Runtime rt = Runtime.getRuntime();
+                        return rt.exec(command);
+                    } catch (IOException x) {
+                        throw new ExternalCommandException(x);
                     }
-                    throw new RuntimeException("Command failed to start");
                 }
-                features = mapper.readValue(line, mapper.getTypeFactory().constructArrayType(String.class));
-            } catch (IOException x) {
-                throw new ExternalCommandException(x);
-            }
+            };
+            out = new ThreadLocal<PrintWriter>() {
+                @Override
+                protected PrintWriter initialValue() {
+                    return new PrintWriter(pr.get().getOutputStream());
+                }
+            };
+            err = new ThreadLocal<BufferedReader>() {
+                @Override
+                protected BufferedReader initialValue() {
+                    return new BufferedReader(new InputStreamReader(pr.get().getErrorStream()));
+                }
+            };
+        
+            in = new ThreadLocal<BufferedReader>() {
+                @Override
+                protected BufferedReader initialValue() {
+                    BufferedReader input = new BufferedReader(new InputStreamReader(pr.get().getInputStream()));
+                    try {
+                        String line = input.readLine();
+                        if (line == null) {
+                            String eline = err.get().readLine();
+                            while (eline != null) {
+                                System.err.println(eline);
+                                eline = err.get().readLine();
+                            }
+                            throw new RuntimeException("Command failed to start");
+                        }
+                        features = mapper.readValue(line, mapper.getTypeFactory().constructArrayType(String.class));
+                    } catch (IOException x) {
+                        throw new ExternalCommandException(x);
+                    }
+                    return input;
+                }
+            };
         }
 
         @Override
@@ -115,9 +143,9 @@ public class Command implements GraphFeatureFactory {
         public double[] extractFeatures(Resource entity1, Resource entity2) {
 
             try {
-                out.println(entity1.getURI() + "\t" + entity2.getURI());
-                out.flush();
-                return mapper.readValue(in.readLine(), double[].class);
+                out.get().println(entity1.getURI() + "\t" + entity2.getURI());
+                out.get().flush();
+                return mapper.readValue(in.get().readLine(), double[].class);
             } catch (IOException x) {
                 throw new RuntimeException();
             }

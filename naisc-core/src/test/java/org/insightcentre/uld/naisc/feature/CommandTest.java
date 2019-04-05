@@ -41,8 +41,9 @@ public class CommandTest {
     /**
      * Test of makeFeatureExtractor method, of class Command.
      */
-    //@Test
+    @Test
     public void testMakeFeatureExtractor() {
+        if(System.getProperty("command.test") != null) {
         System.out.println("makeFeatureExtractor");
         try {
             Set<String> tags = Collections.EMPTY_SET;
@@ -57,6 +58,7 @@ public class CommandTest {
             assertArrayEquals(expData, feature.extractFeatures(null), 0.0);
         } catch (ExternalCommandException x) {
             x.printStackTrace();
+        }
         }
     }
 

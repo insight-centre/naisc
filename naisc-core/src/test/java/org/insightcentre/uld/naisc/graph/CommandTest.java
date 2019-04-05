@@ -46,8 +46,9 @@ public class CommandTest {
     /**
      * Test of makeFeature method, of class Command.
      */
-    //@Test
+    @Test
     public void testMakeFeature() {
+        if(System.getProperty("command.test") != null) {
         try {
             System.out.println("makeFeature");
             final Model model = ModelFactory.createDefaultModel();
@@ -80,6 +81,7 @@ public class CommandTest {
             assertArrayEquals(expResult, result, 0.0);
         } catch (ExternalCommandException x) {
             x.printStackTrace();
+        }
         }
     }
 

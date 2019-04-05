@@ -24,7 +24,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import org.apache.jena.rdf.model.Model;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.Dataset;
@@ -51,7 +50,6 @@ import org.insightcentre.uld.naisc.constraint.ConstraintFactory;
 import org.insightcentre.uld.naisc.constraint.ThresholdConstraint;
 import org.insightcentre.uld.naisc.feature.BagOfWordsSim;
 import org.insightcentre.uld.naisc.feature.BasicString;
-import org.insightcentre.uld.naisc.feature.Command;
 import org.insightcentre.uld.naisc.feature.Dictionary;
 import org.insightcentre.uld.naisc.feature.KeyWords;
 import org.insightcentre.uld.naisc.feature.WordEmbeddings;
@@ -103,6 +101,10 @@ public class Configuration {
      * The description of the configuration
      */
     public final String description;
+    /**
+     * The number of threads to use
+     */
+    public int nThreads = 10;
 
     @JsonCreator
     public Configuration(
