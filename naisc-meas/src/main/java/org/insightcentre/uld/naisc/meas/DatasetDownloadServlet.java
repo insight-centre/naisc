@@ -30,13 +30,13 @@ public class DatasetDownloadServlet extends HttpServlet {
                 downloadRDF("http://server1.nlp.insight-centre.org/naisc-datasets/" + datasetName + "/right",
                         directory, "right");
                 try {
-                    downloadURL("http://server1.nlp.insight-centre.org/naisc-datasets/align.nt",
+                    downloadURL("http://server1.nlp.insight-centre.org/naisc-datasets/" + datasetName + "/align.nt",
                             new File(directory, "align.nt"));
                 } catch(IOException x) {
                     // Ignore: not all datasets have a gold standard
                 }
                 try {
-                    downloadURL("http://server1.nlp.insight-centre.org/naisc-datasets/blocks.nt",
+                    downloadURL("http://server1.nlp.insight-centre.org/naisc-datasets/" + datasetName + "/blocks.nt",
                             new File(directory, "blocks.nt"));
                 } catch(IOException x) {
                     // Ignore: not all datasets have a blocking

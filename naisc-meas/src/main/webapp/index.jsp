@@ -104,7 +104,7 @@
                             <i class="fas fa-upload"></i> Add dataset
                         </button>
                         <button type="button" class="btn btn-user btn-primary float-right" data-toggle="modal" data-target="#downloadDataset" style="margin-right:6px;">
-                            <i class="fas fa-cloud-download-alt"></i> Download dataset
+                            <i class="fas fa-cloud-download-alt"></i> Get more datasets
                         </button>
                     </div>
                     <div class="form-group">
@@ -199,7 +199,9 @@
                                     The list of available datasets is on the <a href="http://server1.nlp.insight-centre.org/naisc-datasets/" target="_blank">NUIG Server</a>
                                     <div class="form-group">
                                         <label for="datasetName">Name</label>
-                                        <input type="text" class="form-control" name="name" id="downloadDatasetName">
+                                        <select class="form-control" name="name" id="downloadDatasetName">
+                                            <option v-for="dataset in availableDatasets" v-bind:value="dataset">{{dataset}}</option>
+                                        </select>
                                     </div>
 
                                 </div>
@@ -391,6 +393,7 @@ var app = new Vue({
     downloadDataset() {
         var form = new FormData($("#downloadDatasetForm")[0]);
         var name = $('#downloadDatasetName').val();
+        alert(name);
         var data = this;
         jQuery.ajax({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/download_dataset?dataset=" + name,
@@ -555,7 +558,7 @@ var app = new Vue({
             method: "POST",
             data: JSON.stringify(unflatten_config(this.config))
         });
-    }       
+    }                
   },
   beforeDestroy() {
     clearInterval(this.polling);

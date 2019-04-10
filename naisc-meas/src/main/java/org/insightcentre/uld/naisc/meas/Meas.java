@@ -3,8 +3,11 @@ package org.insightcentre.uld.naisc.meas;
 import org.insightcentre.uld.naisc.meas.execution.Execution;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +39,7 @@ public class Meas {
     public static String json() {
         try {
             data.activeRuns = ExecuteServlet.activeRuns();
+            data.availableDatasets = getAvailableDataset();
             return mapper.writeValueAsString(data);
         } catch (JsonProcessingException x) {
             throw new RuntimeException(x);
@@ -126,6 +130,27 @@ public class Meas {
         }
     }
 
+    private static List<String> getAvailableDataset() {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(
+                new URL("http://server1.nlp.insight-centre.org/naisc-datasets/").
+                        openConnection().getInputStream()))) {
+            List<String> datasets = new ArrayList<>();
+            String line = in.readLine();
+            while(line != null) {
+                if(line.contains("[DIR]")) {
+                    int i1 = line.indexOf("href=\"") + 6;
+                    int i2 = line.indexOf("\"", i1) - 1;
+                    datasets.add(line.substring(i1, i2));
+                }
+                line = in.readLine();
+            }
+            return datasets;
+        } catch (IOException x) {
+            x.printStackTrace();
+        }
+        return Collections.EMPTY_LIST;
+    }
+
     public static class Data {
 
         public List<ActiveRun> activeRuns = Collections.EMPTY_LIST;
@@ -137,6 +162,7 @@ public class Meas {
         public String datasetName;
         public String identifier;
         public boolean showConfig = false;
+        public List<String> availableDatasets;
     }
 
     public static class Run {
@@ -185,8 +211,7 @@ public class Meas {
 
         public ActiveRun() {
         }
-        
-        
+
     }
 
     public static String loadRunResult(String id, int offset, int limit) throws JsonProcessingException, IOException {
