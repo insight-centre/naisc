@@ -37,6 +37,15 @@
                 </div>
             </div>
             <div class="row">
+                <div class="col">
+                <center>
+                    <a href="<%= System.getProperties().getProperty("base.url", "")  %>/manage/download_all/<%= request.getParameter("id") %>"><button type="button" class="btn btn-user btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' or 'No'"><i class="fas fa-download"></i> Download output links</button></a>
+                    <a href="<%= System.getProperties().getProperty("base.url", "")  %>/manage/download_valid/<%= request.getParameter("id") %>"><button type="button" class="btn btn-user btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' and new links"><i class="fas fa-check-double"></i> Download validated</button></a>
+                
+                </center>
+                </div>
+            </div>
+            <div class="row">
                 <h3 class="results_title">Results {{offset+1}}-{{Math.min(offset+<%=limit%>,totalResults)}} of {{totalResults}}</h3>
                 <table class="table table-striped">
                     <thead>
@@ -245,7 +254,7 @@ var app = new Vue({
     changeRight(idx, currentValue) {
         var self = this;
         jQuery.ajax({
-            url: '/manage/alternatives?id=<%=request.getParameter("id")%>&left=' + self.results[idx].subject,
+            url: '<%= System.getProperties().getProperty("base.url", "")  %>/manage/alternatives?id=<%=request.getParameter("id")%>&left=' + self.results[idx].subject,
             success: function(result) {
                 self.elems = [];
                 for(var i = 0; i < result.length; i++) {
@@ -267,7 +276,7 @@ var app = new Vue({
         var remoteIdx = this.results[idx].idx;
         var self = this;
         jQuery.ajax({
-            url: '/manage/alternatives?id=<%=request.getParameter("id")%>&right=' + self.results[idx].object,
+            url: '<%= System.getProperties().getProperty("base.url", "")  %>/manage/alternatives?id=<%=request.getParameter("id")%>&right=' + self.results[idx].object,
             success: function(result) {
                 self.elems = [];
                 for(var i = 0; i < result.length; i++) {

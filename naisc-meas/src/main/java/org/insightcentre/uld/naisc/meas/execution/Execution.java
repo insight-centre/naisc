@@ -28,7 +28,7 @@ import org.insightcentre.uld.naisc.util.Pair;
 
 /**
  * Manages the execution and how it is saved to the database
- * 
+ *
  * @author John McCrae
  */
 public class Execution implements ExecuteListener {
@@ -37,14 +37,14 @@ public class Execution implements ExecuteListener {
     public boolean aborted = false;
     private final String id;
     private final HashMap<Pair<Resource, Resource>, Map<String, LangStringPair>> lensResults = new HashMap<>();
-    private final List<Pair<Resource, Resource>> blocks = new ArrayList<>();
+    private List<Pair<Resource, Resource>> blocks = new ArrayList<>();
     private final static Object databaseLock = new Object();
 
     public Execution(String id) {
         try {
             Class.forName("org.sqlite.JDBC");
             this.id = id;
-            assert (id.matches(ExecuteServlet.VALID_ID));
+            assert (id == null || id.matches(ExecuteServlet.VALID_ID));
         } catch (ClassNotFoundException x) {
             throw new RuntimeException("SQLite JDBC not available", x);
         }
@@ -69,25 +69,38 @@ public class Execution implements ExecuteListener {
         lensResults.get(p).put(lensId, res);
     }
 
+    private static Connection connection(String id) throws SQLException {
+        if(id != null) {
+            return DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db");
+        } else {
+            return DriverManager.getConnection("jdbc:sqlite::memory:");
+        }
+    }
+    
     @Override
     public void addBlock(Resource res1, Resource res2) {
         blocks.add(new Pair<>(res1, res2));
-        if (blocks.size() > 100000) {
+        if (blocks.size() > BLOCK_MAX) {
             synchronized (databaseLock) {
-                try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
-                    createTables(connection);
-                    saveBlocks(connection);
-                } catch (SQLException x) {
-                    x.printStackTrace();
+                if (blocks.size() > BLOCK_MAX) {
+                    List<Pair<Resource, Resource>> b2 = blocks;
+                    blocks = new ArrayList<>();
+                    try (Connection connection = connection(id)) {
+                        createTables(connection);
+                        saveBlocks(connection, b2);
+                    } catch (SQLException x) {
+                        x.printStackTrace();
+                    }
                 }
             }
         }
     }
+    private static final int BLOCK_MAX = 100000;
 
     private boolean tablesCreated = false;
 
     private void createTables(Connection connection) throws SQLException {
-        if (!tablesCreated) {
+        if (!tablesCreated || id == null) {
             try (Statement stat = connection.createStatement()) {
                 stat.execute("CREATE TABLE runs ("
                         + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -114,18 +127,18 @@ public class Execution implements ExecuteListener {
         }
 
     }
-    
+
     public void clearAlignments() throws SQLException {
         synchronized (databaseLock) {
-            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
-                try(Statement stat = connection.createStatement()) {
+            try (Connection connection = connection(id)) {
+                try (Statement stat = connection.createStatement()) {
                     stat.execute("DELETE FROM results");
                     stat.execute("DELETE FROM blocks");
                     tablesCreated = true;
                 }
-            } 
+            }
         }
-        
+
     }
 
     private void saveStats(Connection connection, Run run) throws SQLException {
@@ -166,13 +179,22 @@ public class Execution implements ExecuteListener {
         }
     }
 
-    public void saveBlocks(Connection connection) throws SQLException {
+    public static void saveBlocks(Connection connection, List<Pair<Resource,Resource>> blocks) throws SQLException {
         connection.setAutoCommit(false);
         try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO blocks(res1, res2) VALUES (?,?)")) {
+        int i = 0;
             for (Pair<Resource, Resource> block : blocks) {
+                if(block._1 == null || !block._1.isURIResource() ||
+                        block._2 == null || !block._2.isURIResource()) {
+                    System.err.println("Bad block generated");
+                    continue;
+                }
                 pstat.setString(1, block._1.getURI());
                 pstat.setString(2, block._2.getURI());
                 pstat.execute();
+                if(++i % 1000 == 0) {
+                    connection.commit();
+                }
             }
         }
         connection.commit();
@@ -181,11 +203,11 @@ public class Execution implements ExecuteListener {
 
     public void saveAligment(Run run, AlignmentSet alignmentSet) {
         synchronized (databaseLock) {
-            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            try (Connection connection = connection(id)) {
                 createTables(connection);
                 saveStats(connection, run);
                 saveResults(connection, alignmentSet);
-                saveBlocks(connection);
+                saveBlocks(connection, blocks);
             } catch (SQLException | JsonProcessingException x) {
                 throw new RuntimeException(x);
             }
@@ -195,7 +217,7 @@ public class Execution implements ExecuteListener {
     public void updateAlignment(Run run, List<RunResultRow> rrrs) {
         ObjectMapper mapper = new ObjectMapper();
         synchronized (databaseLock) {
-            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            try (Connection connection = connection(id)) {
                 try (Statement stat = connection.createStatement()) {
                     try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time) VALUES (?,?,?,?,?,?,?,?)")) {
                         pstat.setString(1, run.identifier);
@@ -233,7 +255,7 @@ public class Execution implements ExecuteListener {
 
     public static Run loadRun(String id) {
         synchronized (databaseLock) {
-            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            try (Connection connection = connection(id)) {
                 try (Statement stat = connection.createStatement()) {
                     try (ResultSet rs = stat.executeQuery("SELECT identifier,configName,datasetName,precision,recall,fmeasure,correlation,time FROM runs")) {
                         Run r = null;
@@ -265,7 +287,7 @@ public class Execution implements ExecuteListener {
             return null;
         }
         synchronized (databaseLock) {
-            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            try (Connection connection = connection(id)) {
                 try (Statement stat = connection.createStatement()) {
                     try (ResultSet rs = stat.executeQuery("SELECT res1, prop, res2, lens, score, valid FROM results ORDER BY list_order")) {
                         List<RunResultRow> rrrs = new ArrayList<>();
@@ -294,7 +316,7 @@ public class Execution implements ExecuteListener {
             return null;
         }
         synchronized (databaseLock) {
-            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            try (Connection connection = connection(id)) {
                 List<RunResultRow> rrrs = new ArrayList<>();
                 try (Statement stat = connection.createStatement()) {
                     try (ResultSet rs = stat.executeQuery("SELECT res1, prop, res2, lens, score, valid, id FROM results ORDER BY list_order LIMIT " + limit + " OFFSET " + offset)) {
@@ -335,7 +357,7 @@ public class Execution implements ExecuteListener {
             return -1;
         }
         synchronized (databaseLock) {
-            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            try (Connection connection = connection(id)) {
                 List<RunResultRow> rrrs = new ArrayList<>();
                 try (Statement stat = connection.createStatement()) {
                     try (ResultSet rs = stat.executeQuery("SELECT COUNT(*) FROM results WHERE valid == '" + what + "'")) {
@@ -356,7 +378,7 @@ public class Execution implements ExecuteListener {
             return -1;
         }
         synchronized (databaseLock) {
-            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            try (Connection connection = connection(id)) {
                 List<RunResultRow> rrrs = new ArrayList<>();
                 try (Statement stat = connection.createStatement()) {
                     try (ResultSet rs = stat.executeQuery("SELECT COUNT(*) FROM results")) {
@@ -375,7 +397,7 @@ public class Execution implements ExecuteListener {
     public int addAlignment(Run run, int idx, String subject, String property, String object) {
         final int max;
         synchronized (databaseLock) {
-            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            try (Connection connection = connection(id)) {
                 connection.setAutoCommit(false);
                 try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time) VALUES (?,?,?,?,?,?,?,?)")) {
                     pstat.setString(1, run.identifier);
@@ -419,7 +441,7 @@ public class Execution implements ExecuteListener {
     public void removeAlignment(Run run, int idx) {
 
         synchronized (databaseLock) {
-            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            try (Connection connection = connection(id)) {
                 try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time) VALUES (?,?,?,?,?,?,?,?)")) {
                     pstat.setString(1, run.identifier);
                     pstat.setString(2, run.configName);
@@ -444,7 +466,7 @@ public class Execution implements ExecuteListener {
     public void changeStatus(Run run, int idx, Valid valid) {
 
         synchronized (databaseLock) {
-            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            try (Connection connection = connection(id)) {
                 try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time) VALUES (?,?,?,?,?,?,?,?)")) {
                     pstat.setString(1, run.identifier);
                     pstat.setString(2, run.configName);
@@ -474,7 +496,7 @@ public class Execution implements ExecuteListener {
         final MapType mapType = mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class);
 
         synchronized (databaseLock) {
-            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:runs/" + id + ".db")) {
+            try (Connection connection = connection(id)) {
                 try (PreparedStatement pstat = connection.prepareStatement("SELECT DISTINCT blocks.res"
                         + (left ? "2" : "1") + ", results.lens FROM blocks JOIN results ON blocks.res"
                         + (left ? "2" : "1") + "=results.res"

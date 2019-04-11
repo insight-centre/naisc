@@ -63,6 +63,7 @@
                             <td>F-Measure</td>
                             <td>Time</td>
                             <td class="icon-table-col"></td>
+                            <td class="icon-table-col"></td>
                         </tr>
                     </thead>
                     <tr v-for="run in runs">
@@ -82,6 +83,7 @@
                         <!--<td v-if="run.correlation >= -1">{{run.correlation.toFixed(3)}}</td>
                         <td v-if="run.correlation < -1">n/a</td>-->
                         <td>{{(run.time / 1000).toFixed(3)}}s</td>
+                        <td><a class="btn btn-info" v-bind:href="'results.jsp?id=' + run.identifier" v-if="!run.isTrain" style="font-weight:bold;">View Results</a></td>
                         <td><button class="btn btn-danger" v-on:click="delRun(run.identifier)" title="Delete this run"><i class="fa fa-trash" aria-hidden="true"></i></button></td>
                     </tr>
                 </table>

@@ -102,7 +102,6 @@ public class ExecuteServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String path = req.getPathInfo();
-        System.err.println(path);
         if (path != null && path.startsWith("/status/") && executions.containsKey(path.substring(8))) {
             try (PrintWriter out = resp.getWriter()) {
                 mapper.writeValue(out, executions.get(path.substring(8)).listener.response);
