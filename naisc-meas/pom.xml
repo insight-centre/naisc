@@ -5,7 +5,7 @@
     <groupId>org.insightcentre</groupId>
     <artifactId>naisc-meas</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
 
     <name>Naisc - Meas Evaluation and Analysis Suite</name>
 
@@ -13,6 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <jetty-version>9.4.12.RC2</jetty-version>
     </properties>
 
     <dependencies>
@@ -50,7 +51,29 @@
             <artifactId>sqlite-jdbc</artifactId>
             <version>3.25.2</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-annotations</artifactId>
+            <version>${jetty-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-webapp</artifactId>
+            <version>${jetty-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>apache-jsp</artifactId>
+            <version>${jetty-version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>apache-jstl</artifactId>
+            <version>${jetty-version}</version>
+            <type>pom</type>
+        </dependency>
+ 
     </dependencies>
 
     <build>
@@ -75,8 +98,15 @@
                     <version>2.21.0</version>
                 </plugin>
                 <plugin>
-                    <artifactId>maven-war-plugin</artifactId>
-                    <version>3.2.0</version>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.1.1</version>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <mainClass>org.insightcentre.uld.naisc.meas.Launch</mainClass>
+                            </manifest>
+                        </archive>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
@@ -90,6 +120,77 @@
                     <groupId>org.eclipse.jetty</groupId>
                     <artifactId>jetty-maven-plugin</artifactId>
                     <version>9.4.10.RC1</version>
+                </plugin>
+                
+                <plugin>
+                    <groupId>com.akathist.maven.plugins.launch4j</groupId>
+                    <artifactId>launch4j-maven-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>naisc</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>launch4j</goal>
+                            </goals>
+                            <configuration>
+                                <headerType>console</headerType>
+                                <outfile>target/naisc.exe</outfile>
+                                <jar>target/naisc-1.0.jar</jar>
+                                <errTitle>naisc</errTitle>
+                                <classPath>
+                                    <mainClass>org.insightcentre.uld.naisc.meas.Launch</mainClass>
+                                    <addDependencies>true</addDependencies>
+                                    <preCp>anything</preCp>
+                                </classPath>
+                                <jre>
+                                    <minVersion>1.5.0</minVersion>
+                                    <opts>
+                                        <opt>-Djava.endorsed.dirs=./endorsed</opt>
+                                    </opts>
+                                </jre>
+                                <versionInfo>
+                                    <fileVersion>1.2.3.4</fileVersion>
+                                    <txtFileVersion>txt file version?</txtFileVersion>
+                                    <fileDescription>a description</fileDescription>
+                                    <copyright>my copyright</copyright>
+                                    <productVersion>4.3.2.1</productVersion>
+                                    <txtProductVersion>txt product version</txtProductVersion>
+                                    <productName>E-N-C-C</productName>
+                                    <internalName>ccne</internalName>
+                                    <originalFilename>naisc.exe</originalFilename>
+                                </versionInfo>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>3.1.1</version>
+                    <configuration>
+                        <descriptorRefs>
+                            <descriptorRef>jar-with-dependencies</descriptorRef>
+                        </descriptorRefs>
+                        <archive>
+                            <manifest>
+                                <mainClass>org.insightcentre.uld.naisc.meas.Launch</mainClass>
+                            </manifest>
+                        </archive>
+                    </configuration>
+
+                    <executions>
+                        <execution>
+                            <id>assembly</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>single</goal>
+                            </goals>
+                            <configuration>
+                                <descriptors>
+                                    <descriptor>assembly.xml</descriptor>
+                                </descriptors>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
