@@ -4,15 +4,8 @@ _'Naisc' means 'links' in Irish and is pronounced 'nashk'._
 
 ## Installation
 
-Naisc can be installed with Maven, to compile the core run
-
-    mvn -f naisc-core/pom.xml install
-
-To obtain the data necessary to run Naisc, run the following script
-
-    bash get-models.sh
-
-Finally, to run and start the Web interface use the following
+Naisc can be installed with Maven, to compile and run the system run the 
+following:
 
     ./meas.sh
 
