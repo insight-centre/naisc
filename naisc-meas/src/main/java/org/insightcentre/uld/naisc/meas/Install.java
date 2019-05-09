@@ -82,9 +82,10 @@ public class Install {
         getConfigs();
         verifyOrDownload("idf");
         verifyOrDownload("ngidf");
-        verifyOrDownload("basic.libsvm");
         verifyOrDownload("glove.6B.100d.txt");
         verifyOrDownload("jaccard.libsvm");
+        verifyOrDownload("basic.libsvm");
+        verifyOrDownload("default.libsvm");
         
     }
 

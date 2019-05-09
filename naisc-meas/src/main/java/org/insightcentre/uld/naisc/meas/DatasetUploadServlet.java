@@ -74,6 +74,12 @@ public class DatasetUploadServlet extends HttpServlet {
             }
             if (datasetName != null && leftFile != null && rightFile != null) {
                 File directory = new File(new File("datasets"), datasetName);
+                if(directory.exists() && directory.isDirectory()) {
+                    // Remove any existing files
+                    for(File f : directory.listFiles()) {
+                        f.delete();
+                    }
+                }
                 if (!directory.mkdirs() && !directory.exists() && !directory.isDirectory()) {
                     throw new ServletException("Could not create directoy");
                 }
