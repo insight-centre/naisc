@@ -42,6 +42,7 @@ public class Launch {
             final OptionParser p = new OptionParser() {
                 {
                     accepts("p", "Port to start the server on").withRequiredArg().ofType(Integer.class);
+                    accepts("b", "The Base URL of the server").withRequiredArg().ofType(String.class);
                 }
             };
             
@@ -57,6 +58,10 @@ public class Launch {
             
             int port = os.valueOf("p") == null ? 8080 : (Integer)os.valueOf("p");
 
+            if(os.has("b")) {
+                System.setProperty("base.url", os.valueOf("b").toString());
+            }
+            
             Install.verify();
             Launch main = new Launch(port);
             main.start();

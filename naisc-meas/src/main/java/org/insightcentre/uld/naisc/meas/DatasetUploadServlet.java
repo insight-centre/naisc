@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -76,10 +77,10 @@ public class DatasetUploadServlet extends HttpServlet {
                 if (!directory.mkdirs() && !directory.exists() && !directory.isDirectory()) {
                     throw new ServletException("Could not create directoy");
                 }
-                Files.move(leftFile.toPath(), new File(directory, "left" + leftSuffix).toPath());
-                Files.move(rightFile.toPath(), new File(directory, "right" + rightSuffix).toPath());
+                Files.move(leftFile.toPath(), new File(directory, "left" + leftSuffix).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                Files.move(rightFile.toPath(), new File(directory, "right" + rightSuffix).toPath(), StandardCopyOption.REPLACE_EXISTING);
                 if (alignFile != null) {
-                    Files.move(alignFile.toPath(), new File(directory, "align.rdf").toPath());
+                    Files.move(alignFile.toPath(), new File(directory, "align.rdf").toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
             } else {
                 if (leftFile != null) {
