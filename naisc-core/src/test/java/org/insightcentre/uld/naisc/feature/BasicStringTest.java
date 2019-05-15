@@ -5,7 +5,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.feature.BasicString.BasicStringImpl;
 import org.insightcentre.uld.naisc.main.Configuration;
 import org.insightcentre.uld.naisc.util.LangStringPair;
@@ -48,7 +52,7 @@ public class BasicStringTest {
     @Test
     public void testId() {
         System.out.println("id");
-        BasicStringImpl instance = new BasicStringImpl(false, null, null, null, null);
+        BasicStringImpl instance = new BasicStringImpl(false, null, null, null, null, false);
         String expResult = "basic-features";
         String result = instance.id();
         assertEquals(expResult, result);
@@ -60,7 +64,7 @@ public class BasicStringTest {
     @Test
     public void testGetFeatureNames() {
         System.out.println("getFeatureNames");
-        BasicStringImpl instance = new BasicStringImpl(false, null, null, null, null);
+        BasicStringImpl instance = new BasicStringImpl(false, null, null, null, null, false);
         String[] expResult = new String[] {
             "lcs",
             "ngram-1",
@@ -88,7 +92,7 @@ public class BasicStringTest {
         LangStringPair _sp = new LangStringPair(Language.ENGLISH, Language.ENGLISH, "foo", "bar");
         String entity1id = "x1";
         String entity2id = "x2";
-        BasicStringImpl instance = new BasicStringImpl(false, null, null, null, null);
+        BasicStringImpl instance = new BasicStringImpl(false, null, null, null, null, false);
         double[] expResult = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0 };
         double[] result = instance.extractFeatures(_sp);
         assertArrayEquals(expResult, result, 0.0001);
@@ -180,7 +184,7 @@ public class BasicStringTest {
     @Test
     public void testClose() throws Exception {
         System.out.println("close");
-        BasicStringImpl instance = new BasicStringImpl(false, null, null, null, null);
+        BasicStringImpl instance = new BasicStringImpl(false, null, null, null, null, false);
         instance.close();
     }
 
@@ -247,5 +251,14 @@ public class BasicStringTest {
     
     private static class Foo {
         public Map<String, Object> params;
+    }
+    
+    @Test
+    public void testJaccard() {
+        BasicString bs = new BasicString();
+        TextFeature f = bs.makeFeatureExtractor(Collections.EMPTY_SET, new HashMap<String,Object>() {{ put("features", Arrays.asList("jaccard"));}});
+        double[] r = f.extractFeatures(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "superficial dermis", "Superficial Vein"));
+        assert(r[0] > 0);
+        
     }
 }

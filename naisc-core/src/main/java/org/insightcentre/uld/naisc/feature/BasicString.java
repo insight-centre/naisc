@@ -73,6 +73,11 @@ public class BasicString implements TextFeatureFactory {
          */
         @ConfigurationParameter(description = "The features to extract", defaultValue="null")
         public List<Feature> features;
+        /**
+         * Convert all strings to lower case before processing
+         */
+        @ConfigurationParameter(description = "Convert all strings to lower case before processing", defaultValue="true")
+        public boolean lowerCase = true;
 
         public Object2DoubleMap<String> ngramWeights() {
             if (ngramWeights != null && !"".equals(ngramWeights)) {
@@ -112,7 +117,8 @@ public class BasicString implements TextFeatureFactory {
         return new BasicStringImpl(config.labelChar, config.wordWeights(),
                 config.ngramWeights(),
                 tags,
-                config.features == null ? null : new HashSet<>(config.features));
+                config.features == null ? null : new HashSet<>(config.features),
+                config.lowerCase);
     }
 
     static class BasicStringImpl implements TextFeature {
@@ -121,6 +127,7 @@ public class BasicString implements TextFeatureFactory {
         private final NGramWeighting ngramWeighting, wordWeighting;
         private final Set<String> tag;
         private final Set<Feature> selectedFeatures;
+        private final boolean lowerCase;
 
         /**
          * The basic classifier features
@@ -131,12 +138,14 @@ public class BasicString implements TextFeatureFactory {
          * @param ngramWeights The weighting to give to each ngram
          * @param tag The tag if any to use
          * @param features Which features to use or null for all
+         * @param lowerCase Lower case the input
          */
         public BasicStringImpl(boolean labelCharFeatures,
                 Object2DoubleMap<String> wordWeights,
                 Object2DoubleMap<String> ngramWeights,
                 Set<String> tag,
-                Set<Feature> features) {
+                Set<Feature> features,
+                boolean lowerCase) {
             this.labelCharFeatures = labelCharFeatures;
             if (wordWeights != null) {
                 wordWeighting = new SumWeighting(wordWeights);
@@ -150,7 +159,7 @@ public class BasicString implements TextFeatureFactory {
             }
             this.tag = tag;
             this.selectedFeatures = features == null || features.isEmpty() ? null : features;
-
+            this.lowerCase = lowerCase;
         }
 
         @Override
@@ -303,12 +312,14 @@ public class BasicString implements TextFeatureFactory {
         @Override
         public double[] extractFeatures(LangStringPair sp) {
             DoubleArrayList featureValues = new DoubleArrayList();
-            final String[] l1tok = PrettyGoodTokenizer.tokenize(sp._1),
-                    l2tok = PrettyGoodTokenizer.tokenize(sp._2);
+            final String label1 = lowerCase ? sp._1.toLowerCase() : sp._1;
+            final String label2 = lowerCase ? sp._2.toLowerCase() : sp._2;
+            final String[] l1tok = PrettyGoodTokenizer.tokenize(label1),
+                    l2tok = PrettyGoodTokenizer.tokenize(label2);
 
-            buildFeatures(sp.lang1, "", featureValues, sp._1, sp._2, l1tok, l2tok, false);
+            buildFeatures(sp.lang1, "", featureValues, label1, label2, l1tok, l2tok, false);
             if (labelCharFeatures) {
-                buildFeatures(sp.lang2, "char-", featureValues, sp._1, sp._2, sp._1.split(""), sp._2.split(""), true);
+                buildFeatures(sp.lang2, "char-", featureValues, label1, label2, label1.split(""), label2.split(""), true);
             }
 
             return featureValues.toDoubleArray();

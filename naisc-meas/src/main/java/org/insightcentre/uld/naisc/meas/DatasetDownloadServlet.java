@@ -41,6 +41,7 @@ public class DatasetDownloadServlet extends HttpServlet {
                 } catch(IOException x) {
                     // Ignore: not all datasets have a blocking
                 }
+                Meas.data.datasetNames.add(datasetName);
             } catch(IOException x) {
                 throw new ServletException(x);
             }

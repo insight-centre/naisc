@@ -395,7 +395,6 @@ var app = new Vue({
     downloadDataset() {
         var form = new FormData($("#downloadDatasetForm")[0]);
         var name = $('#downloadDatasetName').val();
-        alert(name);
         var data = this;
         jQuery.ajax({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/download_dataset?dataset=" + name,

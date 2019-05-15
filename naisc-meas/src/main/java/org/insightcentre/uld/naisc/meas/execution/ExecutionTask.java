@@ -1,6 +1,5 @@
 package org.insightcentre.uld.naisc.meas.execution;
 
-import org.insightcentre.uld.naisc.meas.execution.Execution;
 import java.io.File;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.main.Configuration;

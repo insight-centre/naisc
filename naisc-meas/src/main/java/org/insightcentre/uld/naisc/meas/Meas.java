@@ -85,7 +85,7 @@ public class Meas {
         } catch (Exception x) {
             x.printStackTrace();
         }
-        return Collections.EMPTY_LIST;
+        return new ArrayList<>();   
     }
 
     private static List<Run> runs() {
