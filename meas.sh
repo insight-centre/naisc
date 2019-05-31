@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ $1 == "--clean" ]
+then
+    rm -fr naisc-meas/target
+    shift
+fi
+
 if [ ! -f naisc-meas/target/naisc-meas-jar-with-dependencies.jar ]
 then
     mvn -q -f naisc-core/pom.xml install

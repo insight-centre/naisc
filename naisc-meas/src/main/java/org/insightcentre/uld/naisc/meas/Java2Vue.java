@@ -127,7 +127,7 @@ public class Java2Vue {
                     sb.append("<h5>").append(deCamelCase(f.getName()));
                     if(path.endsWith(".")) {
                         String index = path.substring(path.lastIndexOf("[") + 1);
-                        index = index.substring(0, index.length()-8);
+                        index = index.substring(0, index.length()-2);
                     sb.append("    <button class=\"btn btn-success\" v-on:click.prevent=\"addStr(").append(path.substring(0, path.lastIndexOf("[")))
                             .append(",").append(index)
                             .append(",'").append(f.getName()).append("','")

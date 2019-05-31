@@ -140,6 +140,7 @@
                                 <div v-if="configName" id="configMain">
                                     <%= Java2Vue.java2vue(Configuration.class) %>
                                 </div>
+                                {{config}}
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal" v-on:click="saveConfig">Save</button>
@@ -302,6 +303,9 @@ function _flatten_config(config, obj, path) {
     }
 }
 function unflatten_config(config) {
+    if(typeof config !== 'object') {
+        return config;
+    }
     var root = {};
     for(var key in config) {
         var obj = root;
@@ -413,6 +417,7 @@ var app = new Vue({
     startRun() {
         var configName = this.configName;
         var datasetName = this.datasetName;
+        console.log(this.config);
         var data = this;
         jQuery.ajax({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/start",
