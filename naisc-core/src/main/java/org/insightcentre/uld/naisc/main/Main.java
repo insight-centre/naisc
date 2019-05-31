@@ -5,6 +5,7 @@ import eu.monnetproject.lang.Language;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -217,42 +218,48 @@ public class Main {
                 executor.submit(new Runnable() {
                     @Override
                     public void run() {
-                        if (block._1.getURI() == null || block._1.getURI().equals("")
-                                || block._2.getURI() == null || block._2.getURI().equals("")) {
-                            System.err.println(block._1);
-                            System.err.println(block._2);
-                            throw new RuntimeException("Resource without URI");
-                        }
-                        monitor.addBlock(block._1, block._2);
-                        int c = count.incrementAndGet();
-                        if (c % 1000 == 0) {
-                            monitor.updateStatus(Stage.SCORING, "Scoring (" + c + " done)");
-                        }
-                        FeatureSet featureSet = new FeatureSet(block._1, block._2);
-                        for (Lens lens : lenses) {
-                            Option<LangStringPair> oFacet = lens.extract(block._1, block._2);
-                            if (!oFacet.has()) {
-                                monitor.updateStatus(Stage.SCORING, String.format("Lens produced no label for %s %s", block._1, block._2));
-                            } else {
-                                monitor.addLensResult(block._1, block._2, lens.id(), oFacet.get());
+                        try {
+                            if (block._1.getURI() == null || block._1.getURI().equals("")
+                                    || block._2.getURI() == null || block._2.getURI().equals("")) {
+                                System.err.println(block._1);
+                                System.err.println(block._2);
+                                throw new RuntimeException("Resource without URI");
                             }
-                            LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
-                            for (TextFeature featureExtractor : textFeatures) {
-                                if (featureExtractor.tags() == null || lens.tag() == null
-                                        || featureExtractor.tags().contains(lens.tag())) {
-                                    double[] features = featureExtractor.extractFeatures(facet);
-                                    featureSet = featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
-                                            lens.id(), features, block._1, block._2));
+                            monitor.addBlock(block._1, block._2);
+                            int c = count.incrementAndGet();
+                            if (c % 1000 == 0) {
+                                monitor.updateStatus(Stage.SCORING, "Scoring (" + c + " done)");
+                            }
+                            FeatureSet featureSet = new FeatureSet(block._1, block._2);
+                            for (Lens lens : lenses) {
+                                Option<LangStringPair> oFacet = lens.extract(block._1, block._2);
+                                if (!oFacet.has()) {
+                                    monitor.updateStatus(Stage.SCORING, String.format("Lens produced no label for %s %s", block._1, block._2));
+                                } else {
+                                    monitor.addLensResult(block._1, block._2, lens.id(), oFacet.get());
+                                }
+                                LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
+                                for (TextFeature featureExtractor : textFeatures) {
+                                    if (featureExtractor.tags() == null || lens.tag() == null
+                                            || featureExtractor.tags().contains(lens.tag())) {
+                                        double[] features = featureExtractor.extractFeatures(facet);
+                                        featureSet = featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
+                                                lens.id(), features, block._1, block._2));
+                                    }
                                 }
                             }
-                        }
-                        for (GraphFeature feature : dataFeatures) {
-                            double[] features = feature.extractFeatures(block._1, block._2);
-                            featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
-                        }
-                        for (Scorer scorer : scorers) {
-                            double score = scorer.similarity(featureSet);
-                            alignments.add(new Alignment(block._1, block._2, score, scorer.relation()));
+                            for (GraphFeature feature : dataFeatures) {
+                                double[] features = feature.extractFeatures(block._1, block._2);
+                                featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
+                            }
+                            for (Scorer scorer : scorers) {
+                                double score = scorer.similarity(featureSet);
+                                alignments.add(new Alignment(block._1, block._2, score, scorer.relation()));
+                            }
+                        } catch (Exception x) {
+                            monitor.updateStatus(Stage.FAILED, String.format("Failed to score %s <-> %s due to %s (%s)\n", block._1, block._2, x.getMessage(), x.getClass().getName()));
+                            x.printStackTrace();
+
                         }
 
                     }
@@ -260,6 +267,7 @@ public class Main {
             }
             executor.shutdown();
             executor.awaitTermination(30, TimeUnit.DAYS);
+            monitor.updateStatus(Stage.SCORING, String.format("Scored %d pairs", count.get()));
 
             for (Scorer scorer : scorers) {
                 scorer.close();
@@ -267,7 +275,7 @@ public class Main {
 
             AlignmentSet alignmentSet = new AlignmentSet();
             alignmentSet.addAll(alignments);
-            
+
             monitor.updateStatus(Stage.MATCHING, "Matching");
             if (partialSoln.has()) {
                 return matcher.alignWith(alignmentSet, partialSoln.get(), monitor);
