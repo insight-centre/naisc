@@ -4,7 +4,7 @@
 cd "$(dirname "$0")"
 
 # If the clean flag is set then clear the JAR
-if [ $1 = "--clean" ]
+if [[ $1 = "--clean" ]]
 then
     rm -fr naisc-meas/target
     shift
