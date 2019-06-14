@@ -867,6 +867,7 @@ public class Configuration {
         LabelMatch.class,
         ApproximateStringMatching.class,
         Predefined.class,
+        OntoLex.class,
         org.insightcentre.uld.naisc.blocking.Command.class
     };
 

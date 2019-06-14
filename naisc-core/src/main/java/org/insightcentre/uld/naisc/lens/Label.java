@@ -37,7 +37,7 @@ public class Label implements LensFactory {
     public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
         final Model sparqlData = dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = mapper.convertValue(params, Configuration.class);
-        return new LabelImpl(config.property, config.language, tag, sparqlData);
+        return new LabelImpl(config.property, config.language, tag, sparqlData, config.id);
     }
 
     private static class LabelImpl implements Lens {
@@ -46,16 +46,22 @@ public class Label implements LensFactory {
         private final Language language;
         private final String tag;
         private final Model model;
+        private final String id;
 
-        public LabelImpl(List<String> property, String language, String tag, Model model) {
+        public LabelImpl(List<String> property, String language, String tag, Model model,
+                String id) {
             this.properties = property.stream().map(p -> model.createProperty(p)).collect(Collectors.toList());
             this.language = language == null ? null : Language.get(language);
             this.tag = tag;
             this.model = model;
+            this.id = id;
         }
 
         @Override
         public String id() {
+            if(id != null) {
+                return id;
+            }
             StringBuilder sb = new StringBuilder("label");
             if (language != null) {
                 sb.append("-").append(language);
@@ -127,5 +133,12 @@ public class Label implements LensFactory {
          */
         @ConfigurationParameter(description = "The language to extract", defaultValue = "null")
         public String language = null;
+        
+        /**
+         * The name for this lens, (no two lenses may have the same name). This is consumed by the 
+         * text features in order to distinguish features coming from different sources
+         */
+        @ConfigurationParameter(description = "The unique identifier of this lens")
+        public String id = null;
     }
 }

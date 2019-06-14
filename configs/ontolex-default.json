@@ -1,0 +1,30 @@
+{
+    "blocking": {
+        "name": "blocking.OntoLex"
+    },
+    "lenses": [{
+        "name": "lens.Label",
+        "property": ["http://www.w3.org/2004/02/skos/core#definition"],
+        "id": "label"
+    }],
+    "textFeatures": [{
+        "name": "feature.BasicString",
+        "wordWeights": "models/idf",
+        "ngramWeights": "models/ngidf",
+        "labelChar": true
+    },{
+        "name": "feature.WordEmbeddings",
+        "embeddingPath": "models/glove.6B.100d.txt"
+    }],
+    "scorers": [{
+        "name": "scorer.LibSVM",
+        "modelFile": "models/default.libsvm"
+    }],
+    "matcher": {
+        "name": "matcher.BeamSearch",
+        "constraint": {
+            "name": "constraint.Bijective"
+        }
+    },
+    "description": "The default setting for processing two OntoLex-compliant dictionaries"
+}

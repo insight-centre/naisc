@@ -1,6 +1,7 @@
 package org.insightcentre.uld.naisc.main;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
 import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
@@ -66,5 +67,12 @@ public class ConfigurationTest {
         String s = mapper.writeValueAsString(c1);
         Configuration c2 = mapper.readValue(s, Configuration.class);
         assertEquals(c1, c2);
+    }
+    
+    //@Test
+    public void testConfig() throws Exception {
+        
+        ObjectMapper mapper = new ObjectMapper();
+        Configuration c1 = mapper.readValue(new File("../configs/ontolex-default.json"), Configuration.class);
     }
 }

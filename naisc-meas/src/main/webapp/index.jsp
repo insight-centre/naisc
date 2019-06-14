@@ -285,7 +285,7 @@ function _flatten_config(config, obj, path) {
         if(Array.isArray(config[key])) {
             var arr = [];
             for(var i = 0; i < config[key].length; i++) {
-                if(typeof config[key] === "object") {
+                if(typeof config[key][i] === "object") {
                     var obj2 = {};
                     _flatten_config(config[key][i], obj2, "");                
                     arr.push(obj2);
