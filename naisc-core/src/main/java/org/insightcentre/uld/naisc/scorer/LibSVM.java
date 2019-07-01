@@ -25,6 +25,7 @@ import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.FeatureSetWithScore;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerFactory;
 import org.insightcentre.uld.naisc.ScorerTrainer;
@@ -379,7 +380,7 @@ public class LibSVM implements ScorerFactory {
         }
 
         @Override
-        public double similarity(FeatureSet features) {
+        public double similarity(FeatureSet features, NaiscListener log) {
             final svm_problem instances = makeInstances(features);
             final Instance instance = buildInstance(features, 0.0, instances);
             if (features.names.length != featNames.length) {

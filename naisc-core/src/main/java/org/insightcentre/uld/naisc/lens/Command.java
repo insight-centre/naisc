@@ -12,6 +12,7 @@ import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.LensFactory;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
@@ -120,7 +121,7 @@ public class Command implements LensFactory {
         }
 
         @Override
-        public Option<LangStringPair> extract(Resource entity1, Resource entity2) {
+        public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
             out.get().println(entity1.getURI() + "\t" + entity2.getURI());
             out.get().flush();
             try {

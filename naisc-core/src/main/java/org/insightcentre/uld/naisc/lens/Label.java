@@ -18,6 +18,7 @@ import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.LensFactory;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.util.Labels;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.None;
@@ -74,7 +75,7 @@ public class Label implements LensFactory {
         }
 
         @Override
-        public Option<LangStringPair> extract(Resource entity1, Resource entity2) {
+        public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
             List<Literal> lit1 = new ArrayList<>();
             for (Property lproperty : properties) {
                 NodeIterator iter1 = model.listObjectsOfProperty(entity1, lproperty);

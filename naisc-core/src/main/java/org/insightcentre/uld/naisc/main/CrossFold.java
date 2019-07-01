@@ -535,5 +535,16 @@ public class CrossFold {
             mem.addLensResult(id1, id2, lensId, res);
         }
 
+        @Override
+        public void message(Stage stage, Level level, String message) {
+            if (foldNo > 0) {
+                mem.message(stage, level, String.format("[Fold %d/%d] %s", foldNo, nFolds, message));
+            } else {
+                mem.message(stage, level, message);
+            }
+        }
+        
+        
+
     }
 }

@@ -14,6 +14,7 @@ import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Dataset;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -58,7 +59,7 @@ public class Command implements BlockingStrategyFactory {
         }
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right) {
+        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
             URL leftSparql = left.asEndpoint().getOrExcept(new RuntimeException("Cannot run blocking command with SPARQL endpoint"));
             URL rightSparql = right.asEndpoint().getOrExcept(new RuntimeException("Cannot run blocking command with SPARQL endpoint"));
             return new Iterable<Pair<Resource, Resource>>() {

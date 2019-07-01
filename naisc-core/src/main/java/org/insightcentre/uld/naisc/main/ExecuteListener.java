@@ -1,24 +1,15 @@
 package org.insightcentre.uld.naisc.main;
 
 import org.apache.jena.rdf.model.Resource;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 
 /**
  * A monitor of the execution status
  * @author John McCrae
  */
-public interface ExecuteListener {
-    public static enum Stage {
-        INITIALIZING,
-        BLOCKING,
-        SCORING,
-        MATCHING,
-        TRAINING,
-        FINALIZING,
-        FAILED,
-        COMPLETED,
-        EVALUATION
-    }
+public interface ExecuteListener extends NaiscListener {
+
     
     /**
      * Update the status

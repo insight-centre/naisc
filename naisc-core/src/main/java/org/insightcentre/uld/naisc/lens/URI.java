@@ -13,6 +13,7 @@ import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.LensFactory;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
@@ -126,7 +127,7 @@ public class URI implements LensFactory {
         }
 
         @Override
-        public Option<LangStringPair> extract(Resource entity1, Resource entity2) {
+        public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
             if(entity1.isURIResource() && entity2.isURIResource()) {
                 try {
                     java.net.URI uri1 = new java.net.URI(entity1.getURI());

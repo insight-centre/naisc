@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.feature.embeddings.CosineSimAligner;
 import org.insightcentre.uld.naisc.feature.embeddings.SaliencyFeatures;
 import org.insightcentre.uld.naisc.feature.embeddings.StandardWordAlignmentFeatureExtractor;
@@ -156,7 +157,7 @@ public class WordEmbeddings implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair facet) {
+        public double[] extractFeatures(LangStringPair facet, NaiscListener log) {
             double[] d = new double[featureNames.length];
             if (facet.lang1.equals(facet.lang2)) {
                 return  _extractFeatures(facet._1, facet._2, wordAligner);

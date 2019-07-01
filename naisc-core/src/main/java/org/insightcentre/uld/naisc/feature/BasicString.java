@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.PrettyGoodTokenizer;
 import org.insightcentre.uld.naisc.TextFeature;
@@ -310,7 +311,7 @@ public class BasicString implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair sp) {
+        public double[] extractFeatures(LangStringPair sp, NaiscListener log) {
             DoubleArrayList featureValues = new DoubleArrayList();
             final String label1 = lowerCase ? sp._1.toLowerCase() : sp._1;
             final String label2 = lowerCase ? sp._2.toLowerCase() : sp._2;

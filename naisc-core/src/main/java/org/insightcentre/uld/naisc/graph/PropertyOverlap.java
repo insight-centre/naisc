@@ -15,6 +15,7 @@ import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.GraphFeatureFactory;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.util.StringPair;
 
 /**
@@ -53,7 +54,7 @@ public class PropertyOverlap implements GraphFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(Resource entity1, Resource entity2) {
+        public double[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
             Set<StringPair> lvals = new HashSet<>();
             StmtIterator iter = entity1.listProperties();
             while(iter.hasNext()) {

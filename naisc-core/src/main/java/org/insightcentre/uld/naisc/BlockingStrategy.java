@@ -21,7 +21,21 @@ public interface BlockingStrategy {
      * @return A list of all of the pairs where the first element is in left and
      * the right element is in right
      */
-    Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right);
+    default Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right) {
+        return block(left, right, NaiscListener.DEFAULT);
+    }
+    
+     /**
+     * Extract the set of elements that can be matched in a particular pair of
+     * RDF documents.
+     *
+     * @param left The left RDF document to match
+     * @param right The right RDF document to match
+     * @param log The listener
+     * @return A list of all of the pairs where the first element is in left and
+     * the right element is in right
+     */
+    Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log);
 
     /**
      * Estimate the number of results that blocking will return. Default implementation

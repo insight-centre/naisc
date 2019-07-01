@@ -9,6 +9,7 @@ import java.util.Map;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.FeatureSet;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerFactory;
 import org.insightcentre.uld.naisc.ScorerTrainer;
@@ -76,7 +77,7 @@ public class Average implements ScorerFactory {
         
 
         @Override
-        public double similarity(FeatureSet features) {
+        public double similarity(FeatureSet features, NaiscListener log) {
             if(weights != null && weights.length != features.values.length) {
                 throw new IllegalArgumentException("Length of feature vector does not match that of weights");
             }

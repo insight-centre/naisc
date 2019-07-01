@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.PrettyGoodTokenizer;
@@ -101,7 +102,7 @@ public class KeyWords implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair lsp) {
+        public double[] extractFeatures(LangStringPair lsp, NaiscListener log) {
             IntSet s1 = findKeywords(lsp._1.toLowerCase());
             IntSet s2 = findKeywords(lsp._2.toLowerCase());
             double A = s1.size();

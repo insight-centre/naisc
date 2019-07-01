@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.xml.parsers.ParserConfigurationException;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.feature.wordnet.GWNWordNetReader;
 import org.insightcentre.uld.naisc.feature.wordnet.SemanticSimilarityMeasures;
 import org.insightcentre.uld.naisc.feature.wordnet.Synset;
@@ -138,7 +139,7 @@ public class WordNet implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair facet) {
+        public double[] extractFeatures(LangStringPair facet, NaiscListener log) {
             double[] vec = new double[methods.size() * 2];
             int i = 0;
             for(Method method : methods) {

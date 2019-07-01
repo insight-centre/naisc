@@ -5,7 +5,6 @@ import eu.monnetproject.lang.Language;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -33,7 +32,7 @@ import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.main.ExecuteListener.Stage;
+import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Some;
 

@@ -20,6 +20,7 @@ import org.apache.jena.vocabulary.RDFS;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.Dataset;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.util.Pair;
 
 /**
@@ -94,7 +95,7 @@ public class OntoLex implements BlockingStrategyFactory {
     private static class OntoLexImpl implements BlockingStrategy {
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Dataset _left, Dataset _right) {
+        public Iterable<Pair<Resource, Resource>> block(Dataset _left, Dataset _right, NaiscListener log) {
             Model left = _left.asModel().getOrExcept(new RuntimeException("Does not support SPARQL endpoints"));
             Model right = _right.asModel().getOrExcept(new RuntimeException("Does not support SPARQL endpoints"));
             Set<Resource> leftEntries = extractEntries(left);

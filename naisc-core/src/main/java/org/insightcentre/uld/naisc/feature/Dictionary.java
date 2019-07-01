@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.StringPair;
 import org.insightcentre.uld.naisc.TextFeature;
@@ -88,7 +89,7 @@ public class Dictionary implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair lsp) {
+        public double[] extractFeatures(LangStringPair lsp, NaiscListener log) {
             StringPair sp1 = new StringPair(lsp._1, lsp._2);
             StringPair sp2 = new StringPair(lsp._2, lsp._1);
             return new double[] {

@@ -14,6 +14,7 @@ import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Dataset;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.main.Train;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -50,7 +51,7 @@ public class Predefined implements BlockingStrategyFactory {
         }
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(final Dataset _left, final Dataset _right) {
+        public Iterable<Pair<Resource, Resource>> block(final Dataset _left, final Dataset _right, NaiscListener log) {
             try {
                 final AlignmentSet as = Train.readAlignments(links);
                 return new Iterable<Pair<Resource, Resource>>() {

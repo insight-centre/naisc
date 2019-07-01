@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.PrettyGoodTokenizer;
 import org.insightcentre.uld.naisc.TextFeature;
@@ -70,7 +71,7 @@ public class BagOfWordsSim implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair lsp) {
+        public double[] extractFeatures(LangStringPair lsp, NaiscListener log) {
             Set<String> w1 = new HashSet<>(Arrays.asList(PrettyGoodTokenizer.tokenize(lsp._1)));
             int a = w1.size();
             Set<String> w2 = new HashSet<>(Arrays.asList(PrettyGoodTokenizer.tokenize(lsp._2)));

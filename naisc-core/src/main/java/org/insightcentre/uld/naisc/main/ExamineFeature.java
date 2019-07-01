@@ -9,7 +9,6 @@ import java.util.List;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
@@ -151,7 +150,7 @@ public class ExamineFeature {
 
             FeatureSet fs = examineFeature("examine", left, right, configuration, os.nonOptionArguments().get(2).toString(), os.nonOptionArguments().get(3).toString(),
                     os.valueOf("q") != null && os.valueOf("q").equals(Boolean.TRUE)
-                    ? new NoMonitor() : new StdErrMonitor(), new DefaultDatasetLoader());
+                    ? ExecuteListeners.NONE : ExecuteListeners.STDERR, new DefaultDatasetLoader());
 
             ObjectMapper mapper = new ObjectMapper();
             if (outputFile == null) {
@@ -164,33 +163,4 @@ public class ExamineFeature {
             System.exit(-1);
         }
     }
-
-    static class StdErrMonitor implements ExecuteListener {
-
-        @Override
-        public void updateStatus(ExecuteListener.Stage stage, String message) {
-            System.err.println("[" + stage + "]" + message);
-        }
-
-        @Override
-        public void addLensResult(Resource id1, Resource id2, String lensId, LangStringPair res) {
-            System.err.println("Lens extracted:");
-            System.err.printf("%s => \"%s\"@%s\n", id1, res._1, res.lang1);
-            System.err.printf("%s => \"%s\"@%s\n", id2, res._2, res.lang2);
-        }
-
-    }
-
-    static class NoMonitor implements ExecuteListener {
-
-        @Override
-        public void updateStatus(ExecuteListener.Stage stage, String message) {
-        }
-
-        @Override
-        public void addLensResult(Resource id1, Resource id2, String lensId, LangStringPair res) {
-        }
-
-    }
-
 }

@@ -24,6 +24,12 @@ public class ExecuteListeners {
         public void addLensResult(Resource id1, Resource id2, String lensId, LangStringPair res) {
         }
 
+        @Override
+        public void message(Stage stage, Level level, String message) {
+            System.err.println("[" + stage + "] " + level + ": " + message);
+        }
+
+        
     }
 
     private static class NoMonitor implements ExecuteListener {
@@ -34,6 +40,10 @@ public class ExecuteListeners {
 
         @Override
         public void addLensResult(Resource id1, Resource id2, String lensId, LangStringPair res) {
+        }
+
+        @Override
+        public void message(Stage stage, Level level, String message) {
         }
 
     }
