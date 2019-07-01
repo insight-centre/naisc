@@ -553,6 +553,7 @@ public class Execution implements ExecuteListener {
                 stat.setString(3, message.message);
                 stat.execute();
             }
+            connection.commit();
         }
     }
     

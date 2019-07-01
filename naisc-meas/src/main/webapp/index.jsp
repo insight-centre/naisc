@@ -268,10 +268,12 @@
                                 </button>
                             </div>
                             <div class="modal-body">
-                                <table v-if="messages.length > 0">
-                                    <th></th>
-                                    <th>Stage</th>
-                                    <th>Message</th>
+                                <table v-if="messages.length > 0" style="width:100%;">
+                                    <tr>
+                                        <th class="icon-table-col"></th>
+                                        <th>Stage</th>
+                                        <th>Message</th>
+                                    </tr>
                                     <tr v-for="message in messages">
                                         <td>
                                             <i class="fas fa-car-crash" v-if="message.level == 'CRITICAL'"></i>
@@ -601,9 +603,10 @@ var app = new Vue({
     },
     showMessages(id) {
         jQuery.ajax({
-            url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage?id=" + id,
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/messages?id=" + id,
             success: function(result) {
                 app.messages = result;
+                console.log(JSON.stringify(result));
                 $('#messagesModal').modal('show');
             },
             failure: function(result) {

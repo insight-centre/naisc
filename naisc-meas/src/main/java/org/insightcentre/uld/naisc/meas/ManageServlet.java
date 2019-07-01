@@ -129,19 +129,20 @@ public class ManageServlet extends HttpServlet {
                 x.printStackTrace();
                 throw new ServletException(x);
             }
-        } else if(path.equals("/messages")) {
+        } else if (path.equals("/messages")) {
             try {
                 String id = req.getParameter("id");
-                if(id != null) {
+                if (id != null) {
                     List<Message> messages = Execution.getMessages(id);
-                        try (PrintWriter out = resp.getWriter()) {
-                            out.println(mapper.writeValueAsString(messages));
-                        }
-                    
+                    resp.setContentType("application/json");
+                    try (PrintWriter out = resp.getWriter()) {
+                        out.println(mapper.writeValueAsString(messages));
+                    }
+
                 } else {
                     resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "No run id");
                 }
-            } catch(IOException x) {
+            } catch (IOException x) {
                 x.printStackTrace();
                 throw new ServletException(x);
             }
