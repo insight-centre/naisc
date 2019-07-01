@@ -19,6 +19,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.AlignmentSet;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
 import org.insightcentre.uld.naisc.meas.ExecuteServlet;
 import org.insightcentre.uld.naisc.meas.Meas.Run;
@@ -39,6 +40,7 @@ public class Execution implements ExecuteListener {
     private final HashMap<Pair<Resource, Resource>, Map<String, LangStringPair>> lensResults = new HashMap<>();
     private List<Pair<Resource, Resource>> blocks = new ArrayList<>();
     private final static Object databaseLock = new Object();
+    private final List<Message> messages = new ArrayList<>();
 
     public Execution(String id) {
         try {
@@ -95,6 +97,13 @@ public class Execution implements ExecuteListener {
             }
         }
     }
+
+    @Override
+    public void message(Stage stage, Level level, String message) {
+        this.updateStatus(stage, message);
+        messages.add(new Message(stage, level, message));
+    }
+    
     private static final int BLOCK_MAX = 100000;
 
     private boolean tablesCreated = false;
@@ -122,6 +131,10 @@ public class Execution implements ExecuteListener {
                         + "valid TEXT,"
                         + "list_order INTEGER)");
                 stat.execute("CREATE TABLE blocks (res1 TEXT, res2 TEXT)");
+                stat.execute("CREATE TABLE messages (id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                        + "stage TEXT,"
+                        + "level TEXT,"
+                        + "message TEXT)");
             }
             tablesCreated = true;
         }
@@ -208,6 +221,7 @@ public class Execution implements ExecuteListener {
                 saveStats(connection, run);
                 saveResults(connection, alignmentSet);
                 saveBlocks(connection, blocks);
+                saveMessages(connection, messages);
             } catch (SQLException | JsonProcessingException x) {
                 throw new RuntimeException(x);
             }
@@ -339,7 +353,7 @@ public class Execution implements ExecuteListener {
             }
         }
     }
-
+    
     public static int truePositives(String id) {
         return count(id, "yes");
     }
@@ -531,10 +545,52 @@ public class Execution implements ExecuteListener {
         }
     }
 
+    private void saveMessages(Connection connection, List<Message> messages) throws SQLException {
+        try(PreparedStatement stat = connection.prepareStatement("INSERT INTO messages(stage,level,message) VALUES (?,?,?)")) {
+            for(Message message : messages) {
+                stat.setString(1, message.stage.name());
+                stat.setString(2, message.level.name());
+                stat.setString(3, message.message);
+                stat.execute();
+            }
+        }
+    }
+    
+    public static List<Message> getMessages(String id) {
+        List<Message> messages = new ArrayList<>();
+        synchronized (databaseLock) {
+            try (Connection connection = connection(id)) {
+                try(Statement stat = connection.createStatement()) {
+                    try(ResultSet rs = stat.executeQuery("SELECT stage, level, message FROM messages")) {
+                        while(rs.next()) {
+                            messages.add(new Message(Stage.valueOf(rs.getString(1)), Level.valueOf(rs.getString(2)), rs.getString(3)));
+                        }
+                    }
+                }
+            } catch(SQLException x) {
+                x.printStackTrace();
+                throw new RuntimeException(x);
+            }
+        }
+        return messages;
+    }
+
     public static class ListenerResponse {
 
-        public ExecuteListener.Stage stage = ExecuteListener.Stage.INITIALIZING;
+        public NaiscListener.Stage stage = NaiscListener.Stage.INITIALIZING;
         public String lastMessage = "";
+    }
+    
+    public static class Message {
+        public final NaiscListener.Stage stage;
+        public final NaiscListener.Level level;
+        public final String message;
+
+        public Message(Stage stage, Level level, String message) {
+            this.stage = stage;
+            this.level = level;
+            this.message = message;
+        }
     }
 
 }

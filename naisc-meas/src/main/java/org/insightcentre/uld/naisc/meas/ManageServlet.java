@@ -18,6 +18,7 @@ import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.main.Configuration;
 import static org.insightcentre.uld.naisc.meas.ExecuteServlet.VALID_ID;
 import org.insightcentre.uld.naisc.meas.Meas.Run;
+import org.insightcentre.uld.naisc.meas.execution.Execution.Message;
 
 /**
  *
@@ -128,7 +129,22 @@ public class ManageServlet extends HttpServlet {
                 x.printStackTrace();
                 throw new ServletException(x);
             }
-
+        } else if(path.equals("/messages")) {
+            try {
+                String id = req.getParameter("id");
+                if(id != null) {
+                    List<Message> messages = Execution.getMessages(id);
+                        try (PrintWriter out = resp.getWriter()) {
+                            out.println(mapper.writeValueAsString(messages));
+                        }
+                    
+                } else {
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "No run id");
+                }
+            } catch(IOException x) {
+                x.printStackTrace();
+                throw new ServletException(x);
+            }
         } else {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         }

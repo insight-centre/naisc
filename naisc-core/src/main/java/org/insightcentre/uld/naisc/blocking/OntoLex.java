@@ -99,9 +99,15 @@ public class OntoLex implements BlockingStrategyFactory {
             Model left = _left.asModel().getOrExcept(new RuntimeException("Does not support SPARQL endpoints"));
             Model right = _right.asModel().getOrExcept(new RuntimeException("Does not support SPARQL endpoints"));
             Set<Resource> leftEntries = extractEntries(left);
+            if (leftEntries.isEmpty()) {
+                log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, "There were no ontolex:LexicalEntrys in the left dataset");
+            }
             Set<Resource> rightEntries = extractEntries(right);
-            final Map<LangString, Set<Resource>> leftByLabel = byLabel(leftEntries, left);
-            final Map<LangString, Set<Resource>> rightByLabel = byLabel(rightEntries, right);
+            if (leftEntries.isEmpty()) {
+                log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, "There were no ontolex:LexicalEntrys in the right dataset");
+            }
+            final Map<LangString, Set<Resource>> leftByLabel = byLabel(leftEntries, left, log);
+            final Map<LangString, Set<Resource>> rightByLabel = byLabel(rightEntries, right, log);
             return new Iterable<Pair<Resource, Resource>>() {
                 @Override
                 public Iterator<Pair<Resource, Resource>> iterator() {
@@ -109,7 +115,7 @@ public class OntoLex implements BlockingStrategyFactory {
                         if (rightByLabel.containsKey(r.getKey())) {
                             return rightByLabel.get(r.getKey()).stream().flatMap((Resource r2) -> {
                                 return r.getValue().stream().flatMap((Resource r1) -> {
-                                    return getSensePairs(r1, left, r2, right).stream();
+                                    return getSensePairs(r1, left, r2, right, log).stream();
                                 });
                             });
                         } else {
@@ -126,14 +132,14 @@ public class OntoLex implements BlockingStrategyFactory {
             Model right = _right.asModel().getOrExcept(new RuntimeException("Does not support SPARQL endpoints"));
             Set<Resource> leftEntries = extractEntries(left);
             Set<Resource> rightEntries = extractEntries(right);
-            final Map<LangString, Set<Resource>> leftByLabel = byLabel(leftEntries, left);
-            final Map<LangString, Set<Resource>> rightByLabel = byLabel(rightEntries, right);
+            final Map<LangString, Set<Resource>> leftByLabel = byLabel(leftEntries, left, NaiscListener.DEFAULT);
+            final Map<LangString, Set<Resource>> rightByLabel = byLabel(rightEntries, right, NaiscListener.DEFAULT);
             int i = 0;
             for (Map.Entry<LangString, Set<Resource>> le : leftByLabel.entrySet()) {
                 if (rightByLabel.containsKey(le.getKey())) {
-                    for(Resource r1 : le.getValue()) {
-                        for(Resource r2 : rightByLabel.get(le.getKey())) {
-                            i += getSensePairs(r1, left, r2, right).size();
+                    for (Resource r1 : le.getValue()) {
+                        for (Resource r2 : rightByLabel.get(le.getKey())) {
+                            i += getSensePairs(r1, left, r2, right, NaiscListener.DEFAULT).size();
                         }
                     }
                 }
@@ -152,10 +158,11 @@ public class OntoLex implements BlockingStrategyFactory {
             return entries;
         }
 
-        private Map<LangString, Set<Resource>> byLabel(Set<Resource> resources, Model model) {
+        private Map<LangString, Set<Resource>> byLabel(Set<Resource> resources, Model model, NaiscListener log) {
             Map<LangString, Set<Resource>> byLabel = new HashMap<>();
             for (Resource entry : resources) {
                 NodeIterator i1 = model.listObjectsOfProperty(entry, RDFS.label);
+                boolean success = false;
                 while (i1.hasNext()) {
                     RDFNode n = i1.next();
                     if (n.isLiteral()) {
@@ -163,6 +170,7 @@ public class OntoLex implements BlockingStrategyFactory {
                         if (!byLabel.containsKey(ls)) {
                             byLabel.put(ls, new HashSet<>());
                         }
+                        success = true;
                         byLabel.get(ls).add(entry);
                     }
                 }
@@ -170,6 +178,7 @@ public class OntoLex implements BlockingStrategyFactory {
                     NodeIterator i2 = model.listObjectsOfProperty(entry, model.createProperty(formURL));
                     while (i2.hasNext()) {
                         RDFNode n2 = i2.next();
+                        boolean repFound = false;
                         if (n2.isResource()) {
                             for (String repURL : REP_URIS) {
                                 NodeIterator i3 = model.listObjectsOfProperty(n2.asResource(), model.createProperty(repURL));
@@ -180,6 +189,8 @@ public class OntoLex implements BlockingStrategyFactory {
                                         if (!byLabel.containsKey(ls)) {
                                             byLabel.put(ls, new HashSet<>());
                                         }
+                                        repFound = true;
+                                        success = true;
                                         byLabel.get(ls).add(entry);
 
                                     }
@@ -187,33 +198,47 @@ public class OntoLex implements BlockingStrategyFactory {
 
                             }
                         }
+                        if (!repFound) {
+                            log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, "A form of " + entry + " does not have ontolex:writtenRep");
+                        }
                     }
+                }
+                if (!success) {
+                    log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, entry + " does not have a ontolex:canonicalForm");
                 }
             }
             return byLabel;
 
         }
 
-        private static final List<Pair<Resource, Resource>> getSensePairs(Resource l, Model left, Resource r, Model right) {
+        private static List<Pair<Resource, Resource>> getSensePairs(Resource l, Model left, Resource r, Model right, NaiscListener log) {
             List<Pair<Resource, Resource>> pairs = new ArrayList<>();
             for (String senseURL1 : SENSE_URIS) {
                 NodeIterator i1 = left.listObjectsOfProperty(l, left.getProperty(senseURL1));
                 while (i1.hasNext()) {
                     RDFNode n1 = i1.next();
                     if (n1.isResource()) {
+                        boolean success = false;
                         for (String senseURL2 : SENSE_URIS) {
                             NodeIterator i2 = right.listObjectsOfProperty(r, right.getProperty(senseURL2));
                             while (i2.hasNext()) {
                                 RDFNode n2 = i2.next();
                                 if (n2.isResource()) {
                                     pairs.add(new Pair<>(n1.asResource(), n2.asResource()));
+                                    success = true;
                                 }
                             }
+                        }
+                        if (!success) {
+                            log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, r + " does not have a sense");
                         }
 
                     }
                 }
 
+            }
+            if (pairs.isEmpty()) {
+                log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, l + " does not have a sense");
             }
             return pairs;
         }

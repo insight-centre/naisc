@@ -1,6 +1,5 @@
 package org.insightcentre.uld.naisc;
 
-import org.insightcentre.uld.naisc.util.Pair;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -188,6 +187,10 @@ public class FeatureSet {
             return false;
         }
         return true;
+    }
+
+    public boolean isEmpty() {
+        return names.length == 0;
     }
    
 }

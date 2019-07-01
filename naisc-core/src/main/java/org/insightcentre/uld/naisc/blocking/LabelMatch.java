@@ -121,9 +121,15 @@ public class LabelMatch implements BlockingStrategyFactory {
 
             final Map<String, List<Resource>> leftLabels = new HashMap<>();
             extractLabel(leftLabels, left, leftProp);
+            if(leftLabels.isEmpty()) {
+                log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, "No URIs in the left dataset have the property " + leftProperty);
+            }
 
             final Map<String, List<Resource>> rightLabels = new HashMap<>();
             extractLabel(rightLabels, right, rightProp);
+            if(rightLabels.isEmpty()) {
+                log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, "No URIs in the right dataset have the property " + rightProperty);
+            }
 
             return new Iterable<Pair<Resource, Resource>>() {
                 @Override

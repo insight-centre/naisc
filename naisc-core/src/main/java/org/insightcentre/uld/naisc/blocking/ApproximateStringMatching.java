@@ -271,6 +271,8 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     lefts.add(r);
                 }
             }
+            if(lefts.isEmpty())
+                log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, "No URIs in the left dataset have the property: " + property);
 
             final List<Resource> rights = new ArrayList<>();
             Property rightProp = right.createProperty(rightProperty != null && !rightProperty.equals("") ? rightProperty : property);
@@ -281,6 +283,8 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     rights.add(r);
                 }
             }
+            if(rights.isEmpty())
+                log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, "No URIs in the right dataset have the property: " + property);
 
             final PatriciaTrie<Resource> trie = new PatriciaTrie<>();
             for (Resource r : rights) {
@@ -289,6 +293,8 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     RDFNode n = iter.next();
                     if (n.isLiteral()) {
                         trie.add(n.asLiteral().getLexicalForm(), r);
+                    } else {
+                        log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.WARNING, r + " had a non-literal value for property " + property);
                     }
                 }
             }
@@ -299,6 +305,8 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     RDFNode n = iter.next();
                     if (n.isLiteral()) {
                         labels.add(new Pair(r, n.asLiteral().getLexicalForm()));
+                    } else {
+                        log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.WARNING, r + " had a non-literal value for property " + property);
                     }
                 }
             }

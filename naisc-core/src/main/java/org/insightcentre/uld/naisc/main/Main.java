@@ -32,6 +32,7 @@ import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.GraphFeature;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Some;
@@ -201,7 +202,7 @@ public class Main {
             Matcher matcher = config.makeMatcher();
 
             monitor.updateStatus(Stage.BLOCKING, "Blocking");
-            Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel);
+            Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel, monitor);
             if (left != null && right != null) {
                 blocks = new FilterBlocks(blocks, left, right);
             }
@@ -213,7 +214,9 @@ public class Main {
             ExecutorService executor = new ThreadPoolExecutor(config.nThreads, config.nThreads, 0,
                     TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(1000),
                     new ThreadPoolExecutor.CallerRunsPolicy());
+            boolean blocksEmpty = true;
             for (Pair<Resource, Resource> block : blocks) {
+                blocksEmpty = false;
                 executor.submit(new Runnable() {
                     @Override
                     public void run() {
@@ -231,7 +234,7 @@ public class Main {
                             }
                             FeatureSet featureSet = new FeatureSet(block._1, block._2);
                             for (Lens lens : lenses) {
-                                Option<LangStringPair> oFacet = lens.extract(block._1, block._2);
+                                Option<LangStringPair> oFacet = lens.extract(block._1, block._2, monitor);
                                 if (!oFacet.has()) {
                                     monitor.updateStatus(Stage.SCORING, String.format("Lens produced no label for %s %s", block._1, block._2));
                                 } else {
@@ -241,18 +244,21 @@ public class Main {
                                 for (TextFeature featureExtractor : textFeatures) {
                                     if (featureExtractor.tags() == null || lens.tag() == null
                                             || featureExtractor.tags().contains(lens.tag())) {
-                                        double[] features = featureExtractor.extractFeatures(facet);
+                                        double[] features = featureExtractor.extractFeatures(facet, monitor);
                                         featureSet = featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
                                                 lens.id(), features, block._1, block._2));
                                     }
                                 }
                             }
                             for (GraphFeature feature : dataFeatures) {
-                                double[] features = feature.extractFeatures(block._1, block._2);
+                                double[] features = feature.extractFeatures(block._1, block._2, monitor);
                                 featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
                             }
+                            if(featureSet.isEmpty()) {
+                                monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "An empty feature set was created");
+                            }
                             for (Scorer scorer : scorers) {
-                                double score = scorer.similarity(featureSet);
+                                double score = scorer.similarity(featureSet, monitor);
                                 alignments.add(new Alignment(block._1, block._2, score, scorer.relation()));
                             }
                         } catch (Exception x) {
@@ -267,6 +273,11 @@ public class Main {
             executor.shutdown();
             executor.awaitTermination(30, TimeUnit.DAYS);
             monitor.updateStatus(Stage.SCORING, String.format("Scored %d pairs", count.get()));
+            if(blocksEmpty) {
+                monitor.message(Stage.BLOCKING, NaiscListener.Level.CRITICAL, "Blocking failed to extract any pairs");
+            } else if(count.get() == 0) {
+                monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "Failed to extract any pairs!");
+            }
 
             for (Scorer scorer : scorers) {
                 scorer.close();
@@ -284,6 +295,7 @@ public class Main {
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
+            monitor.message(Stage.FAILED, NaiscListener.Level.CRITICAL, "The process failed due to an exception: " + x.getClass().getName() + ": " + x.getMessage());
             return null;
         }
     }

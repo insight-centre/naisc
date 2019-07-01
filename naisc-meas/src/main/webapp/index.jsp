@@ -64,6 +64,7 @@
                             <td>Time</td>
                             <td class="icon-table-col"></td>
                             <td class="icon-table-col"></td>
+                            <td class="icon-table-col"></td>
                         </tr>
                     </thead>
                     <tr v-for="run in runs">
@@ -84,6 +85,7 @@
                         <td v-if="run.correlation < -1">n/a</td>-->
                         <td>{{(run.time / 1000).toFixed(3)}}s</td>
                         <td><a class="btn btn-info" v-bind:href="'results.jsp?id=' + run.identifier" v-if="!run.isTrain" style="font-weight:bold;">View Results</a></td>
+                        <td><a class="btn btn-info" v-on:click="showMessages(run.identifier)" title="Show messages"><i class="fa fa-info" aria-hidden="true"></i></button></td>
                         <td><button class="btn btn-danger" v-on:click="delRun(run.identifier)" title="Delete this run"><i class="fa fa-trash" aria-hidden="true"></i></button></td>
                     </tr>
                 </table>
@@ -255,6 +257,38 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="modal fade" id="messagesModal" tabindex="-1" role="dialog" aria-labelledby="messagesModelLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-wide" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="messagesModelLabel">Messages</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <table v-if="messages.length > 0">
+                                    <th></th>
+                                    <th>Stage</th>
+                                    <th>Message</th>
+                                    <tr v-for="message in messages">
+                                        <td>
+                                            <i class="fas fa-car-crash" v-if="message.level == 'CRITICAL'"></i>
+                                            <i class="fas fa-exclamation-triangle" v-if="message.level == 'WARNING'"></i>
+                                            <i class="fas fa-info" v-if="message.level == 'INFO'"></i>
+                                        </td>
+                                        <td>{{message.stage}}</td>
+                                        <td>{{message.message}}</td>
+                                    </tr>
+                                </table>
+                                <div v-if="messages.length == 0">
+                                    <i>No messages!</i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>          
             </div>
         </div>
 
@@ -564,7 +598,19 @@ var app = new Vue({
             method: "POST",
             data: JSON.stringify(unflatten_config(this.config))
         });
-    }                
+    },
+    showMessages(id) {
+        jQuery.ajax({
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage?id=" + id,
+            success: function(result) {
+                app.messages = result;
+                $('#messagesModal').modal('show');
+            },
+            failure: function(result) {
+                console.log("failed to get messages");
+            }
+        });
+    }       
   },
   beforeDestroy() {
     clearInterval(this.polling);
