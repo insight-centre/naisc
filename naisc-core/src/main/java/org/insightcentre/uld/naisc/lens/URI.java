@@ -27,7 +27,7 @@ import org.insightcentre.uld.naisc.util.Some;
  */
 public class URI implements LensFactory {
 
-    private static String deCamelCase(String raw) {
+    public static String deCamelCase(String raw) {
         return raw.replaceAll("(?<=[^\\p{IsUpper}])(\\p{IsUpper})", " $1").replaceAll("(\\p{IsUpper})(?=[^\\p{IsUpper}])", " $1");
     }
 
