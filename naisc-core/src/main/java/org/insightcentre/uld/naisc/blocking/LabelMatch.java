@@ -21,7 +21,9 @@ import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
+import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.util.PrettyGoodTokenizer;
 
@@ -35,7 +37,7 @@ public class LabelMatch implements BlockingStrategyFactory {
     private final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
-    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params) {
+    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis) {
         Configuration config = mapper.convertValue(params, Configuration.class);
         if (config.property == null) {
             throw new ConfigurationException("Label match requires a labelling property");

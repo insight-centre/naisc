@@ -22,32 +22,57 @@ import org.apache.jena.rdf.model.StmtIterator;
  *
  * @author John McCrae
  */
-public class LabelAnalysis {
+public class DatasetAnalyzer {
 
-    public static class LabelResult {
-
-        public final String uri;
-        public final int total;
-        public final double coverage;
-        public final double naturalLangLike;
-        public final double uniqueness;
-        public final double diversity;
-
-        public LabelResult(String uri, int total, double coverage, double naturalLangLike, double uniqueness, double diversity) {
-            this.uri = uri;
-            this.total = total;
-            this.coverage = coverage;
-            this.naturalLangLike = naturalLangLike;
-            this.uniqueness = uniqueness;
-            this.diversity = diversity;
+    
+    
+    
+    public List<MatchResult> analyseMatch(Map<String, List<String>> left, Map<String, List<String>> right) {
+        List<MatchResult> results = new ArrayList<>();
+        for(String leftUri : left.keySet()) {
+            for(String rightUri : right.keySet()) {
+                Set<String> overlap = new HashSet<>(left.get(leftUri));
+                overlap.retainAll(right.get(rightUri));
+                results.add(new MatchResult(leftUri, rightUri, left.get(leftUri).size(), right.get(rightUri).size(), overlap.size()));
+            }
         }
-
+        return results;
     }
 
-    public List<LabelResult> analyse(Model model) {
-        Map<String, List<String>> analysis = new HashMap<>();
-        Map<String, Set<String>> propBySubj = new HashMap<>();
-        Set<String> subjects = new HashSet<>();
+    public Analysis analyseModel(Model leftModel, Model rightModel) {
+        Map<String, List<String>> leftAnalysis = new HashMap<>();
+        Map<String, Set<String>> leftPropBySubj = new HashMap<>();
+        Set<String> leftSubjects = new HashSet<>();
+        analyzeModel(leftModel, leftSubjects, leftAnalysis, leftPropBySubj);
+        List<LabelResult> leftResult = new ArrayList<>();
+        for (Map.Entry<String, List<String>> e : leftAnalysis.entrySet()) {
+            leftResult.add(new LabelResult(e.getKey(), leftPropBySubj.get(e.getKey()).size(),
+                    (double) leftPropBySubj.get(e.getKey()).size() / leftSubjects.size(),
+                    naturalLangLike(e.getValue()),
+                    uniqueness(e.getValue()),
+                    diversity(e.getValue())));
+
+        }
+        
+        
+        Map<String, List<String>> rightAnalysis = new HashMap<>();
+        Map<String, Set<String>> rightPropBySubj = new HashMap<>();
+        Set<String> rightSubjects = new HashSet<>();
+        analyzeModel(rightModel, rightSubjects, rightAnalysis, rightPropBySubj);
+        List<LabelResult> rightResult = new ArrayList<>();
+        for (Map.Entry<String, List<String>> e : rightAnalysis.entrySet()) {
+            rightResult.add(new LabelResult(e.getKey(), rightPropBySubj.get(e.getKey()).size(),
+                    (double) rightPropBySubj.get(e.getKey()).size() / rightSubjects.size(),
+                    naturalLangLike(e.getValue()),
+                    uniqueness(e.getValue()),
+                    diversity(e.getValue())));
+
+        }
+        
+        return new Analysis(leftResult, rightResult, analyseMatch(leftAnalysis, rightAnalysis));
+    }
+
+    private void analyzeModel(Model model, Set<String> subjects, Map<String, List<String>> analysis, Map<String, Set<String>> propBySubj) {
         StmtIterator iter = model.listStatements();
         while (iter.hasNext()) {
             Statement stmt = iter.next();
@@ -64,21 +89,9 @@ public class LabelAnalysis {
                 }
             }
         }
-        List<LabelResult> result = new ArrayList<>();
-        for (Map.Entry<String, List<String>> e : analysis.entrySet()) {
-            result.add(new LabelResult(e.getKey(), propBySubj.get(e.getKey()).size(),
-                    (double) propBySubj.get(e.getKey()).size() / subjects.size(),
-                    naturalLangLike(e.getValue()),
-                    uniqueness(e.getValue()),
-                    diversity(e.getValue())));
-
-        }
         List<String> fromURIs = subjects.stream().map(x -> fromURI(x)).collect(Collectors.toList());
-        result.add(new LabelResult("", subjects.size(),
-                1.0, naturalLangLike(fromURIs),
-                uniqueness(fromURIs),
-                diversity(fromURIs)));
-        return result;
+        analysis.put("", fromURIs);
+        propBySubj.put("", subjects);
     }
 
     private double naturalLangLike(List<String> strings) {

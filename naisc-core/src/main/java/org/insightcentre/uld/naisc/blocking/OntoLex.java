@@ -21,6 +21,8 @@ import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.analysis.Analysis;
+import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
 
 /**
@@ -31,7 +33,7 @@ import org.insightcentre.uld.naisc.util.Pair;
 public class OntoLex implements BlockingStrategyFactory {
 
     @Override
-    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params) {
+    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis) {
         return new OntoLexImpl();
     }
 

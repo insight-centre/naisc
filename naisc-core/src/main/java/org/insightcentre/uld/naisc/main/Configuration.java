@@ -39,6 +39,7 @@ import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.TextFeatureFactory;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.GraphFeatureFactory;
+import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.blocking.All;
 import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching;
 import org.insightcentre.uld.naisc.blocking.IDMatch;
@@ -65,6 +66,7 @@ import org.insightcentre.uld.naisc.matcher.Threshold;
 import org.insightcentre.uld.naisc.matcher.UniqueAssignment;
 import org.insightcentre.uld.naisc.scorer.Average;
 import org.insightcentre.uld.naisc.scorer.LibSVM;
+import org.insightcentre.uld.naisc.util.Lazy;
 
 /**
  * A configuration of the system
@@ -197,8 +199,8 @@ public class Configuration {
         return Services.get(MatcherFactory.class, this.matcher.name).makeMatcher(this.matcher.params);
     }
 
-    public BlockingStrategy makeBlockingStrategy() throws IOException {
-        return Services.get(BlockingStrategyFactory.class, this.blocking.name).makeBlockingStrategy(this.blocking.params);
+    public BlockingStrategy makeBlockingStrategy(Lazy<Analysis> analysis) throws IOException {
+        return Services.get(BlockingStrategyFactory.class, this.blocking.name).makeBlockingStrategy(this.blocking.params, analysis);
     }
 
     public static Class[] knownTextFeatures = new Class[]{

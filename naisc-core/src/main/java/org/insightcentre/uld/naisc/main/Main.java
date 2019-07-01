@@ -34,6 +34,8 @@ import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
+import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
+import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Some;
 
@@ -185,7 +187,11 @@ public class Main {
         try {
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading blocking strategy");
-            BlockingStrategy blocking = config.makeBlockingStrategy();
+            BlockingStrategy blocking = config.makeBlockingStrategy(Lazy.fromClosure(() -> {
+                DatasetAnalyzer analyzer = new DatasetAnalyzer();
+                return analyzer.analyseModel(leftModel.asModel().getOrExcept(new RuntimeException("Automatic analysis cannot be performed on SPARQL endpoints")), 
+                        rightModel.asModel().getOrExcept(new RuntimeException("Automatic analysis cannot be performed on SPARQL endpoints")));
+            }));
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading lenses");
             Dataset combined = loader.combine(leftModel, rightModel, name + "/combined");

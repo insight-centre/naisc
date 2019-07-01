@@ -12,6 +12,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.Dataset;
+import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -104,7 +105,7 @@ public class OntoLexTest {
         System.out.println("makeBlockingStrategy");
         Map<String, Object> params = new HashMap<>();
         OntoLex instance = new OntoLex();
-        BlockingStrategy blocker = instance.makeBlockingStrategy(params);
+        BlockingStrategy blocker = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null));
         Model left = ModelFactory.createDefaultModel();
         left.read(new StringReader(ONTOLEX_DOC), "http://www.example.com/", "TURTLE");
         Model right = ModelFactory.createDefaultModel();

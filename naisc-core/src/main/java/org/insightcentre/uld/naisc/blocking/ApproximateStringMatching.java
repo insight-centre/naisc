@@ -24,8 +24,10 @@ import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.analysis.Analysis;
 import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
+import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
 
 /**
@@ -36,7 +38,7 @@ import org.insightcentre.uld.naisc.util.Pair;
 public class ApproximateStringMatching implements BlockingStrategyFactory {
 
     @Override
-    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params) {
+    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis) {
         Configuration config = new ObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if (config.maxMatches < 1) {
             throw new ConfigurationException("Max matches must be at least one");

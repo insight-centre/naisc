@@ -15,8 +15,10 @@ import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.main.Train;
+import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
 
 /**
@@ -27,7 +29,7 @@ import org.insightcentre.uld.naisc.util.Pair;
 public class Predefined implements BlockingStrategyFactory {
 
     @Override
-    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params) {
+    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis) {
         final Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         final File links = config.links == null ? null : new File(config.links);
         if(links == null || !links.exists()) 

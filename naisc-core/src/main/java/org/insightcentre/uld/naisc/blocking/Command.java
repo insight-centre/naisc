@@ -15,8 +15,10 @@ import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
+import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
 
 /**
@@ -27,7 +29,7 @@ import org.insightcentre.uld.naisc.util.Pair;
 public class Command implements BlockingStrategyFactory {
 
     @Override
-    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params) {
+    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if(config.command == null) {
             throw new ConfigurationException("Command cannot be null");

@@ -7,15 +7,12 @@ import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.lens.Label;
-import org.insightcentre.uld.naisc.main.ModelDataset;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -76,8 +73,8 @@ public class LabelAnalysisTest {
                 model.createProperty(Label.SKOS_PREFLABEL), 
                 model.createLiteral("???"));
        
-        LabelAnalysis instance = new LabelAnalysis();
-        List<LabelAnalysis.LabelResult> result = instance.analyse(model);
+        DatasetAnalyzer instance = new DatasetAnalyzer();
+        List<LabelResult> result = instance.analyseModel(model, model).leftLabels;
         assert(result.stream().anyMatch(x -> x.uri.equals("")));
         assert(result.stream().anyMatch(x -> x.uri.equals(Label.RDFS_LABEL)));
         assert(result.stream().anyMatch(x -> x.uri.equals(Label.SKOS_PREFLABEL)));
@@ -138,7 +135,7 @@ public class LabelAnalysisTest {
     @Test
     public void testIsNaturalLangLike() {
         System.out.println("isNaturalLangLike");
-        LabelAnalysis instance = new LabelAnalysis();
+        DatasetAnalyzer instance = new DatasetAnalyzer();
         for(String naturalString : naturalStrings) {
             System.err.println(naturalString);
             assert(instance.isNaturalLangLike(naturalString));
@@ -154,7 +151,7 @@ public class LabelAnalysisTest {
         List<String> notDiverse = Arrays.asList("foo","foo","foo","foo","foo","foo","foo","foo","foo","foo","foo","foo","foo","foo","foo","foo");
         List<String> tooDiverse = Arrays.asList("foo1","foo2","foo3","foo4","foo5","foo6","foo7","foo8","foo9","fooa","foob","fooc","food","fooe","foof","foog");
         List<String> okay = Arrays.asList("foo","foo","foo","bar","bar","bar","bar","bar","foo","foo","baz","baz","baz","baz","baz","baz");
-        LabelAnalysis instance = new LabelAnalysis();
+        DatasetAnalyzer instance = new DatasetAnalyzer();
         double d1 = instance.diversity(notDiverse);
         double d2 = instance.diversity(tooDiverse);
         double d3 = instance.diversity(okay);
