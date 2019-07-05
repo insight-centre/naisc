@@ -18,6 +18,7 @@ import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
+import static org.insightcentre.uld.naisc.util.URI2Label.deCamelCase;
 
 /**
  * This lens assumes that the label is encoded within the URI and extracts
@@ -27,9 +28,7 @@ import org.insightcentre.uld.naisc.util.Some;
  */
 public class URI implements LensFactory {
 
-    public static String deCamelCase(String raw) {
-        return raw.replaceAll("(?<=[^\\p{IsUpper}])(\\p{IsUpper})", " $1").replaceAll("(\\p{IsUpper})(?=[^\\p{IsUpper}])", " $1");
-    }
+
 
     @Override
     public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {

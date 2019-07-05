@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
@@ -29,6 +30,7 @@ import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
+import org.insightcentre.uld.naisc.util.URI2Label;
 
 /**
  * Find the terms that match by the minimum of Levenshtein Edit Distance.
@@ -51,6 +53,9 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         }
         if (config.property == null || config.property.equals("")) {
             throw new ConfigurationException("Property must be set");
+        }
+        if (config.rightProperty == null || config.rightProperty.equals("")) {
+            config.rightProperty = config.property;
         }
         if (config.metric == StringMetric.ngrams && config.ngrams < 1) {
             config.ngrams = 3;
@@ -92,7 +97,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
          */
         public StringMetric metric = StringMetric.ngrams;
         /**
-         * The size of ngrams to ise
+         * The size of ngrams to use
          */
         public int ngrams = 3;
     }
@@ -102,18 +107,30 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         ngrams
     }
 
-    private static class NgramApproximateStringMatch implements BlockingStrategy {
+    static class NgramApproximateStringMatch implements BlockingStrategy {
 
         private final int maxMatches;
         private final String property;
         private final String rightProperty;
         private final int n;
+        private final Set<Resource> leftPreBlocks, rightPreBlocks;
 
         public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n) {
             this.maxMatches = maxMatches;
             this.property = property;
             this.rightProperty = rightProperty;
             this.n = n;
+            this.leftPreBlocks = Collections.EMPTY_SET;
+            this.rightPreBlocks = Collections.EMPTY_SET;
+        }
+
+        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n, Set<Resource> leftPreBlocks, Set<Resource> rightPreBlocks) {
+            this.maxMatches = maxMatches;
+            this.property = property;
+            this.rightProperty = rightProperty;
+            this.n = n;
+            this.leftPreBlocks = leftPreBlocks;
+            this.rightPreBlocks = rightPreBlocks;
         }
 
         @Override
@@ -121,56 +138,67 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
             final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
             final List<Resource> lefts = new ArrayList<>();
-            Property leftProp = left.createProperty(property);
-            ResIterator leftIter = left.listSubjectsWithProperty(leftProp);
+            final ResIterator leftIter;
+            if (property.equals("")) {
+                leftIter = left.listSubjects();
+            } else {
+                leftIter = left.listSubjectsWithProperty(left.createProperty(property));
+            }
             while (leftIter.hasNext()) {
                 Resource r = leftIter.next();
                 if (r.isURIResource()) {
                     lefts.add(r);
                 }
             }
+            lefts.removeAll(leftPreBlocks);
 
             final List<Resource> rights = new ArrayList<>();
-            Property rightProp = right.createProperty(rightProperty != null && !rightProperty.equals("") ? rightProperty : property);
-            ResIterator rightIter = right.listSubjectsWithProperty(rightProp);
+            final ResIterator rightIter;
+            if (rightProperty.equals("")) {
+                rightIter = right.listSubjects();
+            } else {
+                Property rightProp = right.createProperty(rightProperty);
+                rightIter = right.listSubjectsWithProperty(rightProp);
+            }
             while (rightIter.hasNext()) {
                 Resource r = rightIter.next();
                 if (r.isURIResource()) {
                     rights.add(r);
                 }
             }
+            rights.removeAll(rightPreBlocks);
 
             final Map<String, Object2DoubleMap<Resource>> ngrams = new HashMap<>();
             for (Resource r : rights) {
-                NodeIterator iter = right.listObjectsOfProperty(r, rightProp);
-                while (iter.hasNext()) {
-                    RDFNode n = iter.next();
-                    if (n.isLiteral()) {
-                        String s = n.asLiteral().getLexicalForm();
-                        for (int i = 0; i < s.length() - this.n + 1; i++) {
-                            String ng = s.substring(i, i + this.n);
-                            final Object2DoubleMap<Resource> ngMap;
-                            if (!ngrams.containsKey(ng)) {
-                                ngrams.put(ng, ngMap = new Object2DoubleOpenHashMap<>());
-                            } else {
-                                ngMap = ngrams.get(ng);
-                            }
-                            ngMap.put(r, ngMap.getDouble(r) + 1.0 / s.length());
+                if (rightProperty.equals("")) {
+                    extractNgram(URI2Label.fromURI(r.getURI()), ngrams, r);
+                } else {
+                    Property rightProp = right.createProperty(rightProperty);
+                    NodeIterator iter = right.listObjectsOfProperty(r, rightProp);
+                    while (iter.hasNext()) {
+                        RDFNode n = iter.next();
+                        if (n.isLiteral()) {
+                            String s = n.asLiteral().getLexicalForm();
+                            extractNgram(s, ngrams, r);
                         }
                     }
                 }
             }
             final List<Pair<Resource, List<String>>> labels = new ArrayList<>();
             for (Resource r : lefts) {
-                NodeIterator iter = left.listObjectsOfProperty(r, leftProp);
-                List<String> l = new ArrayList<>();
-                while (iter.hasNext()) {
-                    RDFNode n = iter.next();
-                    if (n.isLiteral()) {
-                        l.add(n.asLiteral().getLexicalForm());
+                if (property.equals("")) {
+                    labels.add(new Pair(r, Arrays.asList(URI2Label.fromURI(r.getURI()))));
+                } else {
+                    NodeIterator iter = left.listObjectsOfProperty(r, left.createProperty(property));
+                    List<String> l = new ArrayList<>();
+                    while (iter.hasNext()) {
+                        RDFNode n = iter.next();
+                        if (n.isLiteral()) {
+                            l.add(n.asLiteral().getLexicalForm());
+                        }
                     }
+                    labels.add(new Pair(r, l));
                 }
-                labels.add(new Pair(r, l));
             }
 
             return new Iterable<Pair<Resource, Resource>>() {
@@ -183,6 +211,19 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                 }
 
             };
+        }
+
+        private void extractNgram(String s, final Map<String, Object2DoubleMap<Resource>> ngrams, Resource r) {
+            for (int i = 0; i < s.length() - this.n + 1; i++) {
+                String ng = s.substring(i, i + this.n);
+                final Object2DoubleMap<Resource> ngMap;
+                if (!ngrams.containsKey(ng)) {
+                    ngrams.put(ng, ngMap = new Object2DoubleOpenHashMap<>());
+                } else {
+                    ngMap = ngrams.get(ng);
+                }
+                ngMap.put(r, ngMap.getDouble(r) + 1.0 / s.length());
+            }
         }
 
         private List<Resource> nearest(List<String> labels, Map<String, Object2DoubleMap<Resource>> ngrams) {
@@ -198,8 +239,8 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                         }
                     }
                 }
-                for(Object2DoubleMap.Entry<Resource> e : freqs.object2DoubleEntrySet()) {
-                    freqsFinal.put(e.getKey(), Math.max(freqsFinal.getDouble(e.getKey()),e.getDoubleValue()));
+                for (Object2DoubleMap.Entry<Resource> e : freqs.object2DoubleEntrySet()) {
+                    freqsFinal.put(e.getKey(), Math.max(freqsFinal.getDouble(e.getKey()), e.getDoubleValue()));
                 }
             }
             List<Resource> resList = new ArrayList<>(freqsFinal.keySet());
@@ -245,7 +286,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
 
     }
 
-    private static class LevenshteinApproximateStringMatch implements BlockingStrategy {
+    static class LevenshteinApproximateStringMatch implements BlockingStrategy {
 
         private final int maxMatches;
         private final String property;
@@ -273,8 +314,9 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     lefts.add(r);
                 }
             }
-            if(lefts.isEmpty())
+            if (lefts.isEmpty()) {
                 log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, "No URIs in the left dataset have the property: " + property);
+            }
 
             final List<Resource> rights = new ArrayList<>();
             Property rightProp = right.createProperty(rightProperty != null && !rightProperty.equals("") ? rightProperty : property);
@@ -285,8 +327,9 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     rights.add(r);
                 }
             }
-            if(rights.isEmpty())
+            if (rights.isEmpty()) {
                 log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, "No URIs in the right dataset have the property: " + property);
+            }
 
             final PatriciaTrie<Resource> trie = new PatriciaTrie<>();
             for (Resource r : rights) {

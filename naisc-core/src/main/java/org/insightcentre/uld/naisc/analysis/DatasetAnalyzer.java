@@ -16,6 +16,7 @@ import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
+import org.insightcentre.uld.naisc.util.URI2Label;
 
 /**
  * Analyse the labels so that sensible labels can be extracted
@@ -24,13 +25,10 @@ import org.apache.jena.rdf.model.StmtIterator;
  */
 public class DatasetAnalyzer {
 
-    
-    
-    
     public List<MatchResult> analyseMatch(Map<String, List<String>> left, Map<String, List<String>> right) {
         List<MatchResult> results = new ArrayList<>();
-        for(String leftUri : left.keySet()) {
-            for(String rightUri : right.keySet()) {
+        for (String leftUri : left.keySet()) {
+            for (String rightUri : right.keySet()) {
                 Set<String> overlap = new HashSet<>(left.get(leftUri));
                 overlap.retainAll(right.get(rightUri));
                 results.add(new MatchResult(leftUri, rightUri, left.get(leftUri).size(), right.get(rightUri).size(), overlap.size()));
@@ -43,36 +41,59 @@ public class DatasetAnalyzer {
         Map<String, List<String>> leftAnalysis = new HashMap<>();
         Map<String, Set<String>> leftPropBySubj = new HashMap<>();
         Set<String> leftSubjects = new HashSet<>();
-        analyzeModel(leftModel, leftSubjects, leftAnalysis, leftPropBySubj);
+        Set<String> leftDataProps = new HashSet<>();
+        Set<String> leftClasses = new HashSet<>();
+        analyzeLabels(leftModel, leftSubjects, leftAnalysis, leftPropBySubj, leftDataProps, leftClasses);
         List<LabelResult> leftResult = new ArrayList<>();
         for (Map.Entry<String, List<String>> e : leftAnalysis.entrySet()) {
-            leftResult.add(new LabelResult(e.getKey(), leftPropBySubj.get(e.getKey()).size(),
-                    (double) leftPropBySubj.get(e.getKey()).size() / leftSubjects.size(),
-                    naturalLangLike(e.getValue()),
-                    uniqueness(e.getValue()),
-                    diversity(e.getValue())));
+            if (leftDataProps.contains(e.getKey())) {
+                leftResult.add(new LabelResult(e.getKey(), leftPropBySubj.get(e.getKey()).size(),
+                        (double) leftPropBySubj.get(e.getKey()).size() / leftSubjects.size(),
+                        naturalLangLike(e.getValue()),
+                        uniqueness(e.getValue()),
+                        diversity(e.getValue()), true));
+            } else {
 
+                leftResult.add(new LabelResult(e.getKey(), leftPropBySubj.get(e.getKey()).size(),
+                        (double) leftPropBySubj.get(e.getKey()).size() / leftSubjects.size(),
+                        -1.0,
+                        uniqueness(e.getValue()),
+                        diversity(e.getValue()), false));
+            }
         }
-        
-        
+
         Map<String, List<String>> rightAnalysis = new HashMap<>();
         Map<String, Set<String>> rightPropBySubj = new HashMap<>();
         Set<String> rightSubjects = new HashSet<>();
-        analyzeModel(rightModel, rightSubjects, rightAnalysis, rightPropBySubj);
+        Set<String> rightDataProps = new HashSet<>();
+        Set<String> rightClasses = new HashSet<>();
+        analyzeLabels(rightModel, rightSubjects, rightAnalysis, rightPropBySubj, rightDataProps, rightClasses);
         List<LabelResult> rightResult = new ArrayList<>();
         for (Map.Entry<String, List<String>> e : rightAnalysis.entrySet()) {
-            rightResult.add(new LabelResult(e.getKey(), rightPropBySubj.get(e.getKey()).size(),
-                    (double) rightPropBySubj.get(e.getKey()).size() / rightSubjects.size(),
-                    naturalLangLike(e.getValue()),
-                    uniqueness(e.getValue()),
-                    diversity(e.getValue())));
+            if (rightDataProps.contains(e.getKey())) {
+                rightResult.add(new LabelResult(e.getKey(), rightPropBySubj.get(e.getKey()).size(),
+                        (double) rightPropBySubj.get(e.getKey()).size() / rightSubjects.size(),
+                        naturalLangLike(e.getValue()),
+                        uniqueness(e.getValue()),
+                        diversity(e.getValue()), true));
+            } else {
+
+                rightResult.add(new LabelResult(e.getKey(), rightPropBySubj.get(e.getKey()).size(),
+                        (double) rightPropBySubj.get(e.getKey()).size() / rightSubjects.size(),
+                        -1.0,
+                        uniqueness(e.getValue()),
+                        diversity(e.getValue()), false));
+            }
 
         }
-        
-        return new Analysis(leftResult, rightResult, analyseMatch(leftAnalysis, rightAnalysis));
+
+        return new Analysis(leftResult, rightResult, analyseMatch(leftAnalysis, rightAnalysis),
+                leftClasses, rightClasses);
     }
 
-    private void analyzeModel(Model model, Set<String> subjects, Map<String, List<String>> analysis, Map<String, Set<String>> propBySubj) {
+    private void analyzeLabels(Model model, Set<String> subjects,
+            Map<String, List<String>> analysis, Map<String, Set<String>> propBySubj,
+            Set<String> dataProps, Set<String> classes) {
         StmtIterator iter = model.listStatements();
         while (iter.hasNext()) {
             Statement stmt = iter.next();
@@ -80,16 +101,29 @@ public class DatasetAnalyzer {
                 subjects.add(stmt.getSubject().getURI());
                 if (stmt.getObject().isLiteral()) {
                     String prop = stmt.getPredicate().getURI();
-                    if (!analysis.containsKey(prop)) {
+                    if (!analysis.containsKey(prop) || analysis.containsKey(prop) && !dataProps.contains(prop)) {
                         analysis.put(prop, new ArrayList<>());
                         propBySubj.put(prop, new HashSet<>());
                     }
                     analysis.get(prop).add(stmt.getObject().asLiteral().getString());
                     propBySubj.get(prop).add(stmt.getSubject().getURI());
+                    dataProps.add(prop);
+                } else if (stmt.getObject().isURIResource()) {
+                    String prop = stmt.getPredicate().getURI();
+                    if (prop.equals("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")) {
+                        classes.add(stmt.getObject().asResource().getURI());
+                    } else if (!dataProps.contains(prop)) {
+                        if (!analysis.containsKey(prop)) {
+                            analysis.put(prop, new ArrayList<>());
+                            propBySubj.put(prop, new HashSet<>());
+                        }
+                        analysis.get(prop).add(stmt.getObject().asResource().getURI());
+                        propBySubj.put(prop, new HashSet<>());
+                    }
                 }
             }
         }
-        List<String> fromURIs = subjects.stream().map(x -> fromURI(x)).collect(Collectors.toList());
+        List<String> fromURIs = subjects.stream().map(x -> URI2Label.fromURI(x)).collect(Collectors.toList());
         analysis.put("", fromURIs);
         propBySubj.put("", subjects);
     }
@@ -130,8 +164,9 @@ public class DatasetAnalyzer {
         Set<String> withoutDupes = new HashSet<>(strings);
         int n = withoutDupes.size();
         int N = strings.size();
-        if(N <= 1)
+        if (N <= 1) {
             return 1.0;
+        }
         // Not sure this really makes sense, but it returns a value between 0 and 1
         // which is penalized for very high diversity (all values unique) or 
         // very low diversity (all values the same)
@@ -149,32 +184,4 @@ public class DatasetAnalyzer {
         return (double) n / N;
     }
 
-    private String fromURI(String s) {
-        try {
-            URI uri = URI.create(s);
-            final String raw;
-            if (uri.getFragment() != null) {
-                raw = uri.getFragment();
-            } else {
-
-                String path = uri.getPath();
-                if (path.lastIndexOf("/") >= 0) {
-                    raw = path.substring(path.lastIndexOf("/") + 1);
-                } else if (path.lastIndexOf("\\") >= 0) {
-                    raw = path.substring(path.lastIndexOf("\\") + 1);
-                } else {
-                    raw = path;
-                }
-            }
-            final String clean;
-            try {
-                clean = URLDecoder.decode(org.insightcentre.uld.naisc.lens.URI.deCamelCase(raw).replace("_", " "), "UTF-8");
-            } catch (UnsupportedEncodingException x) {
-                return "";
-            }
-            return clean;
-        } catch (Exception x) {
-            return "";
-        }
-    }
 }

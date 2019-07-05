@@ -13,14 +13,17 @@ public class LabelResult {
     public final double naturalLangLike;
     public final double uniqueness;
     public final double diversity;
+    public final boolean isDataProperty;
 
-    public LabelResult(String uri, int total, double coverage, double naturalLangLike, double uniqueness, double diversity) {
+    public LabelResult(String uri, int total, double coverage, double naturalLangLike, double uniqueness, double diversity, boolean isDataProperty) {
         this.uri = uri;
         this.total = total;
         this.coverage = coverage;
         this.naturalLangLike = naturalLangLike;
         this.uniqueness = uniqueness;
         this.diversity = diversity;
+        this.isDataProperty = isDataProperty;
     }
+
 
 }

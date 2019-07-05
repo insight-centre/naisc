@@ -37,7 +37,7 @@ public class OntoLex implements BlockingStrategyFactory {
         return new OntoLexImpl();
     }
 
-    private static final String[] LEXICAL_ENTRY_URLS = new String[]{
+    public static final String[] LEXICAL_ENTRY_URLS = new String[]{
         "http://www.w3.org/ns/lemon/ontolex#LexicalEntry",
         "http://www.w3.org/ns/lemon/ontolex#Word",
         "http://www.w3.org/ns/lemon/ontolex#MultiwordExpression",
