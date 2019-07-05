@@ -14,6 +14,7 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Random;
 
 /**
@@ -160,6 +161,37 @@ public class FastPPR {
             return nodes.get(startId);
         }
 
+        @Override
+        public String toString() {
+            return "DirectedGraph{" + "nodes=" + nodes + '}';
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 13 * hash + Objects.hashCode(this.nodes);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final DirectedGraph other = (DirectedGraph) obj;
+            if (!Objects.equals(this.nodes, other.nodes)) {
+                return false;
+            }
+            return true;
+        }
+
+        
     }
 
     private static class GraphNode {
@@ -190,6 +222,41 @@ public class FastPPR {
             }
         }
 
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 79 * hash + Objects.hashCode(this.outboundNodes);
+            hash = 79 * hash + this.id;
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final GraphNode other = (GraphNode) obj;
+            if (this.id != other.id) {
+                return false;
+            }
+            if (!Objects.equals(this.outboundNodes, other.outboundNodes)) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return "GraphNode{" + "outboundNodes=" + outboundNodes + ", id=" + id + '}';
+        }
+
+        
     }
 
     public static class FastPPRConfiguration {
@@ -199,6 +266,18 @@ public class FastPPR {
         float teleportProbability = 0.2f;
         float forwardStepsPerReverseStep = 6.7f;
         float nWalksConstant = (float)(24 *  Math.log(1.0e6));
+
+        public FastPPRConfiguration() {
+        }
+        
+        public FastPPRConfiguration(float pprSignificanceThreshold, float reversePPRApproximationFactor, float teleportProbability, float forwardStepsPerReverseStep, float nWalksConstant) {
+            this.pprSignificanceThreshold = pprSignificanceThreshold;
+            this.reversePPRApproximationFactor = reversePPRApproximationFactor;
+            this.teleportProbability = teleportProbability;
+            this.forwardStepsPerReverseStep = forwardStepsPerReverseStep;
+            this.nWalksConstant = nWalksConstant;
+        }
+        
 
         private int walkCount(float forwardPPRSignificanceThreshold) {
             return (int)(nWalksConstant / forwardPPRSignificanceThreshold);

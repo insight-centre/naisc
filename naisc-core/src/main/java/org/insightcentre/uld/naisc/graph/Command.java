@@ -8,14 +8,17 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.util.Map;
 import org.apache.jena.rdf.model.Resource;
+import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.GraphFeatureFactory;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
+import org.insightcentre.uld.naisc.util.Lazy;
 
 /**
  * Graph feature extraction using an external command. The command will receive the 
@@ -41,7 +44,8 @@ import org.insightcentre.uld.naisc.util.ExternalCommandException;
 public class Command implements GraphFeatureFactory {
 
     @Override
-    public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params) {
+    public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params,
+            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if(config.command == null) {
             throw new ConfigurationException("Command cannot be null");

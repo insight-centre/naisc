@@ -24,6 +24,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.Dataset;
@@ -140,11 +141,12 @@ public class Configuration {
         this.description = description;
     }
 
-    public List<GraphFeature> makeDataFeatures(Dataset model) {
+    public List<GraphFeature> makeDataFeatures(Dataset model, Lazy<Analysis> analysis,
+            Lazy<AlignmentSet> prelinking) {
         List<GraphFeature> extractors = new ArrayList<>();
         for (GraphFeatureConfiguration config : dataFeatures) {
             GraphFeatureFactory extractor = Services.get(GraphFeatureFactory.class, config.name);
-            extractors.add(extractor.makeFeature(model, config.params));
+            extractors.add(extractor.makeFeature(model, config.params, analysis, prelinking));
         }
         return extractors;
 

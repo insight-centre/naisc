@@ -20,4 +20,7 @@ public class MatchResult {
         this.coverage = coverage;
     }
 
+    public boolean coversData() {
+        return this.coverage > 100 || this.coverage > 0.1 * Math.min(this.leftTotal, this.rightTotal);
+    }
 }

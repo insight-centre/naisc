@@ -42,7 +42,7 @@ public class Automatic implements BlockingStrategyFactory {
         double bestCoverage = -1;
         String bestLeftProp = "";
         for(LabelResult prop : analysis.leftLabels) {
-            if(prop.coverage > 0.5 && prop.uniqueness > 0.9 && prop.isDataProperty && prop.naturalLangLike > 0.9) {
+            if(prop.isLabelLike()) {
                 if(bestLeftProp == null || prop.coverage > bestCoverage) {
                     bestLeftProp = prop.uri;
                     bestCoverage = prop.coverage;
@@ -54,7 +54,7 @@ public class Automatic implements BlockingStrategyFactory {
         bestCoverage = -1;
         String bestRightProp = "";
         for(LabelResult prop : analysis.rightLabels) {
-            if(prop.coverage > 0.5 && prop.uniqueness > 0.9 && prop.isDataProperty && prop.naturalLangLike > 0.9) {
+            if(prop.isLabelLike()) {
                 if(bestRightProp == null || prop.coverage > bestCoverage) {
                     bestRightProp = prop.uri;
                     bestCoverage = prop.coverage;
@@ -65,7 +65,7 @@ public class Automatic implements BlockingStrategyFactory {
         // 4. Find any potential good pre-blocks
         Set<Pair<String,String>> preblocks = new HashSet<>();
         for(MatchResult mr : analysis.matching) {
-            if((mr.coverage > 100 || mr.coverage > 0.1 * Math.min(mr.leftTotal, mr.rightTotal))
+            if(mr.coversData() 
                     && leftUniqueness.getDouble(mr.leftUri) > 0.9 
                     && rightUniqueness.getDouble(mr.rightUri) > 0.9) {
                 preblocks.add(new Pair<>(mr.leftUri,mr.rightUri));

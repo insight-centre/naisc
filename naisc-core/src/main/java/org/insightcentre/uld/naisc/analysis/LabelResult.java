@@ -24,6 +24,14 @@ public class LabelResult {
         this.diversity = diversity;
         this.isDataProperty = isDataProperty;
     }
+    
+    public boolean isLabelLike() {
+        return this.coverage > 0.5 && this.uniqueness > 0.9 && this.isDataProperty && this.naturalLangLike > 0.9;
+    }
+    
+    public boolean isLabelLens() {
+        return this.coverage > 0.5 && this.uniqueness > 0.9 && (this.uri.equals("") || this.isDataProperty && this.naturalLangLike > 0.9);
+    }
 
 
 }

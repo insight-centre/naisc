@@ -36,6 +36,7 @@ import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
+import org.insightcentre.uld.naisc.matcher.Prematcher;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Some;
@@ -199,8 +200,9 @@ public class Main {
             List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Feature Extractors");
+            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocking.block(leftModel, rightModel)));
             List<TextFeature> textFeatures = config.makeTextFeatures();
-            List<GraphFeature> dataFeatures = config.makeDataFeatures(combined);
+            List<GraphFeature> dataFeatures = config.makeDataFeatures(combined, analysis, prematch);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Scorers");
             List<Scorer> scorers = config.makeScorer();

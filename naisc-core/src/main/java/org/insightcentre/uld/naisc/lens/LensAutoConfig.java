@@ -30,7 +30,7 @@ public class LensAutoConfig {
         // 1. Scan for any good labels in the left dataset
         Set<String> leftCandidates = new HashSet<>();
         for (LabelResult prop : analysis.leftLabels) {
-            if (prop.coverage > 0.5 && prop.uniqueness > 0.9 && (prop.uri.equals("") || prop.isDataProperty && prop.naturalLangLike > 0.9)) {
+            if (prop.isLabelLens()) {
                 leftCandidates.add(prop.uri);
             }
         }
@@ -38,7 +38,7 @@ public class LensAutoConfig {
         // 2. If the same label property is used in both datasets then add it as a label
         Set<String> rightCandidates = new HashSet<>();
         for (LabelResult prop : analysis.rightLabels) {
-            if (prop.coverage > 0.5 && prop.uniqueness > 0.9 && (prop.uri.equals("") || prop.isDataProperty && prop.naturalLangLike > 0.9)) {
+            if (prop.isLabelLens()) {
                 if (prop.uri.equals("") && leftCandidates.contains("")) {
                     lenses.add(new URI.URIImpl("uri", URI.LabelLocation.infer, URI.LabelForm.smart, "_"));
                     leftCandidates.remove("");

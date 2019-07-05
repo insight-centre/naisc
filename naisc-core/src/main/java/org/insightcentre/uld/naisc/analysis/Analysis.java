@@ -13,14 +13,23 @@ public class Analysis {
     public final List<LabelResult> rightLabels;
     public final List<MatchResult> matching;
     public final Set<String> leftClasses, rightClasses;
+    public final double leftLCC, rightLCC;
+    public final int leftSize, rightSize;
 
-    public Analysis(List<LabelResult> leftLabels, List<LabelResult> rightLabels, List<MatchResult> matching, Set<String> leftClasses, Set<String> rightClasses) {
+    public Analysis(List<LabelResult> leftLabels, List<LabelResult> rightLabels, List<MatchResult> matching, Set<String> leftClasses, Set<String> rightClasses, double leftLCC, double rightLCC, int leftSize, int rightSize) {
         this.leftLabels = leftLabels;
         this.rightLabels = rightLabels;
         this.matching = matching;
         this.leftClasses = leftClasses;
         this.rightClasses = rightClasses;
+        this.leftLCC = leftLCC;
+        this.rightLCC = rightLCC;
+        this.leftSize = leftSize;
+        this.rightSize = rightSize;
     }
-
+    
+    public boolean isWellConnected() {
+        return this.leftLCC > 0.2 && this.rightLCC > 0.2;
+    }
 
 }

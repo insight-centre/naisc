@@ -42,6 +42,7 @@ import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
+import org.insightcentre.uld.naisc.matcher.Prematcher;
 import org.insightcentre.uld.naisc.util.Lazy;
 
 /**
@@ -199,8 +200,9 @@ public class Train {
         List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
+            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocking.block(leftModel, rightModel)));
         List<TextFeature> textFeatures = config.makeTextFeatures();
-        List<GraphFeature> dataFeatures = config.makeDataFeatures(combined);
+        List<GraphFeature> dataFeatures = config.makeDataFeatures(combined, analysis, prematch);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Scorers");
         List<ScorerTrainer> scorers = config.makeTrainableScorers();

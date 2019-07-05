@@ -11,11 +11,14 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
+import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.GraphFeatureFactory;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.analysis.Analysis;
+import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.StringPair;
 
 /**
@@ -27,7 +30,8 @@ import org.insightcentre.uld.naisc.util.StringPair;
 public class PropertyOverlap implements GraphFeatureFactory {
 
     @Override
-    public GraphFeature makeFeature(Dataset dataset, Map<String, Object> params) {
+    public GraphFeature makeFeature(Dataset dataset, Map<String, Object> params,
+            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking) {
         dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         return new PropertyOverlapImpl(config.properties);

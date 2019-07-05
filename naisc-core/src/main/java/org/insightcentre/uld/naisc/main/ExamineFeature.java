@@ -12,6 +12,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
+import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.DatasetLoader;
 import org.insightcentre.uld.naisc.FeatureSet;
@@ -21,6 +22,7 @@ import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import static org.insightcentre.uld.naisc.main.Main.mapper;
+import org.insightcentre.uld.naisc.matcher.Prematcher;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Option;
@@ -69,8 +71,9 @@ public class ExamineFeature {
             List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
+            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new AlignmentSet());
             List<TextFeature> textFeatures = config.makeTextFeatures();
-            List<GraphFeature> dataFeatures = config.makeDataFeatures(combined);
+            List<GraphFeature> dataFeatures = config.makeDataFeatures(combined, analysis, prematch);
 
             if (res1.getURI() == null || res1.getURI().equals("")
                     || res1.getURI() == null || res1.getURI().equals("")) {

@@ -1,11 +1,9 @@
 package org.insightcentre.uld.naisc.analysis;
 
-import java.io.UnsupportedEncodingException;
 import static java.lang.Math.exp;
 import static java.lang.Math.sqrt;
-import java.net.URI;
-import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -14,6 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.insightcentre.uld.naisc.util.URI2Label;
@@ -43,7 +42,7 @@ public class DatasetAnalyzer {
         Set<String> leftSubjects = new HashSet<>();
         Set<String> leftDataProps = new HashSet<>();
         Set<String> leftClasses = new HashSet<>();
-        analyzeLabels(leftModel, leftSubjects, leftAnalysis, leftPropBySubj, leftDataProps, leftClasses);
+        List<Set<Resource>> leftComponents = analyzeLabels(leftModel, leftSubjects, leftAnalysis, leftPropBySubj, leftDataProps, leftClasses);
         List<LabelResult> leftResult = new ArrayList<>();
         for (Map.Entry<String, List<String>> e : leftAnalysis.entrySet()) {
             if (leftDataProps.contains(e.getKey())) {
@@ -67,7 +66,7 @@ public class DatasetAnalyzer {
         Set<String> rightSubjects = new HashSet<>();
         Set<String> rightDataProps = new HashSet<>();
         Set<String> rightClasses = new HashSet<>();
-        analyzeLabels(rightModel, rightSubjects, rightAnalysis, rightPropBySubj, rightDataProps, rightClasses);
+        List<Set<Resource>> rightComponents = analyzeLabels(rightModel, rightSubjects, rightAnalysis, rightPropBySubj, rightDataProps, rightClasses);
         List<LabelResult> rightResult = new ArrayList<>();
         for (Map.Entry<String, List<String>> e : rightAnalysis.entrySet()) {
             if (rightDataProps.contains(e.getKey())) {
@@ -88,12 +87,14 @@ public class DatasetAnalyzer {
         }
 
         return new Analysis(leftResult, rightResult, analyseMatch(leftAnalysis, rightAnalysis),
-                leftClasses, rightClasses);
+                leftClasses, rightClasses, lcc(leftComponents), lcc(rightComponents),
+                leftSubjects.size(), rightSubjects.size());
     }
 
-    private void analyzeLabels(Model model, Set<String> subjects,
+    private List<Set<Resource>> analyzeLabels(Model model, Set<String> subjects,
             Map<String, List<String>> analysis, Map<String, Set<String>> propBySubj,
             Set<String> dataProps, Set<String> classes) {
+        List<Set<Resource>> components = new ArrayList<>();
         StmtIterator iter = model.listStatements();
         while (iter.hasNext()) {
             Statement stmt = iter.next();
@@ -122,10 +123,41 @@ public class DatasetAnalyzer {
                     }
                 }
             }
+            if(stmt.getObject().isResource()) {
+                int i = 0;
+                for(; i < components.size(); i++) {
+                    if(components.get(i).contains(stmt.getSubject())) 
+                        break;
+                }
+                int j = 0;
+                for(; j < components.size(); j++) {
+                    if(components.get(j).contains(stmt.getObject().asResource())) 
+                        break;
+                }
+                if(i == components.size()) {
+                    if(j == components.size()) {
+                        components.add(new HashSet<>(Arrays.asList(stmt.getSubject(), stmt.getObject().asResource())));
+                    } else {
+                        components.add(new HashSet<>(Arrays.asList(stmt.getSubject())));
+                        components.get(j).add(stmt.getObject().asResource());
+                    }
+                } else {
+                    if(j == components.size()) {
+                        components.add(new HashSet<>(Arrays.asList(stmt.getObject().asResource())));
+                        components.get(i).add(stmt.getSubject());
+                    } else {
+                        if(i != j) {
+                            components.get(i).addAll(components.get(j));
+                            components.remove(j);
+                        } // No else case here, they are already connected!
+                    }
+                }
+            }
         }
         List<String> fromURIs = subjects.stream().map(x -> URI2Label.fromURI(x)).collect(Collectors.toList());
         analysis.put("", fromURIs);
         propBySubj.put("", subjects);
+        return components;
     }
 
     private double naturalLangLike(List<String> strings) {
@@ -184,4 +216,19 @@ public class DatasetAnalyzer {
         return (double) n / N;
     }
 
+    private static double lcc(List<Set<Resource>> components) {
+        int total = 0;
+        int max = -1;
+        for(Set<Resource> component : components) {
+            if(component.size() > max) {
+                max = component.size();
+            }
+            total += component.size();
+        }
+        if(max >= 0) {
+            return (double)max / total;
+        } else {
+            return 0.0;
+        }
+    }
 }
