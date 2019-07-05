@@ -14,7 +14,9 @@ import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.LensFactory;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.util.LangStringPair;
+import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
@@ -31,7 +33,8 @@ public class URI implements LensFactory {
 
 
     @Override
-    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
+    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params,
+            Lazy<Analysis> analysis) {
         final Model sparqlData = dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         return new URIImpl(tag, config.location, config.form, config.separator);

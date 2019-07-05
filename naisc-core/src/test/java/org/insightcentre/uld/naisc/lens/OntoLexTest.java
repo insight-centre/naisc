@@ -9,6 +9,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.main.ModelDataset;
 import org.insightcentre.uld.naisc.util.LangStringPair;
+import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
 import org.junit.After;
@@ -65,7 +66,7 @@ public class OntoLexTest {
         sparqlData.read(new StringReader(testDoc), "file:test#", "TURTLE");
         Map<String, Object> params = new HashMap<>();
         OntoLex instance = new OntoLex();
-        Lens lens = instance.makeLens(tag, new ModelDataset(sparqlData), params);
+        Lens lens = instance.makeLens(tag, new ModelDataset(sparqlData), params, Lazy.fromClosure(() -> null));
         Option<LangStringPair> result = lens.extract(sparqlData.createResource("http://www.example.com/#foo"), sparqlData.createResource("http://www.example.com/#bar"));
         Option<LangStringPair> expResult = new Some<>(new LangStringPair(Language.ENGLISH, Language.ENGLISH, "foo", "bar"));
         assertEquals(expResult, result);

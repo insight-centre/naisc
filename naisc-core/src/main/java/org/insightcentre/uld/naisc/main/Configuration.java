@@ -160,11 +160,12 @@ public class Configuration {
         return extractors;
     }
 
-    public List<Lens> makeLenses(Dataset model) {
+    public List<Lens> makeLenses(Dataset model,
+            Lazy<Analysis> analysis) {
         List<Lens> ls = new ArrayList<>();
         for (LensConfiguration config : lenses) {
             LensFactory lens = Services.get(LensFactory.class, config.name);
-            ls.add(lens.makeLens(config.tag, model, config.params));
+            ls.add(lens.makeLens(config.tag, model, config.params, analysis));
         }
         if (ls.isEmpty()) {
             System.err.println("No lenses loaded!");

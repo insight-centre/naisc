@@ -11,6 +11,7 @@ import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
+import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
 import org.junit.After;
@@ -74,7 +75,7 @@ public class CommandTest {
             params.put("command", "python3 src/test/resources/test-lens.py");
             params.put("id", "test");
             Command instance = new Command();
-            Lens lens = instance.makeLens(tag, dataset, params);
+            Lens lens = instance.makeLens(tag, dataset, params, Lazy.fromClosure(() -> null));
             Option<LangStringPair> result = lens.extract(
                     model.createResource("http://www.example.com/foo"),
                     model.createResource("http://www.example.com/bar"));

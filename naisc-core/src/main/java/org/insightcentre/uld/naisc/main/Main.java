@@ -34,6 +34,7 @@ import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
+import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.None;
@@ -185,17 +186,17 @@ public class Main {
     public static AlignmentSet execute(String name, Dataset leftModel, Dataset rightModel, Configuration config,
             Option<AlignmentSet> partialSoln, ExecuteListener monitor, Set<Resource> left, Set<Resource> right, DatasetLoader loader) {
         try {
-
-            monitor.updateStatus(Stage.INITIALIZING, "Loading blocking strategy");
-            BlockingStrategy blocking = config.makeBlockingStrategy(Lazy.fromClosure(() -> {
+            Lazy<Analysis> analysis = Lazy.fromClosure(() -> {
                 DatasetAnalyzer analyzer = new DatasetAnalyzer();
                 return analyzer.analyseModel(leftModel.asModel().getOrExcept(new RuntimeException("Automatic analysis cannot be performed on SPARQL endpoints")), 
                         rightModel.asModel().getOrExcept(new RuntimeException("Automatic analysis cannot be performed on SPARQL endpoints")));
-            }));
+            });
+            monitor.updateStatus(Stage.INITIALIZING, "Loading blocking strategy");
+            BlockingStrategy blocking = config.makeBlockingStrategy(analysis);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading lenses");
             Dataset combined = loader.combine(leftModel, rightModel, name + "/combined");
-            List<Lens> lenses = config.makeLenses(combined);
+            List<Lens> lenses = config.makeLenses(combined, analysis);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Feature Extractors");
             List<TextFeature> textFeatures = config.makeTextFeatures();
