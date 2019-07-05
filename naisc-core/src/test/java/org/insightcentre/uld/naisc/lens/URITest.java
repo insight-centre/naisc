@@ -10,7 +10,6 @@ import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.main.ModelDataset;
 import org.insightcentre.uld.naisc.util.LangStringPair;
-import org.insightcentre.uld.naisc.util.Lazy;
 import org.junit.After;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
@@ -53,7 +52,7 @@ public class URITest {
         Model model = ModelFactory.createDefaultModel();
         Map<String, Object> params = new HashMap<>();
         URI instance = new URI();
-        Lens lens = instance.makeLens(tag, new ModelDataset(model), params, Lazy.fromClosure(() -> null));
+        Lens lens = instance.makeLens(tag, new ModelDataset(model), params);
 
         Resource r1 = model.createResource("http://www.example.com/foo/thisIsAPath#fragmentID");
         Resource r2 = model.createResource("http://www.example.com/foo/this_is_also_a_path#fragment_id");
@@ -67,7 +66,7 @@ public class URITest {
 
         params.put("location", "fragment");
         params.put("form", "camelCased");
-        lens = instance.makeLens(tag, new ModelDataset(model), params, Lazy.fromClosure(() -> null));
+        lens = instance.makeLens(tag, new ModelDataset(model), params);
 
         assertEquals(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED,
                 "fragment ID", "fragment_id"), lens.extract(r1, r2).get());
@@ -75,7 +74,7 @@ public class URITest {
 
         params.put("location", "endOfPath");
         params.put("form", "urlEncoded");
-        lens = instance.makeLens(tag, new ModelDataset(model), params, Lazy.fromClosure(() -> null));
+        lens = instance.makeLens(tag, new ModelDataset(model), params);
 
         assertEquals(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED,
                 "thisIsAPath", "this_is_also_a_path"), lens.extract(r1, r2).get());

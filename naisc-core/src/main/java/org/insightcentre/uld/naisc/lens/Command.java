@@ -13,12 +13,10 @@ import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.LensFactory;
 import org.insightcentre.uld.naisc.NaiscListener;
-import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
-import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
@@ -48,8 +46,7 @@ import org.insightcentre.uld.naisc.util.Some;
 public class Command implements LensFactory {
 
     @Override
-    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params,
-            Lazy<Analysis> analysis) {
+    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if(config.command == null) {
             throw new ConfigurationException("Command cannot be null");

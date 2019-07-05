@@ -8,7 +8,6 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.main.ModelDataset;
-import org.insightcentre.uld.naisc.util.Lazy;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -54,7 +53,7 @@ public class SPARQLTest {
 "SELECT ?label1 ?label2 WHERE { $entity1 rdfs:label ?label1 . $entity2\n" +
 " rdfs:label ?label2 . }");
         SPARQL instance = new SPARQL();
-        Lens lens = instance.makeLens(tag, new ModelDataset(model), params, Lazy.fromClosure(() -> null));
+        Lens lens = instance.makeLens(tag, new ModelDataset(model), params);
         final Resource res = model.createResource("http://www.example.com/foo");
         final Resource res2 = model.createResource("http://www.example.com/foo2");
         final Resource res3 = model.createResource("http://www.example.com/foo3");

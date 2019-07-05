@@ -9,7 +9,6 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.main.ModelDataset;
-import org.insightcentre.uld.naisc.util.Lazy;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -51,7 +50,7 @@ public class LabelTest {
         Model model = ModelFactory.createDefaultModel();
         Map<String, Object> params = new HashMap<>();
         Label instance = new Label();
-        Lens lens = instance.makeLens(tag, new ModelDataset(model), params, Lazy.fromClosure(() -> null));
+        Lens lens = instance.makeLens(tag, new ModelDataset(model), params);
         final Resource res = model.createResource("http://www.example.com/foo");
         final Resource res2 = model.createResource("http://www.example.com/foo2");
         final Resource res3 = model.createResource("http://www.example.com/foo3");
@@ -84,7 +83,7 @@ public class LabelTest {
         assert(!lens.extract(res, res5).has());
         
         params.put("language", "en");
-        lens = instance.makeLens(tag, new ModelDataset(model), params, Lazy.fromClosure(() -> null));
+        lens = instance.makeLens(tag, new ModelDataset(model), params);
         
         
         assert(!lens.extract(res, res2).has());
@@ -94,7 +93,7 @@ public class LabelTest {
         
         params.remove("language");
         params.put("property", new ArrayList<String>() {{ add(Label.RDFS_LABEL); add(Label.SKOS_PREFLABEL); }});
-        lens = instance.makeLens(tag, new ModelDataset(model), params, Lazy.fromClosure(() -> null));
+        lens = instance.makeLens(tag, new ModelDataset(model), params);
         
         
         assert(!lens.extract(res, res2).has());
