@@ -38,20 +38,21 @@ public class Label implements LensFactory {
     public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
         final Model sparqlData = dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = mapper.convertValue(params, Configuration.class);
-        return new LabelImpl(config.property, config.language, tag, sparqlData, config.id);
+        return new LabelImpl(config.property, config.rightProperty, config.language, tag, sparqlData, config.id);
     }
 
-    private static class LabelImpl implements Lens {
+    static class LabelImpl implements Lens {
 
-        private final List<Property> properties;
+        private final Property leftProp, rightProp;
         private final Language language;
         private final String tag;
         private final Model model;
         private final String id;
 
-        public LabelImpl(List<String> property, String language, String tag, Model model,
+        public LabelImpl(String leftProperty, String rightProperty, String language, String tag, Model model,
                 String id) {
-            this.properties = property.stream().map(p -> model.createProperty(p)).collect(Collectors.toList());
+            this.leftProp = model.createProperty(leftProperty);
+            this.rightProp = model.createProperty(rightProperty);
             this.language = language == null ? null : Language.get(language);
             this.tag = tag;
             this.model = model;
@@ -60,16 +61,15 @@ public class Label implements LensFactory {
 
         @Override
         public String id() {
-            if(id != null) {
+            if (id != null) {
                 return id;
             }
             StringBuilder sb = new StringBuilder("label");
             if (language != null) {
                 sb.append("-").append(language);
             }
-            Property property = properties.get(0);
-            if (!property.getURI().equals(RDFS_LABEL)) {
-                sb.append("-").append(String.format("-%d", property.hashCode()));
+            if (!leftProp.getURI().equals(RDFS_LABEL)) {
+                sb.append("-").append(String.format("-%d", leftProp.hashCode()));
             }
             return sb.toString();
         }
@@ -77,26 +77,23 @@ public class Label implements LensFactory {
         @Override
         public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
             List<Literal> lit1 = new ArrayList<>();
-            for (Property lproperty : properties) {
-                NodeIterator iter1 = model.listObjectsOfProperty(entity1, lproperty);
-                while (iter1.hasNext()) {
-                    RDFNode node1 = iter1.next();
-                    if (node1.isLiteral()) {
-                        lit1.add(node1.asLiteral());
-                    }
+
+            NodeIterator iter1 = model.listObjectsOfProperty(entity1, leftProp);
+            while (iter1.hasNext()) {
+                RDFNode node1 = iter1.next();
+                if (node1.isLiteral()) {
+                    lit1.add(node1.asLiteral());
                 }
             }
 
             List<Literal> lit2 = new ArrayList<>();
-            for (Property rproperty : properties) {
-                NodeIterator iter2 = model.listObjectsOfProperty(entity2, rproperty);
-                while (iter2.hasNext()) {
-                    RDFNode node2 = iter2.next();
-                    if (node2.isLiteral()) {
-                        lit2.add(node2.asLiteral());
-                    }
-
+            NodeIterator iter2 = model.listObjectsOfProperty(entity2, rightProp);
+            while (iter2.hasNext()) {
+                RDFNode node2 = iter2.next();
+                if (node2.isLiteral()) {
+                    lit2.add(node2.asLiteral());
                 }
+
             }
             List<LangStringPair> labels = Labels.closestLabelsByLang(lit1, lit2);
 
@@ -127,17 +124,24 @@ public class Label implements LensFactory {
          * The property to extract. Default is rdfs:label
          */
         @ConfigurationParameter(description = "The property to extract", defaultValue = "[\"http://www.w3.org/2000/01/rdf-schema#label\"]")
-        public List<String> property = Collections.singletonList(RDFS_LABEL);
+        public String property = RDFS_LABEL;
+        /**
+         * The property on the right to extract, empty string will use the same
+         * property on both models
+         */
+        @ConfigurationParameter(description = "The property to extract", defaultValue = "[\"http://www.w3.org/2000/01/rdf-schema#label\"]")
+        public String rightProperty = RDFS_LABEL;
         /**
          * The language to extract. Default is <code>null</code> for all
          * languages.
          */
         @ConfigurationParameter(description = "The language to extract", defaultValue = "null")
         public String language = null;
-        
+
         /**
-         * The name for this lens, (no two lenses may have the same name). This is consumed by the 
-         * text features in order to distinguish features coming from different sources
+         * The name for this lens, (no two lenses may have the same name). This
+         * is consumed by the text features in order to distinguish features
+         * coming from different sources
          */
         @ConfigurationParameter(description = "The unique identifier of this lens")
         public String id = null;

@@ -38,6 +38,7 @@ import org.insightcentre.uld.naisc.ScorerTrainer;
 import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.GraphFeature;
+import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
@@ -185,17 +186,17 @@ public class Train {
     public static void execute(String name, Dataset leftModel, Dataset rightModel,
             AlignmentSet goldAlignments, double negativeSampling,
             Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
-
-        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading blocking strategy");
-        BlockingStrategy blocking = config.makeBlockingStrategy(Lazy.fromClosure(() -> {
+            Lazy<Analysis> analysis = Lazy.fromClosure(() -> {
                 DatasetAnalyzer analyzer = new DatasetAnalyzer();
                 return analyzer.analyseModel(leftModel.asModel().getOrExcept(new RuntimeException("Automatic analysis cannot be performed on SPARQL endpoints")), 
                         rightModel.asModel().getOrExcept(new RuntimeException("Automatic analysis cannot be performed on SPARQL endpoints")));
-            }));
+            });
+        monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading blocking strategy");
+        BlockingStrategy blocking = config.makeBlockingStrategy(analysis);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading lenses");
         Dataset combined = loader.combine(leftModel, rightModel, name + "/combined");
-        List<Lens> lenses = config.makeLenses(combined);
+        List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
         List<TextFeature> textFeatures = config.makeTextFeatures();

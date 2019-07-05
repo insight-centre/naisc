@@ -39,6 +39,7 @@ import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.TextFeatureFactory;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.GraphFeatureFactory;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.blocking.All;
 import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching;
@@ -57,6 +58,7 @@ import org.insightcentre.uld.naisc.feature.WordEmbeddings;
 import org.insightcentre.uld.naisc.feature.WordNet;
 import org.insightcentre.uld.naisc.graph.PropertyOverlap;
 import org.insightcentre.uld.naisc.lens.Label;
+import org.insightcentre.uld.naisc.lens.LensAutoConfig;
 import org.insightcentre.uld.naisc.lens.OntoLex;
 import org.insightcentre.uld.naisc.lens.SPARQL;
 import org.insightcentre.uld.naisc.lens.URI;
@@ -160,8 +162,11 @@ public class Configuration {
         return extractors;
     }
 
-    public List<Lens> makeLenses(Dataset model) {
+    public List<Lens> makeLenses(Dataset model, Lazy<Analysis> analysis, NaiscListener log) {
         List<Lens> ls = new ArrayList<>();
+        if(lenses.isEmpty()) {
+            return new LensAutoConfig().autoConfiguration(analysis.get(), model, log);
+        }
         for (LensConfiguration config : lenses) {
             LensFactory lens = Services.get(LensFactory.class, config.name);
             ls.add(lens.makeLens(config.tag, model, config.params));

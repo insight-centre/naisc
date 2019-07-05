@@ -18,8 +18,11 @@ import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.TextFeature;
+import org.insightcentre.uld.naisc.analysis.Analysis;
+import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import static org.insightcentre.uld.naisc.main.Main.mapper;
 import org.insightcentre.uld.naisc.util.LangStringPair;
+import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Option;
 
 /**
@@ -57,10 +60,13 @@ public class ExamineFeature {
             if (!rightModel.listStatements(res2, null, (RDFNode) null).hasNext()) {
                 System.err.printf("%s is not in model\n", res2);
             }
-
+            Lazy<Analysis> analysis = Lazy.fromClosure(() -> {
+                DatasetAnalyzer analyzer = new DatasetAnalyzer();
+                return analyzer.analyseModel(leftModel, rightModel);
+            });
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading lenses");
             Dataset combined = loader.combine(leftDataset, rightDataset, name + "/combined");
-            List<Lens> lenses = config.makeLenses(combined);
+            List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
             List<TextFeature> textFeatures = config.makeTextFeatures();

@@ -32,7 +32,7 @@ public class URI implements LensFactory {
 
     @Override
     public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
-        final Model sparqlData = dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
+        //final Model sparqlData = dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         return new URIImpl(tag, config.location, config.form, config.separator);
     }
@@ -107,7 +107,7 @@ public class URI implements LensFactory {
         smart
     }
     
-    private static class URIImpl implements Lens {
+    static class URIImpl implements Lens {
         private final String tag;
         private final LabelLocation location;
         private final LabelForm form;
