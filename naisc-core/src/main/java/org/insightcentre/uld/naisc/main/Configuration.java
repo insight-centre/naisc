@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -182,7 +183,8 @@ public class Configuration {
     public List<Scorer> makeScorer() throws IOException {
         List<Scorer> scorerList = new ArrayList<>();
         for (ScorerConfiguration config : this.scorers) {
-            scorerList.addAll(Services.get(ScorerFactory.class, config.name).makeScorer(config.params));
+            File path = config.modelFile == null ? null : new File(config.modelFile);
+            scorerList.addAll(Services.get(ScorerFactory.class, config.name).makeScorer(config.params, path));
         }
         if (scorerList.isEmpty()) {
             System.err.println("No scorers loaded!");
@@ -190,11 +192,12 @@ public class Configuration {
         return scorerList;
     }
 
-    public List<ScorerTrainer> makeTrainableScorers(String property) {
+    public List<ScorerTrainer> makeTrainableScorers(String property, String tag) {
         List<ScorerTrainer> tsfs = new ArrayList<>();
         for (ScorerConfiguration config : this.scorers) {
             ScorerFactory sf = Services.get(ScorerFactory.class, config.name);
-            tsfs.addAll(sf.makeTrainer(config.params, property).toList());
+            File path = config.modelFile == null ? null : new File(config.modelFile + tag);
+            tsfs.addAll(sf.makeTrainer(config.params, property, path).toList());
         }
         if (tsfs.isEmpty()) {
             System.err.println("Training but no trainable scorers are in the configuration!");
@@ -540,21 +543,28 @@ public class Configuration {
          * The parameters to configure the scorer.
          */
         public final Map<String, Object> params;
+        /**
+         * The path to the model file.
+         */
+        public final String modelFile;
 
         @JsonCreator
         public ScorerConfiguration(
                 @JsonProperty("name") String name,
-                @JsonProperty("params") Map<String, Object> params) {
+                @JsonProperty("params") Map<String, Object> params,
+                @JsonProperty("modelFile") String modelFile) {
             this.name = name;
             assert (name != null);
             this.params = params == null ? Collections.EMPTY_MAP : params;
+            this.modelFile = modelFile;
         }
 
         @Override
         public int hashCode() {
             int hash = 7;
-            hash = 59 * hash + Objects.hashCode(this.name);
-            hash = 59 * hash + Objects.hashCode(this.params);
+            hash = 97 * hash + Objects.hashCode(this.name);
+            hash = 97 * hash + Objects.hashCode(this.params);
+            hash = 97 * hash + Objects.hashCode(this.modelFile);
             return hash;
         }
 
@@ -573,11 +583,15 @@ public class Configuration {
             if (!Objects.equals(this.name, other.name)) {
                 return false;
             }
+            if (!Objects.equals(this.modelFile, other.modelFile)) {
+                return false;
+            }
             if (!Objects.equals(this.params, other.params)) {
                 return false;
             }
             return true;
         }
+
 
     }
 
@@ -592,16 +606,19 @@ public class Configuration {
             JsonNode node = p.getCodec().readTree(p);
             final Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
             String name = null;
+            String modelFile = null;
             Map<String, Object> params = new HashMap<>();
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> f = fields.next();
                 if (f.getKey().equals("name")) {
                     name = f.getValue().textValue();
+                } else if(f.getKey().equals("modelFile")) {
+                    modelFile = f.getValue().textValue();
                 } else {
                     params.put(f.getKey(), p.getCodec().readValue(f.getValue().traverse(), Object.class));
                 }
             }
-            return new ScorerConfiguration(name, params);
+            return new ScorerConfiguration(name, params, modelFile);
         }
     }
 

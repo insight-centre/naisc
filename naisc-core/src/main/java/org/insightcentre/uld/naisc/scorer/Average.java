@@ -2,6 +2,7 @@ package org.insightcentre.uld.naisc.scorer;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
 import java.io.IOException;
 import static java.lang.Double.max;
 import static java.lang.Double.min;
@@ -33,13 +34,13 @@ public class Average implements ScorerFactory {
     }
 
     @Override
-    public List<Scorer> makeScorer(Map<String, Object> params) {
+    public List<Scorer> makeScorer(Map<String, Object> params, File modelPath) {
         Configuration config = mapper.convertValue(params, Configuration.class);
         return Collections.singletonList(new AverageImpl(config.weights, config.property, config.softmax));
     }
 
     @Override
-    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property) {
+    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property, File modelPath) {
         return new None<>();
     }
     

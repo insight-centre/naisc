@@ -48,12 +48,6 @@ public class LibSVM implements ScorerFactory {
      * The configuration for LibSVM models
      */
     public static class Configuration {
-
-        /**
-         * The file containing the model data.
-         */
-        @ConfigurationParameter(description = "The file containing the model data")
-        public String modelFile;
         /**
          * The property to output.
          */
@@ -74,12 +68,8 @@ public class LibSVM implements ScorerFactory {
     private static ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
-    public List<Scorer> makeScorer(Map<String, Object> params) {
+    public List<Scorer> makeScorer(Map<String, Object> params, File objectFile) {
         Configuration config = mapper.convertValue(params, Configuration.class);
-        if (config.modelFile == null) {
-            throw new ConfigurationException("Model file is a required parameter of LibSVM");
-        }
-        final File objectFile = new File(config.modelFile);
         if (!objectFile.exists()) {
             throw new ConfigurationException("Model file does not exist. (Perhaps you need to train this model?)");
         }
@@ -91,13 +81,13 @@ public class LibSVM implements ScorerFactory {
     }
 
     @Override
-    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property) {
+    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property, File objectFile) {
         Configuration config = mapper.convertValue(params, Configuration.class);
         if (property.equals(config.property)) {
-            if (config.modelFile == null) {
+            if (objectFile == null) {
                 throw new ConfigurationException("Model file is a required parameter of LibSVM");
             }
-            return new Some<>(new LibSVMTrainer(config));
+            return new Some<>(new LibSVMTrainer(config, objectFile));
         } else {
             return new None<>();
         }
@@ -180,19 +170,19 @@ public class LibSVM implements ScorerFactory {
 
         private final boolean perFeature;
         private final String property;
-        private final String modelFile;
+        private final File modelFile;
 
-        public LibSVMTrainer(Configuration configuration) {
+        public LibSVMTrainer(Configuration configuration, File modelFile) {
             this.perFeature = configuration.perFeature;
             this.property = configuration.property == null ? Alignment.SKOS_EXACT_MATCH : configuration.property;
-            this.modelFile = configuration.modelFile;
+            this.modelFile = modelFile;
             if (modelFile == null) {
                 throw new IllegalArgumentException("Model file cannot be null");
             }
         }
 
         @Override
-        public Scorer train(List<FeatureSetWithScore> dataset) {
+        public Scorer train(List<FeatureSetWithScore> dataset, NaiscListener log) {
             if (dataset.isEmpty()) {
                 throw new RuntimeException("Cannot train LibSVM on an empty dataset");
             }
@@ -244,11 +234,11 @@ public class LibSVM implements ScorerFactory {
             }
             final LibSVMClassifier classifier = new LibSVMClassifier(model, featNames, property);
 
-            try {
+            /*try {
                 classifier.save(new File(modelFile));
             } catch (IOException x) {
                 throw new RuntimeException(x);
-            }
+            }*/
 
             return classifier;
         }
@@ -274,6 +264,17 @@ public class LibSVM implements ScorerFactory {
         @Override
         public void close() throws IOException {
         }
+
+        @Override
+        public void save(Scorer scorer) throws IOException {
+            if(scorer instanceof LibSVMClassifier) {
+                ((LibSVMClassifier)scorer).save(modelFile);
+            } else {
+                throw new IllegalArgumentException("SVM trainer can only save SVM models");
+            }
+        }
+        
+        
     }
 
 //    static ArrayList<Attribute> buildAttributes(FeatureSet example, String[] featNames) {

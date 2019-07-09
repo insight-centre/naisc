@@ -1,6 +1,8 @@
 package org.insightcentre.uld.naisc;
 
 import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Predict if two entities are similar
@@ -28,4 +30,5 @@ public interface Scorer extends Closeable {
      * @return The URI of the relation to be predicted
      */
     String relation();
+
 }

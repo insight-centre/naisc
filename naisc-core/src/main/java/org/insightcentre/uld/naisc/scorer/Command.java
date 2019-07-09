@@ -2,6 +2,7 @@ package org.insightcentre.uld.naisc.scorer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -56,16 +57,16 @@ public class Command implements ScorerFactory {
     }
 
     @Override
-    public List<Scorer> makeScorer(Map<String, Object> params) {
+    public List<Scorer> makeScorer(Map<String, Object> params, File modelPath) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if (config.command == null) {
             throw new ConfigurationException("Command cannot be null");
         }
-        return Collections.singletonList(new CommandImpl(config.command, config.property));
+        return Collections.singletonList(new CommandImpl(modelPath == null ? config.command : config.command.replace("$MODEL_PATH", modelPath.getAbsolutePath()), config.property));
     }
 
     @Override
-    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property) {
+    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property, File modelPath) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if (property.equals(config.property)) {
             if (config.trainCommand == null || config.trainCommand.equals("")) {
@@ -74,7 +75,8 @@ public class Command implements ScorerFactory {
             if (config.command == null) {
                 throw new ConfigurationException("Command cannot be null");
             }
-            return new Some<>(new CommandTrainerImpl(config.trainCommand, config.command, config.property));
+            return new Some<>(new CommandTrainerImpl(modelPath == null ? config.trainCommand : config.trainCommand.replace("$MODEL_PATH", modelPath.getAbsolutePath()), 
+                    modelPath == null ? config.command : config.command.replace("$MODEL_PATH", modelPath.getAbsolutePath()), config.property));
         } else {
             return new None<>();
         }
@@ -88,13 +90,13 @@ public class Command implements ScorerFactory {
         /**
          * The command to run.
          */
-        @ConfigurationParameter(description = "The command to run")
+        @ConfigurationParameter(description = "The command to run. Use $MODEL_PATH to indicate the path to the model.")
         public String command;
 
         /**
          * The command to run the trainer or null for no trainer.
          */
-        @ConfigurationParameter(description = "The command to run the trainer")
+        @ConfigurationParameter(description = "The command to run the trainer. Use $MODEL_PATH to indicate the path to the model.")
         public String trainCommand;
 
         /**
@@ -175,7 +177,7 @@ public class Command implements ScorerFactory {
         }
 
         @Override
-        public Scorer train(List<FeatureSetWithScore> dataset) {
+        public Scorer train(List<FeatureSetWithScore> dataset, NaiscListener log) {
 
             Runtime rt = Runtime.getRuntime();
             try {
@@ -199,5 +201,9 @@ public class Command implements ScorerFactory {
         public void close() throws IOException {
         }
 
+        @Override
+        public void save(Scorer scorer) throws IOException {
+            
+        }
     }
 }

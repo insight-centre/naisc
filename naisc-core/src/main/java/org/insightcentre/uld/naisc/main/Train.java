@@ -288,14 +288,14 @@ public class Train {
         for (String prop : goldProps) {
 
             monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Loading Scorers");
-            List<ScorerTrainer> scorers = config.makeTrainableScorers(prop);
+            List<ScorerTrainer> scorers = config.makeTrainableScorers(prop, "");
 
             //ArrayList<Scorer> trainedScorers = new ArrayList<>();
             for (ScorerTrainer tsf : scorers) {
                 List<FeatureSetWithScore> data = trainingData.get(prop);
                 if (data != null) {
                     monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Learning model (" + data.size() + " items)");
-                    tsf.train(data);
+                    tsf.save(tsf.train(data, monitor));
                 } else {
                     System.err.println(String.format("No data for %s so could not train model", prop));
                 }
