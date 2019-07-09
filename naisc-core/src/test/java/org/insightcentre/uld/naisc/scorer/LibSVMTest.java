@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Random;
 import libsvm.svm_node;
 import libsvm.svm_problem;
+import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.FeatureSetWithScore;
 import org.insightcentre.uld.naisc.Scorer;
@@ -101,7 +102,7 @@ public class LibSVMTest {
         params.put("modelFile", tmpFile.getAbsolutePath());
         tmpFile.deleteOnExit();
         LibSVM instance = new LibSVM();
-        instance.makeTrainer(params);
+        instance.makeTrainer(params, Alignment.SKOS_EXACT_MATCH);
     }
 
     /**
@@ -148,7 +149,7 @@ public class LibSVMTest {
         params.put("modelFile", tmpFile.getAbsolutePath());
         tmpFile.deleteOnExit();
         LibSVM instance = new LibSVM();
-        Scorer result = instance.makeTrainer(params).get().train(dataset);
+        Scorer result = instance.makeTrainer(params, Alignment.SKOS_EXACT_MATCH).get().train(dataset);
         double sim1 = result.similarity(new FeatureSetWithScore(1.0, new StringPair[]{new StringPair("foo", "bar")}, new double[]{1.0}, "id1", "id2"));
         System.err.println(sim1);
         double sim6 = result.similarity(new FeatureSetWithScore(0.0, new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.0}, "id1", "id2"));

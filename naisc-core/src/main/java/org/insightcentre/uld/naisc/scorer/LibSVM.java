@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import libsvm.svm;
@@ -22,6 +23,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.jena.ext.xerces.impl.dv.util.Base64;
 import org.insightcentre.uld.naisc.Alignment;
+import static org.insightcentre.uld.naisc.Alignment.SKOS_EXACT_MATCH;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.FeatureSetWithScore;
@@ -30,6 +32,7 @@ import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerFactory;
 import org.insightcentre.uld.naisc.ScorerTrainer;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
+import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
 
@@ -55,7 +58,7 @@ public class LibSVM implements ScorerFactory {
          * The property to output.
          */
         @ConfigurationParameter(description = "The property to output")
-        public String property;
+        public String property = SKOS_EXACT_MATCH;
         /**
          * Print analysis of features.
          */
@@ -71,7 +74,7 @@ public class LibSVM implements ScorerFactory {
     private static ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
-    public Scorer makeScorer(Map<String, Object> params) {
+    public List<Scorer> makeScorer(Map<String, Object> params) {
         Configuration config = mapper.convertValue(params, Configuration.class);
         if (config.modelFile == null) {
             throw new ConfigurationException("Model file is a required parameter of LibSVM");
@@ -81,19 +84,23 @@ public class LibSVM implements ScorerFactory {
             throw new ConfigurationException("Model file does not exist. (Perhaps you need to train this model?)");
         }
         try {
-            return load(objectFile, config);
+            return Collections.singletonList(load(objectFile, config));
         } catch (IOException x) {
             throw new ConfigurationException(x);
         }
     }
 
     @Override
-    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params) {
+    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property) {
         Configuration config = mapper.convertValue(params, Configuration.class);
-        if (config.modelFile == null) {
-            throw new ConfigurationException("Model file is a required parameter of LibSVM");
+        if (property.equals(config.property)) {
+            if (config.modelFile == null) {
+                throw new ConfigurationException("Model file is a required parameter of LibSVM");
+            }
+            return new Some<>(new LibSVMTrainer(config));
+        } else {
+            return new None<>();
         }
-        return new Some<>(new LibSVMTrainer(config));
     }
 
     @Override
@@ -170,6 +177,7 @@ public class LibSVM implements ScorerFactory {
     }
 
     private class LibSVMTrainer implements ScorerTrainer {
+
         private final boolean perFeature;
         private final String property;
         private final String modelFile;
@@ -178,8 +186,9 @@ public class LibSVM implements ScorerFactory {
             this.perFeature = configuration.perFeature;
             this.property = configuration.property == null ? Alignment.SKOS_EXACT_MATCH : configuration.property;
             this.modelFile = configuration.modelFile;
-            if(modelFile == null)
+            if (modelFile == null) {
                 throw new IllegalArgumentException("Model file cannot be null");
+            }
         }
 
         @Override
@@ -321,7 +330,7 @@ public class LibSVM implements ScorerFactory {
     }
 
     private static boolean LIBSVM_NAN_WARNING = false;
-    
+
     static Instance buildInstance(FeatureSet fss, double score, svm_problem instances) {
         //        final Instance instance = new DenseInstance(N);
 //        for(int i = 0; i < fss.values.length; i++) {
@@ -336,10 +345,10 @@ public class LibSVM implements ScorerFactory {
         for (int i = 0; i < fss.values.length; i++) {
             instance[i] = new svm_node();
             instance[i].index = i;
-            
-            if(!Double.isFinite(fss.values[i])) {
-                if(!LIBSVM_NAN_WARNING) {
-                    System.err.println("Not a number generated... LibSVM does not support this. Setting to zero but you should examine the feature " + fss.names[i]._1+ "-" + fss.names[i]._2);
+
+            if (!Double.isFinite(fss.values[i])) {
+                if (!LIBSVM_NAN_WARNING) {
+                    System.err.println("Not a number generated... LibSVM does not support this. Setting to zero but you should examine the feature " + fss.names[i]._1 + "-" + fss.names[i]._2);
                     LIBSVM_NAN_WARNING = true;
                 }
                 instance[i].value = 0.0;
@@ -428,7 +437,6 @@ public class LibSVM implements ScorerFactory {
         @Override
         public void close() throws IOException {
         }
-        
-        
+
     }
 }

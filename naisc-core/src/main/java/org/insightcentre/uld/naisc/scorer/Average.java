@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import static java.lang.Double.max;
 import static java.lang.Double.min;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
@@ -31,13 +33,13 @@ public class Average implements ScorerFactory {
     }
 
     @Override
-    public Scorer makeScorer(Map<String, Object> params) {
+    public List<Scorer> makeScorer(Map<String, Object> params) {
         Configuration config = mapper.convertValue(params, Configuration.class);
-        return new AverageImpl(config.weights, config.property, config.softmax);
+        return Collections.singletonList(new AverageImpl(config.weights, config.property, config.softmax));
     }
 
     @Override
-    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params) {
+    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property) {
         return new None<>();
     }
     

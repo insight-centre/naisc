@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc;
 
+import java.util.List;
 import java.util.Map;
 import org.insightcentre.uld.naisc.util.Option;
 
@@ -17,14 +18,15 @@ public interface ScorerFactory {
     /**
      * Train the classifier
      * @param params Any extra parameters
-     * @return The similarity classifier
+     * @return The similarity classifiers (by property)
      */
-    Scorer makeScorer(Map<String, Object> params);
+    List<Scorer> makeScorer(Map<String, Object> params);
     
     /**
      * Get the trainer for this scorer.
      * @param params The configuration of this scorer
+     * @param property The property being predicted
      * @return A scorer instance or None for untrainable scorers
      */
-    Option<ScorerTrainer> makeTrainer(Map<String, Object> params);
+    Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property);
 }

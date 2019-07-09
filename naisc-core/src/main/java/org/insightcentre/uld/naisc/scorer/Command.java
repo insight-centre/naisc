@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
@@ -22,32 +23,29 @@ import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
 
 /**
- * Use an external command as the scorer of matches. The command will be fed
- * the datapoints one line at a time as a Json array and
- * should print a score between 0 and 1 on each corresponding line. For example
- * 
- * Input:
- * <code>
+ * Use an external command as the scorer of matches. The command will be fed the
+ * datapoints one line at a time as a Json array and should print a score
+ * between 0 and 1 on each corresponding line. For example
+ *
+ * Input:  <code>
  * [0.1,0.3,0.7]
  * [0.6,0.2,0.8]
  * </code>
- * 
- * Output:
- * <code>
+ *
+ * Output:  <code>
  * 0.9
  * 0.2
  * </code>
- * 
- * The trainer is fed the same input but with the score appended after a tab. 
+ *
+ * The trainer is fed the same input but with the score appended after a tab.
  * There is no expected output. Instead the `trainCommand` and `command` should
  * both refer to the same saved model file.
- * 
- * Input:
- * <code>
+ *
+ * Input:  <code>
  * [0.1,0.3,0.7]    0.9
  * [0.6,0.2,0.8]    0.2
  * </code>
- * 
+ *
  * @author John McCrae
  */
 public class Command implements ScorerFactory {
@@ -58,24 +56,28 @@ public class Command implements ScorerFactory {
     }
 
     @Override
-    public Scorer makeScorer(Map<String, Object> params) {
+    public List<Scorer> makeScorer(Map<String, Object> params) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if (config.command == null) {
             throw new ConfigurationException("Command cannot be null");
         }
-        return new CommandImpl(config.command, config.property);
+        return Collections.singletonList(new CommandImpl(config.command, config.property));
     }
 
     @Override
-    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params) {
+    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
-        if(config.trainCommand == null || config.trainCommand.equals("")) {
+        if (property.equals(config.property)) {
+            if (config.trainCommand == null || config.trainCommand.equals("")) {
+                return new None<>();
+            }
+            if (config.command == null) {
+                throw new ConfigurationException("Command cannot be null");
+            }
+            return new Some<>(new CommandTrainerImpl(config.trainCommand, config.command, config.property));
+        } else {
             return new None<>();
         }
-        if (config.command == null) {
-            throw new ConfigurationException("Command cannot be null");
-        }
-        return new Some<>(new CommandTrainerImpl(config.trainCommand, config.command, config.property));
     }
 
     /**

@@ -182,7 +182,7 @@ public class Configuration {
     public List<Scorer> makeScorer() throws IOException {
         List<Scorer> scorerList = new ArrayList<>();
         for (ScorerConfiguration config : this.scorers) {
-            scorerList.add(Services.get(ScorerFactory.class, config.name).makeScorer(config.params));
+            scorerList.addAll(Services.get(ScorerFactory.class, config.name).makeScorer(config.params));
         }
         if (scorerList.isEmpty()) {
             System.err.println("No scorers loaded!");
@@ -190,11 +190,11 @@ public class Configuration {
         return scorerList;
     }
 
-    public List<ScorerTrainer> makeTrainableScorers() {
+    public List<ScorerTrainer> makeTrainableScorers(String property) {
         List<ScorerTrainer> tsfs = new ArrayList<>();
         for (ScorerConfiguration config : this.scorers) {
             ScorerFactory sf = Services.get(ScorerFactory.class, config.name);
-            tsfs.addAll(sf.makeTrainer(config.params).toList());
+            tsfs.addAll(sf.makeTrainer(config.params, property).toList());
         }
         if (tsfs.isEmpty()) {
             System.err.println("Training but no trainable scorers are in the configuration!");
