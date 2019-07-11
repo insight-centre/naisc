@@ -17,7 +17,7 @@ import java.util.Map;
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.main.Configuration;
-import org.insightcentre.uld.naisc.meas.ExecuteServlet.Dataset;
+import org.insightcentre.uld.naisc.EvaluationSet;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 
 /**
@@ -76,7 +76,7 @@ public class Meas {
             if (f.exists() && f.isDirectory()) {
                 List<String> datasets = new ArrayList<>();
                 for (File f2 : f.listFiles()) {
-                    if (Dataset.isDataset(f2)) {
+                    if (EvaluationSet.isDataset(f2)) {
                         datasets.add(f2.getName());
                     }
                 }

@@ -13,6 +13,7 @@ import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.FeatureSetWithScore;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.ScoreResult;
 import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerFactory;
 import org.insightcentre.uld.naisc.ScorerTrainer;
@@ -141,12 +142,12 @@ public class Command implements ScorerFactory {
         }
 
         @Override
-        public double similarity(FeatureSet features, NaiscListener log) {
+        public ScoreResult similarity(FeatureSet features, NaiscListener log) {
             try {
                 out.get().println(mapper.writeValueAsString(features.values));
                 out.get().flush();
                 String line = in.get().readLine();
-                return Double.parseDouble(line.trim());
+                return ScoreResult.fromDouble(Double.parseDouble(line.trim()));
             } catch (IOException x) {
                 throw new RuntimeException(x);
             }

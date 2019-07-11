@@ -28,6 +28,7 @@ import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.FeatureSetWithScore;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.ScoreResult;
 import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerFactory;
 import org.insightcentre.uld.naisc.ScorerTrainer;
@@ -390,7 +391,7 @@ public class LibSVM implements ScorerFactory {
         }
 
         @Override
-        public double similarity(FeatureSet features, NaiscListener log) {
+        public ScoreResult similarity(FeatureSet features, NaiscListener log) {
             final svm_problem instances = makeInstances(features);
             final Instance instance = buildInstance(features, 0.0, instances);
             if (features.names.length != featNames.length) {
@@ -415,7 +416,7 @@ public class LibSVM implements ScorerFactory {
                 double[] prob_estimates = new double[totalClasses];
                 svm.svm_predict_probability(classifier, instance.x, prob_estimates);
                 double sim = prob_estimates[0];
-                return sim;
+                return ScoreResult.fromDouble(sim);
             } catch (IndexOutOfBoundsException x) {
                 throw new RuntimeException("Length of test-time vector is not the same as train. Please retrain the model for this configuration", x);
             } catch (Exception x) {

@@ -13,6 +13,7 @@ import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.ScoreResult;
 import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerFactory;
 import org.insightcentre.uld.naisc.ScorerTrainer;
@@ -80,7 +81,7 @@ public class Average implements ScorerFactory {
         
 
         @Override
-        public double similarity(FeatureSet features, NaiscListener log) {
+        public ScoreResult similarity(FeatureSet features, NaiscListener log) {
             if(weights != null && weights.length != features.values.length) {
                 throw new IllegalArgumentException("Length of feature vector does not match that of weights");
             }
@@ -93,9 +94,9 @@ public class Average implements ScorerFactory {
                 }
             }
             if(softmax) {
-                return sigmoid(score);
+                return ScoreResult.fromDouble(sigmoid(score));
             } else {
-                return max(0.0, min(1.0, score));
+                return ScoreResult.fromDouble(max(0.0, min(1.0, score)));
             }
         }
 

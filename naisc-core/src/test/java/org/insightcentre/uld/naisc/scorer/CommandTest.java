@@ -8,6 +8,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.ScoreResult;
 import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerTrainer;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
@@ -70,10 +71,10 @@ public class CommandTest {
             Command instance = new Command();
 
             Scorer scorer = instance.makeScorer(params,null).get(0);
-            double result = scorer.similarity(new FeatureSet(new String[]{"foo"}, "foo", new double[]{0.2},
+            ScoreResult result = scorer.similarity(new FeatureSet(new String[]{"foo"}, "foo", new double[]{0.2},
                     model.createResource("http://www.example.com/uri1"), model.createResource("http://www.example.com/uri2")));
             double expResult = 0.2;
-            assertEquals(expResult, result, 0.0);
+            assertEquals(expResult, result.value(), 0.0);
         } catch (ExternalCommandException x) {
             x.printStackTrace();
         }

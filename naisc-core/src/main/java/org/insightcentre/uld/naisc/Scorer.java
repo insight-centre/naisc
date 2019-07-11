@@ -14,7 +14,7 @@ public interface Scorer extends Closeable {
      * @param features The features
      * @return The similarity score between 0.0 (not at all similar) and 1.0 (exactly the same)
      */
-    default double similarity(FeatureSet features) {
+    default ScoreResult similarity(FeatureSet features) {
         return similarity(features, NaiscListener.DEFAULT);
     }
       /**
@@ -23,7 +23,7 @@ public interface Scorer extends Closeable {
      * @param log The listener
      * @return The similarity score between 0.0 (not at all similar) and 1.0 (exactly the same)
      */
-    double similarity(FeatureSet features, NaiscListener log);
+    ScoreResult similarity(FeatureSet features, NaiscListener log);
       
     /**
      * Get the relation that is predicted by this scorer

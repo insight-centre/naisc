@@ -1,6 +1,8 @@
 package org.insightcentre.uld.naisc.scorer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -15,12 +17,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.FeatureSet;
 import org.insightcentre.uld.naisc.FeatureSetWithScore;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.NaiscListener.Level;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
+import org.insightcentre.uld.naisc.ScoreResult;
 import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerFactory;
 import org.insightcentre.uld.naisc.ScorerTrainer;
@@ -70,6 +72,7 @@ public class Logit implements ScorerFactory {
     }
 
     private static class TrainSerializer {
+
         private final Map<String, LogitModel> models = new HashMap<>();
         private final File modelFile;
         private final ObjectMapper mapper;
@@ -78,15 +81,14 @@ public class Logit implements ScorerFactory {
             this.modelFile = modelFile;
             this.mapper = mapper;
         }
-        
-        
+
         public void save(String property, LogitModel model) throws IOException {
-            models.put(property,model);
+            models.put(property, model);
             List<LogitModel> modelList = new ArrayList<>(models.values());
             mapper.writeValue(modelFile, modelList);
         }
     }
-    
+
     public static class Configuration {
     }
 
@@ -100,19 +102,30 @@ public class Logit implements ScorerFactory {
     private static class LogitImpl implements Scorer {
 
         private final LogitModel model;
+        private final Map<StringPair, LogGap> feats = new HashMap<>();
 
         public LogitImpl(LogitModel model) {
             this.model = model;
         }
 
         @Override
-        public double similarity(FeatureSet features, NaiscListener log) {
-            double x = 0.0;
+        public ScoreResult similarity(FeatureSet features, NaiscListener log) {
+            DoubleList weights = new DoubleArrayList(features.names.length);
+            List<ScoreResult> result = new ArrayList<>(features.names.length);
+            for (int i = 0; i < features.names.length; i++) {
+                weights.add(model.weights.getOrDefault(features.names[i], 1.0));
+                if(!feats.containsKey(features.names[i])) {
+                    feats.put(features.names[i], new LogGap());
+                }
+                result.add(feats.get(features.names[i]).result(features.values[i]));
+            }
+            return new LogGapScorer(result, weights, model);
+            /*double x = 0.0;
             for (int i = 0; i < features.names.length; i++) {
                 x += model.weights.getOrDefault(features.names[i], 1.0) * features.values[i];
             }
             x /= features.names.length;
-            return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
+            return logGap.result(1.0 / (1.0 + exp(-model.alpha * x - model.beta)));*/
         }
 
         @Override
@@ -124,6 +137,30 @@ public class Logit implements ScorerFactory {
         public void close() throws IOException {
         }
 
+    }
+    
+    private static class LogGapScorer implements ScoreResult {
+        private final List<ScoreResult> features;
+        private final DoubleList weights;
+        private final LogitModel model;
+
+        public LogGapScorer(List<ScoreResult> features, DoubleList weights, LogitModel model) {
+            this.features = features;
+            this.weights = weights;
+            this.model = model;
+        }
+
+        @Override
+        public double value() {
+            double x = 0.0;
+            for (int i = 0; i < features.size(); i++) {
+                x += weights.get(i) * features.get(i).value();
+            }
+            x /= features.size();
+            return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
+        }
+        
+        
     }
 
     private static class LogitTrainer implements ScorerTrainer {
@@ -159,6 +196,14 @@ public class Logit implements ScorerFactory {
                 }
                 i++;
             }
+            // Apply Log Gap normalization
+            for(i = 0; i < data.length; i++) {
+                LogGap lg = new LogGap();
+                lg.makeModel(data[i]);
+                for(int j = 0; j < data[i].length; j++) {
+                    data[i][j] = lg.normalize(data[i][j]);
+                }
+            }
             LogitFunction f = new LogitFunction(data, scores);
             double[] soln = adaGrad(f, log);
             model.alpha = soln[0];
@@ -166,7 +211,7 @@ public class Logit implements ScorerFactory {
             for (Object2IntMap.Entry<StringPair> e : featureIDs.object2IntEntrySet()) {
                 model.weights.put(e.getKey(), soln[e.getIntValue() + 2]);
             }
-            
+
             return new LogitImpl(model);
         }
 
@@ -181,8 +226,8 @@ public class Logit implements ScorerFactory {
 
         @Override
         public void save(Scorer scorer) throws IOException {
-            if(scorer instanceof LogitImpl) {
-                serializer.save(model.property, ((LogitImpl)scorer).model);
+            if (scorer instanceof LogitImpl) {
+                serializer.save(model.property, ((LogitImpl) scorer).model);
             } else {
                 throw new IllegalArgumentException("Logit cannot serialize models not created by Logit");
             }
@@ -190,7 +235,7 @@ public class Logit implements ScorerFactory {
 
     }
 
-    static class LogitFunction  {
+    static class LogitFunction {
 
         final double[][] data;
         final double[] scores;
@@ -216,7 +261,7 @@ public class Logit implements ScorerFactory {
                 }
                 z /= n;
                 double q = 1.0 / (1.0 + exp(-alpha * z - beta));
-                value +=  (scores[i] - 1) * log(1 - q) - scores[i] * log(q);
+                value += (scores[i] - 1) * log(1 - q) - scores[i] * log(q);
                 double d = (1 - scores[i]) / (1 - q) - scores[i] / q;
                 g[0] += d * q * (1 - q) * z;
                 g[1] += d * q * (1 - q);
@@ -284,4 +329,6 @@ public class Logit implements ScorerFactory {
         }
         return x;
     }
+
+
 }

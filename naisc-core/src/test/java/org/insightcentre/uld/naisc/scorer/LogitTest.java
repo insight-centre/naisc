@@ -74,7 +74,7 @@ public class LogitTest {
         }, new double[]{
             0.1, 0.8, 0.7
         }, "e1", "e2");
-        double result = scorer.similarity(fs);
+        double result = scorer.similarity(fs).value();
         assertEquals(result, 0.630, 0.001);
     }
 
@@ -123,7 +123,7 @@ public class LogitTest {
         System.err.println(trained.similarity(data.get(0)));
         System.err.println(trained.similarity(data.get(1)));
         System.err.println(trained.similarity(data.get(2)));
-        double score = trained.similarity(fs);
+        double score = trained.similarity(fs).value();
         assert(Double.isFinite(score));
         assert(score < 0.630);
     }

@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.jena.rdf.model.Resource;
@@ -34,6 +35,7 @@ import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
+import org.insightcentre.uld.naisc.ScoreResult;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import org.insightcentre.uld.naisc.matcher.Prematcher;
@@ -219,7 +221,7 @@ public class Main {
             monitor.updateStatus(Stage.SCORING, "Scoring");
             //int count = 0;
             final AtomicInteger count = new AtomicInteger(0);
-            ConcurrentLinkedQueue<Alignment> alignments = new ConcurrentLinkedQueue<>();
+            ConcurrentLinkedQueue<TmpAlignment> alignments = new ConcurrentLinkedQueue<>();
             ExecutorService executor = new ThreadPoolExecutor(config.nThreads, config.nThreads, 0,
                     TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(1000),
                     new ThreadPoolExecutor.CallerRunsPolicy());
@@ -267,8 +269,8 @@ public class Main {
                                 monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "An empty feature set was created");
                             }
                             for (Scorer scorer : scorers) {
-                                double score = scorer.similarity(featureSet, monitor);
-                                alignments.add(new Alignment(block._1, block._2, score, scorer.relation()));
+                                ScoreResult score = scorer.similarity(featureSet, monitor);
+                                alignments.add(new TmpAlignment(block._1, block._2, score, scorer.relation()));
                             }
                         } catch (Exception x) {
                             monitor.updateStatus(Stage.FAILED, String.format("Failed to score %s <-> %s due to %s (%s)\n", block._1, block._2, x.getMessage(), x.getClass().getName()));
@@ -293,7 +295,7 @@ public class Main {
             }
 
             AlignmentSet alignmentSet = new AlignmentSet();
-            alignmentSet.addAll(alignments);
+            alignmentSet.addAll(alignments.stream().map(x -> x.toAlignment()).collect(Collectors.toSet()));
 
             monitor.updateStatus(Stage.MATCHING, "Matching");
             if (partialSoln.has()) {
@@ -408,5 +410,22 @@ public class Main {
             };
         }
 
+    }
+    
+    private static class TmpAlignment {
+        private final Resource left, right;
+        private final ScoreResult result;
+        private final String relation;
+
+        public TmpAlignment(Resource left, Resource right, ScoreResult result, String relation) {
+            this.left = left;
+            this.right = right;
+            this.result = result;
+            this.relation = relation;
+        }
+        
+        public Alignment toAlignment() {
+            return new Alignment(left, left, result.value(), relation);
+        }
     }
 }

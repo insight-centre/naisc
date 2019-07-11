@@ -8,6 +8,7 @@ import org.insightcentre.uld.naisc.main.Evaluate;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
 import org.insightcentre.uld.naisc.main.Main;
 import org.insightcentre.uld.naisc.main.Train;
+import org.insightcentre.uld.naisc.EvaluationSet;
 import org.insightcentre.uld.naisc.meas.ExecuteServlet;
 import org.insightcentre.uld.naisc.meas.ManageServlet;
 import org.insightcentre.uld.naisc.meas.Meas;
@@ -46,7 +47,7 @@ public class ExecutionTask implements Runnable {
     @Override
     public void run() {
         try (final MeasDatasetLoader loader = new MeasDatasetLoader(requestURL)) {
-            final ExecuteServlet.Dataset ds = new ExecuteServlet.Dataset(new File(new File("datasets"), dataset));
+            final EvaluationSet ds = new EvaluationSet(new File(new File("datasets"), dataset));
             isActive = true;
             File f = new File("runs");
             f.mkdirs();
