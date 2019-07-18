@@ -261,4 +261,14 @@ public class BasicStringTest {
         assert(r[0] > 0);
         
     }
+    
+    @Test
+    public void testApacheStringFunctions() {
+        BasicString bs = new BasicString();
+        TextFeature f = bs.makeFeatureExtractor(Collections.EMPTY_SET, new HashMap<String,Object>() {{ put("features", Arrays.asList("jaroWinkler","levenshtein")); put("labelChar","true")}});
+        double[] r = f.extractFeatures(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "superficial dermis", "Superficial Vein"));
+        assert(r[0] > 0);
+        assert(r[1] > 0);
+        
+    }
 }

@@ -16,6 +16,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.text.similarity.JaroWinklerSimilarity;
+import org.apache.commons.text.similarity.LevenshteinDistance;
+import org.apache.commons.text.similarity.SimilarityScore;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.util.LangStringPair;
@@ -29,7 +32,10 @@ import org.insightcentre.uld.naisc.TextFeatureFactory;
  * @author John McCrae
  */
 public class BasicString implements TextFeatureFactory {
-
+    private static final SimilarityScore<Double> JARO_WINKLER = new JaroWinklerSimilarity();
+    private static final LevenshteinDistance LEVENSHTEIN = new LevenshteinDistance();
+            
+    
     /**
      * The features implemented by basic string
      */
@@ -46,7 +52,9 @@ public class BasicString implements TextFeatureFactory {
         senLenRatio,
         aveWordLenRatio,
         negation,
-        number
+        number,
+        jaroWinkler,
+        levenshtein
     }
 
     /**
@@ -236,6 +244,15 @@ public class BasicString implements TextFeatureFactory {
                     featureNames.add(prefix + "number");
                 }
             }
+            
+            if(charLevel) {
+                if (selectedFeatures == null || selectedFeatures.contains(Feature.jaroWinkler)) {
+                    featureNames.add(prefix + "jaroWinkler");
+                }
+                if (selectedFeatures == null || selectedFeatures.contains(Feature.levenshtein)) {
+                    featureNames.add(prefix + "levenshtein");
+                }                
+            }
         }
 
         private void buildFeatures(Language lang, String prefix,
@@ -297,9 +314,16 @@ public class BasicString implements TextFeatureFactory {
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.number)) {
                     featureValues.add(numberAgree(l1, l2));
                 }
-
             }
 
+            if(charLevel) {
+                if (selectedFeatures == null || selectedFeatures.contains(Feature.jaroWinkler)) {
+                    featureValues.add(JARO_WINKLER.apply(label1, label2));
+                }
+                if (selectedFeatures == null || selectedFeatures.contains(Feature.levenshtein)) {
+                    featureValues.add(((double)LEVENSHTEIN.apply(label1, label2) * 2.0) / (label1.length() + label2.length()));
+                }                
+            }
 //        featureNames.add(prefix + "gst");
 //        if(charLevel) {
 //            String cl1 = label1.replaceAll("", " ").trim();
