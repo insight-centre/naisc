@@ -77,7 +77,6 @@ public class Alignment {
         assert (score >= 0 && score <= 1);
     }
     
-    private ObjectMapper mapper;
 
     @Override
     public String toString() {

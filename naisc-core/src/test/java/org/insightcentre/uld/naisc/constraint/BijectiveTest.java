@@ -52,19 +52,19 @@ public class BijectiveTest {
         Map<String, Object> params = new HashMap<>();
         Bijective instance = new Bijective();
         Constraint result = instance.make(params);
-        result = result.add(new Alignment(r("a"), r("b"), 1.0, "r"));
+        result.add(new Alignment(r("a"), r("b"), 1.0, "r"));
         assert(!result.canAdd(new Alignment(r("a"), r("c"), 1.0, "r")));
         assert(!result.canAdd(new Alignment(r("c"), r("b"), 1.0, "r")));
         
         params.put("surjection","surjective");
         result = instance.make(params);
-        result = result.add(new Alignment(r("a"), r("b"), 1.0, "r"));
+        result.add(new Alignment(r("a"), r("b"), 1.0, "r"));
         assert(!result.canAdd(new Alignment(r("a"), r("c"), 1.0, "r")));
         assert(result.canAdd(new Alignment(r("c"), r("b"), 1.0, "r")));
         
         params.put("surjection","inverseSurjective");
         result = instance.make(params);
-        result = result.add(new Alignment(r("a"), r("b"), 1.0, "r"));
+        result.add(new Alignment(r("a"), r("b"), 1.0, "r"));
         assert(result.canAdd(new Alignment(r("a"), r("c"), 1.0, "r")));
         assert(!result.canAdd(new Alignment(r("c"), r("b"), 1.0, "r")));
     }

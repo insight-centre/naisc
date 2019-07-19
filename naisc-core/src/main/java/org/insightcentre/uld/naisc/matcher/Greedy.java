@@ -71,21 +71,27 @@ public class Greedy implements MatcherFactory {
                 if(!constraint.canAdd(init)) {
                     listener.updateStatus(ExecuteListener.Stage.MATCHING, "A link from the initial set is not valid with the constraint.");
                 }
-                constraint = constraint.add(init);
+                //constraint = constraint.add(init);
+                constraint.add(init);
             }
             Constraint lastComplete = constraint.complete() ? constraint : null;
             matches.sortAlignments();
             for(Alignment alignment : matches.getAlignments()) {
                 if(alignment.score >= threshold && constraint.canAdd(alignment)) {
-                    Constraint newConstraint = constraint.add(alignment);
-                    if(newConstraint.score > constraint.score) 
-                        constraint = newConstraint;
-                    if(lastComplete == null || newConstraint.complete() && newConstraint.score > lastComplete.score)
-                        lastComplete = newConstraint;
+                    //Constraint newConstraint = constraint.add(alignment);
+                    double newScore = constraint.score + constraint.delta(alignment);
+                    if(newScore > constraint.score)  {
+                        //constraint = newConstraint;
+                        constraint.add(alignment);
+                    }
+                    if(lastComplete == null || constraint.canComplete(alignment) && newScore > lastComplete.score) {
+                        lastComplete = constraint.copy();
+                        lastComplete.add(alignment);
+                    }
                 }
             }
             if(lastComplete != null)
-                return new AlignmentSet(lastComplete.alignments(new ArrayList<>()));
+                return new AlignmentSet(lastComplete.alignments());
             else
                 throw new UnsolvableConstraint("No complete solution was generated");
         }

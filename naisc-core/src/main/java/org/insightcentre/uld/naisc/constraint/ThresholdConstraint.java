@@ -29,26 +29,24 @@ public class ThresholdConstraint implements ConstraintFactory {
     @Override
     public Constraint make(Map<String, Object> params) {
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
-        return new ThresholdImpl(null, null, 0.0, config.threshold);
+        return new ThresholdImpl(new ArrayList<>(), 0.0, config.threshold);
     }
 
     private static class ThresholdImpl extends Constraint {
 
         private final double threshold;
-        private final Alignment alignment;
-        private final ThresholdImpl parent;
+        private final List<Alignment> alignments;
 
-        public ThresholdImpl(Alignment alignment, ThresholdImpl parent, double score, double threshold) {
+        public ThresholdImpl(List<Alignment> alignments, double score, double threshold) {
             super(score);
             this.threshold = threshold;
-            this.alignment = alignment;
-            this.parent = parent;
+            this.alignments = alignments;
         }
 
         @Override
-        public Constraint add(Alignment alignment) {
-            double newScore = score + delta(alignment);
-            return new ThresholdImpl(alignment, this, newScore, threshold);
+        public void add(Alignment alignment) {
+            score += delta(alignment);
+            alignments.add(alignment);
         }
 
         @Override
@@ -57,17 +55,15 @@ public class ThresholdConstraint implements ConstraintFactory {
         }
 
         @Override
-        public List<Alignment> alignments(List<Alignment> alignments) {
-            if(alignment != null) {
-                alignments.add(alignment);
-                return parent.alignments(alignments);
-            } else {
-                return alignments;
-            }
+        public List<Alignment> alignments() {
+            return alignments;
         }
-        
-        
 
+        @Override
+        public Constraint copy() {
+            List<Alignment> newAligns = new ArrayList<>(alignments);
+            return new ThresholdImpl(newAligns, score, threshold);
+        }
     }
 
 }

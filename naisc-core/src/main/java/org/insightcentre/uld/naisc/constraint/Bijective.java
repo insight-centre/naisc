@@ -2,15 +2,15 @@ package org.insightcentre.uld.naisc.constraint;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
+import java.util.stream.Collectors;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import static org.insightcentre.uld.naisc.constraint.Bijective.Surjection.bijective;
-import static org.insightcentre.uld.naisc.constraint.Bijective.Surjection.surjective;
-import static org.insightcentre.uld.naisc.constraint.Bijective.Surjection.inverseSurjective;
 import org.insightcentre.uld.naisc.util.SimpleCache;
 
 /**
@@ -46,10 +46,59 @@ public class Bijective implements ConstraintFactory {
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if(config.surjection == null)
             config.surjection = bijective;
-        return new BijectiveImpl(new SimpleCache<>(100000), new Random(), config.surjection);
+        return new BijectiveImpl(new HashMap<>(), new HashMap<>(), config.surjection, 0.0);
     }
 
     private static class BijectiveImpl extends Constraint {
+        final Map<Resource, List<Alignment>> byLeft;
+        final Map<Resource, List<Alignment>> byRight;
+        final Surjection surjection;
+
+        public BijectiveImpl(Map<Resource, List<Alignment>> byLeft, Map<Resource, List<Alignment>> byRight, Surjection surjection, double score) {
+            super(score);
+            this.byLeft = byLeft;
+            this.byRight = byRight;
+            this.surjection = surjection;
+        }
+
+        @Override
+        public List<Alignment> alignments() {
+            return byLeft.values().stream().flatMap((x) -> x.stream()).collect(Collectors.toList());
+        }
+
+        @Override
+        public boolean canAdd(Alignment alignment) {
+            return (!byLeft.containsKey(alignment.entity1) || surjection == Surjection.inverseSurjective) &&
+                    (!byRight.containsKey(alignment.entity2) || surjection == Surjection.surjective);
+        }
+
+        @Override
+        public void add(Alignment alignment) {
+            score += delta(alignment);
+            if(!byLeft.containsKey(alignment.entity1)) {
+                byLeft.put(alignment.entity1, new ArrayList<>());
+            }
+            byLeft.get(alignment.entity1).add(alignment);
+            
+            if(!byRight.containsKey(alignment.entity2)) {
+                byRight.put(alignment.entity2, new ArrayList<>());
+            }
+            byRight.get(alignment.entity2).add(alignment);
+        }
+
+        @Override
+        public Constraint copy() {
+            Map<Resource, List<Alignment>> newByLeft = new HashMap<>(byLeft);
+            Map<Resource, List<Alignment>> newByRight = new HashMap<>(byRight);
+            return new BijectiveImpl(newByLeft, newByRight, surjection, score);
+        }
+        
+        
+        
+        
+    }
+            
+    /*private static class BijectiveImpl extends Constraint {
         final SimpleCache<BijectiveCacheEntry, Boolean> cache;
         final long id;
         final Random random;
@@ -177,5 +226,5 @@ public class Bijective implements ConstraintFactory {
             return true;
         }
         
-    }
+    }*/
 }

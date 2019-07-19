@@ -14,12 +14,13 @@ public abstract class Constraint {
      */
     public static final double EPS = 1e-10;
     /** The score of this alignment */
-    public final double score;
-    /** The alignments that this score is calculated from 
-     * @param alignments The list to add all alignments to
+    public double score;
+    
+    /** 
+     * The alignments that this score is calculated from 
      * @return The list passed
      */
-    public abstract List<Alignment> alignments(List<Alignment> alignments);
+    public abstract List<Alignment> alignments();
     
     /**
      * Create an score
@@ -54,9 +55,23 @@ public abstract class Constraint {
      * including the alignments list are cloned, otherwise the algorithm can proceed
      * in a very strange manner
      * @param alignment The additional alignment
-     * @return A new constraint instance
      */
-    public abstract Constraint add(Alignment alignment);
+    public abstract void add(Alignment alignment);
+    
+    /**
+     * Create a clone of this constraint (for example to model multiple paths in the solution space
+     * @return A copy of this constraint
+     */
+    public abstract Constraint copy();
+    
+    /**
+     * Returns whether adding the alignment would complete the constraint
+     * @param alignment The alignment to add
+     * @return true if after adding the aligment complete() would return true
+     */
+    public boolean canComplete(Alignment alignment) {
+        return true;
+    }
     
     /**
      * Is this a complete solution.

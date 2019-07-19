@@ -101,7 +101,7 @@ public class BeamSearch implements MatcherFactory {
                 if(!score.canAdd(init)) {
                     listener.updateStatus(ExecuteListener.Stage.MATCHING, "A link from the initial set is not valid with the constraint.");
                 }
-                score = score.add(init);
+                score.add(init);
             }
             Beam<Constraint> beam = new Beam<>(beamSize);
             Constraint bestValid = initialScore.complete() ? initialScore : null;
@@ -112,11 +112,12 @@ public class BeamSearch implements MatcherFactory {
                 if (alignment.score >= threshold) {
                     for (Constraint current : beam) {
                         if (current.canAdd(alignment)) {
-                            Constraint ts = current.add(alignment);
+                            Constraint ts = current.copy();
+                            ts.add(alignment);
                             beam.insert(ts, ts.score);
                             if (ts.complete() && (bestValid == null || bestValid.score < ts.score)) {
                                 //System.err.println("Score: " + ts.score);
-                                bestValid = ts;
+                                bestValid = ts.copy();
                             }
                         }
                     }
@@ -131,7 +132,7 @@ public class BeamSearch implements MatcherFactory {
                 }
             }
             if (bestValid != null) {
-                return new AlignmentSet(bestValid.alignments(new ArrayList<>()));
+                return new AlignmentSet(bestValid.alignments());
             } else {
                 throw new UnsolvableConstraint("Beam search did not find any complete solutions");
             }
