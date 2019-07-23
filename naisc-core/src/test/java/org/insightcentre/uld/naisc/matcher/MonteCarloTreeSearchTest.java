@@ -87,6 +87,7 @@ public class MonteCarloTreeSearchTest {
     
     @Test
     public void testMakeMatcher2() {
+        //for(int i = 0; i < 100; i++) {
         System.out.println("makeMatcher");
         Map<String, Object> params = new HashMap<>();
         params.put("constraint", new HashMap<String,String>());
@@ -105,6 +106,7 @@ public class MonteCarloTreeSearchTest {
         assert(result.contains(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH)));
         assert(result.contains(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH)));
         assert(result.contains(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH)));
+        //}
     }
 
 }

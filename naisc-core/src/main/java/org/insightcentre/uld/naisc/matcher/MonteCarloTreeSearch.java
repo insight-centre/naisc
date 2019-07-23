@@ -80,7 +80,6 @@ public class MonteCarloTreeSearch implements MatcherFactory {
             MCTSTree root = new MCTSTree(randomSearch(base.copy(), matches, 0));
             ITERATION:
             for (int iter = 0; iter < iterMax; iter++) {
-                //System.err.println("Iteration " + iter);
                 if ((iter + 1) % 10000 == 0 && listener != null) {
                     listener.updateStatus(ExecuteListener.Stage.MATCHING,
                             String.format("Generated %sth candidate (max score=%.2f)", iter,
@@ -93,7 +92,23 @@ public class MonteCarloTreeSearch implements MatcherFactory {
                 int replaySize = 0;
                 int depth = 0;
                 while (depth < matches.size()) {
-                    if (tree.goLeft(ce, matches.size() - depth) && soln.canAdd(matches.get(depth))) {
+                    if (!soln.canAdd(matches.get(depth))) {
+                        if (tree.right != null) {
+                            replay.set(depth, false);
+                            replaySize++;
+                            tree = tree.right;
+                            depth++;
+                        } else {
+                            double score = randomSearch(soln, matches, depth + 1);
+                            tree.right = new MCTSTree(score);
+                            tree.hasLeft = false;
+                            backtrack(root, replay, replaySize, score);
+                            if (soln.complete() && (bestValid == null || bestValid.score < soln.score)) {
+                                bestValid = soln.copy();
+                            }
+                            break;
+                        }
+                    } else if (tree.goLeft(ce, matches.size() - depth)) {
                         if (tree.left != null) {
                             replay.set(depth, true);
                             replaySize++;
@@ -106,7 +121,6 @@ public class MonteCarloTreeSearch implements MatcherFactory {
                             tree.left = new MCTSTree(score);
                             backtrack(root, replay, replaySize, score);
                             if (soln.complete() && (bestValid == null || bestValid.score < soln.score)) {
-                                //System.err.println("Score: " + ts.score);
                                 bestValid = soln.copy();
                             }
                             break;
@@ -122,7 +136,6 @@ public class MonteCarloTreeSearch implements MatcherFactory {
                             tree.right = new MCTSTree(score);
                             backtrack(root, replay, replaySize, score);
                             if (soln.complete() && (bestValid == null || bestValid.score < soln.score)) {
-                                //System.err.println("Score: " + ts.score);
                                 bestValid = soln.copy();
                             }
                             break;
@@ -132,13 +145,13 @@ public class MonteCarloTreeSearch implements MatcherFactory {
                 if (depth == matches.size()) {
                     backtrack(root, replay, replaySize, soln.score);
                     if (soln.complete() && (bestValid == null || bestValid.score < soln.score)) {
-                        //System.err.println("Score: " + ts.score);
                         bestValid = soln.copy();
                     }
 
                 }
-                if(tree.fullyExpanded(matches.size()))
+                if (root.fullyExpanded(matches.size())) {
                     break;
+                }
             }
 
             if (bestValid != null) {
@@ -165,18 +178,16 @@ public class MonteCarloTreeSearch implements MatcherFactory {
             for (int i = 0; i < replaySize; i++) {
                 assert (tree != null);
                 if (replay.get(i)) {
-                    //System.err.printf("L");
                     tree = tree.left;
                 } else {
-                    //System.err.printf("R");
                     tree = tree.right;
                 }
 
                 if (tree != null) {
                     tree.update(score);
                 }
+
             }
-            //System.err.println();
         }
 
     }
@@ -186,6 +197,7 @@ public class MonteCarloTreeSearch implements MatcherFactory {
         public MCTSTree left, right;
         public double sum, sumSq, lb, ub;
         public int visits;
+        public boolean hasLeft = true;
 
         public MCTSTree(double y) {
             sum = y;
@@ -196,17 +208,20 @@ public class MonteCarloTreeSearch implements MatcherFactory {
         }
 
         public boolean goLeft(double ce, int depthToGo) {
+            if (!hasLeft) {
+                return false;
+            }
             if (left == null) {
                 return true;
             }
             if (right == null) {
                 return false;
             }
-            
-            if(left.fullyExpanded(depthToGo)) {
+
+            if (left.fullyExpanded(depthToGo - 1)) {
                 return false;
             }
-            if(right.fullyExpanded(depthToGo)) {
+            if (right.fullyExpanded(depthToGo - 1)) {
                 return true;
             }
 
@@ -216,7 +231,6 @@ public class MonteCarloTreeSearch implements MatcherFactory {
             double rightScore = rmean() + Math.sqrt(ce * Math.log(visits) / right.visits
                     * Math.min(0.25, rvar()
                             + Math.sqrt(2 * Math.log(visits) / right.visits)));
-            //System.err.printf("%.4f > %.4f\n", leftScore, rightScore);
             return leftScore > rightScore;
         }
 
@@ -253,12 +267,13 @@ public class MonteCarloTreeSearch implements MatcherFactory {
             ub = Math.max(ub, y);
             lb = Math.min(lb, y);
         }
-        
+
         private boolean isFullyExpanded = false;
-        
+
         public boolean fullyExpanded(int depth) {
-            return isFullyExpanded = isFullyExpanded ||
-                    depth <= 0 || (left != null && right != null && left.fullyExpanded(depth-1) && right.fullyExpanded(depth - 1));
+            return isFullyExpanded = isFullyExpanded
+                    || depth <= 0 || (left != null && right != null && left.fullyExpanded(depth - 1) && right.fullyExpanded(depth - 1))
+                    || (!hasLeft && right != null && right.fullyExpanded(depth - 1));
         }
 
     }
