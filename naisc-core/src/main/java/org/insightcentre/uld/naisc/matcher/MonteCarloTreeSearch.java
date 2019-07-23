@@ -78,8 +78,9 @@ public class MonteCarloTreeSearch implements MatcherFactory {
             Constraint bestValid = base.complete() ? base : null;
 
             MCTSTree root = new MCTSTree(randomSearch(base.copy(), matches, 0));
+            ITERATION:
             for (int iter = 0; iter < iterMax; iter++) {
-                System.err.println("Iteration " + iter);
+                //System.err.println("Iteration " + iter);
                 if ((iter + 1) % 10000 == 0 && listener != null) {
                     listener.updateStatus(ExecuteListener.Stage.MATCHING,
                             String.format("Generated %sth candidate (max score=%.2f)", iter,
@@ -92,7 +93,7 @@ public class MonteCarloTreeSearch implements MatcherFactory {
                 int replaySize = 0;
                 int depth = 0;
                 while (depth < matches.size()) {
-                    if (tree.goLeft(ce) && soln.canAdd(matches.get(depth))) {
+                    if (tree.goLeft(ce, matches.size() - depth) && soln.canAdd(matches.get(depth))) {
                         if (tree.left != null) {
                             replay.set(depth, true);
                             replaySize++;
@@ -136,7 +137,8 @@ public class MonteCarloTreeSearch implements MatcherFactory {
                     }
 
                 }
-
+                if(tree.fullyExpanded(matches.size()))
+                    break;
             }
 
             if (bestValid != null) {
@@ -163,10 +165,10 @@ public class MonteCarloTreeSearch implements MatcherFactory {
             for (int i = 0; i < replaySize; i++) {
                 assert (tree != null);
                 if (replay.get(i)) {
-                    System.err.printf("L");
+                    //System.err.printf("L");
                     tree = tree.left;
                 } else {
-                    System.err.printf("R");
+                    //System.err.printf("R");
                     tree = tree.right;
                 }
 
@@ -174,7 +176,7 @@ public class MonteCarloTreeSearch implements MatcherFactory {
                     tree.update(score);
                 }
             }
-            System.err.println();
+            //System.err.println();
         }
 
     }
@@ -193,12 +195,19 @@ public class MonteCarloTreeSearch implements MatcherFactory {
             visits = 1;
         }
 
-        public boolean goLeft(double ce) {
+        public boolean goLeft(double ce, int depthToGo) {
             if (left == null) {
                 return true;
             }
             if (right == null) {
                 return false;
+            }
+            
+            if(left.fullyExpanded(depthToGo)) {
+                return false;
+            }
+            if(right.fullyExpanded(depthToGo)) {
+                return true;
             }
 
             double leftScore = lmean() + Math.sqrt(ce * Math.log(visits) / left.visits
@@ -207,7 +216,7 @@ public class MonteCarloTreeSearch implements MatcherFactory {
             double rightScore = rmean() + Math.sqrt(ce * Math.log(visits) / right.visits
                     * Math.min(0.25, rvar()
                             + Math.sqrt(2 * Math.log(visits) / right.visits)));
-            System.err.printf("%.4f > %.4f\n", leftScore, rightScore);
+            //System.err.printf("%.4f > %.4f\n", leftScore, rightScore);
             return leftScore > rightScore;
         }
 
