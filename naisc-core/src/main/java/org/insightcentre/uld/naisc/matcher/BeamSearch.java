@@ -96,7 +96,7 @@ public class BeamSearch implements MatcherFactory {
         @Override
         public AlignmentSet alignWith(AlignmentSet matches, AlignmentSet initial, ExecuteListener listener) {
             matches.sortAlignments();
-            Constraint score = initialScore;
+            Constraint score = initialScore.copy();
             for(Alignment init : initial) {
                 if(!score.canAdd(init)) {
                     listener.updateStatus(ExecuteListener.Stage.MATCHING, "A link from the initial set is not valid with the constraint.");

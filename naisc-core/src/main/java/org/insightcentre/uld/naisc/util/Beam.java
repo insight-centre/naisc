@@ -28,6 +28,7 @@ public class Beam<A> extends AbstractCollection<A> {
         return queue.iterator();
     }
     
+    @Override
     public int size() {
         return queue.size();
     }
@@ -81,10 +82,12 @@ public class Beam<A> extends AbstractCollection<A> {
         return a;
     }
     
+    @Override
     public boolean isEmpty() {
         return queue.isEmpty();
     }
 
+    @Override
     public void clear() {
         queue.clear();
         scores.clear();

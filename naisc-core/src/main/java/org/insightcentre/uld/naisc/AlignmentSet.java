@@ -228,4 +228,13 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
         return true;
     }
     
+    /**
+     * Get the ith alignment
+     * @param i The index
+     * @return The ith alignment
+     */
+    public Alignment get(int i) {
+        return alignments.get(i);
+    }
+    
 }
