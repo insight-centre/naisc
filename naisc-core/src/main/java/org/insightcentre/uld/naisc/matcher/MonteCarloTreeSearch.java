@@ -254,8 +254,11 @@ public class MonteCarloTreeSearch implements MatcherFactory {
             lb = Math.min(lb, y);
         }
         
+        private boolean isFullyExpanded = false;
+        
         public boolean fullyExpanded(int depth) {
-            return depth <= 0 || (left != null && right != null && left.fullyExpanded(depth-1) && right.fullyExpanded(depth - 1));
+            return isFullyExpanded = isFullyExpanded ||
+                    depth <= 0 || (left != null && right != null && left.fullyExpanded(depth-1) && right.fullyExpanded(depth - 1));
         }
 
     }
