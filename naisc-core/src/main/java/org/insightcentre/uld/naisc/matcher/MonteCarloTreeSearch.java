@@ -36,7 +36,7 @@ public class MonteCarloTreeSearch implements MatcherFactory {
          * The exploration parameter (expert)
          */
         @ConfigurationParameter(description = "The exploration paramter (expert)")
-        public double ce = 0.5;
+        public double ce = 2.0;
 
         /**
          * The maximum number of iterations to perform
@@ -79,12 +79,13 @@ public class MonteCarloTreeSearch implements MatcherFactory {
 
             MCTSTree root = new MCTSTree(randomSearch(base.copy(), matches, 0));
             for (int iter = 0; iter < iterMax; iter++) {
+                System.err.println("Iteration " + iter);
                 if ((iter + 1) % 10000 == 0 && listener != null) {
                     listener.updateStatus(ExecuteListener.Stage.MATCHING,
                             String.format("Generated %sth candidate (max score=%.2f)", iter,
                                     bestValid == null ? 0.0 : bestValid.score));
                 }
-                
+
                 Constraint soln = base.copy();
                 MCTSTree tree = root;
                 BitSet replay = new BitSet(matches.size());
@@ -127,6 +128,14 @@ public class MonteCarloTreeSearch implements MatcherFactory {
                         }
                     }
                 }
+                if (depth == matches.size()) {
+                    backtrack(root, replay, replaySize, soln.score);
+                    if (soln.complete() && (bestValid == null || bestValid.score < soln.score)) {
+                        //System.err.println("Score: " + ts.score);
+                        bestValid = soln.copy();
+                    }
+
+                }
 
             }
 
@@ -154,8 +163,10 @@ public class MonteCarloTreeSearch implements MatcherFactory {
             for (int i = 0; i < replaySize; i++) {
                 assert (tree != null);
                 if (replay.get(i)) {
+                    System.err.printf("L");
                     tree = tree.left;
                 } else {
+                    System.err.printf("R");
                     tree = tree.right;
                 }
 
@@ -163,6 +174,7 @@ public class MonteCarloTreeSearch implements MatcherFactory {
                     tree.update(score);
                 }
             }
+            System.err.println();
         }
 
     }
@@ -189,15 +201,13 @@ public class MonteCarloTreeSearch implements MatcherFactory {
                 return false;
             }
 
-            double variance = 1 / (visits - 1) * ((sumSq - 2.0 * lb * sum + visits * lb * lb) / (ub - lb) / (ub - lb)
-                    - (sum / (ub - lb) - visits * lb / (ub - lb))
-                    * (sum / (ub - lb) - visits * lb / (ub - lb)) / visits);
             double leftScore = lmean() + Math.sqrt(ce * Math.log(visits) / left.visits
-                    * Math.min(0.25, variance
+                    * Math.min(0.25, lvar()
                             + Math.sqrt(2 * Math.log(visits) / left.visits)));
             double rightScore = rmean() + Math.sqrt(ce * Math.log(visits) / right.visits
-                    * Math.min(0.25, variance
+                    * Math.min(0.25, rvar()
                             + Math.sqrt(2 * Math.log(visits) / right.visits)));
+            System.err.printf("%.4f > %.4f\n", leftScore, rightScore);
             return leftScore > rightScore;
         }
 
@@ -205,16 +215,38 @@ public class MonteCarloTreeSearch implements MatcherFactory {
             return left.sum / (ub - lb) / left.visits - lb / (ub - lb);
         }
 
-        
         public double rmean() {
             return right.sum / (ub - lb) / right.visits - lb / (ub - lb);
         }
+
+        public double lvar() {
+            if (left.visits <= 1) {
+                return Double.POSITIVE_INFINITY;
+            }
+            return ((left.sumSq - 2.0 * lb * left.sum + left.visits * lb * lb) / (ub - lb) / (ub - lb)
+                    - (left.sum / (ub - lb) - left.visits * lb / (ub - lb))
+                    * (left.sum / (ub - lb) - left.visits * lb / (ub - lb)) / left.visits) / (left.visits - 1);
+        }
+
+        public double rvar() {
+            if (right.visits <= 1) {
+                return Double.POSITIVE_INFINITY;
+            }
+            return ((right.sumSq - 2.0 * lb * right.sum + right.visits * lb * lb) / (ub - lb) / (ub - lb)
+                    - (right.sum / (ub - lb) - right.visits * lb / (ub - lb))
+                    * (right.sum / (ub - lb) - right.visits * lb / (ub - lb)) / right.visits) / (right.visits - 1);
+        }
+
         public void update(double y) {
             sum += y;
             sumSq += y * y;
             visits++;
             ub = Math.max(ub, y);
             lb = Math.min(lb, y);
+        }
+        
+        public boolean fullyExpanded(int depth) {
+            return depth <= 0 || (left != null && right != null && left.fullyExpanded(depth-1) && right.fullyExpanded(depth - 1));
         }
 
     }
