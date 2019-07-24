@@ -25,7 +25,7 @@ public interface Matcher {
      * @return A subset of matches optimized according to the rules of this matcher
      */
     default AlignmentSet align(AlignmentSet matches, ExecuteListener listener) {
-        return alignWith(matches, new AlignmentSet(), NONE);
+        return alignWith(matches, new AlignmentSet(), listener);
     }
     
     /**
