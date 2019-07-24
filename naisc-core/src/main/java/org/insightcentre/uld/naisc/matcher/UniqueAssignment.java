@@ -148,11 +148,12 @@ public class UniqueAssignment implements MatcherFactory {
                             throw new RuntimeException("Invalid (negative) alignment score generated");
                         }
                         m.add(lefts.getInt(alignment.entity1), rights.getInt(alignment.entity2),
-                                Math.log(alignment.score == 0 ? 1e-6 : alignment.score / baseProbability));
+                                alignment.score);
+                                //Math.log(alignment.score == 0 ? 1e-6 : alignment.score / baseProbability));
                     }
                 }
                 MunkRes munkRes = new MunkRes(m);
-                double[] sim = m.sim();
+                //double[] sim = m.sim();
                 for (IntPair ip : munkRes.execute()) {
                     if(linv.containsKey(ip._1) && rinv.containsKey(ip._2)) {
                         alignmentSet.add(new Alignment(linv.get(ip._1), rinv.get(ip._2),
@@ -308,6 +309,7 @@ public class UniqueAssignment implements MatcherFactory {
                     }
                     throw new RuntimeException("Iterations exceeded");
                 }
+//                printMatrix(matrix);
                 if (step == 1) {
                     step = step1();
                 } else if (step == 2) {
@@ -1091,5 +1093,15 @@ public class UniqueAssignment implements MatcherFactory {
             return true;
         }
 
+    }
+    
+    private static void printMatrix(Mat m) {
+        for(int i = 0; i < m.M(); i++) {
+            for(int j = 0; j < m.N(); j++) {
+                System.err.printf("%.4f ", m.val(i, j));
+            }
+            System.err.println();
+        }
+            System.err.println();
     }
 }

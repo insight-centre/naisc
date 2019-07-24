@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import org.apache.jena.rdf.model.AnonId;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -11,6 +12,8 @@ import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.Matcher;
+import org.insightcentre.uld.naisc.constraint.Bijective;
+import org.insightcentre.uld.naisc.constraint.Constraint;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -117,4 +120,31 @@ public class UniqueAssignmentTest {
         
     }
     
+    private static AlignmentSet genAlignSet(int n, int seed) {
+        AlignmentSet as = new AlignmentSet();
+        Random r = new Random(seed);
+        Model m = ModelFactory.createDefaultModel();
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                    as.add(new Alignment(m.createResource("file:id" + i), m.createResource("file:id" + j), r.nextDouble()));
+            }
+        }
+        return as;
+    }
+    
+    
+    @Test
+    public void testHard() {
+        UniqueAssignment instance = new UniqueAssignment();
+        Matcher matcher = instance.makeMatcher(new HashMap<>());
+        AlignmentSet matches = genAlignSet(10, 0);
+        AlignmentSet result = matcher.alignWith(matches, new AlignmentSet(), NONE);
+        assert(result.size() == 10);
+        Constraint bijective = new Bijective().make(new HashMap<>());
+        for(Alignment a : result) {
+            bijective.add(a);
+        }
+        //assert(bijective.score > 6.744);
+        
+    }
 }
