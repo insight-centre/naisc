@@ -13,6 +13,7 @@ import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
+import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -75,7 +76,7 @@ public class AutomaticTest {
         model2.add(model2.createStatement(model2.createResource("file:bar5"), model2.createProperty("file:label"), "the label5"));
         Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(model1, model2));
         Automatic instance = new Automatic();
-        BlockingStrategy strat = instance.makeBlockingStrategy(params, _analysis);
+        BlockingStrategy strat = instance.makeBlockingStrategy(params, _analysis, ExecuteListeners.NONE);
         Iterable<Pair<Resource,Resource>> _results = strat.block(new DatasetImpl(model1), new DatasetImpl(model2));
         Set<Pair<Resource,Resource>> results = new HashSet<>();
         for(Pair<Resource,Resource> p : _results) {
@@ -132,7 +133,7 @@ public class AutomaticTest {
         model2.add(model2.createStatement(model2.createResource("file:foobar2"), model2.createProperty("file:p1"), model2.createResource("adfadfdafawdf")));
         Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(model1, model2));
         Automatic instance = new Automatic();
-        BlockingStrategy strat = instance.makeBlockingStrategy(params, _analysis);
+        BlockingStrategy strat = instance.makeBlockingStrategy(params, _analysis, ExecuteListeners.NONE);
         Iterable<Pair<Resource,Resource>> _results = strat.block(new DatasetImpl(model1), new DatasetImpl(model2));
         Set<Pair<Resource,Resource>> results = new HashSet<>();
         for(Pair<Resource,Resource> p : _results) {

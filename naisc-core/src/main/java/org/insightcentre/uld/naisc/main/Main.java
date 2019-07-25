@@ -195,7 +195,7 @@ public class Main {
                         rightModel.asModel().getOrExcept(new RuntimeException("Automatic analysis cannot be performed on SPARQL endpoints")));
             });
             monitor.updateStatus(Stage.INITIALIZING, "Loading blocking strategy");
-            BlockingStrategy blocking = config.makeBlockingStrategy(analysis);
+            BlockingStrategy blocking = config.makeBlockingStrategy(analysis, monitor);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading lenses");
             Dataset combined = loader.combine(leftModel, rightModel, name + "/combined");
@@ -204,7 +204,7 @@ public class Main {
             monitor.updateStatus(Stage.INITIALIZING, "Loading Feature Extractors");
             Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocking.block(leftModel, rightModel)));
             List<TextFeature> textFeatures = config.makeTextFeatures();
-            List<GraphFeature> dataFeatures = config.makeDataFeatures(combined, analysis, prematch);
+            List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Scorers");
             List<Scorer> scorers = config.makeScorer();

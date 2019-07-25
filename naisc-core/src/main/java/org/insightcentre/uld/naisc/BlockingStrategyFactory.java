@@ -15,7 +15,8 @@ public interface BlockingStrategyFactory {
      * 
      * @param params The configuration of this object
      * @param analysis The analysis of the problem
+     * @param listener A listener to record any notes
      * @return A new instance of a blocking strategy
      */
-    BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis);
+    BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis, NaiscListener listener);
 }

@@ -29,7 +29,7 @@ import org.insightcentre.uld.naisc.util.Pair;
 public class IDMatch implements BlockingStrategyFactory {
 
     @Override
-    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis) {
+    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis, NaiscListener listener) {
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if(config.method == IDMatching.namespace && (config.leftNamespace == null || config.rightNamespace == null)) {
             throw new ConfigurationException("Method is namespace but namespaces are not set");

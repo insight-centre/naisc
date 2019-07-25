@@ -26,13 +26,13 @@ import org.insightcentre.uld.naisc.util.Pair;
 public class Automatic implements BlockingStrategyFactory {
 
     @Override
-    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> _analysis) {
+    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> _analysis, NaiscListener listener) {
         Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
         Analysis analysis = _analysis.get();
         // 1. If OntoLex URIs are used assume that we are matching an OntoLex model
         for(String prop : OntoLex.LEXICAL_ENTRY_URLS) {
             if(analysis.leftClasses.contains(prop) || analysis.rightClasses.contains(prop)) {
-                return new OntoLex().makeBlockingStrategy(params, _analysis);
+                return new OntoLex().makeBlockingStrategy(params, _analysis, listener);
             }
         }
         Object2DoubleMap<String> leftUniqueness = new Object2DoubleOpenHashMap<>();

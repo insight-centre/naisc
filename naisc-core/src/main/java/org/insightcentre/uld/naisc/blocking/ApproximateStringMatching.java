@@ -40,7 +40,7 @@ import org.insightcentre.uld.naisc.util.URI2Label;
 public class ApproximateStringMatching implements BlockingStrategyFactory {
 
     @Override
-    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis) {
+    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis, NaiscListener listener) {
         Configuration config = new ObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if (config.maxMatches < 1) {
             throw new ConfigurationException("Max matches must be at least one");

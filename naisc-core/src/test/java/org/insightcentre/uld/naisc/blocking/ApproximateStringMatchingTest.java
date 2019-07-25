@@ -12,6 +12,7 @@ import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching.PatriciaTrie;
 import static org.insightcentre.uld.naisc.blocking.ApproximateStringMatching.editDistance;
 import org.insightcentre.uld.naisc.lens.Label;
+import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.main.ModelDataset;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -183,7 +184,7 @@ public class ApproximateStringMatchingTest {
     public void testNearestNgramHard() {
         int N = 8;
         ApproximateStringMatching matching = new ApproximateStringMatching();
-        BlockingStrategy strat = matching.makeBlockingStrategy(new HashMap<String, Object>() {{ this.put("metric", "ngrams"); this.put("maxMatches", N); this.put("ngrams", 1); }}, Lazy.fromClosure(() -> null));
+        BlockingStrategy strat = matching.makeBlockingStrategy(new HashMap<String, Object>() {{ this.put("metric", "ngrams"); this.put("maxMatches", N); this.put("ngrams", 1); }}, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
                 
         Model left = ModelFactory.createDefaultModel();
         left.add(left.createResource("file:tmp#abc"), left.createProperty(Label.RDFS_LABEL), left.createLiteral("abc"));

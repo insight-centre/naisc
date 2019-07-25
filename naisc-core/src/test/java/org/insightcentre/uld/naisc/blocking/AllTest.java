@@ -7,6 +7,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.BlockingStrategy;
+import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.main.ModelDataset;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -51,7 +52,7 @@ public class AllTest {
         
         Map<String, Object> params = Collections.EMPTY_MAP;
         All instance = new All();
-        BlockingStrategy strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null));
+        BlockingStrategy strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
         Model left = ModelFactory.createDefaultModel();
         Model right = ModelFactory.createDefaultModel();
         left.add(left.createStatement(left.createResource("file:foo"), left.createProperty("file:bar"), left.createResource("file:baz")));

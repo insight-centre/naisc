@@ -29,7 +29,7 @@ import org.insightcentre.uld.naisc.util.Pair;
 public class Command implements BlockingStrategyFactory {
 
     @Override
-    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis) {
+    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis, NaiscListener listener) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if(config.command == null) {
             throw new ConfigurationException("Command cannot be null");

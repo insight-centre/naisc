@@ -37,7 +37,7 @@ public class LabelMatch implements BlockingStrategyFactory {
     private final ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
-    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis) {
+    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis, NaiscListener listener) {
         Configuration config = mapper.convertValue(params, Configuration.class);
         if (config.property == null) {
             throw new ConfigurationException("Label match requires a labelling property");

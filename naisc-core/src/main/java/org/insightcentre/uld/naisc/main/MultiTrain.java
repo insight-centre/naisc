@@ -60,7 +60,7 @@ public class MultiTrain {
                     accepts("c", "The configuration to use").withRequiredArg().ofType(File.class);
                     accepts("q", "Quiet (suppress output)");
                     accepts("n", "Negative Sampling rate (number of negative examples/positive example)").withRequiredArg().ofType(Double.class);
-                    nonOptions("The dataset to use for training");
+                    nonOptions("The datasets to use for training");
                 }
             };
             final OptionSet os;
@@ -77,7 +77,7 @@ public class MultiTrain {
             }
             List<EvaluationSet> evalSets = new ArrayList<>();
             for (Object evalSetName : os.nonOptionArguments()) {
-                EvaluationSet es = new EvaluationSet(new File(evalSetName.toString()));
+                EvaluationSet es = new EvaluationSet(new File(new File("datasets"), evalSetName.toString()));
                 if (!es.left().exists()) {
                     badOptions(p, es.left().getName() + " does not exist for ");
                     return;

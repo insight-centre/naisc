@@ -216,7 +216,7 @@ public class Train {
                     rightModel.asModel().getOrExcept(new RuntimeException("Automatic analysis cannot be performed on SPARQL endpoints")));
         });
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading blocking strategy");
-        BlockingStrategy blocking = config.makeBlockingStrategy(analysis);
+        BlockingStrategy blocking = config.makeBlockingStrategy(analysis, monitor);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading lenses");
         Dataset combined = loader.combine(leftModel, rightModel, name + "/combined");
@@ -225,7 +225,7 @@ public class Train {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
         Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocking.block(leftModel, rightModel)));
         List<TextFeature> textFeatures = config.makeTextFeatures();
-        List<GraphFeature> dataFeatures = config.makeDataFeatures(combined, analysis, prematch);
+        List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch);
 
         monitor.updateStatus(ExecuteListener.Stage.BLOCKING, "Blocking");
         final Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel);

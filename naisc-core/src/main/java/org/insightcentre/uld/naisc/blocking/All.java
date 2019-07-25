@@ -21,7 +21,7 @@ import org.insightcentre.uld.naisc.util.Pair;
 public class All implements BlockingStrategyFactory {
 
     @Override
-    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis) {
+    public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis, NaiscListener listener) {
         return new AllImpl();
     }
 

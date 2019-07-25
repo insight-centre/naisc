@@ -8,6 +8,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
+import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.main.ModelDataset;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.junit.After;
@@ -62,21 +63,21 @@ public class IDMatchTest {
         right.add(right.createStatement(right.createResource("http://www.beispiel.de/path/bar#baz"), right.createProperty(RDFS_LABEL), left.createLiteral("dog house", "en")));
         right.add(right.createStatement(right.createResource("http://www.beispiel.de/foo/bar#baz"), right.createProperty(RDFS_LABEL), left.createLiteral("dog house", "en")));
         
-        BlockingStrategy strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null));
+        BlockingStrategy strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
         assertEquals(3, count(strategy.block(new ModelDataset(left), new ModelDataset(right))));
         
         params.put("method", "exact");
-        strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null));
+        strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
         assertEquals(1, count(strategy.block(new ModelDataset(left), new ModelDataset(right))));
         
         params.put("method", "fragment");
-        strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null));
+        strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
         assertEquals(4, count(strategy.block(new ModelDataset(left), new ModelDataset(right))));
         
         params.put("method", "exact");
         params.put("leftNamespace", "http://www.example.com/");
         params.put("rightNamespace", "http://www.beispiel.de");
-        strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null));
+        strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
         assertEquals(1, count(strategy.block(new ModelDataset(left), new ModelDataset(right))));
     }
 

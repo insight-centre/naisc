@@ -94,7 +94,7 @@ public class Configuration {
     /**
      * The list of data features
      */
-    public final List<GraphFeatureConfiguration> dataFeatures;
+    public final List<GraphFeatureConfiguration> graphFeatures;
     /**
      * The configuration of the similarity classifier
      */
@@ -116,7 +116,7 @@ public class Configuration {
     public Configuration(
             @JsonProperty("blocking") BlockingStrategyConfiguration blocking,
             @JsonProperty("lenses") List<LensConfiguration> lenses,
-            @JsonProperty("dataFeatures") List<GraphFeatureConfiguration> dataFeatures,
+            @JsonProperty("graphFeatures") List<GraphFeatureConfiguration> dataFeatures,
             @JsonProperty("textFeatures") List<TextFeatureConfiguration> textFeatures,
             @JsonProperty("scorers") List<ScorerConfiguration> scorers,
             @JsonProperty("matcher") MatcherConfiguration matcher,
@@ -126,8 +126,8 @@ public class Configuration {
         }
         this.blocking = blocking;
         this.textFeatures = textFeatures == null ? Collections.EMPTY_LIST : textFeatures;
-        this.dataFeatures = dataFeatures == null ? Collections.EMPTY_LIST : dataFeatures;
-        if (this.textFeatures.isEmpty() && this.dataFeatures.isEmpty()) {
+        this.graphFeatures = dataFeatures == null ? Collections.EMPTY_LIST : dataFeatures;
+        if (this.textFeatures.isEmpty() && this.graphFeatures.isEmpty()) {
             throw new ConfigurationException("No features specified");
         }
         if (scorers == null || scorers.isEmpty()) {
@@ -142,10 +142,10 @@ public class Configuration {
         this.description = description;
     }
 
-    public List<GraphFeature> makeDataFeatures(Dataset model, Lazy<Analysis> analysis,
+    public List<GraphFeature> makeGraphFeatures(Dataset model, Lazy<Analysis> analysis,
             Lazy<AlignmentSet> prelinking) {
         List<GraphFeature> extractors = new ArrayList<>();
-        for (GraphFeatureConfiguration config : dataFeatures) {
+        for (GraphFeatureConfiguration config : graphFeatures) {
             GraphFeatureFactory extractor = Services.get(GraphFeatureFactory.class, config.name);
             extractors.add(extractor.makeFeature(model, config.params, analysis, prelinking));
         }
@@ -209,8 +209,8 @@ public class Configuration {
         return Services.get(MatcherFactory.class, this.matcher.name).makeMatcher(this.matcher.params);
     }
 
-    public BlockingStrategy makeBlockingStrategy(Lazy<Analysis> analysis) throws IOException {
-        return Services.get(BlockingStrategyFactory.class, this.blocking.name).makeBlockingStrategy(this.blocking.params, analysis);
+    public BlockingStrategy makeBlockingStrategy(Lazy<Analysis> analysis, NaiscListener listener) throws IOException {
+        return Services.get(BlockingStrategyFactory.class, this.blocking.name).makeBlockingStrategy(this.blocking.params, analysis, listener);
     }
 
     public static Class[] knownTextFeatures = new Class[]{
@@ -1123,7 +1123,7 @@ public class Configuration {
         hash = 43 * hash + Objects.hashCode(this.blocking);
         hash = 43 * hash + Objects.hashCode(this.lenses);
         hash = 43 * hash + Objects.hashCode(this.textFeatures);
-        hash = 43 * hash + Objects.hashCode(this.dataFeatures);
+        hash = 43 * hash + Objects.hashCode(this.graphFeatures);
         hash = 43 * hash + Objects.hashCode(this.scorers);
         hash = 43 * hash + Objects.hashCode(this.matcher);
         hash = 43 * hash + Objects.hashCode(this.description);
@@ -1154,7 +1154,7 @@ public class Configuration {
         if (!Objects.equals(this.textFeatures, other.textFeatures)) {
             return false;
         }
-        if (!Objects.equals(this.dataFeatures, other.dataFeatures)) {
+        if (!Objects.equals(this.graphFeatures, other.graphFeatures)) {
             return false;
         }
         if (!Objects.equals(this.scorers, other.scorers)) {
