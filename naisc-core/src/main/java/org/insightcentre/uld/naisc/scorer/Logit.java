@@ -259,8 +259,12 @@ public class Logit implements ScorerFactory {
                         n++;
                     }
                 }
+                if(n == 0)
+                    continue;
                 z /= n;
                 double q = 1.0 / (1.0 + exp(-alpha * z - beta));
+                assert(q != 0.0);
+                assert(q != 1.0);
                 value += (scores[i] - 1) * log(1 - q) - scores[i] * log(q);
                 double d = (1 - scores[i]) / (1 - q) - scores[i] / q;
                 g[0] += d * q * (1 - q) * z;
@@ -288,7 +292,7 @@ public class Logit implements ScorerFactory {
     }
 
     private static double[] adaGrad(LogitFunction objective, NaiscListener log) {
-        return adaGrad(objective, 1000, 0.1, 1e-6, 1e-8, log);
+        return adaGrad(objective, 100000, 0.1, 1e-6, 1e-8, log);
     }
 
     private static double[] adaGrad(LogitFunction objective, int maxIters,
@@ -308,7 +312,9 @@ public class Logit implements ScorerFactory {
                 gradSum += gjj;
                 gsum[j] += gjj;
             }
-            log.message(Stage.TRAINING, Level.INFO, String.format("Iteration %d: Value=%.8f, Gradient=%.8f", i, fx, Math.sqrt(gradSum)));
+            if((i + 1) % 1000 == 0) {
+                log.message(Stage.TRAINING, Level.INFO, String.format("Iteration %d: Value=%.8f, Gradient=%.8f", i+1, fx, Math.sqrt(gradSum)));
+            }
             if (Math.sqrt(gradSum) < tolerance) {
                 return x;
             }

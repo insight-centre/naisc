@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 /**
- * A LRU cache for any objects
+ * A LRU cache for any objects. Please note that this is NOT thread-safe!
  * 
  * @author John McCrae
  */

@@ -26,11 +26,12 @@ public class LabelResult {
     }
     
     public boolean isLabelLike() {
-        return this.coverage > 0.5 && this.uniqueness > 0.9 && this.isDataProperty && this.naturalLangLike > 0.9;
+        //System.err.printf("%s cov:%.4f uniq:%.4f nll:%.4f dp:%s\n", uri, coverage, uniqueness, naturalLangLike, isDataProperty);
+        return this.coverage > 0.5 && this.uniqueness > 0.5 && this.isDataProperty && this.naturalLangLike > 0.5;
     }
     
     public boolean isLabelLens() {
-        return this.coverage > 0.5 && this.uniqueness > 0.9 && (this.uri.equals("") || this.isDataProperty && this.naturalLangLike > 0.9);
+        return this.coverage > 0.5 && this.uniqueness > 0.5 && (this.uri.equals("") || this.isDataProperty && this.naturalLangLike > 0.5);
     }
 
 

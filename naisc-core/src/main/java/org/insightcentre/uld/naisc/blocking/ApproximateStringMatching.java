@@ -28,6 +28,7 @@ import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
+import org.insightcentre.uld.naisc.util.Beam;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.util.URI2Label;
@@ -184,6 +185,13 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     }
                 }
             }
+            // Heuristically remove any very common n-grams
+            Iterator<Map.Entry<String, Object2DoubleMap<Resource>>> ngramsIter = ngrams.entrySet().iterator();
+            while(ngramsIter.hasNext()) {
+                Map.Entry<String, Object2DoubleMap<Resource>> e = ngramsIter.next();
+                if(e.getValue().size() > 100)
+                    ngramsIter.remove();
+            }
             final List<Pair<Resource, List<String>>> labels = new ArrayList<>();
             for (Resource r : lefts) {
                 if (property.equals("")) {
@@ -227,27 +235,27 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         }
 
         private List<Resource> nearest(List<String> labels, Map<String, Object2DoubleMap<Resource>> ngrams) {
-            final Object2DoubleMap<Resource> freqsFinal = new Object2DoubleOpenHashMap<>();
+            final Beam<Resource> freqsFinal = new Beam<>(maxMatches);
             for (String r : labels) {
-                final Object2DoubleMap<Resource> freqs = new Object2DoubleOpenHashMap<>();
-                for (int i = 0; i < r.length() - n + 1; i++) {
+                //System.err.println("label: " + r);
+                for (int i = 0; i < Math.min(100,r.length()) - n + 1; i++) {
                     String ng = r.substring(i, i + n);
+                    //System.err.print(ng);
                     Object2DoubleMap<Resource> ngs = ngrams.get(ng);
                     if (ngs != null) {
+                        //System.err.printf(" %d", ngs.size());
                         for (Object2DoubleMap.Entry<Resource> e : ngs.object2DoubleEntrySet()) {
-                            freqs.put(e.getKey(), freqs.getDouble(e.getKey()) + e.getDoubleValue());
+                            freqsFinal.increment(e.getKey(), e.getDoubleValue());
                         }
                     }
-                }
-                for (Object2DoubleMap.Entry<Resource> e : freqs.object2DoubleEntrySet()) {
-                    freqsFinal.put(e.getKey(), Math.max(freqsFinal.getDouble(e.getKey()), e.getDoubleValue()));
+                    //System.err.println();
                 }
             }
             List<Resource> resList = new ArrayList<>(freqsFinal.keySet());
-            Collections.sort(resList, new Comparator<Resource>() {
+            /*Collections.sort(resList, new Comparator<Resource>() {
                 @Override
                 public int compare(Resource o1, Resource o2) {
-                    double f1 = freqsFinal.getDouble(o1);
+                    double f1 = freqsFinal.getScore(o1);
                     double f2 = freqsFinal.getDouble(o2);
                     if (f1 > f2) {
                         return -1;
@@ -257,7 +265,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                         return o1.getURI().compareTo(o2.getURI());
                     }
                 }
-            });
+            });*/
             if (resList.size() > maxMatches) {
                 return resList.subList(0, maxMatches);
             } else {

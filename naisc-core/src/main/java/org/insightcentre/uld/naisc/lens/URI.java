@@ -122,7 +122,7 @@ public class URI implements LensFactory {
 
         @Override
         public String id() {
-            return "lens";
+            return "uri";
         }
 
         @Override

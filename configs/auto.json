@@ -1,0 +1,29 @@
+{
+    "blocking": {
+        "name": "blocking.Automatic"
+    },
+    "lenses": [],
+    "textFeatures": [{
+        "name": "feature.BasicString",
+        "wordWeights": "models/idf",
+        "ngramWeights": "models/ngidf",
+        "labelChar": true
+    },{
+        "name": "feature.WordEmbeddings",
+        "embeddingPath": "models/glove.6B.100d.txt"
+    }],
+    "graphFeatures": [{
+        "name": "graph.Automatic"
+    }],
+    "scorers": [{
+        "name": "scorer.Logit",
+        "modelFile": "models/auto.logit"
+    }],
+    "matcher": {
+        "name": "matcher.Greedy",
+        "constraint": {
+            "name": "constraint.Bijective"
+        }
+    },
+    "description": "The default setting using automatic blocking and lenses"
+}

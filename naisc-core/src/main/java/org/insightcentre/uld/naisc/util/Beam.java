@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
 import java.util.AbstractCollection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * A 'beam' that is a sorted set of fixed size where adding an element remove the
@@ -31,6 +32,14 @@ public class Beam<A> extends AbstractCollection<A> {
     @Override
     public int size() {
         return queue.size();
+    }
+    
+    public Set<A> keySet() {
+        return queue;
+    }
+    
+    public double getScore(A a) {
+        return scores.getDouble(a);
     }
     
     
@@ -66,8 +75,19 @@ public class Beam<A> extends AbstractCollection<A> {
             scores.put(a, score);
             queue.add(a);
             if(queue.size() > size) {
+                scores.remove(queue.last());
                 queue.remove(queue.last());
             }
+        }
+    }
+    
+    public void increment(A a, double amount) {
+        if(scores.containsKey(a)) {
+            queue.remove(a);
+            scores.put(a, scores.getDouble(a) + amount);
+            queue.add(a);
+        } else {
+            insert(a, amount);
         }
     }
     

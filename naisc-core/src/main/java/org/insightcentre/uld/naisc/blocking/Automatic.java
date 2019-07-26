@@ -12,6 +12,7 @@ import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.LabelResult;
 import org.insightcentre.uld.naisc.analysis.MatchResult;
@@ -66,12 +67,17 @@ public class Automatic implements BlockingStrategyFactory {
         Set<Pair<String,String>> preblocks = new HashSet<>();
         for(MatchResult mr : analysis.matching) {
             if(mr.coversData() 
-                    && leftUniqueness.getDouble(mr.leftUri) > 0.9 
-                    && rightUniqueness.getDouble(mr.rightUri) > 0.9) {
+                    && leftUniqueness.getDouble(mr.leftUri) > 0.1 
+                    && rightUniqueness.getDouble(mr.rightUri) > 0.1) {
                 preblocks.add(new Pair<>(mr.leftUri,mr.rightUri));
             }
         }
         
+        listener.message(Stage.INITIALIZING, NaiscListener.Level.INFO, String.format("Matching using properties %s and %s", 
+                bestLeftProp.equals("") ? "<URI>" : bestLeftProp, 
+                bestRightProp.equals("") ? "<URI>" : bestRightProp));
+        if(!preblocks.isEmpty())
+            listener.message(Stage.INITIALIZING, NaiscListener.Level.INFO, "Pre-blocking on properties " + preblocks);
         return new AutomaticImpl(preblocks, config.maxMatches, bestLeftProp, bestRightProp, config.ngrams);
     }
 

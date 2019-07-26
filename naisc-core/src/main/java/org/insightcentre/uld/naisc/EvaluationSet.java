@@ -91,4 +91,12 @@ public class EvaluationSet {
         return f.exists() && f.isDirectory() && (new File(f, "left.rdf").exists() || new File(f, "left.nt").exists() || new File(f, "left.ttl").exists() || new File(f, "left.xml").exists()) && (new File(f, "right.rdf").exists() || new File(f, "right.nt").exists() || new File(f, "right.ttl").exists() || new File(f, "right.xml").exists());
     }
 
+    /**
+     * Get the name of the dataset
+     * @return The name of the dataset
+     */
+    public String name() {
+        return folder.getName();
+    }
+
 }

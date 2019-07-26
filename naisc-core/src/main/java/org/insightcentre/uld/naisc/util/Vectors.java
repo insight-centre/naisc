@@ -28,7 +28,7 @@ public class Vectors {
            ab += s.getDoubleValue()*v2.getDouble(s.getIntKey());
        }
        final double bnorm = v2.norm();
-       if(aa == 0 && bnorm == 0) {
+       if(aa == 0 || bnorm == 0) {
            return 0.0;
        } else {
            return ab / Math.sqrt(aa) / bnorm;

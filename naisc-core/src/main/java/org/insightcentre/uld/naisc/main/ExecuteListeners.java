@@ -17,7 +17,7 @@ public class ExecuteListeners {
 
         @Override
         public void updateStatus(ExecuteListener.Stage stage, String message) {
-            System.err.println("[" + stage + "]" + message);
+            System.err.println("[" + stage + "] " + message);
         }
 
         @Override

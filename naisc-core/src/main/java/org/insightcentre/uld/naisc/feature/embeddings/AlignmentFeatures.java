@@ -211,6 +211,7 @@ public class AlignmentFeatures {
             }
             sumStep += pow(colSum / alignment.getTargetSize(), 1.0 /p);
         }
+        assert(Double.isFinite(sumStep));
         return sumStep / alignment.getSourceSize();
     }
 }
