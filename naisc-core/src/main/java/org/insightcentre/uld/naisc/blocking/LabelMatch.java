@@ -115,9 +115,7 @@ public class LabelMatch implements BlockingStrategyFactory {
 
         @Override
         @SuppressWarnings("Convert2Lambda")
-        public Iterable<Pair<Resource, Resource>> block(Dataset _left, Dataset _right, NaiscListener log) {
-            final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
-            final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
+        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
             Property leftProp = left.createProperty(leftProperty);
             Property rightProp = right.createProperty(rightProperty);
 
@@ -149,7 +147,7 @@ public class LabelMatch implements BlockingStrategyFactory {
             };
         }
 
-        private void extractLabel(Map<String, List<Resource>> map, Model model, Property prop) {
+        private void extractLabel(Map<String, List<Resource>> map, Dataset model, Property prop) {
             StmtIterator iter = model.listStatements(null, prop, (RDFNode) null);
             while (iter.hasNext()) {
                 Statement stmt = iter.next();

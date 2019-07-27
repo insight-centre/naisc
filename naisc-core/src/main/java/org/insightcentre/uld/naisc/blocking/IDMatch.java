@@ -219,9 +219,7 @@ public class IDMatch implements BlockingStrategyFactory {
 
         @Override
         @SuppressWarnings("Convert2Lambda")
-        public Iterable<Pair<Resource, Resource>> block(final Dataset _left, final Dataset _right, NaiscListener log) {
-            final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
-            final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
+        public Iterable<Pair<Resource, Resource>> block(final Dataset left, final Dataset right, NaiscListener log) {
             return new Iterable<Pair<Resource, Resource>>() {
                 @Override
                 public Iterator<Pair<Resource, Resource>> iterator() {

@@ -1,7 +1,6 @@
 package org.insightcentre.uld.naisc.blocking;
 
 import java.io.StringReader;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,13 +10,10 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.Dataset;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.util.Lazy;
-import org.insightcentre.uld.naisc.util.None;
-import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Pair;
-import org.insightcentre.uld.naisc.util.Some;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -111,11 +107,11 @@ public class OntoLexTest {
         left.read(new StringReader(ONTOLEX_DOC), "http://www.example.com/", "TURTLE");
         Model right = ModelFactory.createDefaultModel();
         right.read(new StringReader(SIMPLE_DOC), "http://www.example.com/", "TURTLE");
-        assertEquals(9, blocker.estimateSize(new ModelAsDataset(left), new ModelAsDataset(right)));
+        assertEquals(9, blocker.estimateSize(new ModelDataset(left), new ModelDataset(right)));
         Set<String> leftMatching = new HashSet<>(Arrays.asList("http://www.example.com/#cat-1","http://www.example.com/#cat-2","http://www.example.com/#cat-3"));
         Set<String> rightMatching = new HashSet<>(Arrays.asList("file:DDO/11001660/sense/21002471","file:DDO/11001660/sense/21002472","file:DDO/11001660/sense/21002485"));
         HashSet<Pair<Resource, Resource>> s = new HashSet<>();
-        for(Pair<Resource,Resource> rr : blocker.block(new ModelAsDataset(left), new ModelAsDataset(right))) {
+        for(Pair<Resource,Resource> rr : blocker.block(new ModelDataset(left), new ModelDataset(right))) {
             assert(leftMatching.contains(rr._1.getURI()));
             assert(rightMatching.contains(rr._2.getURI()));
             s.add(rr);
@@ -123,23 +119,4 @@ public class OntoLexTest {
         assertEquals(9, s.size());
     }
 
-    private static class ModelAsDataset implements Dataset {
-        private final Model model;
-
-        public ModelAsDataset(Model model) {
-            this.model = model;
-        }
-
-        @Override
-        public Option<Model> asModel() {
-            return new Some<>(model);
-        }
-
-        @Override
-        public Option<URL> asEndpoint() {
-            return new None<>();
-        }
-        
-        
-    }
 }

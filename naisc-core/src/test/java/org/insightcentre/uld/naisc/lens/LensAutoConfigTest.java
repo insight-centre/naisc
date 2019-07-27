@@ -1,6 +1,5 @@
 package org.insightcentre.uld.naisc.lens;
 
-import java.net.URL;
 import java.util.List;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -9,9 +8,7 @@ import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
-import org.insightcentre.uld.naisc.util.Lazy;
-import org.insightcentre.uld.naisc.util.Option;
-import org.insightcentre.uld.naisc.util.Some;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -69,30 +66,12 @@ public class LensAutoConfigTest {
         model2.add(model2.createStatement(model2.createResource("file:bar4"), model2.createProperty("file:label"), "the label4"));
         model2.add(model2.createStatement(model2.createResource("file:bar5"), model2.createProperty("file:label"), "the label5"));
         String tag = "tmp";
-        Analysis analysis = new DatasetAnalyzer().analyseModel(model1, model2);
-        Dataset leftModel = new DatasetImpl(model1);
-        Dataset rightModel = new DatasetImpl(model2);
+        Analysis analysis = new DatasetAnalyzer().analyseModel(new ModelDataset(model1), new ModelDataset(model2));
+        Dataset leftModel = new ModelDataset(model1);
+        Dataset rightModel = new ModelDataset(model2);
         LensAutoConfig instance = new LensAutoConfig();
         List<Lens> result = instance.autoConfiguration(analysis, leftModel, NaiscListener.DEFAULT);
         assertEquals(3, result.size());
     }
 
-    private static class DatasetImpl implements Dataset {
-        private final Model model;
-
-        public DatasetImpl(Model model) {
-            this.model = model;
-        }
-
-        @Override
-        public Option<URL> asEndpoint() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public Option<Model> asModel() {
-            return new Some<>(model);
-        }
-        
-    }
 }

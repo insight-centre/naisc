@@ -8,6 +8,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.lens.Label;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -74,7 +75,7 @@ public class LabelAnalysisTest {
                 model.createLiteral("???"));
        
         DatasetAnalyzer instance = new DatasetAnalyzer();
-        List<LabelResult> result = instance.analyseModel(model, model).leftLabels;
+        List<LabelResult> result = instance.analyseModel(new ModelDataset(model), new ModelDataset(model)).leftLabels;
         assert(result.stream().anyMatch(x -> x.uri.equals("")));
         assert(result.stream().anyMatch(x -> x.uri.equals(Label.RDFS_LABEL)));
         assert(result.stream().anyMatch(x -> x.uri.equals(Label.SKOS_PREFLABEL)));

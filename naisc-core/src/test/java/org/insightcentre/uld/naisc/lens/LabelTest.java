@@ -1,14 +1,12 @@
 package org.insightcentre.uld.naisc.lens;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.main.ModelDataset;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

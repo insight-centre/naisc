@@ -1,6 +1,5 @@
 package org.insightcentre.uld.naisc.blocking;
 
-import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,14 +9,12 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.util.Lazy;
-import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Pair;
-import org.insightcentre.uld.naisc.util.Some;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -74,10 +71,10 @@ public class AutomaticTest {
         model2.add(model2.createStatement(model2.createResource("file:bar3"), model2.createProperty("file:label"), "the label3"));
         model2.add(model2.createStatement(model2.createResource("file:bar4"), model2.createProperty("file:label"), "the label4"));
         model2.add(model2.createStatement(model2.createResource("file:bar5"), model2.createProperty("file:label"), "the label5"));
-        Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(model1, model2));
+        Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model1), new ModelDataset(model2)));
         Automatic instance = new Automatic();
         BlockingStrategy strat = instance.makeBlockingStrategy(params, _analysis, ExecuteListeners.NONE);
-        Iterable<Pair<Resource,Resource>> _results = strat.block(new DatasetImpl(model1), new DatasetImpl(model2));
+        Iterable<Pair<Resource,Resource>> _results = strat.block(new ModelDataset(model1), new ModelDataset(model2));
         Set<Pair<Resource,Resource>> results = new HashSet<>();
         for(Pair<Resource,Resource> p : _results) {
             results.add(p);
@@ -97,24 +94,6 @@ public class AutomaticTest {
         ));
         assertEquals(expResult, results);
     }
-    private static class DatasetImpl implements Dataset {
-        private final Model model;
-
-        public DatasetImpl(Model model) {
-            this.model = model;
-        }
-
-        @Override
-        public Option<URL> asEndpoint() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public Option<Model> asModel() {
-            return new Some<>(model);
-        }
-        
-    }
     
     
     /**
@@ -131,10 +110,10 @@ public class AutomaticTest {
         model2.add(model2.createStatement(model2.createResource("file:barfoo1"), model2.createProperty("file:p1"), model2.createResource("adfafafdasf")));
         model2.add(model2.createStatement(model2.createResource("file:barfoo2"), model2.createProperty("file:p1"), model2.createResource("adfafdafdsafaf")));
         model2.add(model2.createStatement(model2.createResource("file:foobar2"), model2.createProperty("file:p1"), model2.createResource("adfadfdafawdf")));
-        Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(model1, model2));
+        Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model1), new ModelDataset(model2)));
         Automatic instance = new Automatic();
         BlockingStrategy strat = instance.makeBlockingStrategy(params, _analysis, ExecuteListeners.NONE);
-        Iterable<Pair<Resource,Resource>> _results = strat.block(new DatasetImpl(model1), new DatasetImpl(model2));
+        Iterable<Pair<Resource,Resource>> _results = strat.block(new ModelDataset(model1), new ModelDataset(model2));
         Set<Pair<Resource,Resource>> results = new HashSet<>();
         for(Pair<Resource,Resource> p : _results) {
             results.add(p);

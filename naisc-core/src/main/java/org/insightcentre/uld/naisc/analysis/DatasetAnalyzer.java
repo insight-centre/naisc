@@ -15,6 +15,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
+import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.util.URI2Label;
 
 /**
@@ -36,7 +37,7 @@ public class DatasetAnalyzer {
         return results;
     }
 
-    public Analysis analyseModel(Model leftModel, Model rightModel) {
+    public Analysis analyseModel(Dataset leftModel, Dataset rightModel) {
         Map<String, List<String>> leftAnalysis = new HashMap<>();
         Map<String, Set<String>> leftPropBySubj = new HashMap<>();
         Set<String> leftSubjects = new HashSet<>();
@@ -91,7 +92,7 @@ public class DatasetAnalyzer {
                 leftSubjects.size(), rightSubjects.size());
     }
 
-    private List<Set<Resource>> analyzeLabels(Model model, Set<String> subjects,
+    private List<Set<Resource>> analyzeLabels(Dataset model, Set<String> subjects,
             Map<String, List<String>> analysis, Map<String, Set<String>> propBySubj,
             Set<String> dataProps, Set<String> classes) {
         List<Set<Resource>> components = new ArrayList<>();

@@ -7,7 +7,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.main.ModelDataset;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

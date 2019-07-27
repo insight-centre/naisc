@@ -2,7 +2,6 @@ package org.insightcentre.uld.naisc.graph;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
@@ -14,10 +13,9 @@ import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.util.FastPPR;
 import org.insightcentre.uld.naisc.util.Lazy;
-import org.insightcentre.uld.naisc.util.Option;
-import org.insightcentre.uld.naisc.util.Some;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -67,9 +65,9 @@ public class PPRTest {
         AlignmentSet prealign = new AlignmentSet();
         prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar1"), 1.0));
         prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar3"), 0.0));
-        Dataset sparqlData = new DatasetImpl(model);
+        Dataset sparqlData = new ModelDataset(model);
         Map<String, Object> params = new HashMap<>();
-        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(model, model));
+        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model), new ModelDataset(model)));
         Lazy<AlignmentSet> prelinking = Lazy.fromClosure(() -> prealign);
         PPR instance = new PPR();
         GraphFeature feat = instance.makeFeature(sparqlData, params, analysis, prelinking);
@@ -95,27 +93,8 @@ public class PPRTest {
         prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar1"), 1.0));
         prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar3"), 0.0));
         Object2IntMap<Resource> identifiers = new Object2IntOpenHashMap<>();
-        FastPPR.DirectedGraph result = PPR.buildGraph(model, prealign, identifiers);
+        FastPPR.DirectedGraph result = PPR.buildGraph(new ModelDataset(model), prealign, identifiers);
     }
 
-    private static class DatasetImpl implements Dataset {
-
-        private final Model model;
-
-        public DatasetImpl(Model model) {
-            this.model = model;
-        }
-
-        @Override
-        public Option<URL> asEndpoint() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public Option<Model> asModel() {
-            return new Some<>(model);
-        }
-
-    }
 
 }

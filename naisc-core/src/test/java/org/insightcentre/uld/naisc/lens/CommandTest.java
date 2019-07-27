@@ -1,7 +1,6 @@
 package org.insightcentre.uld.naisc.lens;
 
 import eu.monnetproject.lang.Language;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,6 +8,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Option;
@@ -49,27 +49,13 @@ public class CommandTest {
      * Test of makeLens method, of class Command.
      */
     @Test
-    public void testMakeLens() {
+    public void testMakeLens() throws Exception {
         if(System.getProperty("command.test") != null) {
         try {
             System.out.println("makeLens");
             Model model = ModelFactory.createDefaultModel();
             String tag = "command";
-            Dataset dataset = new Dataset() {
-                @Override
-                public Option<Model> asModel() {
-                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-                }
-
-                @Override
-                public Option<URL> asEndpoint() {
-                    try {
-                        return new Some<>(new URL("http://www.example.com/"));
-                    } catch (MalformedURLException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-            };
+            Dataset dataset = new DefaultDatasetLoader.EndpointDataset(new URL("http://www.example.com"));
             Map<String, Object> params = new HashMap<>();
             params.put("command", "python3 src/test/resources/test-lens.py");
             params.put("id", "test");

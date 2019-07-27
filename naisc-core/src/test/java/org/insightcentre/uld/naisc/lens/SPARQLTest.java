@@ -1,19 +1,17 @@
 package org.insightcentre.uld.naisc.lens;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.main.ModelDataset;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -53,7 +51,6 @@ public class SPARQLTest {
 "SELECT ?label1 ?label2 WHERE { $entity1 rdfs:label ?label1 . $entity2\n" +
 " rdfs:label ?label2 . }");
         SPARQL instance = new SPARQL();
-        Lens lens = instance.makeLens(tag, new ModelDataset(model), params);
         final Resource res = model.createResource("http://www.example.com/foo");
         final Resource res2 = model.createResource("http://www.example.com/foo2");
         final Resource res3 = model.createResource("http://www.example.com/foo3");
@@ -80,6 +77,7 @@ public class SPARQLTest {
                 model.createProperty(Label.SKOS_PREFLABEL), 
                 model.createLiteral("???"));
         
+        Lens lens = instance.makeLens(tag, new ModelDataset(model), params);
         assert(lens.extract(res, res2).has());
         assert(lens.extract(res, res3).has());
         assert(lens.extract(res, res4).has());

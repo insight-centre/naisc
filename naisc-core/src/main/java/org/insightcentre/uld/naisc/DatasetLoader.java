@@ -8,7 +8,7 @@ import java.net.URL;
  * Interface to load a dataset
  * @author John McCrae
  */
-public interface DatasetLoader {
+public interface DatasetLoader<Combinable extends Dataset> {
     /**
      * Create a dataset from a RDF file
      * @param file The file to load
@@ -32,6 +32,6 @@ public interface DatasetLoader {
      * @param name The name of the combined dataset
      * @return The combination of the two datasets
      */
-    Dataset combine(Dataset dataset1, Dataset dataset2, String name);
+    Combinable combine(Combinable dataset1, Combinable dataset2, String name);
 
 }

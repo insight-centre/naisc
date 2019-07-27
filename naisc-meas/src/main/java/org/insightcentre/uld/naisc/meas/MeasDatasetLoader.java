@@ -11,93 +11,76 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.DatasetLoader;
-import org.insightcentre.uld.naisc.util.None;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
 
 /**
  * The Meas loader also creates a SPARQL endpoint for the datasets
+ *
  * @author John McCrae
  */
-public class MeasDatasetLoader implements DatasetLoader, AutoCloseable {
+public class MeasDatasetLoader implements DatasetLoader<MeasDatasetLoader.MeasDataset>, AutoCloseable {
+
     private Set<String> models = new HashSet<>();
     private final String requestURL;
 
     public MeasDatasetLoader(String requestURL) {
         this.requestURL = requestURL.endsWith("/") ? requestURL : (requestURL + "/");
     }
-    
+
     @Override
     public Dataset fromFile(File file, String name) throws IOException {
         final Model model = ModelFactory.createDefaultModel();
         model.read(new FileReader(file), file.toURI().toString(), "riot");
         SPARQLEndpointServlet.registerModel(name, model);
         models.add(name);
-        return new Dataset() {
-            @Override
-            public Option<Model> asModel() {
-                return new Some<>(model);
-            }
-
-            @Override
-            public Option<URL> asEndpoint() {
-                try {
-                    return new Some<>(new URL(requestURL + "sparql/" + name));
-                } catch (MalformedURLException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        };
+        return new MeasDataset(name, model);
     }
 
     @Override
     public Dataset fromEndpoint(URL endpoint) {
-        return new Dataset() {
-            @Override
-            public Option<Model> asModel() {
-                return new None<>();
-            }
-
-            @Override
-            public Option<URL> asEndpoint() {
-                return new Some<>(endpoint);
-            }
-        };
+        return new DefaultDatasetLoader.EndpointDataset(endpoint);
     }
 
     @Override
-    public Dataset combine(Dataset dataset1, Dataset dataset2, String name) {
+    public MeasDataset combine(MeasDataset dataset1, MeasDataset dataset2, String name) {
         final Model combined = ModelFactory.createDefaultModel();
-        final Model leftModel = dataset1.asModel().getOrExcept(new RuntimeException("Cannot combine SPARQL endpoints"));
-        final Model rightModel = dataset2.asModel().getOrExcept(new RuntimeException("Cannot combine SPARQL endpoints"));
+        final Model leftModel = dataset1.model;
+        final Model rightModel = dataset2.model;
         combined.add(leftModel);
         combined.add(rightModel);
         SPARQLEndpointServlet.registerModel(name, combined);
         models.add(name);
-        return new Dataset() {
-            @Override
-            public Option<Model> asModel() {
-                return new Some<>(combined);
-            }
-
-            @Override
-            public Option<URL> asEndpoint() {
-                try {
-                    return new Some<>(new URL(requestURL + "sparql/" + name));
-                } catch (MalformedURLException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        };
+        return new MeasDataset(name, combined);
     }
 
     @Override
     public void close() throws IOException {
-        for(String model : models) {
+        for (String model : models) {
             SPARQLEndpointServlet.deregisterModel(model);
         }
     }
-    
-    
+
+    public class MeasDataset extends ModelDataset {
+
+        private final String name;
+
+        public MeasDataset(String name, Model model) {
+            super(model);
+            this.name = name;
+        }
+
+        @Override
+        public Option<URL> asEndpoint() {
+            try {
+                return new Some<>(new URL(requestURL + "sparql/" + name));
+            } catch (MalformedURLException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+    }
 
 }

@@ -97,9 +97,7 @@ public class OntoLex implements BlockingStrategyFactory {
     private static class OntoLexImpl implements BlockingStrategy {
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Dataset _left, Dataset _right, NaiscListener log) {
-            Model left = _left.asModel().getOrExcept(new RuntimeException("Does not support SPARQL endpoints"));
-            Model right = _right.asModel().getOrExcept(new RuntimeException("Does not support SPARQL endpoints"));
+        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
             Set<Resource> leftEntries = extractEntries(left);
             if (leftEntries.isEmpty()) {
                 log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, "There were no ontolex:LexicalEntrys in the left dataset");
@@ -129,9 +127,7 @@ public class OntoLex implements BlockingStrategyFactory {
         }
 
         @Override
-        public int estimateSize(Dataset _left, Dataset _right) {
-            Model left = _left.asModel().getOrExcept(new RuntimeException("Does not support SPARQL endpoints"));
-            Model right = _right.asModel().getOrExcept(new RuntimeException("Does not support SPARQL endpoints"));
+        public int estimateSize(Dataset left, Dataset right) {
             Set<Resource> leftEntries = extractEntries(left);
             Set<Resource> rightEntries = extractEntries(right);
             final Map<LangString, Set<Resource>> leftByLabel = byLabel(leftEntries, left, NaiscListener.DEFAULT);
@@ -149,7 +145,7 @@ public class OntoLex implements BlockingStrategyFactory {
             return i;
         }
 
-        private Set<Resource> extractEntries(Model model) {
+        private Set<Resource> extractEntries(Dataset model) {
             Set<Resource> entries = new HashSet<>();
             for (String entryURL : LEXICAL_ENTRY_URLS) {
                 ResIterator i = model.listSubjectsWithProperty(RDF.type, model.createResource(entryURL));
@@ -160,7 +156,7 @@ public class OntoLex implements BlockingStrategyFactory {
             return entries;
         }
 
-        private Map<LangString, Set<Resource>> byLabel(Set<Resource> resources, Model model, NaiscListener log) {
+        private Map<LangString, Set<Resource>> byLabel(Set<Resource> resources, Dataset model, NaiscListener log) {
             Map<LangString, Set<Resource>> byLabel = new HashMap<>();
             for (Resource entry : resources) {
                 NodeIterator i1 = model.listObjectsOfProperty(entry, RDFS.label);
@@ -213,16 +209,16 @@ public class OntoLex implements BlockingStrategyFactory {
 
         }
 
-        private static List<Pair<Resource, Resource>> getSensePairs(Resource l, Model left, Resource r, Model right, NaiscListener log) {
+        private static List<Pair<Resource, Resource>> getSensePairs(Resource l, Dataset left, Resource r, Dataset right, NaiscListener log) {
             List<Pair<Resource, Resource>> pairs = new ArrayList<>();
             for (String senseURL1 : SENSE_URIS) {
-                NodeIterator i1 = left.listObjectsOfProperty(l, left.getProperty(senseURL1));
+                NodeIterator i1 = left.listObjectsOfProperty(l, left.createProperty(senseURL1));
                 while (i1.hasNext()) {
                     RDFNode n1 = i1.next();
                     if (n1.isResource()) {
                         boolean success = false;
                         for (String senseURL2 : SENSE_URIS) {
-                            NodeIterator i2 = right.listObjectsOfProperty(r, right.getProperty(senseURL2));
+                            NodeIterator i2 = right.listObjectsOfProperty(r, right.createProperty(senseURL2));
                             while (i2.hasNext()) {
                                 RDFNode n2 = i2.next();
                                 if (n2.isResource()) {

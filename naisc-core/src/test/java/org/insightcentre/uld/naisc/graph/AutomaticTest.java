@@ -1,6 +1,5 @@
 package org.insightcentre.uld.naisc.graph;
 
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
@@ -11,9 +10,8 @@ import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.util.Lazy;
-import org.insightcentre.uld.naisc.util.Option;
-import org.insightcentre.uld.naisc.util.Some;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -82,9 +80,9 @@ public class AutomaticTest {
             prealign.add(new Alignment(model.createResource("file:foo" + i), model.createResource("file:bar" + i), 1.0));
 
         }
-        Dataset sparqlData = new DatasetImpl(model);
+        Dataset sparqlData = new ModelDataset(model);
         Map<String, Object> params = new HashMap<>();
-        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(lmodel, rmodel));
+        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(lmodel), new ModelDataset(rmodel)));
         Lazy<AlignmentSet> prelinking = Lazy.fromClosure(() -> prealign);
         GraphFeature feat = new Automatic().makeFeature(sparqlData, params, analysis, prelinking);
         double[] result = feat.extractFeatures(lmodel.createResource("file:foo2"), rmodel.createResource("file:bar2"));
@@ -93,25 +91,5 @@ public class AutomaticTest {
         result = feat.extractFeatures(lmodel.createResource("file:foo1"), rmodel.createResource("file:bar1"));
         expResult = new double[]{1.0, 0.242};
         assertArrayEquals(expResult, result, 0.01);
-    }
-
-    private static class DatasetImpl implements Dataset {
-
-        private final Model model;
-
-        public DatasetImpl(Model model) {
-            this.model = model;
-        }
-
-        @Override
-        public Option<URL> asEndpoint() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public Option<Model> asModel() {
-            return new Some<>(model);
-        }
-
     }
 }

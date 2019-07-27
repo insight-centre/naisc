@@ -48,12 +48,11 @@ public class SPARQL implements LensFactory {
 
     @Override
     public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
-        final Model sparqlData = dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if(config.query == null) {
             throw new ConfigurationException("Query must be given for SPARQL lens");
         }
-        return new SPARQLImpl(config.query, sparqlData, config.baseURI, tag);
+        return new SPARQLImpl(config.query, dataset, config.baseURI, tag);
     }
 
     /**
@@ -76,11 +75,11 @@ public class SPARQL implements LensFactory {
     private static class SPARQLImpl implements Lens {
 
         private final String query;
-        private final Model model;
+        private final Dataset model;
         private final String baseURI;
         private final String tag;
 
-        public SPARQLImpl(String query, Model model, String baseURI, String tag) {
+        public SPARQLImpl(String query, Dataset model, String baseURI, String tag) {
             this.query = query;
             this.model = model;
             this.baseURI = baseURI;
@@ -99,7 +98,7 @@ public class SPARQL implements LensFactory {
                     .replaceAll("\\$entity2", "<" + entity2.getURI() + ">");
             Query sparqlQuery = baseURI == null ? QueryFactory.create(queryString)
                     : QueryFactory.create(queryString, baseURI);
-            try (QueryExecution qexec = QueryExecutionFactory.create(sparqlQuery, model)) {
+            try (QueryExecution qexec = model.createQuery(sparqlQuery)) {
                 ResultSet results = qexec.execSelect();
                 for (; results.hasNext();) {
                     QuerySolution soln = results.nextSolution();

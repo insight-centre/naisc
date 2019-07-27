@@ -28,9 +28,7 @@ public class All implements BlockingStrategyFactory {
     private static class AllImpl implements BlockingStrategy {
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Dataset _left, Dataset _right, NaiscListener log) {
-            final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
-            final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
+        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
             return new Iterable<Pair<Resource, Resource>>() {
                 @Override
                 public Iterator<Pair<Resource, Resource>> iterator() {
@@ -40,9 +38,7 @@ public class All implements BlockingStrategyFactory {
         }
 
         @Override
-        public int estimateSize(Dataset _left, Dataset _right) {
-            final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
-            final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
+        public int estimateSize(Dataset left, Dataset right) {
             Iterator<Resource> i1 = left.listSubjects();
             Iterator<Resource> i2 = right.listSubjects();
             int n = 0;
@@ -65,10 +61,10 @@ public class All implements BlockingStrategyFactory {
     private static class AllIterator implements Iterator<Pair<Resource, Resource>> {
 
         private Iterator<Resource> left, right;
-        private final Model leftModel, rightModel;
+        private final Dataset leftModel, rightModel;
         private  Pair<Resource, Resource> next;
 
-        public AllIterator(Model left, Model right) {
+        public AllIterator(Dataset left, Dataset right) {
             this.leftModel = left;
             this.rightModel = right;
             this.left = left.listSubjects();

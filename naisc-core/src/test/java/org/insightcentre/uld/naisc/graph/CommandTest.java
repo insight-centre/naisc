@@ -1,17 +1,13 @@
 package org.insightcentre.uld.naisc.graph;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.GraphFeature;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
-import org.insightcentre.uld.naisc.util.Lazy;
-import org.insightcentre.uld.naisc.util.Option;
-import org.insightcentre.uld.naisc.util.Some;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -53,21 +49,7 @@ public class CommandTest {
         try {
             System.out.println("makeFeature");
             final Model model = ModelFactory.createDefaultModel();
-            Dataset sparqlData = new Dataset() {
-                @Override
-                public Option<Model> asModel() {
-                    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-                }
-
-                @Override
-                public Option<URL> asEndpoint() {
-                    try {
-                        return new Some<>(new URL("http://www.example.com"));
-                    } catch (MalformedURLException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-            };
+            Dataset sparqlData = new ModelDataset(model);
             Map<String, Object> params = new HashMap<>();
             params.put("command", "python3 src/test/resources/test-graph.py");
             params.put("id", "test");

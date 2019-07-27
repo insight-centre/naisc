@@ -191,8 +191,8 @@ public class Main {
         try {
             Lazy<Analysis> analysis = Lazy.fromClosure(() -> {
                 DatasetAnalyzer analyzer = new DatasetAnalyzer();
-                return analyzer.analyseModel(leftModel.asModel().getOrExcept(new RuntimeException("Automatic analysis cannot be performed on SPARQL endpoints")), 
-                        rightModel.asModel().getOrExcept(new RuntimeException("Automatic analysis cannot be performed on SPARQL endpoints")));
+                return analyzer.analyseModel(leftModel, 
+                        rightModel);
             });
             monitor.updateStatus(Stage.INITIALIZING, "Loading blocking strategy");
             BlockingStrategy blocking = config.makeBlockingStrategy(analysis, monitor);

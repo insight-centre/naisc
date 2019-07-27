@@ -32,9 +32,8 @@ public class PropertyOverlap implements GraphFeatureFactory {
     @Override
     public GraphFeature makeFeature(Dataset dataset, Map<String, Object> params,
             Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking) {
-        dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
-        return new PropertyOverlapImpl(config.properties);
+        return new PropertyOverlapImpl(config.properties, dataset);
     }
 
     /** Configuration for the property overlap feature */
@@ -46,9 +45,11 @@ public class PropertyOverlap implements GraphFeatureFactory {
     
     private static class PropertyOverlapImpl implements GraphFeature  {
         private final Set<String> properties;
+        private final Dataset dataset;
 
-        public PropertyOverlapImpl(Set<String> properties) {
+        public PropertyOverlapImpl(Set<String> properties, Dataset dataset) {
             this.properties = properties;
+            this.dataset = dataset;
         }
         
 
@@ -60,7 +61,7 @@ public class PropertyOverlap implements GraphFeatureFactory {
         @Override
         public double[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
             Set<StringPair> lvals = new HashSet<>();
-            StmtIterator iter = entity1.listProperties();
+            StmtIterator iter = dataset.listStatements(entity1, null, null);
             while(iter.hasNext()) {
                 Statement stmt = iter.next();
                 if(properties == null || properties.contains(stmt.getPredicate().getURI())) {
@@ -68,7 +69,7 @@ public class PropertyOverlap implements GraphFeatureFactory {
                 }
             }
             Set<StringPair> rvals = new HashSet<>();
-            iter = entity2.listProperties();
+            iter = dataset.listStatements(entity2, null, null);
             while(iter.hasNext()) {
                 Statement stmt = iter.next();
                 if(properties == null || properties.contains(stmt.getPredicate().getURI())) {

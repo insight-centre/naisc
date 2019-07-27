@@ -43,12 +43,11 @@ public class ExamineFeature {
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
             Dataset leftDataset = loader.fromFile(leftFile, name + "/left");
-            Model leftModel = leftDataset.asModel().get();
-            Resource res1 = leftModel.createResource(left);
-            if (!leftModel.listStatements(res1, null, (RDFNode) null).hasNext()) {
+            Resource res1 = leftDataset.createResource(left);
+            if (!leftDataset.listStatements(res1, null, (RDFNode) null).hasNext()) {
                 System.err.printf("%s is not in model\n", res1);
                 System.err.println("Entities are:");
-                final ResIterator subjIter = leftModel.listSubjects();
+                final ResIterator subjIter = leftDataset.listSubjects();
                 while (subjIter.hasNext()) {
                     System.err.println("  " + subjIter.next());
                 }
@@ -56,15 +55,14 @@ public class ExamineFeature {
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
             Dataset rightDataset = loader.fromFile(rightFile, name + "/right");
-            Model rightModel = rightDataset.asModel().get();
-            rightModel.read(new FileReader(rightFile), rightFile.toURI().toString(), "riot");
-            Resource res2 = rightModel.createResource(right);
-            if (!rightModel.listStatements(res2, null, (RDFNode) null).hasNext()) {
+            //rightDataset.read(new FileReader(rightFile), rightFile.toURI().toString(), "riot");
+            Resource res2 = rightDataset.createResource(right);
+            if (!rightDataset.listStatements(res2, null, (RDFNode) null).hasNext()) {
                 System.err.printf("%s is not in model\n", res2);
             }
             Lazy<Analysis> analysis = Lazy.fromClosure(() -> {
                 DatasetAnalyzer analyzer = new DatasetAnalyzer();
-                return analyzer.analyseModel(leftModel, rightModel);
+                return analyzer.analyseModel(leftDataset, rightDataset);
             });
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading lenses");
             Dataset combined = loader.combine(leftDataset, rightDataset, name + "/combined");

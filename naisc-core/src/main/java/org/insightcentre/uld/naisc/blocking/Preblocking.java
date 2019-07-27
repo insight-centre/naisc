@@ -43,22 +43,20 @@ public class Preblocking {
      * @return A list of pairs of resources that are pre-blocked
      */
     public Set<Pair<Resource, Resource>> preblock(Dataset left, Dataset right, NaiscListener log) {
-        Model _left = left.asModel().getOrExcept(new RuntimeException("Cannot preblock a SPARQL endpoint"));
-        Model _right = right.asModel().getOrExcept(new RuntimeException("Cannot preblock a SPARQL endpoint"));
         Set<Pair<Resource, Resource>> preblocks = new HashSet<>();
         for (Pair<String, String> p : preblockProperties) {
             String leftUri = p._1;
             String rightUri = p._2;
             if(leftUri.equals("")) {
-                final ResIterator iter = _left.listSubjects();
+                final ResIterator iter = left.listSubjects();
                 while (iter.hasNext()) {
                     Resource l = iter.next();
                     if (l.isURIResource()) {
                         final ResIterator iter2;
                         if(rightUri.equals("")) {
-                            iter2 = _right.listSubjects();
+                            iter2 = right.listSubjects();
                         } else {
-                            iter2 = _right.listSubjectsWithProperty(_right.createProperty(rightUri));
+                            iter2 = right.listSubjectsWithProperty(right.createProperty(rightUri));
                         }
                         while (iter2.hasNext()) {
                             Resource r = iter2.next();
@@ -70,7 +68,7 @@ public class Preblocking {
                     }
                 }
             } else {
-                final StmtIterator iter = _left.listStatements(null, _left.createProperty(leftUri), (RDFNode)null);
+                final StmtIterator iter = left.listStatements(null, left.createProperty(leftUri), (RDFNode)null);
                 while (iter.hasNext()) {
                     Statement s = iter.next();
                     Resource l = s.getSubject();
@@ -78,9 +76,9 @@ public class Preblocking {
                     if (l.isURIResource()) {
                         final ResIterator iter2;
                         if(rightUri.equals("")) {
-                            iter2 = _right.listSubjects();
+                            iter2 = right.listSubjects();
                         } else {
-                            iter2 = _right.listSubjectsWithProperty(_right.createProperty(rightUri), s.getObject());
+                            iter2 = right.listSubjectsWithProperty(right.createProperty(rightUri), s.getObject());
                         }
                         while (iter2.hasNext()) {
                             Resource r = iter2.next();

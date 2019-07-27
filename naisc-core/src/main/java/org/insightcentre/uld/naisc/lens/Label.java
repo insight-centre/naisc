@@ -4,10 +4,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.NodeIterator;
@@ -36,9 +34,8 @@ public class Label implements LensFactory {
 
     @Override
     public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
-        final Model sparqlData = dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = mapper.convertValue(params, Configuration.class);
-        return new LabelImpl(config.property, config.rightProperty, config.language, tag, sparqlData, config.id);
+        return new LabelImpl(config.property, config.rightProperty, config.language, tag, dataset, config.id);
     }
 
     static class LabelImpl implements Lens {
@@ -46,10 +43,10 @@ public class Label implements LensFactory {
         private final Property leftProp, rightProp;
         private final Language language;
         private final String tag;
-        private final Model model;
+        private final Dataset model;
         private final String id;
 
-        public LabelImpl(String leftProperty, String rightProperty, String language, String tag, Model model,
+        public LabelImpl(String leftProperty, String rightProperty, String language, String tag, Dataset model,
                 String id) {
             this.leftProp = model.createProperty(leftProperty);
             this.rightProp = model.createProperty(rightProperty);

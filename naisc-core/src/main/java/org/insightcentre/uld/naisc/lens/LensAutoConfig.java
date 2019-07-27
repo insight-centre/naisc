@@ -44,7 +44,7 @@ public class LensAutoConfig {
                     leftCandidates.remove("");
                     log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, "Using URIs as a lens");
                 } else if (leftCandidates.contains(prop.uri)) {
-                    lenses.add(new Label.LabelImpl(prop.uri, prop.uri, null, prop.uri, leftModel.asModel().getOrElse(ModelFactory.createDefaultModel()), null));
+                    lenses.add(new Label.LabelImpl(prop.uri, prop.uri, null, prop.uri, leftModel, null));
                     leftCandidates.remove(prop.uri);
                     log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, "Using " +  prop.uri +" as a lens");
                 } else {
@@ -73,7 +73,7 @@ public class LensAutoConfig {
                 if(scores.getDouble(elem) < 0.1) 
                     break;
                 if(leftCandidates.contains(elem._1) && rightCandidates.contains(elem._2)) {
-                    lenses.add(new Label.LabelImpl(elem._1, elem._2, null, elem._1, leftModel.asModel().getOrElse(ModelFactory.createDefaultModel()), null));
+                    lenses.add(new Label.LabelImpl(elem._1, elem._2, null, elem._1, leftModel, null));
                     log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, "Using " +  elem._1 +" with " + elem._2 + " as a lens");
                     leftCandidates.remove(elem._1);
                     rightCandidates.remove(elem._2);

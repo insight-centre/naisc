@@ -35,12 +35,11 @@ public class OntoLex implements LensFactory {
 
     @Override
     public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
-        final Model sparqlData = dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if(config.dialect == null) {
             config.dialect = ONTOLEX;
         }
-        return new OntoLexImpl(config.dialect, tag, sparqlData, 
+        return new OntoLexImpl(config.dialect, tag, dataset, 
                 config.language == null ? null : Language.get(config.language), config.onlyCanonical);
     }
 
@@ -88,12 +87,12 @@ public class OntoLex implements LensFactory {
 
         private final Dialect dialect;
         private final String tag;
-        private final Model model;
+        private final Dataset model;
         private final boolean onlyCanonical;
         private final Property RDFS_LABEL;
         private final Language language;
 
-        public OntoLexImpl(Dialect dialect, String tag, Model model, Language language, boolean onlyCanonical) {
+        public OntoLexImpl(Dialect dialect, String tag, Dataset model, Language language, boolean onlyCanonical) {
             this.dialect = dialect;
             this.tag = tag;
             this.model = model;
@@ -110,11 +109,11 @@ public class OntoLex implements LensFactory {
         private Property prop(String name) {
             switch (dialect) {
                 case ONTOLEX:
-                    return model.createProperty("http://www.w3.org/ns/lemon/ontolex#", name);
+                    return model.createProperty("http://www.w3.org/ns/lemon/ontolex#"+ name);
                 case LEMON:
-                    return model.createProperty("http://lemon-model.net/lemon#", name);
+                    return model.createProperty("http://lemon-model.net/lemon#"+ name);
                 case MONNET_LEMON:
-                    return model.createProperty("http://www.monnet-project.eu/lemon#", name);
+                    return model.createProperty("http://www.monnet-project.eu/lemon#"+ name);
             }
             throw new RuntimeException("Dialect not valid");
         }

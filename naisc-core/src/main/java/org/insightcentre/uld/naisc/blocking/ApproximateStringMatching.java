@@ -135,9 +135,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         }
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Dataset _left, Dataset _right, NaiscListener log) {
-            final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
-            final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
+        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
             final List<Resource> lefts = new ArrayList<>();
             final ResIterator leftIter;
             if (property.equals("")) {
@@ -274,9 +272,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         }
 
         @Override
-        public int estimateSize(Dataset _left, Dataset _right) {
-            final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
-            final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
+        public int estimateSize(Dataset left, Dataset right) {
             Iterator<Resource> i1 = left.listSubjects();
             Iterator<Resource> i2 = right.listSubjects();
             int n = 0;
@@ -310,9 +306,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
 
         @Override
         @SuppressWarnings("Convert2Lambda")
-        public Iterable<Pair<Resource, Resource>> block(Dataset _left, Dataset _right, NaiscListener log) {
-            final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
-            final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
+        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
             final List<Resource> lefts = new ArrayList<>();
             Property leftProp = left.createProperty(property);
             ResIterator leftIter = left.listSubjectsWithProperty(leftProp);
@@ -378,9 +372,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         }
 
         @Override
-        public int estimateSize(Dataset _left, Dataset _right) {
-            final Model left = _left.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
-            final Model right = _right.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
+        public int estimateSize(Dataset left, Dataset right) {
             Iterator<Resource> i1 = left.listSubjects();
             Iterator<Resource> i2 = right.listSubjects();
             int n = 0;

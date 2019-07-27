@@ -31,8 +31,7 @@ public class PPR implements GraphFeatureFactory {
     public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params, Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking) {
         Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
         Object2IntMap<Resource> identifiers = new Object2IntOpenHashMap<>();
-        Model model = sparqlData.asModel().getOrExcept(new RuntimeException("Cannot apply PPR to SPARQL endpoint"));
-        DirectedGraph graph = buildGraph(model, prelinking.get(), identifiers);
+        DirectedGraph graph = buildGraph(sparqlData, prelinking.get(), identifiers);
 
         FastPPRConfiguration pprConfig = new FastPPRConfiguration(config.pprSignificanceThreshold, config.reversePPRApproximationFactor, config.teleportProbability, config.forwardStepsPerReverseStep, config.nWalksConstant);
 
@@ -50,7 +49,7 @@ public class PPR implements GraphFeatureFactory {
 
     private static final String[] FEAT_NAMES = new String[]{"ppr"};
 
-    static DirectedGraph buildGraph(Model model, AlignmentSet prealign, Object2IntMap<Resource> identifiers) {
+    static DirectedGraph buildGraph(Dataset model, AlignmentSet prealign, Object2IntMap<Resource> identifiers) {
         DirectedGraph g = new DirectedGraph();
         StmtIterator stat = model.listStatements();
         while (stat.hasNext()) {
