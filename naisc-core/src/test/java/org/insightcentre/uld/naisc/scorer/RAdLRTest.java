@@ -11,7 +11,8 @@ import org.insightcentre.uld.naisc.FeatureSetWithScore;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerTrainer;
-import org.insightcentre.uld.naisc.scorer.Logit.LogitFunction;
+import org.insightcentre.uld.naisc.scorer.RAdLR.FMRAdLRFunction;
+import org.insightcentre.uld.naisc.scorer.RAdLR.RAdLRFunction;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.StringPair;
 import org.junit.After;
@@ -25,9 +26,9 @@ import static org.junit.Assert.*;
  *
  * @author John McCrae
  */
-public class LogitTest {
+public class RAdLRTest {
 
-    public LogitTest() {
+    public RAdLRTest() {
     }
 
     @BeforeClass
@@ -47,25 +48,25 @@ public class LogitTest {
     }
 
     /**
-     * Test of id method, of class Logit.
+     * Test of id method, of class RAdLR.
      */
     @Test
     public void testId() {
         System.out.println("id");
-        Logit instance = new Logit();
-        String expResult = "logit";
+        RAdLR instance = new RAdLR();
+        String expResult = "radlr";
         String result = instance.id();
         assertEquals(expResult, result);
     }
 
     /**
-     * Test of makeScorer method, of class Logit.
+     * Test of makeScorer method, of class RAdLR.
      */
     @Test
     public void testMakeScorer() {
         System.out.println("makeScorer");
         Map<String, Object> params = new HashMap<>();
-        Logit instance = new Logit();
+        RAdLR instance = new RAdLR();
         Scorer scorer = instance.makeScorer(params, null).get(0);
         FeatureSet fs = new FeatureSet(new StringPair[]{
             new StringPair("foo", "bar"),
@@ -79,14 +80,14 @@ public class LogitTest {
     }
 
     /**
-     * Test of makeTrainer method, of class Logit.
+     * Test of makeTrainer method, of class RAdLR.
      */
     @Test
     public void testMakeTrainer() {
         System.out.println("makeTrainer");
         Map<String, Object> params = new HashMap<>();
         String property = Alignment.SKOS_EXACT_MATCH;
-        Logit instance = new Logit();
+        RAdLR instance = new RAdLR();
         Option<ScorerTrainer> trainer2 = instance.makeTrainer(params, property, null);
         assert (trainer2.has());
         ScorerTrainer trainer = trainer2.get();
@@ -124,34 +125,85 @@ public class LogitTest {
         System.err.println(trained.similarity(data.get(1)));
         System.err.println(trained.similarity(data.get(2)));
         double score = trained.similarity(fs).value();
-        assert(Double.isFinite(score));
-        assert(score < 0.630);
+        assert (Double.isFinite(score));
+        assert (score < 0.630);
     }
-    
+
     @Test
     public void testGradient() {
         Random r = new Random();
-        for(int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
             double[][] data = new double[100][10];
             double[] scores = new double[100];
-            for(int j = 0; j < 100; j++) {
-                for(int k = 0; k < 10; k++) {
+            for (int j = 0; j < 100; j++) {
+                for (int k = 0; k < 10; k++) {
                     data[j][k] = r.nextDouble();
                 }
                 scores[j] = r.nextDouble();
             }
             double[] g = new double[12];
-            LogitFunction f = new Logit.LogitFunction(data, scores);
+            RAdLRFunction f = new RAdLR.RAdLRFunction(data, scores, 0.0);
             double[] x = new double[12];
-            for(int j = 0; j < 12; j++) {
+            for (int j = 0; j < 12; j++) {
                 x[j] = r.nextDouble();
             }
             double f0 = f.evaluate(x, g);
             double[] g2 = new double[12];
-            for(int j = 0; j < 12; j++) {
+            for (int j = 0; j < 12; j++) {
                 x[j] += 1e-6;
                 double f1 = f.evaluate(x, g2);
-                assertEquals(g[j],(f1 - f0) / 1e-6, 0.01);
+                assertEquals(g[j], (f1 - f0) / 1e-6, 0.01);
+                x[j] -= 1e-6;
+            }
+        }
+    }
+
+    @Test
+    public void testFMGradientEasy() {
+        double[][] data = new double[][]{new double[]{1, 2, 3}, new double[]{-1, -2, -3}};
+        double[] scores = new double[]{1.0, 0.0};
+
+        FMRAdLRFunction f = new RAdLR.FMRAdLRFunction(data, scores);
+
+        double[] x = new double[]{1.0, -1.0, 1.0, 1.0, 1.0};
+        double[] g = new double[5];
+        double f0 = f.evaluate(x, g);
+        assertEquals(0.411, f0, 0.01);
+        double[] g2 = new double[5];
+        for (int j = 0; j < 5; j++) {
+            x[j] += 1e-6;
+            double f1 = f.evaluate(x, g2);
+            assertEquals(g[j], (f1 - f0) / 1e-6, 0.01);
+            x[j] -= 1e-6;
+        }
+    }
+
+    @Test
+    public void testGradientFM() {
+        Random r = new Random();
+        for (int i = 0; i < 10; i++) {
+            double[][] data = new double[100][10];
+            double[] scores = new double[100];
+            for (int j = 0; j < 100; j++) {
+                for (int k = 0; k < 10; k++) {
+                    data[j][k] = r.nextDouble();
+                }
+                scores[j] = r.nextDouble();
+            }
+            double[] g = new double[12];
+            FMRAdLRFunction f = new RAdLR.FMRAdLRFunction(data, scores);
+            double[] x = new double[12];
+            for (int j = 0; j < 12; j++) {
+                x[j] = r.nextDouble();
+            }
+            double f0 = f.evaluate(x, g);
+            double[] g2 = new double[12];
+            for (int j = 0; j < 12; j++) {
+                x[j] += 1e-6;
+                double f1 = f.evaluate(x, g2);
+                double gestimate = (f1 - f0) / 1e-6;
+                System.err.printf("%.4f <-> %.4f\n", g[j], gestimate);
+                assertEquals(g[j], (f1 - f0) / 1e-6, 0.01);
                 x[j] -= 1e-6;
             }
         }
