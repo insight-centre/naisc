@@ -34,9 +34,9 @@ import org.insightcentre.uld.naisc.util.StringPair;
 
 /**
  * Robust adaptive logistic regression. This classifier aims to provide a robust
- * implementation over missing features, features not in training and feature 
+ * implementation over missing features, features not in training and feature
  * distributions
- * 
+ *
  * @author John McCrae
  */
 public class RAdLR implements ScorerFactory {
@@ -99,14 +99,12 @@ public class RAdLR implements ScorerFactory {
         SoftkullbackLeibler,
         FMeasure
     }
-    
+
     public static class Configuration {
-        
+
         @ConfigurationParameter(description = "The error function to use in training")
         public ErrorFunction errorFunction = ErrorFunction.FMeasure;
-        
-        
-        
+
     }
 
     public static class RAdLRModel {
@@ -131,7 +129,7 @@ public class RAdLR implements ScorerFactory {
             List<ScoreResult> result = new ArrayList<>(features.names.length);
             for (int i = 0; i < features.names.length; i++) {
                 weights.add(model.weights.getOrDefault(features.names[i], 1.0));
-                if(!feats.containsKey(features.names[i])) {
+                if (!feats.containsKey(features.names[i])) {
                     feats.put(features.names[i], new LogGap());
                 }
                 result.add(feats.get(features.names[i]).result(features.values[i]));
@@ -149,8 +147,9 @@ public class RAdLR implements ScorerFactory {
         }
 
     }
-    
+
     private static class LogGapScorer implements ScoreResult {
+
         private final List<ScoreResult> features;
         private final DoubleList weights;
         private final RAdLRModel model;
@@ -166,7 +165,7 @@ public class RAdLR implements ScorerFactory {
             double x = 0.0;
             int n = 0;
             for (int i = 0; i < features.size(); i++) {
-                if(Double.isFinite(features.get(i).value())) {
+                if (Double.isFinite(features.get(i).value())) {
                     x += weights.get(i) * features.get(i).value();
                     n++;
                 }
@@ -174,8 +173,7 @@ public class RAdLR implements ScorerFactory {
             x /= n;
             return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
         }
-        
-        
+
     }
 
     private static class RAdLRTrainer implements ScorerTrainer {
@@ -214,15 +212,21 @@ public class RAdLR implements ScorerFactory {
                 i++;
             }
             // Apply Log Gap normalization
-            for(i = 0; i < data.length; i++) {
-                LogGap lg = new LogGap();
-                lg.makeModel(data[i]);
-                for(int j = 0; j < data[i].length; j++) {
-                    data[i][j] = lg.normalize(data[i][j]);
+            if (data.length > 0) {
+                for (int j = 0; j < data[0].length; j++) {
+                    double[] d = new double[data.length];
+                    for (i = 0; i < data.length; i++) {
+                        d[i] = data[i][j];
+                    }
+                    LogGap lg = new LogGap();
+                    lg.makeModel(d);
+                    for (i = 0; i < data.length; i++) {
+                        data[i][j] = lg.normalize(data[i][j]);
+                    }
                 }
             }
             final Function f;
-            switch(errorFunction) {
+            switch (errorFunction) {
                 case KullbackLeibler:
                     f = new RAdLRFunction(data, scores, 0.0);
                     break;
@@ -265,7 +269,6 @@ public class RAdLR implements ScorerFactory {
 
     }
 
-    
     static abstract class Function {
 
         final double[][] data;
@@ -275,9 +278,9 @@ public class RAdLR implements ScorerFactory {
             this.data = data;
             this.scores = scores;
         }
-        
+
         public abstract double evaluate(double[] x, double[] g);
-        
+
         public double[] initial() {
             if (data.length > 0) {
                 double[] init = new double[data[0].length + 2];
@@ -286,8 +289,8 @@ public class RAdLR implements ScorerFactory {
                 return init;*/
                 int pos = 0;
                 int neg = 0;
-                for(double score : scores) {
-                    if(score > 0.5) {
+                for (double score : scores) {
+                    if (score > 0.5) {
                         pos++;
                     } else {
                         neg++;
@@ -297,36 +300,37 @@ public class RAdLR implements ScorerFactory {
                 init[1] = -6.0 * neg / (neg + pos);
                 PearsonsCorrelation correl = new PearsonsCorrelation();
                 double sumsq = 0.0;
-                for(int i = 0; i < data[0].length; i++) {
+                for (int i = 0; i < data[0].length; i++) {
                     double[] z = new double[data.length];
-                    for(int j = 0; j < data.length; j++) {
+                    for (int j = 0; j < data.length; j++) {
                         z[j] = data[j][i];
                     }
-                    init[i+2] = correl.correlation(z, scores);
-                    if(!Double.isFinite(init[i+2]))
-                        init[i+2] = 0.0;
-                    sumsq += init[i+2] * init[i+2];
+                    init[i + 2] = correl.correlation(z, scores);
+                    if (!Double.isFinite(init[i + 2])) {
+                        init[i + 2] = 0.0;
+                    }
+                    sumsq += init[i + 2] * init[i + 2];
                 }
                 sumsq /= data[0].length;
-                for(int i = 0; i < data[0].length; i++) {
-                    init[i+2] /= sumsq;
+                for (int i = 0; i < data[0].length; i++) {
+                    init[i + 2] /= sumsq;
                 }
                 return init;
-                
+
             } else {
                 throw new RuntimeException("Cannot learn from empty data");
             }
         }
     }
-    
+
     static class RAdLRFunction extends Function {
 
         private final double smooth;
+
         public RAdLRFunction(double[][] data, double[] scores, double smooth) {
             super(data, scores);
             this.smooth = smooth;
         }
-
 
         @Override
         public double evaluate(double[] x, double[] g) {
@@ -343,14 +347,16 @@ public class RAdLR implements ScorerFactory {
                         n++;
                     }
                 }
-                if(n == 0)
+                if (n == 0) {
                     continue;
+                }
                 z /= n;
                 double q = 1.0 / (1.0 + exp(-alpha * z - beta));
-                assert(q != 0.0);
-                assert(q != 1.0);
-                if(x[0] == 3.0)
-                    System.err.printf("%.4f (%.4f) <-> %.4f = %.4f\n", q, z, scores[i],(scores[i] - 1) * log(1 - q + smooth) - scores[i] * log(q + smooth));
+                assert (q != 0.0);
+                assert (q != 1.0);
+                if (x[0] == 3.0) {
+                    System.err.printf("%.4f (%.4f) <-> %.4f = %.4f\n", q, z, scores[i], (scores[i] - 1) * log(1 - q + smooth) - scores[i] * log(q + smooth));
+                }
                 value += (scores[i] - 1) * log(1 - q + smooth) - scores[i] * log(q + smooth);
                 double d = (1 - scores[i]) / (1 - q + smooth) - scores[i] / (q + smooth);
                 g[0] += d * q * (1 - q) * z / data.length;
@@ -364,13 +370,12 @@ public class RAdLR implements ScorerFactory {
             return value / data.length;
         }
     }
-    
+
     static class FMRAdLRFunction extends Function {
 
         public FMRAdLRFunction(double[][] data, double[] scores) {
             super(data, scores);
         }
-        
 
         @Override
         public double evaluate(double[] x, double[] g) {
@@ -391,12 +396,13 @@ public class RAdLR implements ScorerFactory {
                         n++;
                     }
                 }
-                if(n == 0)
+                if (n == 0) {
                     continue;
+                }
                 z /= n;
                 double p = 1.0 / (1.0 + exp(-alpha * z - beta));
-                assert(p != 0.0);
-                assert(p != 1.0);
+                assert (p != 0.0);
+                assert (p != 1.0);
                 P += p;
                 Q += scores[i];
                 PQ += scores[i] * p;
@@ -405,16 +411,16 @@ public class RAdLR implements ScorerFactory {
                 d[0] += p * (1 - p) * z;
                 d[1] += p * (1 - p);
                 for (int j = 0; j < data[i].length; j++) {
-                    if(Double.isFinite(data[i][j])) {
+                    if (Double.isFinite(data[i][j])) {
                         qd[j + 2] += scores[i] * p * (1 - p) * alpha * data[i][j] / n;
                         d[j + 2] += p * (1 - p) * alpha * data[i][j] / n;
                     }
                 }
             }
-            for(int i = 0; i < g.length; i++) {
-                g[i] = 1.0 / (P + Q) / (P + Q) * ((P + Q) * qd[i] - PQ * d[i]);
+            for (int i = 0; i < g.length; i++) {
+                g[i] = -1.0 / (P + Q) / (P + Q) * ((P + Q) * qd[i] - PQ * d[i]);
             }
-            return PQ / (P + Q);
+            return -PQ / (P + Q);
         }
     }
 
@@ -439,7 +445,7 @@ public class RAdLR implements ScorerFactory {
                 gradSum += gjj;
                 gsum[j] += gjj;
             }
-            if(i % 1000 == 0) {
+            if (i % 1000 == 0) {
                 log.message(Stage.TRAINING, Level.INFO, String.format("Iteration %d: Value=%.8f, Gradient=%.8f", i, fx, Math.sqrt(gradSum)));
             }
             if (Math.sqrt(gradSum) < tolerance) {
@@ -462,6 +468,5 @@ public class RAdLR implements ScorerFactory {
         }
         return x;
     }
-
 
 }

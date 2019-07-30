@@ -168,7 +168,7 @@ public class RAdLRTest {
         double[] x = new double[]{1.0, -1.0, 1.0, 1.0, 1.0};
         double[] g = new double[5];
         double f0 = f.evaluate(x, g);
-        assertEquals(0.411, f0, 0.01);
+        assertEquals(-0.411, f0, 0.01);
         double[] g2 = new double[5];
         for (int j = 0; j < 5; j++) {
             x[j] += 1e-6;

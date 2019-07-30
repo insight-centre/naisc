@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.math3.distribution.BetaDistribution;
-import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
@@ -25,13 +24,21 @@ import org.insightcentre.uld.naisc.util.URI2Label;
  */
 public class DatasetAnalyzer {
 
+    public int overlapSize(Set<String> left, List<String> right) {
+        int overlap = 0;
+        for(String s : right) {
+            if(left.contains(s))
+                overlap++;
+        }
+        return overlap;
+    }
+    
     public List<MatchResult> analyseMatch(Map<String, List<String>> left, Map<String, List<String>> right) {
         List<MatchResult> results = new ArrayList<>();
         for (String leftUri : left.keySet()) {
+            Set<String> leftSet = new HashSet<>(left.get(leftUri));
             for (String rightUri : right.keySet()) {
-                Set<String> overlap = new HashSet<>(left.get(leftUri));
-                overlap.retainAll(right.get(rightUri));
-                results.add(new MatchResult(leftUri, rightUri, left.get(leftUri).size(), right.get(rightUri).size(), overlap.size()));
+                results.add(new MatchResult(leftUri, rightUri, left.get(leftUri).size(), right.get(rightUri).size(), overlapSize(leftSet, right.get(rightUri))));
             }
         }
         return results;
