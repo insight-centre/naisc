@@ -225,7 +225,7 @@ public class Train {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
         Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocking.block(leftModel, rightModel)));
         List<TextFeature> textFeatures = config.makeTextFeatures();
-        List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch);
+        List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
         monitor.updateStatus(ExecuteListener.Stage.BLOCKING, "Blocking");
         final Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel);

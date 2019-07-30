@@ -16,8 +16,8 @@
         "name": "graph.Automatic"
     }],
     "scorers": [{
-        "name": "scorer.Logit",
-        "modelFile": "models/auto.logit"
+        "name": "scorer.RAdLR",
+        "modelFile": "models/auto.radlr"
     }],
     "matcher": {
         "name": "matcher.Greedy",

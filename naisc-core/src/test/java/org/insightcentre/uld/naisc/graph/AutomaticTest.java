@@ -11,6 +11,7 @@ import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
+import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -84,7 +85,7 @@ public class AutomaticTest {
         Map<String, Object> params = new HashMap<>();
         Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(lmodel), new ModelDataset(rmodel)));
         Lazy<AlignmentSet> prelinking = Lazy.fromClosure(() -> prealign);
-        GraphFeature feat = new Automatic().makeFeature(sparqlData, params, analysis, prelinking);
+        GraphFeature feat = new Automatic().makeFeature(sparqlData, params, analysis, prelinking, ExecuteListeners.NONE);
         double[] result = feat.extractFeatures(lmodel.createResource("file:foo2"), rmodel.createResource("file:bar2"));
         double[] expResult = new double[]{0.0, 0.242};
         assertArrayEquals(expResult, result, 0.01);

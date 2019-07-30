@@ -14,6 +14,7 @@ import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
+import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.util.FastPPR;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.junit.After;
@@ -70,7 +71,7 @@ public class PPRTest {
         Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model), new ModelDataset(model)));
         Lazy<AlignmentSet> prelinking = Lazy.fromClosure(() -> prealign);
         PPR instance = new PPR();
-        GraphFeature feat = instance.makeFeature(sparqlData, params, analysis, prelinking);
+        GraphFeature feat = instance.makeFeature(sparqlData, params, analysis, prelinking, ExecuteListeners.NONE);
         double[] result = feat.extractFeatures(model.createResource("file:foo2"), model.createResource("file:bar2"));
         double[] expResult = new double[]{0.113};
         assertArrayEquals(expResult, result, 0.01);

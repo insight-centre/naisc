@@ -28,7 +28,7 @@ import org.insightcentre.uld.naisc.util.Lazy;
 public class PPR implements GraphFeatureFactory {
 
     @Override
-    public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params, Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking) {
+    public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params, Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking, NaiscListener listener) {
         Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
         Object2IntMap<Resource> identifiers = new Object2IntOpenHashMap<>();
         DirectedGraph graph = buildGraph(sparqlData, prelinking.get(), identifiers);

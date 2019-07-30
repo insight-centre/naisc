@@ -143,11 +143,11 @@ public class Configuration {
     }
 
     public List<GraphFeature> makeGraphFeatures(Dataset model, Lazy<Analysis> analysis,
-            Lazy<AlignmentSet> prelinking) {
+            Lazy<AlignmentSet> prelinking, NaiscListener listener) {
         List<GraphFeature> extractors = new ArrayList<>();
         for (GraphFeatureConfiguration config : graphFeatures) {
             GraphFeatureFactory extractor = Services.get(GraphFeatureFactory.class, config.name);
-            extractors.add(extractor.makeFeature(model, config.params, analysis, prelinking));
+            extractors.add(extractor.makeFeature(model, config.params, analysis, prelinking, listener));
         }
         return extractors;
 

@@ -28,12 +28,16 @@ public class Automatic implements GraphFeatureFactory {
 
     @Override
     public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params,
-            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking) {
+            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking, NaiscListener listener) {
+        listener.message(NaiscListener.Stage.INITIALIZING, NaiscListener.Level.INFO, "Automatically configuring graph features");
         Analysis _analysis = analysis.get();
         List<Pair<String,String>> propMatches = new ArrayList<>();
         for(MatchResult mr : _analysis.matching) {
             if(mr.coversData() && !mr.leftUri.equals("") && !mr.rightUri.equals("")) 
                 propMatches.add(new Pair<>(mr.leftUri, mr.rightUri));
+        }
+        if(!propMatches.isEmpty()) {
+            listener.message(NaiscListener.Stage.INITIALIZING, NaiscListener.Level.INFO, "Using the following properties as values matches: " + propMatches.toString());
         }
         boolean pprAnalysis = false;
         if(_analysis.isWellConnected()) {
@@ -45,7 +49,8 @@ public class Automatic implements GraphFeatureFactory {
         }
         GraphFeature ppr = null;
         if(pprAnalysis) {
-            ppr = new PPR().makeFeature(sparqlData, params, analysis, prelinking);
+            ppr = new PPR().makeFeature(sparqlData, params, analysis, prelinking, listener);
+            listener.message(NaiscListener.Stage.INITIALIZING, NaiscListener.Level.INFO, "Using PPR on graph");
         }
         return new AutomaticImpl(propMatches, ppr);
     }

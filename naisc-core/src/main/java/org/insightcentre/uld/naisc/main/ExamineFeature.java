@@ -71,7 +71,7 @@ public class ExamineFeature {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
             Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new AlignmentSet());
             List<TextFeature> textFeatures = config.makeTextFeatures();
-            List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch);
+            List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
             if (res1.getURI() == null || res1.getURI().equals("")
                     || res1.getURI() == null || res1.getURI().equals("")) {

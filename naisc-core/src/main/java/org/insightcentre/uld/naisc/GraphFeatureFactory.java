@@ -16,8 +16,10 @@ public interface GraphFeatureFactory {
      * @param params Configuration parameters for this lens
      * @param analysis The analysis of the dataset
      * @param prelinking The prelinking
+     * @param listener A listener for events
      * @return The graph feature
      */
     GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params,
-            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking);
+            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking,
+            NaiscListener listener);
 }

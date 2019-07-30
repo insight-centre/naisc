@@ -7,6 +7,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
+import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -54,7 +55,7 @@ public class CommandTest {
             params.put("command", "python3 src/test/resources/test-graph.py");
             params.put("id", "test");
             Command instance = new Command();
-            GraphFeature feature = instance.makeFeature(sparqlData, params, null, null);
+            GraphFeature feature = instance.makeFeature(sparqlData, params, null, null, ExecuteListeners.NONE);
             double[] result = feature.extractFeatures(model.createResource("http://www.example.com/example"),
                     model.createResource("http://www.example.com/anotherExample"));
             double[] expResult = new double[]{"http://www.example.com/example".length(),

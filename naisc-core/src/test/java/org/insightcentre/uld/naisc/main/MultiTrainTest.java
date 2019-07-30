@@ -41,7 +41,7 @@ public class MultiTrainTest {
      */
     @Test
     public void testExecute() throws Exception {
-        /*System.out.println("execute");
+        System.out.println("execute");
         File f = new File(new File(new File(".."),"datasets"), "wwim");
         if (f.exists()) {
             String name = "train";
@@ -51,8 +51,8 @@ public class MultiTrainTest {
             File configuration = new File(new File(new File(".."),"configs"), "auto.json");
             ExecuteListener monitor = ExecuteListeners.STDERR;
             DatasetLoader loader = new DefaultDatasetLoader();
-            MultiTrain.execute(name, evaluationSets, negativeSampling, configuration, monitor, loader);
-        }*/
+            MultiTrain.execute(name, evaluationSets, negativeSampling, configuration, monitor, loader, null);
+        }
     }
 
 }
