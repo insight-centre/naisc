@@ -42,7 +42,7 @@ public class MultiTrainTest {
     @Test
     public void testExecute() throws Exception {
         System.out.println("execute");
-        File f = new File(new File(new File(".."),"datasets"), "wwim");
+        /*File f = new File(new File(new File(".."),"datasets"), "wwim");
         if (f.exists()) {
             String name = "train";
             List<EvaluationSet> evaluationSets = new ArrayList<>();
@@ -52,7 +52,7 @@ public class MultiTrainTest {
             ExecuteListener monitor = ExecuteListeners.STDERR;
             DatasetLoader loader = new DefaultDatasetLoader();
             MultiTrain.execute(name, evaluationSets, negativeSampling, configuration, monitor, loader, null);
-        }
+        }*/
     }
 
 }

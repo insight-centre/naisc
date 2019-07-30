@@ -29,7 +29,7 @@ public class Analysis {
     }
     
     public boolean isWellConnected() {
-        return this.leftLCC > 0.2 && this.rightLCC > 0.2;
+        return this.leftLCC > 0.01 && this.leftLCC >= 3.0 / leftSize && this.rightLCC > 0.01 && this.rightLCC >= 3.0 / rightSize;
     }
 
 }
