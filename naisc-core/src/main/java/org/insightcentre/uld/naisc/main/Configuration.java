@@ -45,8 +45,10 @@ import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.blocking.All;
 import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching;
+import org.insightcentre.uld.naisc.blocking.Automatic;
 import org.insightcentre.uld.naisc.blocking.IDMatch;
 import org.insightcentre.uld.naisc.blocking.LabelMatch;
+import org.insightcentre.uld.naisc.blocking.Path;
 import org.insightcentre.uld.naisc.blocking.Predefined;
 import org.insightcentre.uld.naisc.constraint.Bijective;
 import org.insightcentre.uld.naisc.constraint.Constraint;
@@ -58,6 +60,7 @@ import org.insightcentre.uld.naisc.feature.Dictionary;
 import org.insightcentre.uld.naisc.feature.KeyWords;
 import org.insightcentre.uld.naisc.feature.WordEmbeddings;
 import org.insightcentre.uld.naisc.feature.WordNet;
+import org.insightcentre.uld.naisc.graph.PPR;
 import org.insightcentre.uld.naisc.graph.PropertyOverlap;
 import org.insightcentre.uld.naisc.lens.Label;
 import org.insightcentre.uld.naisc.lens.LensAutoConfig;
@@ -66,10 +69,12 @@ import org.insightcentre.uld.naisc.lens.SPARQL;
 import org.insightcentre.uld.naisc.lens.URI;
 import org.insightcentre.uld.naisc.matcher.BeamSearch;
 import org.insightcentre.uld.naisc.matcher.Greedy;
+import org.insightcentre.uld.naisc.matcher.MonteCarloTreeSearch;
 import org.insightcentre.uld.naisc.matcher.Threshold;
 import org.insightcentre.uld.naisc.matcher.UniqueAssignment;
 import org.insightcentre.uld.naisc.scorer.Average;
 import org.insightcentre.uld.naisc.scorer.LibSVM;
+import org.insightcentre.uld.naisc.scorer.RAdLR;
 import org.insightcentre.uld.naisc.util.Lazy;
 
 /**
@@ -383,7 +388,9 @@ public class Configuration {
 
     public static Class[] knownGraphFeatures = new Class[]{
         PropertyOverlap.class,
-        org.insightcentre.uld.naisc.graph.Command.class
+        org.insightcentre.uld.naisc.graph.Command.class,
+        Automatic.class,
+        PPR.class
     };
 
     /**
@@ -516,7 +523,8 @@ public class Configuration {
     public static Class[] knownScorers = new Class[]{
         Average.class,
         LibSVM.class,
-        org.insightcentre.uld.naisc.scorer.Command.class
+        org.insightcentre.uld.naisc.scorer.Command.class,
+        RAdLR.class
     };
 
     /**
@@ -644,7 +652,8 @@ public class Configuration {
         UniqueAssignment.class,
         Greedy.class,
         BeamSearch.class,
-        org.insightcentre.uld.naisc.matcher.Command.class
+        org.insightcentre.uld.naisc.matcher.Command.class,
+        MonteCarloTreeSearch.class
     };
 
     /**
@@ -888,13 +897,15 @@ public class Configuration {
     }
 
     public static Class[] knownBlockingStrategies = new Class[]{
+        org.insightcentre.uld.naisc.blocking.Automatic.class,
         All.class,
         IDMatch.class,
         LabelMatch.class,
         ApproximateStringMatching.class,
         Predefined.class,
         OntoLex.class,
-        org.insightcentre.uld.naisc.blocking.Command.class
+        org.insightcentre.uld.naisc.blocking.Command.class,
+        Path.class
     };
 
     /**
