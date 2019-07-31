@@ -240,6 +240,7 @@ public class RAdLR implements ScorerFactory {
                     throw new RuntimeException("Unexpected or null error function");
             }
             double[] soln = adaGrad(f, log);
+            normalizeSoln(soln);
             model.alpha = soln[0];
             model.beta = soln[1];
             for (Object2IntMap.Entry<StringPair> e : featureIDs.object2IntEntrySet()) {
@@ -264,6 +265,21 @@ public class RAdLR implements ScorerFactory {
                 serializer.save(model.property, ((RAdLRImpl) scorer).model);
             } else {
                 throw new IllegalArgumentException("RAdLR cannot serialize models not created by RAdLR");
+            }
+        }
+
+        private void normalizeSoln(double[] soln) {
+            double sumSq = 0.0;
+            for(int i = 2; i < soln.length; i++) {
+                sumSq += soln[i] * soln[i];
+            }
+            if(sumSq == 0.0 || soln.length == 2)
+                return;
+            sumSq /= soln.length - 2;
+            sumSq = Math.sqrt(sumSq);
+            soln[0] *= sumSq;
+            for(int i = 2; i < soln.length; i++) {
+                soln[i] /= sumSq;
             }
         }
 
@@ -456,17 +472,20 @@ public class RAdLR implements ScorerFactory {
                 x[j] -= initialLearningRate / Math.sqrt(gsum[j] + smoothing) * grad[j];
             }
 
-            // This bit is specific, we want to keep the mean of the weights as zero
+            /*// This bit is specific, we want to keep the mean of the weights as zero
             double sum = 0.0;
             for (int j = 2; j < n; j++) {
-                sum += x[j];
+                //sum += Math.abs(x[j]);
+                sum += x[j]*x[j];
             }
             sum /= n - 2;
+            sum = Math.sqrt(sum);
             for (int j = 2; j < n; j++) {
                 x[j] /= sum;
-            }
+            }*/
         }
         return x;
     }
 
 }
+
