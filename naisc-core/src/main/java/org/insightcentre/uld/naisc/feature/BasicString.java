@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.apache.commons.text.similarity.SimilarityScore;
@@ -34,8 +35,7 @@ import org.insightcentre.uld.naisc.TextFeatureFactory;
 public class BasicString implements TextFeatureFactory {
     private static final SimilarityScore<Double> JARO_WINKLER = new JaroWinklerSimilarity();
     private static final LevenshteinDistance LEVENSHTEIN = new LevenshteinDistance();
-            
-    
+  
     /**
      * The features implemented by basic string
      */
@@ -54,7 +54,9 @@ public class BasicString implements TextFeatureFactory {
         negation,
         number,
         jaroWinkler,
-        levenshtein
+        levenshtein,
+        mongeElkanJaroWinkler,
+        mongeElkanLevenshtein
     }
 
     /**
@@ -253,6 +255,15 @@ public class BasicString implements TextFeatureFactory {
                     featureNames.add(prefix + "levenshtein");
                 }                
             }
+            
+            if(!charLevel) {
+                if (selectedFeatures == null || selectedFeatures.contains(Feature.mongeElkanJaroWinkler)) {
+                    featureNames.add(prefix + "mongeElkanJaroWinkler");
+                }
+                if (selectedFeatures == null || selectedFeatures.contains(Feature.mongeElkanLevenshtein)) {
+                    featureNames.add(prefix + "mongeElkanLevenshtein");
+                } 
+            }
         }
 
         private void buildFeatures(Language lang, String prefix,
@@ -324,6 +335,15 @@ public class BasicString implements TextFeatureFactory {
                     featureValues.add(((double)LEVENSHTEIN.apply(label1, label2) * 2.0) / (label1.length() + label2.length()));
                 }                
             }
+            if(!charLevel) {
+                if (selectedFeatures == null || selectedFeatures.contains(Feature.mongeElkanJaroWinkler)) {
+                    featureValues.add(mongeElkan(l1, l2, (s,t) -> JARO_WINKLER.apply(s, t)));
+                }
+                if (selectedFeatures == null || selectedFeatures.contains(Feature.mongeElkanLevenshtein)) {
+                    featureValues.add(mongeElkan(l1, l2, (s,t) -> 1.0 - (double)LEVENSHTEIN.apply(s, t) * 2.0 / (s.length() + t.length())));
+                }                
+                
+            }
 //        featureNames.add(prefix + "gst");
 //        if(charLevel) {
 //            String cl1 = label1.replaceAll("", " ").trim();
@@ -370,6 +390,18 @@ public class BasicString implements TextFeatureFactory {
                 }
             }
             return (double) lcs / (double) Math.max(s1.length, s2.length);
+        }
+
+        private double mongeElkan(String[] l1, String[] l2, BiFunction<String, String, Double> function) {
+            double sum = 0.0;
+            for(String s : l1) {
+                double max = Double.NEGATIVE_INFINITY;
+                for(String t : l2) {
+                    max = Math.max(function.apply(s,t), max);
+                }
+                sum += max;
+            }
+            return sum / l1.length;
         }
 
         public static interface NGramWeighting {

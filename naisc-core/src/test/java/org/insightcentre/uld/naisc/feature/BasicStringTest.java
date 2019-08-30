@@ -77,7 +77,9 @@ public class BasicStringTest {
             "senLenRatio",
             "aveWordLenRatio",
             "negation",
-            "number"
+            "number",
+            "mongeElkanJaroWinkler",
+            "mongeElkanLevenshtein"
         };
         String[] result = instance.getFeatureNames();
         assertArrayEquals(expResult, result);
@@ -93,7 +95,7 @@ public class BasicStringTest {
         String entity1id = "x1";
         String entity2id = "x2";
         BasicStringImpl instance = new BasicStringImpl(false, null, null, null, null, false);
-        double[] expResult = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0 };
+        double[] expResult = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 };
         double[] result = instance.extractFeatures(_sp);
         assertArrayEquals(expResult, result, 0.0001);
     }
@@ -266,6 +268,16 @@ public class BasicStringTest {
     public void testApacheStringFunctions() {
         BasicString bs = new BasicString();
         TextFeature f = bs.makeFeatureExtractor(Collections.EMPTY_SET, new HashMap<String,Object>() {{ put("features", Arrays.asList("jaroWinkler","levenshtein")); put("labelChar","true");}});
+        double[] r = f.extractFeatures(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "superficial dermis", "Superficial Vein"));
+        assert(r[0] > 0);
+        assert(r[1] > 0);
+        
+    }
+    
+    @Test
+    public void testMongeElkan() {
+        BasicString bs = new BasicString();
+        TextFeature f = bs.makeFeatureExtractor(Collections.EMPTY_SET, new HashMap<String,Object>() {{ put("features", Arrays.asList("mongeElkanJaroWinkler","mongeElkanLevenshtein")); put("labelChar","false");}});
         double[] r = f.extractFeatures(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "superficial dermis", "Superficial Vein"));
         assert(r[0] > 0);
         assert(r[1] > 0);
