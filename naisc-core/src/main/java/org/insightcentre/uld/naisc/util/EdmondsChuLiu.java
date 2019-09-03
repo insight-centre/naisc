@@ -62,9 +62,11 @@ package org.insightcentre.uld.naisc.util;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -76,34 +78,34 @@ import java.util.stream.Collectors;
 public class EdmondsChuLiu {
 
     //private List<Node> cycle;
-    public AdjacencyList getMinBranching(Node root, AdjacencyList list) {
-        AdjacencyList reverse = list.getReversedList();
+    public static <Data,EdgeType> AdjacencyList<Data,EdgeType> getMinBranching(Node<Data> root, AdjacencyList<Data,EdgeType> list) {
+        AdjacencyList<Data,EdgeType> reverse = list.getReversedList();
         // remove all edges entering the root
         if (reverse.getAdjacent(root) != null) {
             reverse.getAdjacent(root).clear();
         }
-        AdjacencyList outEdges = new AdjacencyList();
+        AdjacencyList<Data,EdgeType> outEdges = new AdjacencyList();
         // for each node, select the edge entering it with smallest weight
-        for (Node n : reverse.getSourceNodeSet()) {
-            List<Edge> inEdges = reverse.getAdjacent(n);
+        for (Node<Data> n : reverse.getSourceNodeSet()) {
+            List<Edge<Data, EdgeType>> inEdges = reverse.getAdjacent(n);
             if (inEdges.isEmpty()) {
                 continue;
             }
-            Edge min = inEdges.get(0);
-            for (Edge e : inEdges) {
+            Edge<Data, EdgeType> min = inEdges.get(0);
+            for (Edge<Data, EdgeType> e : inEdges) {
                 if (e.getWeight() < min.getWeight()) {
                     min = e;
                 }
             }
-            outEdges.addEdge(min.getTo(), min.getFrom(), min.getWeight());
+            outEdges.addEdge(min.getTo(), min.getFrom(), min.getWeight(), min.getEdgeType());
         }
 
         // detect cycles
-        List<List<Node>> cycles = new ArrayList<>();
-        List<Node> cycle = new ArrayList<>();
+        List<List<Node<Data>>> cycles = new ArrayList<>();
+        List<Node<Data>> cycle = new ArrayList<>();
         getCycle(root, outEdges, cycle);
         cycles.add(cycle);
-        for (Node n : outEdges.getSourceNodeSet()) {
+        for (Node<Data> n : outEdges.getSourceNodeSet()) {
             if (!n.isVisited()) {
                 cycle = new ArrayList<>();
                 getCycle(n, outEdges, cycle);
@@ -114,7 +116,7 @@ public class EdmondsChuLiu {
         // for each cycle formed, modify the path to merge it into another part of the graph
         AdjacencyList outEdgesReverse = outEdges.getReversedList();
 
-        for (List<Node> x : cycles) {
+        for (List<Node<Data>> x : cycles) {
             if (x.contains(root)) {
                 continue;
             }
@@ -123,12 +125,12 @@ public class EdmondsChuLiu {
         return outEdges;
     }
 
-    private void mergeCycles(List<Node> cycle, AdjacencyList list, AdjacencyList reverse, AdjacencyList outEdges, AdjacencyList outEdgesReverse) {
-        List<Edge> cycleAllInEdges = new ArrayList<>();
-        Edge minInternalEdge = null;
+    private static <Data,EdgeType> void mergeCycles(List<Node<Data>> cycle, AdjacencyList<Data,EdgeType> list, AdjacencyList<Data,EdgeType> reverse, AdjacencyList<Data,EdgeType> outEdges, AdjacencyList<Data,EdgeType> outEdgesReverse) {
+        List<Edge<Data, EdgeType>> cycleAllInEdges = new ArrayList<>();
+        Edge<Data, EdgeType> minInternalEdge = null;
         // find the minimum internal edge weight
         for (Node n : cycle) {
-            for (Edge e : reverse.getAdjacent(n)) {
+            for (Edge<Data, EdgeType> e : reverse.getAdjacent(n)) {
                 if (cycle.contains(e.getTo())) {
                     if (minInternalEdge == null || minInternalEdge.getWeight() > e.getWeight()) {
                         minInternalEdge = e;
@@ -141,9 +143,9 @@ public class EdmondsChuLiu {
         }
         assert (minInternalEdge != null);
         // find the incoming edge with minimum modified cost
-        Edge minExternalEdge = null;
+        Edge<Data, EdgeType> minExternalEdge = null;
         double minModifiedWeight = 0;
-        for (Edge e : cycleAllInEdges) {
+        for (Edge<Data, EdgeType> e : cycleAllInEdges) {
             double w = e.getWeight() - (outEdgesReverse.getAdjacent(e.getFrom()).get(0).getWeight() - minInternalEdge.getWeight());
             if (minExternalEdge == null || minModifiedWeight > w) {
                 minExternalEdge = e;
@@ -152,61 +154,64 @@ public class EdmondsChuLiu {
         }
         assert (minExternalEdge != null);
         // add the incoming edge and remove the inner-circuit incoming edge
-        Edge removing = outEdgesReverse.getAdjacent(minExternalEdge.getFrom()).get(0);
+        Edge<Data, EdgeType> removing = outEdgesReverse.getAdjacent(minExternalEdge.getFrom()).get(0);
         outEdgesReverse.getAdjacent(minExternalEdge.getFrom()).clear();
-        outEdgesReverse.addEdge(minExternalEdge.getTo(), minExternalEdge.getFrom(), minExternalEdge.getWeight());
-        List<Edge> adj = outEdges.getAdjacent(removing.getTo());
-        for (Iterator<Edge> i = adj.iterator(); i.hasNext();) {
+        outEdgesReverse.addEdge(minExternalEdge.getTo(), minExternalEdge.getFrom(), minExternalEdge.getWeight(), minExternalEdge.getEdgeType());
+        List<Edge<Data, EdgeType>> adj = outEdges.getAdjacent(removing.getTo());
+        for (Iterator<Edge<Data, EdgeType>> i = adj.iterator(); i.hasNext();) {
             if (i.next().getTo() == removing.getFrom()) {
                 i.remove();
                 break;
             }
         }
-        outEdges.addEdge(minExternalEdge.getTo(), minExternalEdge.getFrom(), minExternalEdge.getWeight());
+        outEdges.addEdge(minExternalEdge.getTo(), minExternalEdge.getFrom(), minExternalEdge.getWeight(), minExternalEdge.getEdgeType());
     }
 
-    private void getCycle(Node n, AdjacencyList outEdges, List<Node> cycle) {
+    private static <Data,EdgeType> void getCycle(Node<Data> n, AdjacencyList<Data,EdgeType> outEdges, List<Node<Data>> cycle) {
         n.setVisited(true);
         cycle.add(n);
         if (outEdges.getAdjacent(n) == null) {
             return;
         }
-        for (Edge e : outEdges.getAdjacent(n)) {
+        for (Edge<Data, EdgeType> e : outEdges.getAdjacent(n)) {
             if (!e.getTo().isVisited()) {
                 getCycle(e.getTo(), outEdges, cycle);
             }
         }
     }
 
-    public static class Edge {
+    public static class Edge<Data, EType> {
 
-        private final Node from;
-        private final Node to;
+        private final Node<Data> from;
+        private final Node<Data> to;
         private final double weight;
+        private final EType edgeType;
 
         /**
          *
-         * @param argFrom
-         * @param argTo
-         * @param weight
+         * @param argFrom The source node
+         * @param argTo The target node
+         * @param weight A weighting score
+         * @param edgeType A type of the edge (may be null)
          */
-        public Edge(final Node argFrom, final Node argTo, double weight) {
+        public Edge(final Node argFrom, final Node argTo, double weight, EType edgeType) {
             this.from = argFrom;
             this.to = argTo;
             this.weight = weight;
+            this.edgeType = edgeType;
         }
 
         /**
          * @return the from
          */
-        public Node getFrom() {
+        public Node<Data> getFrom() {
             return from;
         }
 
         /**
          * @return the to
          */
-        public Node getTo() {
+        public Node<Data> getTo() {
             return to;
         }
 
@@ -214,9 +219,39 @@ public class EdmondsChuLiu {
             return weight;
         }
 
+        public EType getEdgeType() {
+            return edgeType;
+        }
+
+        
     }
 
     public static class Node<Data> {
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 71 * hash + Objects.hashCode(this.data);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Node<?> other = (Node<?>) obj;
+            if (!Objects.equals(this.data, other.data)) {
+                return false;
+            }
+            return true;
+        }
 
         private final Data data;
         private boolean visited = false;   // used for Kosaraju's algorithm and Edmonds's algorithm
@@ -245,28 +280,28 @@ public class EdmondsChuLiu {
 
     }
 
-    public static class AdjacencyList {
+    public static class AdjacencyList<Data, EdgeType> {
 
-        private final Map<Node, List<Edge>> adjacencies = new HashMap<>();
+        private final Map<Node<Data>, List<Edge<Data, EdgeType>>> adjacencies = new HashMap<>();
 
         public AdjacencyList() {
         }
 
         public AdjacencyList getReversedList() {
             AdjacencyList newlist = new AdjacencyList();
-            for (List<Edge> edges : adjacencies.values()) {
-                for (Edge e : edges) {
-                    newlist.addEdge(e.getTo(), e.getFrom(), e.getWeight());
+            for (List<Edge<Data, EdgeType>> edges : adjacencies.values()) {
+                for (Edge<Data, EdgeType> e : edges) {
+                    newlist.addEdge(e.getTo(), e.getFrom(), e.getWeight(), e.getEdgeType());
                 }
             }
             return newlist;
         }
 
-        public List<Edge> getAdjacent(Node source) {
+        public List<Edge<Data, EdgeType>> getAdjacent(Node source) {
             return adjacencies.get(source);
         }
 
-        public Set<Node> getSourceNodeSet() {
+        public Set<Node<Data>> getSourceNodeSet() {
             return adjacencies.keySet();
         }
         
@@ -278,15 +313,48 @@ public class EdmondsChuLiu {
             }
         }
 
-        public void addEdge(Node source, Node target, double weight) {
-            List<Edge> list;
+        public void addEdge(Node source, Node target, double weight, EdgeType edgeType) {
+            List<Edge<Data, EdgeType>> list;
             if (!adjacencies.containsKey(source)) {
                 list = new ArrayList<>();
                 adjacencies.put(source, list);
             } else {
                 list = adjacencies.get(source);
             }
-            list.add(new Edge(source, target, weight));
+            if(!adjacencies.containsKey(target)) {
+                adjacencies.put(target, new ArrayList<>());
+            }
+            list.add(new Edge<Data, EdgeType>(source, target, weight, edgeType));
+        }
+        
+        public void addAll(AdjacencyList<Data, EdgeType> g) {
+            this.adjacencies.putAll(g.adjacencies);
+        }
+        
+        public Set<Node<Data>> getRoots() {
+            Set<Node<Data>> roots = new HashSet<>(adjacencies.keySet());
+            for(List<Edge<Data, EdgeType>> es : adjacencies.values()) {
+                for(Edge<Data, EdgeType> e : es) {
+                    roots.remove(e.to);
+                }
+            }
+            return roots;
+        }
+        
+        public boolean accessibleFrom(Node<Data> data) {
+            Set<Node<Data>> accessible = new HashSet<>();
+            accessible.add(data);
+            calcAccessible(accessible, data);
+            return accessible.size() == adjacencies.size();
+        }
+        
+        private void calcAccessible(Set<Node<Data>> accessible, Node<Data> d) {
+            for(Edge<Data, EdgeType> e : adjacencies.get(d)) {
+                if(!accessible.contains(e.to)) {
+                    accessible.add(e.to);
+                    calcAccessible(accessible, d);
+                }
+            }
         }
     }
 }

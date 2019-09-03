@@ -45,10 +45,10 @@ public class EdmondsChuLiuTest {
         EdmondsChuLiu.Node node3 = new EdmondsChuLiu.Node<>(3);
         EdmondsChuLiu.Node node4 = new EdmondsChuLiu.Node<>(4);
         EdmondsChuLiu.AdjacencyList list = new EdmondsChuLiu.AdjacencyList();
-        list.addEdge(node1, node2, 1.0);
-        list.addEdge(node1, node3, 2.0);
-        list.addEdge(node1, node4, 3.0);
-        list.addEdge(node2, node4, 1.0);
+        list.addEdge(node1, node2, 1.0, null);
+        list.addEdge(node1, node3, 2.0, null);
+        list.addEdge(node1, node4, 3.0, null);
+        list.addEdge(node2, node4, 1.0, null);
         
         EdmondsChuLiu instance = new EdmondsChuLiu();
         
