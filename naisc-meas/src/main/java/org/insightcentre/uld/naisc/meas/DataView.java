@@ -29,6 +29,7 @@ public class DataView {
     }
 
     public static DataView build(Dataset left, Dataset right, AlignmentSet alignment) {
+        alignment.sortAlignments();
         Tree leftTrees = buildTree(left);
         List<Paths> rightTrees = convertToPaths(buildTree(right));
         return new DataView(convertToDataView(leftTrees, rightTrees, alignment));

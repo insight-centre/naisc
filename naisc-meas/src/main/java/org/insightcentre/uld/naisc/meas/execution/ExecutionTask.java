@@ -104,7 +104,7 @@ public class ExecutionTask implements Runnable {
             Meas.Run run = new Meas.Run(id, configName, dataset, er == null ? -1.0 : er.precision(), er == null ? -1.0 : er.recall(), er == null ? -1.0 : er.fmeasure(), er == null ? -2.0 : er.correlation, time, mode == ExecutionMode.TRAIN);
             ManageServlet.completed.put(id, run);
             if (alignment != null) {
-                listener.saveAligment(run, alignment);
+                listener.saveAligment(run, alignment, loader.fromFile(ds.left(), "left"), loader.fromFile(ds.right(), "right"));
             }
             Meas.data.runs.add(run);
         } catch (Exception x) {

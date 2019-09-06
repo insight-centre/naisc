@@ -232,6 +232,10 @@ public class Meas {
         public double score;
         public Valid valid;
         public int idx;
+        public String leftRoot;
+        public String rightRoot;
+        public List<String> leftPath;
+        public List<String> rightPath;
     }
 
 }
