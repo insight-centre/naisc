@@ -119,7 +119,7 @@ public class Automatic implements BlockingStrategyFactory {
             final ApproximateStringMatching.NgramApproximateStringMatch matcher = 
                     new ApproximateStringMatching.NgramApproximateStringMatch(
                             maxMatches, property, rightProperty, n, 
-                            Preblocking.leftPreblocked(p), Preblocking.rightPreblocked(p));
+                            Preblocking.leftPreblocked(p), Preblocking.rightPreblocked(p), true);
             final Iterable<Pair<Resource, Resource>> base = matcher.block(left, right, log);
             return new Iterable<Pair<Resource, Resource>>() {
                 @Override

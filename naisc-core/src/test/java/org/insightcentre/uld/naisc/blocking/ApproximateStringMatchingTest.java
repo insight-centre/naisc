@@ -198,7 +198,7 @@ public class ApproximateStringMatchingTest {
         }, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
 
         Model left = ModelFactory.createDefaultModel();
-        left.add(left.createResource("file:tmp#abc"), left.createProperty(Label.RDFS_LABEL), left.createLiteral("abc"));
+        left.add(left.createResource("file:tmp#abc"), left.createProperty(Label.RDFS_LABEL), left.createLiteral("abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc"));
         Model right = ModelFactory.createDefaultModel();
         List<Resource> strings = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
@@ -232,13 +232,18 @@ public class ApproximateStringMatchingTest {
 
     private double ngramSim(Resource r) {
         String s = r.getURI().substring(9);
-        double score = 0.0;
+        int a = 0;
+        int b = 0;
+        int c = 0;
         for (int i = 0; i < s.length(); i++) {
-            if (s.charAt(i) == 'a' || s.charAt(i) == 'b' || s.charAt(i) == 'c') {
-                score += 1.0 / (s.length() + 3.0);
-            }
+            if(s.charAt(i) == 'a') 
+                a++;
+            if(s.charAt(i) == 'b') 
+                b++;
+            if(s.charAt(i) == 'c') 
+                c++;
         }
-        return score;
+        return (double)(Math.min(a, 31) + Math.min(b, 31) + Math.min(c, 31)) / (s.length() + 93.0);
     }
 
     @Test

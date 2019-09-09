@@ -5,6 +5,8 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -246,6 +248,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
 
         private List<Resource> nearest(List<String> labels, Map<String, Map<Resource, FreqLen>> ngrams) {
             final Object2DoubleMap<Resource> freqsFinal = new Object2DoubleOpenHashMap<>();
+            final Object2IntMap<String> reps = new Object2IntOpenHashMap<>();
             for (String r : labels) {
                 for (int i = 0; i < Math.min(100,r.length()) - n + 1; i++) {
                     String ng = r.substring(i, i + n);
@@ -254,8 +257,10 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     if (ngs != null) {
                         //System.err.printf(" %d", ngs.size());
                         for (Map.Entry<Resource, FreqLen> e : ngs.entrySet()) {
-                            freqsFinal.put(e.getKey(), freqsFinal.getDouble(e.getKey()) + e.getValue().freq / (e.getValue().len + r.length()));
+                            if(reps.getInt(ng) < e.getValue().freq)
+                                freqsFinal.put(e.getKey(), freqsFinal.getDouble(e.getKey()) + 1.0 / (e.getValue().len + r.length()));
                         }
+                            reps.put(ng, reps.getInt(ng) + 1);
                     }
                     //System.err.println();
                 }
