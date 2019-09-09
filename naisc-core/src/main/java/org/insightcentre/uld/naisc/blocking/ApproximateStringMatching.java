@@ -9,6 +9,7 @@ import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -26,7 +27,6 @@ import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
-import org.insightcentre.uld.naisc.util.Beam;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.util.URI2Label;
@@ -42,7 +42,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
     public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> analysis, NaiscListener listener) {
         Configuration config = new ObjectMapper().configure(FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if (config.maxMatches < 1) {
-            throw new ConfigurationException("Max matches must be at least one");
+            throw new ConfigurationException("Max matches must be at least one (or is not set)");
         }
         if (config.metric == null) {
             config.metric = StringMetric.ngrams;
@@ -61,9 +61,9 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         }
         switch (config.metric) {
             case levenshtein:
-                return new LevenshteinApproximateStringMatch(config.maxMatches, config.property, config.rightProperty, config.queueMax);
+                return new LevenshteinApproximateStringMatch(config.maxMatches, config.property, config.rightProperty, config.queueMax, config.lowercase);
             case ngrams:
-                return new NgramApproximateStringMatch(config.maxMatches, config.property, config.rightProperty, config.ngrams);
+                return new NgramApproximateStringMatch(config.maxMatches, config.property, config.rightProperty, config.ngrams, config.lowercase);
             default:
                 throw new RuntimeException("Unreachable");
         }
@@ -99,6 +99,10 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
          * The size of ngrams to use
          */
         public int ngrams = 3;
+        /**
+         * Lowercase all strings
+         */
+        public boolean lowercase = true;
     }
 
     public static enum StringMetric {
@@ -113,23 +117,26 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         private final String rightProperty;
         private final int n;
         private final Set<Resource> leftPreBlocks, rightPreBlocks;
+        private final boolean lowercase;
 
-        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n) {
+        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n, boolean lowercase) {
             this.maxMatches = maxMatches;
             this.property = property;
             this.rightProperty = rightProperty;
             this.n = n;
             this.leftPreBlocks = Collections.EMPTY_SET;
             this.rightPreBlocks = Collections.EMPTY_SET;
+            this.lowercase = lowercase;
         }
 
-        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n, Set<Resource> leftPreBlocks, Set<Resource> rightPreBlocks) {
+        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n, Set<Resource> leftPreBlocks, Set<Resource> rightPreBlocks, boolean lowercase) {
             this.maxMatches = maxMatches;
             this.property = property;
             this.rightProperty = rightProperty;
             this.n = n;
             this.leftPreBlocks = leftPreBlocks;
             this.rightPreBlocks = rightPreBlocks;
+            this.lowercase = lowercase;
         }
 
         @Override
@@ -165,10 +172,12 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             }
             rights.removeAll(rightPreBlocks);
 
-            final Map<String, Object2DoubleMap<Resource>> ngrams = new HashMap<>();
+            final Map<String, Map<Resource, FreqLen>> ngrams = new HashMap<>();
             for (Resource r : rights) {
                 if (rightProperty.equals("")) {
-                    extractNgram(URI2Label.fromURI(r.getURI()), ngrams, r);
+                    String s = URI2Label.fromURI(r.getURI());
+                            if(lowercase) s = s.toLowerCase();
+                    extractNgram(s, ngrams, r);
                 } else {
                     Property rightProp = right.createProperty(rightProperty);
                     NodeIterator iter = right.listObjectsOfProperty(r, rightProp);
@@ -176,29 +185,34 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                         RDFNode n = iter.next();
                         if (n.isLiteral()) {
                             String s = n.asLiteral().getLexicalForm();
+                            if(lowercase) s = s.toLowerCase();
                             extractNgram(s, ngrams, r);
                         }
                     }
                 }
             }
             // Heuristically remove any very common n-grams
-            Iterator<Map.Entry<String, Object2DoubleMap<Resource>>> ngramsIter = ngrams.entrySet().iterator();
+            Iterator<Map.Entry<String, Map<Resource, FreqLen>>> ngramsIter = ngrams.entrySet().iterator();
             while(ngramsIter.hasNext()) {
-                Map.Entry<String, Object2DoubleMap<Resource>> e = ngramsIter.next();
+                Map.Entry<String, Map<Resource, FreqLen>> e = ngramsIter.next();
                 if(e.getValue().size() > 100)
                     ngramsIter.remove();
             }
             final List<Pair<Resource, List<String>>> labels = new ArrayList<>();
             for (Resource r : lefts) {
                 if (property.equals("")) {
-                    labels.add(new Pair(r, Arrays.asList(URI2Label.fromURI(r.getURI()))));
+                    String s = URI2Label.fromURI(r.getURI());
+                            if(lowercase) s = s.toLowerCase();
+                    labels.add(new Pair(r, Arrays.asList(s)));
                 } else {
                     NodeIterator iter = left.listObjectsOfProperty(r, left.createProperty(property));
                     List<String> l = new ArrayList<>();
                     while (iter.hasNext()) {
                         RDFNode n = iter.next();
                         if (n.isLiteral()) {
-                            l.add(n.asLiteral().getLexicalForm());
+                            String s = n.asLiteral().getLexicalForm();
+                            if(lowercase) s = s.toLowerCase();
+                            l.add(s);
                         }
                     }
                     labels.add(new Pair(r, l));
@@ -217,40 +231,40 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             };
         }
 
-        private void extractNgram(String s, final Map<String, Object2DoubleMap<Resource>> ngrams, Resource r) {
+        private void extractNgram(String s, final Map<String, Map<Resource, FreqLen>> ngrams, Resource r) {
             for (int i = 0; i < s.length() - this.n + 1; i++) {
                 String ng = s.substring(i, i + this.n);
-                final Object2DoubleMap<Resource> ngMap;
+                final Map<Resource, FreqLen> ngMap;
                 if (!ngrams.containsKey(ng)) {
-                    ngrams.put(ng, ngMap = new Object2DoubleOpenHashMap<>());
+                    ngrams.put(ng, ngMap = new HashMap<>());
                 } else {
                     ngMap = ngrams.get(ng);
                 }
-                ngMap.put(r, ngMap.getDouble(r) + 1.0 / s.length());
+                ngMap.put(r, ngMap.get(r) == null ? new FreqLen(1.0, s.length()) : new FreqLen(ngMap.get(r).freq + 1, s.length()));
             }
         }
 
-        private List<Resource> nearest(List<String> labels, Map<String, Object2DoubleMap<Resource>> ngrams) {
-            final Beam<Resource> freqsFinal = new Beam<>(maxMatches);
+        private List<Resource> nearest(List<String> labels, Map<String, Map<Resource, FreqLen>> ngrams) {
+            final Object2DoubleMap<Resource> freqsFinal = new Object2DoubleOpenHashMap<>();
             for (String r : labels) {
                 for (int i = 0; i < Math.min(100,r.length()) - n + 1; i++) {
                     String ng = r.substring(i, i + n);
                     //System.err.print(ng);
-                    Object2DoubleMap<Resource> ngs = ngrams.get(ng);
+                    Map<Resource, FreqLen> ngs = ngrams.get(ng);
                     if (ngs != null) {
                         //System.err.printf(" %d", ngs.size());
-                        for (Object2DoubleMap.Entry<Resource> e : ngs.object2DoubleEntrySet()) {
-                            freqsFinal.increment(e.getKey(), e.getDoubleValue());
+                        for (Map.Entry<Resource, FreqLen> e : ngs.entrySet()) {
+                            freqsFinal.put(e.getKey(), freqsFinal.getDouble(e.getKey()) + e.getValue().freq / (e.getValue().len + r.length()));
                         }
                     }
                     //System.err.println();
                 }
             }
             List<Resource> resList = new ArrayList<>(freqsFinal.keySet());
-            /*Collections.sort(resList, new Comparator<Resource>() {
+            Collections.sort(resList, new Comparator<Resource>() {
                 @Override
                 public int compare(Resource o1, Resource o2) {
-                    double f1 = freqsFinal.getScore(o1);
+                    double f1 = freqsFinal.getDouble(o1);
                     double f2 = freqsFinal.getDouble(o2);
                     if (f1 > f2) {
                         return -1;
@@ -260,7 +274,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                         return o1.getURI().compareTo(o2.getURI());
                     }
                 }
-            });*/
+            });
             if (resList.size() > maxMatches) {
                 return resList.subList(0, maxMatches);
             } else {
@@ -293,12 +307,14 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         private final String property;
         private final String rightProperty;
         private final int queueMax;
+        private final boolean lowercase;
 
-        public LevenshteinApproximateStringMatch(int maxMatches, String property, String rightProperty, int queueMax) {
+        public LevenshteinApproximateStringMatch(int maxMatches, String property, String rightProperty, int queueMax, boolean lowercase) {
             this.maxMatches = maxMatches;
             this.property = property;
             this.rightProperty = rightProperty;
             this.queueMax = queueMax;
+            this.lowercase = lowercase;
         }
 
         @Override
@@ -336,7 +352,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                 while (iter.hasNext()) {
                     RDFNode n = iter.next();
                     if (n.isLiteral()) {
-                        trie.add(n.asLiteral().getLexicalForm(), r);
+                        trie.add(lowercase ? n.asLiteral().getLexicalForm().toLowerCase() : n.asLiteral().getLexicalForm(), r);
                     } else {
                         log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.WARNING, r + " had a non-literal value for property " + property);
                     }
@@ -348,7 +364,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                 while (iter.hasNext()) {
                     RDFNode n = iter.next();
                     if (n.isLiteral()) {
-                        labels.add(new Pair(r, n.asLiteral().getLexicalForm()));
+                        labels.add(new Pair(r, lowercase ? n.asLiteral().getLexicalForm().toLowerCase() : n.asLiteral().getLexicalForm()));
                     } else {
                         log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.WARNING, r + " had a non-literal value for property " + property);
                     }
@@ -669,4 +685,14 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
 
     }
 
+    private static class FreqLen {
+        public final double freq, len;
+
+        public FreqLen(double freq, double len) {
+            this.freq = freq;
+            this.len = len;
+        }
+
+        
+    }
 }
