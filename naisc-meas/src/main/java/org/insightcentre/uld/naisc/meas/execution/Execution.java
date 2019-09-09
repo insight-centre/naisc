@@ -3,6 +3,7 @@ package org.insightcentre.uld.naisc.meas.execution;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
+import eu.monnetproject.lang.Language;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -43,6 +44,8 @@ public class Execution implements ExecuteListener {
     public boolean aborted = false;
     private final String id;
     private final HashMap<Pair<Resource, Resource>, Map<String, LangStringPair>> lensResults = new HashMap<>();
+    private final HashMap<Resource, Map<String, LangStringPair>> leftLensResults = new HashMap<>();
+    private final HashMap<Resource, Map<String, LangStringPair>> rightLensResults = new HashMap<>();
     private List<Pair<Resource, Resource>> blocks = new ArrayList<>();
     private final static Object databaseLock = new Object();
     private final List<Message> messages = new ArrayList<>();
@@ -75,6 +78,14 @@ public class Execution implements ExecuteListener {
                 lensResults.put(p, new HashMap<>());
             }
             lensResults.get(p).put(lensId, res);
+            if (!leftLensResults.containsKey(id1)) {
+                leftLensResults.put(id1, new HashMap<>());
+            }
+            leftLensResults.get(id1).put(lensId, res);
+            if (!rightLensResults.containsKey(id1)) {
+                rightLensResults.put(id1, new HashMap<>());
+            }
+            rightLensResults.get(id1).put(lensId, res);
         }
     }
 
@@ -191,6 +202,9 @@ public class Execution implements ExecuteListener {
                 for (DataViewPath dvp : dve.paths) {
 
                     Map<String, LangStringPair> m = lensResults.get(new Pair(dvp.alignment.entity1, dvp.alignment.entity2));
+                    if (m == null) {
+                        m = createLensResult(dvp.alignment.entity1, dvp.alignment.entity2);
+                    }
                     String lens = m == null ? "{}" : mapper.writeValueAsString(m);
                     pstat.setString(1, dvp.alignment.entity1.getURI());
                     pstat.setString(2, dvp.alignment.relation);
@@ -633,6 +647,36 @@ public class Execution implements ExecuteListener {
             }
         }
         return messages;
+    }
+
+    private Map<String, LangStringPair> createLensResult(Resource entity1, Resource entity2) {
+        if (leftLensResults.containsKey(entity1)) {
+            Map<String, LangStringPair> merged = new HashMap<>(leftLensResults.get(entity1));
+            Map<String, LangStringPair> r = rightLensResults.get(entity2);
+            for (Map.Entry<String, LangStringPair> e : merged.entrySet()) {
+                if (r != null && r.containsKey(e.getKey())) {
+                    e.setValue(new LangStringPair(e.getValue().lang1, r.get(e.getKey()).lang2, e.getValue()._1, r.get(e.getKey())._2));
+                } else {
+                    e.setValue(new LangStringPair(e.getValue().lang1, Language.UNDEFINED, e.getValue()._1, ""));
+                }
+            }
+            if (r != null) {
+                for (Map.Entry<String, LangStringPair> e : r.entrySet()) {
+                    if (!merged.containsKey(e.getKey())) {
+                        merged.put(e.getKey(), new LangStringPair(Language.UNDEFINED, e.getValue().lang2, "", e.getValue()._2));
+                    }
+                }
+            }
+            return merged;
+        } else if (rightLensResults.containsKey(entity2)) {
+            Map<String, LangStringPair> merged = new HashMap<>(rightLensResults.get(entity2));
+            for (Map.Entry<String, LangStringPair> e : merged.entrySet()) {
+                e.setValue(new LangStringPair(Language.UNDEFINED, e.getValue().lang2, "", e.getValue()._2));
+            }
+            return merged;
+        } else {
+            return null;
+        }
     }
 
     public static class ListenerResponse {

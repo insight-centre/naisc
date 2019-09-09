@@ -9,13 +9,11 @@ import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
@@ -235,7 +233,6 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         private List<Resource> nearest(List<String> labels, Map<String, Object2DoubleMap<Resource>> ngrams) {
             final Beam<Resource> freqsFinal = new Beam<>(maxMatches);
             for (String r : labels) {
-                //System.err.println("label: " + r);
                 for (int i = 0; i < Math.min(100,r.length()) - n + 1; i++) {
                     String ng = r.substring(i, i + n);
                     //System.err.print(ng);
