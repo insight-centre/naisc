@@ -425,7 +425,7 @@ public class Main {
         }
         
         public Alignment toAlignment() {
-            return new Alignment(left, left, result.value(), relation);
+            return new Alignment(left, right, result.value(), relation);
         }
     }
 }

@@ -2,7 +2,6 @@ package org.insightcentre.uld.naisc.matcher;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import org.insightcentre.uld.naisc.Alignment;
