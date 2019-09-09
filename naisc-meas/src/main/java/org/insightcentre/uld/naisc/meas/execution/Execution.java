@@ -12,11 +12,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.Dataset;
@@ -330,7 +331,7 @@ public class Execution implements ExecuteListener {
                 List<RunResultRow> rrrs = new ArrayList<>();
                 try (Statement stat = connection.createStatement()) {
                     final String query;
-                    if(offset >= 0 && limit > 0) {
+                    if (offset >= 0 && limit > 0) {
                         query = "SELECT res1, prop, res2, lens, score, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order LIMIT " + limit + " OFFSET " + offset;
                     } else {
                         query = "SELECT res1, prop, res2, lens, score, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order";
@@ -353,9 +354,61 @@ public class Execution implements ExecuteListener {
                         }
                     }
                 }
+                simplifyView(rrrs);
                 return rrrs;
             } catch (SQLException | IOException x) {
                 throw new RuntimeException(x);
+            }
+        }
+    }
+
+    private static void simplifyView(List<RunResultRow> rrrs) {
+        String lastLeftRoot = "";
+        String lastRightRoot = "";
+        List<String> lastLeftPath = Collections.EMPTY_LIST;
+        List<String> lastRightPath = Collections.EMPTY_LIST;
+        for (RunResultRow rrr : rrrs) {
+            if (rrr.leftRoot.equals(lastLeftRoot)) {
+                rrr.leftRoot = "";
+                List<String> newLeftPath = new ArrayList<>();
+                Iterator<String> i1 = rrr.leftPath.iterator();
+                Iterator<String> i2 = lastLeftPath.iterator();
+                while (i1.hasNext() && i2.hasNext()) {
+                    String s = i1.next();
+                    if (s.equals(i2.next())) {
+                        newLeftPath.add("");
+                    } else {
+                        newLeftPath.add(s);
+                    }
+                }
+                while (i1.hasNext()) {
+                    newLeftPath.add(i1.next());
+                }
+                lastLeftPath = rrr.leftPath;
+                rrr.leftPath = newLeftPath;
+            } else {
+                lastLeftRoot = rrr.leftRoot;
+            }
+            if (rrr.rightRoot.equals(lastRightRoot)) {
+                rrr.rightRoot = "";
+                List<String> newRightPath = new ArrayList<>();
+                Iterator<String> i1 = rrr.leftPath.iterator();
+                Iterator<String> i2 = lastRightPath.iterator();
+                while (i1.hasNext() && i2.hasNext()) {
+                    String s = i1.next();
+                    if (s.equals(i2.next())) {
+                        newRightPath.add("");
+                    } else {
+                        newRightPath.add(s);
+                    }
+                }
+                while (i1.hasNext()) {
+                    newRightPath.add(i1.next());
+                }
+                lastRightPath = rrr.leftPath;
+                rrr.leftPath = newRightPath;
+            } else {
+                lastRightRoot = rrr.rightRoot;
             }
         }
     }

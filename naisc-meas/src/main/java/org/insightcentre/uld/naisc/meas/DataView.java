@@ -1,6 +1,7 @@
 package org.insightcentre.uld.naisc.meas;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,6 +23,57 @@ import org.insightcentre.uld.naisc.Dataset;
  */
 public class DataView {
 
+    public static final String[] BLACK_PROPERTIES = new String[]{
+        "http://www.w3.org/2002/07/owl#allValuesFrom",
+        "http://www.w3.org/2002/07/owl#annotatedProperty",
+        "http://www.w3.org/2002/07/owl#annotatedSource",
+        "http://www.w3.org/2002/07/owl#annotatedTarget",
+        "http://www.w3.org/2002/07/owl#assertionProperty",
+        "http://www.w3.org/2002/07/owl#cardinality",
+        "http://www.w3.org/2002/07/owl#complementOf",
+        "http://www.w3.org/2002/07/owl#datatypeComplementOf",
+        "http://www.w3.org/2002/07/owl#differentFrom",
+        "http://www.w3.org/2002/07/owl#disjointUnionOf",
+        "http://www.w3.org/2002/07/owl#disjointWith",
+        "http://www.w3.org/2002/07/owl#distinctMembers",
+        "http://www.w3.org/2002/07/owl#equivalentClass",
+        "http://www.w3.org/2002/07/owl#equivalentProperty",
+        "http://www.w3.org/2002/07/owl#hasKey",
+        "http://www.w3.org/2002/07/owl#hasSelf",
+        "http://www.w3.org/2002/07/owl#hasValue",
+        "http://www.w3.org/2002/07/owl#intersectionOf",
+        "http://www.w3.org/2002/07/owl#inverseOf",
+        "http://www.w3.org/2002/07/owl#maxCardinality",
+        "http://www.w3.org/2002/07/owl#maxQualifiedCardinality",
+        "http://www.w3.org/2002/07/owl#members",
+        "http://www.w3.org/2002/07/owl#minCardinality",
+        "http://www.w3.org/2002/07/owl#minQualifiedCardinality",
+        "http://www.w3.org/2002/07/owl#onClass",
+        "http://www.w3.org/2002/07/owl#onDataRange",
+        "http://www.w3.org/2002/07/owl#onDatatype",
+        "http://www.w3.org/2002/07/owl#oneOf",
+        "http://www.w3.org/2002/07/owl#onProperties",
+        "http://www.w3.org/2002/07/owl#onProperty",
+        "http://www.w3.org/2002/07/owl#propertyChainAxiom",
+        "http://www.w3.org/2002/07/owl#propertyDisjointWith",
+        "http://www.w3.org/2002/07/owl#qualifiedCardinality",
+        "http://www.w3.org/2002/07/owl#someValuesFrom",
+        "http://www.w3.org/2002/07/owl#sourceIndividual",
+        "http://www.w3.org/2002/07/owl#targetIndividual",
+        "http://www.w3.org/2002/07/owl#targetValue",
+        "http://www.w3.org/2002/07/owl#unionOf",
+        "http://www.w3.org/2002/07/owl#withRestrictions"
+    };
+
+    private static Set<String> blackProps = null;
+    
+    public static Set<String> blackProperties() {
+        if(blackProps == null) {
+            blackProps = new HashSet<>(Arrays.asList(BLACK_PROPERTIES));
+        }
+        return blackProps;
+    }
+    
     public final List<DataViewEntry> entries;
 
     public DataView(List<DataViewEntry> entries) {
@@ -41,10 +93,11 @@ public class DataView {
         for (Paths p : ps) {
             List<DataViewPath> l = new ArrayList<>();
             for (Alignment a : alignmentSet) {
-                
+
                 List<String> leftPath = p.paths.get(a.entity1);
-                if(leftPath == null)
+                if (leftPath == null) {
                     continue;
+                }
                 List<String> rightPath = null;
                 String rightRoot = null;
                 for (Paths rightP : rightPaths) {
@@ -70,31 +123,35 @@ public class DataView {
         StmtIterator iter = d.listStatements();
         while (iter.hasNext()) {
             Statement s = iter.next();
-            if (!s.getObject().isResource() || s.getObject().asResource().equals(s.getSubject())) {
+            if (!s.getObject().isResource() || s.getObject().asResource().equals(s.getSubject())
+                    || blackProperties().contains(s.getPredicate().getURI())) {
                 continue;
             }
             Resource o = s.getObject().asResource();
-            if(roots.containsKey(s.getSubject())) {
-                if(roots.containsKey(o) && roots.get(o).contains(s.getSubject())) 
+            if (roots.containsKey(s.getSubject())) {
+                if (roots.containsKey(o) && roots.get(o).contains(s.getSubject())) {
                     continue; // This would be a loop
-                for(Map.Entry<Resource, Set<Resource>> e : roots.entrySet()) {
-                    if(e.getValue().contains(o)) {
+                }
+                for (Map.Entry<Resource, Set<Resource>> e : roots.entrySet()) {
+                    if (e.getValue().contains(o)) {
                         e.getValue().remove(o);
                         e.getValue().addAll(roots.get(s.getSubject()));
-                        if(e.getValue().contains(e.getKey()))
+                        if (e.getValue().contains(e.getKey())) {
                             throw new RuntimeException("Root algorithm is bust");
+                        }
                     }
                 }
             } else {
-                for(Map.Entry<Resource, Set<Resource>> e : roots.entrySet()) {
-                    if(e.getValue().contains(o)) {
+                for (Map.Entry<Resource, Set<Resource>> e : roots.entrySet()) {
+                    if (e.getValue().contains(o)) {
                         e.getValue().remove(o);
                         e.getValue().add(s.getSubject());
-                        if(e.getValue().contains(e.getKey()))
+                        if (e.getValue().contains(e.getKey())) {
                             throw new RuntimeException("Root algorithm is bust");
+                        }
                     }
                 }
-                if(!roots.containsKey(o)) {
+                if (!roots.containsKey(o)) {
                     roots.put(o, new HashSet<>());
                 }
                 roots.get(o).add(s.getSubject());
@@ -119,7 +176,8 @@ public class DataView {
         List<Resource> toVisit = new ArrayList<>();
         while (iter.hasNext()) {
             Statement s = iter.next();
-            if (!s.getObject().isResource() || s.getObject().asResource().equals(s.getSubject())) {
+            if (!s.getObject().isResource() || s.getObject().asResource().equals(s.getSubject())
+                    || blackProperties().contains(s.getPredicate().getURI())) {
                 continue;
             }
             Resource o = s.getObject().asResource();
@@ -201,8 +259,6 @@ public class DataView {
         public String toString() {
             return "Tree{" + "adjacencies=" + adjacencies + ", roots=" + roots + '}';
         }
-        
-        
 
     }
 
@@ -249,8 +305,7 @@ public class DataView {
         public String toString() {
             return "Paths{" + "root=" + root + ", paths=" + paths + '}';
         }
-        
-        
+
     }
 
     public static class DataViewEntry {

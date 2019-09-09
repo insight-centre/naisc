@@ -57,18 +57,28 @@
                             <td>Evaluation</td>
                     </thead>
                     <tr v-for="(result,idx) in results" v-bind:class="{'valid-yes':result.valid === 'yes','valid-no':result.valid === 'no','valid-unknown':result.valid === 'unknown','valid-novel':result.valid === 'novel'}">
-                        <td><a v-bind:href="result.subject">{{displayUrl(result.subject)}}</a>
+                        <td>
+                            <span v-if="result.leftRoot && result.leftRoot !== result.subject"><a v-bind:href="result.leftRoot" class="root">{{displayUrl(result.leftRoot)}}</a><br/></span>
+                            <div v-for="(lp, lpidx) in result.leftPath">
+                                <span v-if="lp"><a v-bind:href="lp" class="treeLink" v-bind:style="{ marginLeft: (lpidx*10 + 10) + 'px' }">{{displayUrl(lp)}}</a><br/></span>
+                            </div>
+                            <a v-bind:href="result.subject" v-bind:style="{ marginLeft: (result.leftPath.length*10 + 20) + 'px' }">{{displayUrl(result.subject)}}</a>
                             <button type="button" class="btn btn-info" title="Change this entity" v-if="result.valid==='no'" v-on:click.prevent="changeLeft(idx,result.subject)">
                                 <i class="fas fa-wrench"></i></button>
-                            <div v-for="(l, lensid) in result.lens">
+                            <div v-for="(l, lensid) in result.lens" v-bind:style="{ marginLeft: (result.leftPath.length*10 + 20) + 'px' }">
                                 <span class="lens-id">{{lensid}}:</span> <span class="lens-content">{{l._1}}</span> <span class="lens-language">{{l.lang1}}</span>
                             </div>
                         </td>
                         <td><a v-bind:href="result.property">{{displayUrl(result.property)}}</a></td>
-                        <td><a v-bind:href="result.object">{{displayUrl(result.object)}}</a>
+                        <td>
+                            <span v-if="result.rightRoot && result.rightRoot !== result.object"><a v-bind:href="result.rightRoot" class="root">{{displayUrl(result.rightRoot)}}</a><br/></span>
+                            <div v-for="(lp, lpidx) in result.rightPath">
+                                <span v-if="lp"><a v-bind:href="lp" class="treeLink" v-bind:style="{ marginLeft: (lpidx*10 + 10) + 'px' }">{{displayUrl(lp)}}</a><br/></span>
+                            </div>
+                            <a v-bind:href="result.object" v-bind:style="{ marginLeft: (result.rightPath.length*10 + 20) + 'px' }">{{displayUrl(result.object)}}</a>
                             <button type="button" class="btn btn-info" title="Change this entity" v-if="result.valid==='no'" v-on:click.prevent="changeRight(idx,result.object)">
                                 <i class="fas fa-wrench"></i></button>
-                            <div v-for="(l, lensid) in result.lens">
+                            <div v-for="(l, lensid) in result.lens" v-bind:style="{ marginLeft: (result.rightPath.length*10 + 20) + 'px' }">
                                 <span class="lens-id">{{lensid}}:</span> <span class="lens-content">{{l._2}}</span> <span class="lens-language">{{l.lang2}}</span>
                             </div>
                         </td>
