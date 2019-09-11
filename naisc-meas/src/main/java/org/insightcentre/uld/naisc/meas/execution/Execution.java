@@ -99,7 +99,9 @@ public class Execution implements ExecuteListener {
 
     @Override
     public void addBlock(Resource res1, Resource res2) {
-        blocks.add(new Pair<>(res1, res2));
+        synchronized (databaseLock) {
+            blocks.add(new Pair<>(res1, res2));
+        }
         if (blocks.size() > BLOCK_MAX) {
             synchronized (databaseLock) {
                 if (blocks.size() > BLOCK_MAX) {
