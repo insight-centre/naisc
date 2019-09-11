@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.scorer;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -83,12 +84,14 @@ public class RAdLRTest {
      * Test of makeTrainer method, of class RAdLR.
      */
     @Test
-    public void testMakeTrainer() {
+    public void testMakeTrainer() throws Exception {
         System.out.println("makeTrainer");
         Map<String, Object> params = new HashMap<>();
         String property = Alignment.SKOS_EXACT_MATCH;
         RAdLR instance = new RAdLR();
-        Option<ScorerTrainer> trainer2 = instance.makeTrainer(params, property, null);
+        File f = File.createTempFile("foo", "bar");
+        f.deleteOnExit();
+        Option<ScorerTrainer> trainer2 = instance.makeTrainer(params, property, f);
         assert (trainer2.has());
         ScorerTrainer trainer = trainer2.get();
         List<FeatureSetWithScore> data = new ArrayList<>();

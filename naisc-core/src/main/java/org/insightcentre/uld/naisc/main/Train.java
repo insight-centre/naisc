@@ -122,6 +122,8 @@ public class Train {
             DatasetLoader loader) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
         final Configuration config = mapper.readValue(configuration, Configuration.class);
+        if(config.scorers.size() >= 1)
+            System.err.println("modelFile=" + config.scorers.get(0).modelFile);
         execute(name, leftFile, rightFile, alignment, negativeSampling, config, monitor, loader);
     }
 
@@ -152,7 +154,7 @@ public class Train {
      * @param name The identifier for this run
      * @param leftFile The left RDF dataset to align
      * @param rightFile The right RDF dataset to align
-     * @param alignment The alignments to learn
+     * @param goldAlignments The alignments to learn
      * @param negativeSampling The rate at which to generate negative examples
      * @param config The configuration object
      * @param monitor The listener for eventsDataset
@@ -360,7 +362,7 @@ public class Train {
         }
         return featureSet;
     }
-
+/*
     @SuppressWarnings("UseSpecificCatch")
     public static void main(String[] args) {
         try {
@@ -412,5 +414,5 @@ public class Train {
             x.printStackTrace();
             System.exit(-1);
         }
-    }
+    }*/
 }

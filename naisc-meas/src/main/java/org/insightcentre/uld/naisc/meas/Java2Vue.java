@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
@@ -25,11 +27,21 @@ public class Java2Vue {
     }
 
     private static void _java2vue(Class configClass, StringBuilder sb, String path) {
-        ObjectMapper mapper = new ObjectMapper();
+        if (knownScorers.contains(configClass.getDeclaringClass())) {
+            sb.append("<div class=\"form-group\">\n");
+            sb.append("  <label for=\"modelFile\">Model File</label>\n");
+            sb.append("  <input type=\"text\" class=\"form-control\" id=\"").
+                    append(toVar(path)).append(sep(path)).append("modelFile").append("\" v-model=\"").
+                    append(path).append(sep(path)).append("modelFile").append("\">\n");
+            sb.append("  <small class=\"form-text text-muted\">The path to the trained model file</small>\n");
+            sb.append("</div>\n");
+
+        }
+        //ObjectMapper mapper = new ObjectMapper();
         for (Field f : configClass.getFields()) {
             ConfigurationParameter param = f.getAnnotation(ConfigurationParameter.class);
             String description = param == null ? "" : param.description();
-            Object defaultValue = annoDefaultValue(param, mapper);
+            //Object defaultValue = annoDefaultValue(param, mapper);
             if (Modifier.isStatic(f.getModifiers())) {
 
             } else if (f.getType().equals(String.class)) {
@@ -89,7 +101,7 @@ public class Java2Vue {
                 if (knownConfigs.containsKey(listClass)) {
                     sb.append("<div class=\"card\">\n");
                     sb.append("  <h5 class=\"card-header\">").append(deCamelCase(f.getName()));
-                    
+
                     sb.append("    <button class=\"btn btn-success\" v-on:click.prevent=\"add(")
                             .append(path).append(sep(path)).append(f.getName()).append(",'")
                             .append(f.getName()).append("')\"><i class=\"fas fa-plus-circle\"></i> Add</button>\n");
@@ -125,26 +137,26 @@ public class Java2Vue {
                     sb.append("</div>\n");
                 } else {
                     sb.append("<h5>").append(deCamelCase(f.getName()));
-                    if(path.endsWith(".")) {
+                    if (path.endsWith(".")) {
                         String index = path.substring(path.lastIndexOf("[") + 1);
-                        index = index.substring(0, index.length()-2);
-                    sb.append("    <button class=\"btn btn-success\" v-on:click.prevent=\"addStr(").append(path.substring(0, path.lastIndexOf("[")))
-                            .append(",").append(index)
-                            .append(",'").append(f.getName()).append("','")
-                            .append(path.substring(0, path.lastIndexOf("["))).append("')\"><i class=\"fas fa-plus-circle\"></i> Add</button>\n");
+                        index = index.substring(0, index.length() - 2);
+                        sb.append("    <button class=\"btn btn-success\" v-on:click.prevent=\"addStr(").append(path.substring(0, path.lastIndexOf("[")))
+                                .append(",").append(index)
+                                .append(",'").append(f.getName()).append("','")
+                                .append(path.substring(0, path.lastIndexOf("["))).append("')\"><i class=\"fas fa-plus-circle\"></i> Add</button>\n");
                     }
                     sb.append("</h5>\n");
                     sb.append("<ul class=\"list-group\">\n");
                     sb.append("<li class=\"list-group-item\"  v-for=\"(").append(f.getName()).append("Item, ").append(f.getName()).append("Index) in ").append(path).append(sep(path)).append(f.getName()).append("\">\n");
-                    if(listClass.equals(String.class)) {
-                        
+                    if (listClass.equals(String.class)) {
+
                         sb.append("  <input type=\"text\" class=\"form-control\" id=\"").
-                            append(toVar(path)).append(f.getName()).append("\" v-model=\"").
-                            append(path).append(sep(path)).append(f.getName()).append("[").append(f.getName()).append("Index]").append("\">\n");
+                                append(toVar(path)).append(f.getName()).append("\" v-model=\"").
+                                append(path).append(sep(path)).append(f.getName()).append("[").append(f.getName()).append("Index]").append("\">\n");
                         if (description.length() > 0) {
                             sb.append("  <small class=\"form-text text-muted\">").append(description).append("</small>\n");
                         }
-                    } else if(listClass.isEnum()) {                        
+                    } else if (listClass.isEnum()) {
                         sb.append("    <select class=\"form-control\"  v-model=\"").
                                 append(path).append(sep(path)).append(f.getName()).append("[").append(f.getName()).append("Index]").append("\">\n");
                         for (Object o : listClass.getEnumConstants()) {
@@ -160,7 +172,7 @@ public class Java2Vue {
                     sb.append("<button class=\"btn btn-danger float-right\" v-on:click.prevent=\"remove(").append(path).append(sep(path)).append(f.getName()).append(",").append(f.getName()).append("Index)\"><i class=\"fas fa-minus-circle\"></i> Remove</button>\n");
                     sb.append("</li>");
                     sb.append("</ul>");
-                    
+
                 }
             } else if (knownConfigs.containsKey(f.getType())) {
                 sb.append("<div class=\"card\">\n");
@@ -203,17 +215,17 @@ public class Java2Vue {
     }
 
     private static String sep(String path) {
-        if(path.equals("")) {
+        if (path.equals("")) {
             return "";
-        } else if(path.equals("config")) {
+        } else if (path.equals("config")) {
             return ".";
-        } else if(path.endsWith(".")) {
+        } else if (path.endsWith(".")) {
             return "";
         } else {
             return "__";
         }
     }
-    
+
     private static Object annoDefaultValue(ConfigurationParameter param, ObjectMapper mapper) {
         Object defaultValue;
         try {
@@ -247,7 +259,8 @@ public class Java2Vue {
         return v.replace('.', '_').replaceAll("\\[[^\\]]\\]", "");
     }
 
-    private static HashMap<Class, Class[]> knownConfigs = new HashMap<Class, Class[]>() {
+    private static final HashSet<Class> knownScorers = new HashSet<>(Arrays.asList(Configuration.knownScorers));
+    private static final HashMap<Class, Class[]> knownConfigs = new HashMap<Class, Class[]>() {
         {
             put(Configuration.BlockingStrategyConfiguration.class, Configuration.knownBlockingStrategies);
             put(Configuration.LensConfiguration.class, Configuration.knownLenses);
@@ -262,6 +275,5 @@ public class Java2Vue {
     private static String serviceName(Class c) {
         return c.getName().replaceAll("^org\\.insightcentre\\.uld\\.naisc\\.", "");
     }
-
 
 }

@@ -640,6 +640,7 @@ public class Configuration {
         public void serialize(ScorerConfiguration value, JsonGenerator gen, SerializerProvider provider) throws IOException {
             gen.writeStartObject();
             gen.writeStringField("name", value.name);
+            gen.writeStringField("modelFile", value.modelFile);
             for (Map.Entry<String, Object> e : value.params.entrySet()) {
                 gen.writeObjectField(e.getKey(), e.getValue());
             }

@@ -69,6 +69,8 @@ public class RAdLR implements ScorerFactory {
     @Override
     public Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property, File modelFile) {
         ObjectMapper mapper = new ObjectMapper();
+        if(modelFile == null)
+            throw new RuntimeException("Model file cannot be null");
         Configuration config = mapper.convertValue(params, Configuration.class);
         RAdLRModel model = new RAdLRModel();
         model.property = property;
