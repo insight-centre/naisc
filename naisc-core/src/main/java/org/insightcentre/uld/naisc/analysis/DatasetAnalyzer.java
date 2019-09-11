@@ -103,7 +103,8 @@ public class DatasetAnalyzer {
     }
 
     private static class Components {
-
+        // For efficiency we maintain the component list simultaneously in two
+        // similar data structures
         List<Set<Resource>> components = new ArrayList<>();
         Object2IntMap ids = new Object2IntOpenHashMap<>();
 
