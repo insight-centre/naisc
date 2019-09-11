@@ -404,11 +404,12 @@ public class Execution implements ExecuteListener {
                 rrr.leftPath = newLeftPath;
             } else {
                 lastLeftRoot = rrr.leftRoot;
+                lastLeftPath = rrr.leftPath;
             }
             if (rrr.rightRoot.equals(lastRightRoot)) {
                 rrr.rightRoot = "";
                 List<String> newRightPath = new ArrayList<>();
-                Iterator<String> i1 = rrr.leftPath.iterator();
+                Iterator<String> i1 = rrr.rightPath.iterator();
                 Iterator<String> i2 = lastRightPath.iterator();
                 while (i1.hasNext() && i2.hasNext()) {
                     String s = i1.next();
@@ -421,10 +422,11 @@ public class Execution implements ExecuteListener {
                 while (i1.hasNext()) {
                     newRightPath.add(i1.next());
                 }
-                lastRightPath = rrr.leftPath;
-                rrr.leftPath = newRightPath;
+                lastRightPath = rrr.rightPath;
+                rrr.rightPath = newRightPath;
             } else {
                 lastRightRoot = rrr.rightRoot;
+                lastRightPath = rrr.rightPath;
             }
         }
     }
