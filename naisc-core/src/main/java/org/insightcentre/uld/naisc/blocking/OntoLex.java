@@ -288,4 +288,6 @@ public class OntoLex implements BlockingStrategyFactory {
         }
 
     }
+    
+    public static class Configuration {}
 }
