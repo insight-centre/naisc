@@ -9,9 +9,7 @@
         "name": "feature.BasicString"
     }],
     "scorers": [{
-        "name": "scorer.LibSVM",
-        "modelFile": "src/test/resources/model.libsvm",
-        "property": "http://www.w3.org/2004/02/skos/core#exactMatch"
+        "name": "scorer.Average"
     }],
     "matcher": {
         "name": "matcher.Threshold",
