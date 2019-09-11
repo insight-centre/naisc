@@ -2,6 +2,7 @@ package org.insightcentre.uld.naisc.meas;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -118,8 +119,39 @@ public class DataView {
         return dves;
     }
 
-    static Set<Resource> findRoots(Dataset d) {
+    private static class Roots {
         Map<Resource, Set<Resource>> roots = new HashMap<>();
+        Map<Resource, Set<Resource>> invRoots = new HashMap<>();
+        
+        public boolean containsKey(Resource r) { return roots.containsKey(r); }
+        public Collection<Set<Resource>> values() { return roots.values(); }
+        public Set<Resource> get(Resource r) { return roots.get(r); }
+        public void put(Resource r, Resource r2) {
+            if(!roots.containsKey(r)) {
+                roots.put(r, new HashSet<>());
+            }
+            roots.get(r).add(r2);
+            if(!invRoots.containsKey(r2)) {
+                invRoots.put(r2, new HashSet<>());
+            }
+            invRoots.get(r2).add(r);
+        }
+        public Set<Resource> getInv(Resource r) { return invRoots.containsKey(r) ? new HashSet<>(invRoots.get(r)) : Collections.EMPTY_SET; }
+        public void remove(Resource r, Resource r2) {
+            if(roots.containsKey(r))
+                roots.get(r).remove(r2);
+            if(invRoots.containsKey(r2))
+                invRoots.get(r2).remove(r);
+        }
+        public void addAll(Resource r, Set<Resource> r2s) {
+            for(Resource r2 : r2s) {
+                put(r, r2);
+            }
+        }
+    }
+    
+    static Set<Resource> findRoots(Dataset d) {
+        Roots roots = new Roots();
         StmtIterator iter = d.listStatements();
         while (iter.hasNext()) {
             Statement s = iter.next();
@@ -132,29 +164,16 @@ public class DataView {
                 if (roots.containsKey(o) && roots.get(o).contains(s.getSubject())) {
                     continue; // This would be a loop
                 }
-                for (Map.Entry<Resource, Set<Resource>> e : roots.entrySet()) {
-                    if (e.getValue().contains(o)) {
-                        e.getValue().remove(o);
-                        e.getValue().addAll(roots.get(s.getSubject()));
-                        if (e.getValue().contains(e.getKey())) {
-                            throw new RuntimeException("Root algorithm is bust");
-                        }
-                    }
+                for(Resource r : roots.getInv(o)) {
+                    roots.remove(r, o);
+                    roots.addAll(r, roots.get(s.getSubject()));
                 }
             } else {
-                for (Map.Entry<Resource, Set<Resource>> e : roots.entrySet()) {
-                    if (e.getValue().contains(o)) {
-                        e.getValue().remove(o);
-                        e.getValue().add(s.getSubject());
-                        if (e.getValue().contains(e.getKey())) {
-                            throw new RuntimeException("Root algorithm is bust");
-                        }
-                    }
+                for(Resource r : roots.getInv(o)) {
+                    roots.remove(r, o);
+                    roots.put(r, s.getSubject());
                 }
-                if (!roots.containsKey(o)) {
-                    roots.put(o, new HashSet<>());
-                }
-                roots.get(o).add(s.getSubject());
+                roots.put(o, s.getSubject());
             }
         }
         return roots.values().stream().flatMap(x -> x.stream()).collect(Collectors.toSet());
