@@ -1,5 +1,7 @@
 package org.insightcentre.uld.naisc.analysis;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import static java.lang.Math.exp;
 import static java.lang.Math.sqrt;
 import java.util.ArrayList;
@@ -26,13 +28,14 @@ public class DatasetAnalyzer {
 
     public int overlapSize(Set<String> left, List<String> right) {
         int overlap = 0;
-        for(String s : right) {
-            if(left.contains(s))
+        for (String s : right) {
+            if (left.contains(s)) {
                 overlap++;
+            }
         }
         return overlap;
     }
-    
+
     public List<MatchResult> analyseMatch(Map<String, List<String>> left, Map<String, List<String>> right) {
         List<MatchResult> results = new ArrayList<>();
         for (String leftUri : left.keySet()) {
@@ -99,10 +102,62 @@ public class DatasetAnalyzer {
                 leftSubjects.size(), rightSubjects.size());
     }
 
+    private static class Components {
+
+        List<Set<Resource>> components = new ArrayList<>();
+        Object2IntMap ids = new Object2IntOpenHashMap<>();
+
+        public int componentNumber(Resource r) {
+            return ids.getInt(r);
+        }
+
+        public int size() {
+            return components.size();
+        }
+
+        public void add(Resource r) {
+            ids.put(r, components.size());
+            components.add(new HashSet<>(Arrays.asList(r)));
+        }
+
+        public void add(Resource r, Resource r2) {
+            ids.put(r, components.size());
+            ids.put(r2, components.size());
+            components.add(new HashSet<>(Arrays.asList(r, r2)));
+        }
+
+        public void add(int j, Resource r) {
+            ids.put(r, j);
+            components.get(j).add(r);
+        }
+
+        public void merge(int i, int j) {
+
+            Set<Resource> ci = components.get(i);
+            Set<Resource> cj = components.get(j);
+            if (ci.size() < cj.size()) {
+                for(Resource r : ci) {
+                    ids.put(r, j);
+                }
+                cj.addAll(ci);
+                components.remove(i);
+            } else {
+                for(Resource r : cj) {
+                    ids.put(r, i);
+                }
+                ci.addAll(cj);
+                components.remove(j);
+            }
+        }
+        
+        public List<Set<Resource>> asList() { return components; }
+    }
+
+
     private List<Set<Resource>> analyzeLabels(Dataset model, Set<String> subjects,
             Map<String, List<String>> analysis, Map<String, Set<String>> propBySubj,
             Set<String> dataProps, Set<String> classes) {
-        List<Set<Resource>> components = new ArrayList<>();
+        Components components = new Components();
         StmtIterator iter = model.listStatements();
         while (iter.hasNext()) {
             Statement stmt = iter.next();
@@ -131,32 +186,24 @@ public class DatasetAnalyzer {
                     }
                 }
             }
-            if(stmt.getObject().isResource()) {
-                int i = 0;
-                for(; i < components.size(); i++) {
-                    if(components.get(i).contains(stmt.getSubject())) 
-                        break;
-                }
-                int j = 0;
-                for(; j < components.size(); j++) {
-                    if(components.get(j).contains(stmt.getObject().asResource())) 
-                        break;
-                }
-                if(i == components.size()) {
-                    if(j == components.size()) {
-                        components.add(new HashSet<>(Arrays.asList(stmt.getSubject(), stmt.getObject().asResource())));
+            if (stmt.getObject().isResource()) {
+                int i = components.componentNumber(stmt.getSubject());
+                int j = components.componentNumber(stmt.getObject().asResource());
+                if (i == components.size()) {
+                    if (j == components.size()) {
+                        components.add(stmt.getSubject(), stmt.getObject().asResource());
+                        //components.add(new HashSet<>(Arrays.asList(stmt.getSubject(), stmt.getObject().asResource())));
                     } else {
-                        components.add(new HashSet<>(Arrays.asList(stmt.getSubject())));
-                        components.get(j).add(stmt.getObject().asResource());
+                        components.add(stmt.getSubject());
+                        components.add(j, stmt.getObject().asResource());
                     }
                 } else {
-                    if(j == components.size()) {
-                        components.add(new HashSet<>(Arrays.asList(stmt.getObject().asResource())));
-                        components.get(i).add(stmt.getSubject());
+                    if (j == components.size()) {
+                        components.add(stmt.getObject().asResource());
+                        components.add(i, stmt.getSubject());
                     } else {
-                        if(i != j) {
-                            components.get(i).addAll(components.get(j));
-                            components.remove(j);
+                        if (i != j) {
+                            components.merge(i, j);
                         } // No else case here, they are already connected!
                     }
                 }
@@ -165,7 +212,7 @@ public class DatasetAnalyzer {
         List<String> fromURIs = subjects.stream().map(x -> URI2Label.fromURI(x)).collect(Collectors.toList());
         analysis.put("", fromURIs);
         propBySubj.put("", subjects);
-        return components;
+        return components.asList();
     }
 
     private double naturalLangLike(List<String> strings) {
@@ -227,14 +274,14 @@ public class DatasetAnalyzer {
     private static double lcc(List<Set<Resource>> components) {
         int total = 0;
         int max = -1;
-        for(Set<Resource> component : components) {
-            if(component.size() > max) {
+        for (Set<Resource> component : components) {
+            if (component.size() > max) {
                 max = component.size();
             }
             total += component.size();
         }
-        if(max >= 0) {
-            return (double)max / total;
+        if (max >= 0) {
+            return (double) max / total;
         } else {
             return 0.0;
         }
