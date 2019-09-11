@@ -42,7 +42,7 @@ public class Path implements BlockingStrategyFactory {
         if (config.preblockLeftProperty == null) {
             throw new IllegalArgumentException("Property for preblocking cannot be null");
         }
-        return new PathImpl(new Preblocking(Collections.singleton(new Pair<>(config.preblockLeftProperty,
+        return new PathImpl(new Prelinking(Collections.singleton(new Pair<>(config.preblockLeftProperty,
                 config.preblockRightProperty == null || config.preblockRightProperty.equals("") ? config.preblockLeftProperty : config.preblockRightProperty))), config.maxMatches);
     }
 
@@ -69,17 +69,17 @@ public class Path implements BlockingStrategyFactory {
 
     private static class PathImpl implements BlockingStrategy {
 
-        private final Preblocking preblocking;
+        private final Prelinking preblocking;
         private final int maxMatches;
 
-        public PathImpl(Preblocking preblocking, int maxMatches) {
+        public PathImpl(Prelinking preblocking, int maxMatches) {
             this.preblocking = preblocking;
             this.maxMatches = maxMatches;
         }
 
         @Override
         public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
-            Map<Resource, List<Resource>> prelinking = convertPrelinking(preblocking.preblock(left, right, log));
+            Map<Resource, List<Resource>> prelinking = convertPrelinking(preblocking.prelink(left, right, log));
             return new Iterable<Pair<Resource, Resource>>() {
                 @Override
                 public Iterator<Pair<Resource, Resource>> iterator() {

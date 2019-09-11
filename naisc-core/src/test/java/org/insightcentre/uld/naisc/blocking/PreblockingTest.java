@@ -64,7 +64,7 @@ public class PreblockingTest {
         Dataset left = new ModelDataset(model1);
         Dataset right = new ModelDataset(model2);
         NaiscListener log = NaiscListener.DEFAULT;
-        Preblocking instance = new Preblocking(new HashSet<>(Arrays.asList(
+        Prelinking instance = new Prelinking(new HashSet<>(Arrays.asList(
                 new Pair<>("file:p1", "file:p1"))));
         Set<Pair<Resource, Resource>> expResult = new HashSet<>(Arrays.asList(
                 new Pair<>(model1.createResource("file:foo1"), model2.createResource("file:bar1")),
@@ -72,7 +72,7 @@ public class PreblockingTest {
                 new Pair<>(model1.createResource("file:foo1"), model2.createResource("file:bar3")),
                 new Pair<>(model1.createResource("file:foo4"), model2.createResource("file:bar2")),
                 new Pair<>(model1.createResource("file:foo5"), model2.createResource("file:bar5"))));
-        Set<Pair<Resource, Resource>> result = instance.preblock(left, right, log);
+        Set<Pair<Resource, Resource>> result = instance.prelink(left, right, log);
         assertEquals(expResult, result);
     }
 
@@ -94,7 +94,7 @@ public class PreblockingTest {
                 model1.createResource("file:foo2"),
                 model1.createResource("file:foo1"),
                 model1.createResource("file:foo5")));
-        Set<Resource> result = Preblocking.leftPreblocked(s);
+        Set<Resource> result = Prelinking.leftPrelinked(s);
         assertEquals(expResult, result);
     }
 
@@ -116,7 +116,7 @@ public class PreblockingTest {
                 model1.createResource("file:bar2"),
                 model1.createResource("file:bar3"),
                 model1.createResource("file:bar5")));
-        Set<Resource> result = Preblocking.rightPreblocked(s);
+        Set<Resource> result = Prelinking.rightPrelinked(s);
         assertEquals(expResult, result);
     }
 

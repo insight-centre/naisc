@@ -76,8 +76,13 @@ public class Automatic implements BlockingStrategyFactory {
         listener.message(Stage.INITIALIZING, NaiscListener.Level.INFO, String.format("Matching using properties %s and %s", 
                 bestLeftProp.equals("") ? "<URI>" : bestLeftProp, 
                 bestRightProp.equals("") ? "<URI>" : bestRightProp));
-        if(!preblocks.isEmpty())
-            listener.message(Stage.INITIALIZING, NaiscListener.Level.INFO, "Pre-blocking on properties " + preblocks);
+        if(!preblocks.isEmpty()) {
+            StringBuilder sb = new StringBuilder("Pre-blocking on properties:\n");
+            for(Pair<String, String> preblock : preblocks) {
+                sb.append(String.format("%s <-> %s (%.4f, %.4f)\n", preblock._1, preblock._2, leftUniqueness.getDouble(preblock._1), rightUniqueness.getDouble(preblock._2)));
+            }
+            listener.message(Stage.INITIALIZING, NaiscListener.Level.INFO, sb.toString());
+        }
         return new AutomaticImpl(preblocks, config.maxMatches, bestLeftProp, bestRightProp, config.ngrams);
     }
 
@@ -98,13 +103,13 @@ public class Automatic implements BlockingStrategyFactory {
     }
     
     private static class AutomaticImpl implements BlockingStrategy {
-        private final Preblocking preblocking;
+        private final Prelinking preblocking;
         private final int maxMatches, n;
         private final String property, rightProperty;
         
 
         public AutomaticImpl(Set<Pair<String,String>> preblockProperties, int maxMatches, String property, String rightProperty, int n) {
-            this.preblocking = new Preblocking(preblockProperties);
+            this.preblocking = new Prelinking(preblockProperties);
             this.maxMatches = maxMatches;
             this.property = property;
             this.rightProperty = rightProperty;
@@ -115,11 +120,11 @@ public class Automatic implements BlockingStrategyFactory {
 
         @Override
         public Iterable<Pair<Resource, Resource>> block(Dataset left,  Dataset right, NaiscListener log) {
-            final Set<Pair<Resource, Resource>> p = preblocking.preblock(left, right, log);
+            final Set<Pair<Resource, Resource>> p = preblocking.prelink(left, right, log);
             final ApproximateStringMatching.NgramApproximateStringMatch matcher = 
                     new ApproximateStringMatching.NgramApproximateStringMatch(
                             maxMatches, property, rightProperty, n, 
-                            Preblocking.leftPreblocked(p), Preblocking.rightPreblocked(p), true);
+                            Prelinking.leftPrelinked(p), Prelinking.rightPrelinked(p), true);
             final Iterable<Pair<Resource, Resource>> base = matcher.block(left, right, log);
             return new Iterable<Pair<Resource, Resource>>() {
                 @Override

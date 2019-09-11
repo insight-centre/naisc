@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.math3.distribution.BetaDistribution;
+import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
@@ -170,6 +171,10 @@ public class DatasetAnalyzer {
                         analysis.put(prop, new ArrayList<>());
                         propBySubj.put(prop, new HashSet<>());
                     }
+                    Literal l = stmt.getObject().asLiteral();
+                    if(l.getDatatypeURI() != null && l.getDatatypeURI().startsWith("http://www.w3.org/2001/XMLSchema#") &&
+                            !l.getDatatypeURI().equals("http://www.w3.org/2001/XMLSchema#string"))
+                        continue; // Skip all non-string data
                     analysis.get(prop).add(stmt.getObject().asLiteral().getString());
                     propBySubj.get(prop).add(stmt.getSubject().getURI());
                     dataProps.add(prop);
