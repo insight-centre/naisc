@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.util;
 
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
@@ -14,10 +15,10 @@ public final class PrettyGoodTokenizer {
 
     private final static SimpleCache<String, String[]> cache = new SimpleCache(10000);
 
-    private final static class DoTokenize implements SimpleCache.Get<String, String[]> {
+    private final static class DoTokenize implements Function<String, String[]> {
 
         @Override
-        public String[] get(String s) {
+        public String[] apply(String s) {
             String s1 = pattern1.matcher(s).replaceAll(" $1 ");
             String s2 = pattern2.matcher(s1).replaceAll("");
             return s2.split("\\p{Z}+");

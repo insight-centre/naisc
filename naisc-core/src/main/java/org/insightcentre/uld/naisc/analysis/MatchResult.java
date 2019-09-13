@@ -21,7 +21,6 @@ public class MatchResult {
     }
 
     public boolean coversData() {
-        System.err.printf("%s <-> %s %d\n", leftUri, rightUri, coverage);
-        return this.coverage > 100 || this.coverage > 0.1 * Math.min(this.leftTotal, this.rightTotal);
+        return this.coverage > 100 || this.coverage > 0.1 * Math.max(this.leftTotal, this.rightTotal);
     }
 }

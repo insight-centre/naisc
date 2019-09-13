@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import static eu.monnetproject.lang.Language.ENGLISH;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntIterator;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import java.io.File;
 import java.io.IOException;
@@ -33,9 +36,10 @@ import org.insightcentre.uld.naisc.TextFeatureFactory;
  * @author John McCrae
  */
 public class BasicString implements TextFeatureFactory {
+
     private static final SimilarityScore<Double> JARO_WINKLER = new JaroWinklerSimilarity();
     private static final LevenshteinDistance LEVENSHTEIN = new LevenshteinDistance();
-  
+
     /**
      * The features implemented by basic string
      */
@@ -82,20 +86,21 @@ public class BasicString implements TextFeatureFactory {
         /**
          * Use only features with the given names
          */
-        @ConfigurationParameter(description = "The features to extract", defaultValue="null")
+        @ConfigurationParameter(description = "The features to extract", defaultValue = "null")
         public List<Feature> features;
         /**
          * Convert all strings to lower case before processing
          */
-        @ConfigurationParameter(description = "Convert all strings to lower case before processing", defaultValue="true")
+        @ConfigurationParameter(description = "Convert all strings to lower case before processing", defaultValue = "true")
         public boolean lowerCase = true;
 
         public Object2DoubleMap<String> ngramWeights() {
             if (ngramWeights != null && !"".equals(ngramWeights)) {
                 try {
                     final File file = new File(ngramWeights);
-                    if(!file.exists())
+                    if (!file.exists()) {
                         throw new RuntimeException("Could not find file: " + file.getAbsolutePath());
+                    }
                     return WordWeighting.get(file);
                 } catch (IOException x) {
                     throw new RuntimeException(x);
@@ -109,8 +114,9 @@ public class BasicString implements TextFeatureFactory {
             if (wordWeights != null && !"".equals(wordWeights)) {
                 try {
                     final File file = new File(wordWeights);
-                    if(!file.exists())
+                    if (!file.exists()) {
                         throw new RuntimeException("Could not find file: " + file.getAbsolutePath());
+                    }
                     return WordWeighting.get(file);
                 } catch (IOException x) {
                     throw new RuntimeException(x);
@@ -246,23 +252,23 @@ public class BasicString implements TextFeatureFactory {
                     featureNames.add(prefix + "number");
                 }
             }
-            
-            if(charLevel) {
+
+            if (charLevel) {
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.jaroWinkler)) {
                     featureNames.add(prefix + "jaroWinkler");
                 }
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.levenshtein)) {
                     featureNames.add(prefix + "levenshtein");
-                }                
+                }
             }
-            
-            if(!charLevel) {
+
+            if (!charLevel) {
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.mongeElkanJaroWinkler)) {
                     featureNames.add(prefix + "mongeElkanJaroWinkler");
                 }
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.mongeElkanLevenshtein)) {
                     featureNames.add(prefix + "mongeElkanLevenshtein");
-                } 
+                }
             }
         }
 
@@ -327,22 +333,22 @@ public class BasicString implements TextFeatureFactory {
                 }
             }
 
-            if(charLevel) {
+            if (charLevel) {
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.jaroWinkler)) {
                     featureValues.add(JARO_WINKLER.apply(label1, label2));
                 }
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.levenshtein)) {
-                    featureValues.add(((double)LEVENSHTEIN.apply(label1, label2) * 2.0) / (label1.length() + label2.length()));
-                }                
+                    featureValues.add(((double) LEVENSHTEIN.apply(label1, label2) * 2.0) / (label1.length() + label2.length()));
+                }
             }
-            if(!charLevel) {
+            if (!charLevel) {
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.mongeElkanJaroWinkler)) {
-                    featureValues.add(mongeElkan(l1, l2, (s,t) -> JARO_WINKLER.apply(s, t)));
+                    featureValues.add(mongeElkan(l1, l2, (s, t) -> JARO_WINKLER.apply(s, t)));
                 }
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.mongeElkanLevenshtein)) {
-                    featureValues.add(mongeElkan(l1, l2, (s,t) -> 1.0 - (double)LEVENSHTEIN.apply(s, t) * 2.0 / (s.length() + t.length())));
-                }                
-                
+                    featureValues.add(mongeElkan(l1, l2, (s, t) -> 1.0 - (double) LEVENSHTEIN.apply(s, t) * 2.0 / (s.length() + t.length())));
+                }
+
             }
 //        featureNames.add(prefix + "gst");
 //        if(charLevel) {
@@ -394,10 +400,10 @@ public class BasicString implements TextFeatureFactory {
 
         private double mongeElkan(String[] l1, String[] l2, BiFunction<String, String, Double> function) {
             double sum = 0.0;
-            for(String s : l1) {
+            for (String s : l1) {
                 double max = Double.NEGATIVE_INFINITY;
-                for(String t : l2) {
-                    max = Math.max(function.apply(s,t), max);
+                for (String t : l2) {
+                    max = Math.max(function.apply(s, t), max);
                 }
                 sum += max;
             }
@@ -464,16 +470,44 @@ public class BasicString implements TextFeatureFactory {
                 return 1;
             }
             double ngramOverlap = 0;
-            for (int i = 0; i + n <= s1.length; i++) {
-                OUTER:
-                for (int j = 0; j + n <= s2.length; j++) {
-                    for (int k = 0; k < n; k++) {
-                        if (!s1[i + k].equals(s2[j + k])) {
-                            continue OUTER;
-                        }
+            if (s2.length > 100) {
+                HashMap<String, IntList> c2oMap = new HashMap<>();
+                for(int j = 0; j + n <= s2.length; j++) {
+                    if(!c2oMap.containsKey(s2[j])) {
+                        c2oMap.put(s2[j], new IntArrayList());
                     }
-                    ngramOverlap += weighting.weight(s1, i, n);
-                    break;
+                    c2oMap.get(s2[j]).add(j);
+                }
+                 for (int i = 0; i + n <= s1.length; i++) {
+                     if(!c2oMap.containsKey(s1[i]))
+                         continue;
+                    
+                    IntIterator ii = c2oMap.get(s1[i]).iterator();
+                    OUTER:
+                    while(ii.hasNext()) {
+                        int j = ii.nextInt();
+                        for (int k = 1; k < n; k++) {
+                            if (!s1[i + k].equals(s2[j + k])) {
+                                continue OUTER;
+                            }
+                        }
+                        ngramOverlap += weighting.weight(s1, i, n);
+                        break;
+                    }
+                }        
+
+            } else {
+                for (int i = 0; i + n <= s1.length; i++) {
+                    OUTER:
+                    for (int j = 0; j + n <= s2.length; j++) {
+                        for (int k = 0; k < n; k++) {
+                            if (!s1[i + k].equals(s2[j + k])) {
+                                continue OUTER;
+                            }
+                        }
+                        ngramOverlap += weighting.weight(s1, i, n);
+                        break;
+                    }
                 }
             }
             return ((double) ngramOverlap) / (s1.length - n + 1);

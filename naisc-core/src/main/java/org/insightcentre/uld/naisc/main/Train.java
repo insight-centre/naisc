@@ -122,8 +122,9 @@ public class Train {
             DatasetLoader loader) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
         final Configuration config = mapper.readValue(configuration, Configuration.class);
-        if(config.scorers.size() >= 1)
+        if (config.scorers.size() >= 1) {
             System.err.println("modelFile=" + config.scorers.get(0).modelFile);
+        }
         execute(name, leftFile, rightFile, alignment, negativeSampling, config, monitor, loader);
     }
 
@@ -189,14 +190,15 @@ public class Train {
     public static void execute(String name, Dataset leftModel, Dataset rightModel,
             AlignmentSet goldAlignments, double negativeSampling,
             Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
-        Map<String, List<FeatureSetWithScore>> trainingData = 
-        extractData(name, leftModel, rightModel, goldAlignments, negativeSampling, config, monitor, loader);
-        
+        Map<String, List<FeatureSetWithScore>> trainingData
+                = extractData(name, leftModel, rightModel, goldAlignments, negativeSampling, config, monitor, loader);
+
         trainModels(monitor, config, trainingData);
     }
 
     /**
      * Extract the data to be trained
+     *
      * @param name The name of the run
      * @param leftModel The left dataset
      * @param rightModel The right dataset
@@ -314,6 +316,7 @@ public class Train {
 
     /**
      * Train the models
+     *
      * @param monitor A logger
      * @param config The configuration
      * @param trainingData The training data
@@ -341,11 +344,10 @@ public class Train {
 
     private static FeatureSet makeFeatures(Resource res1, Resource res2, List<Lens> lenses, ExecuteListener monitor, List<TextFeature> textFeatures, List<GraphFeature> dataFeatures) {
         FeatureSet featureSet = new FeatureSet(res1, res2);
+        boolean labelsProduced = false;
         for (Lens lens : lenses) {
             Option<LangStringPair> oFacet = lens.extract(res1, res2);
-            if (!oFacet.has()) {
-                monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", res1, res2));
-            }
+            labelsProduced = labelsProduced || oFacet.has();
             LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
             for (TextFeature featureExtractor : textFeatures) {
                 if (featureExtractor.tags() == null || lens.tag() == null
@@ -356,13 +358,16 @@ public class Train {
                 }
             }
         }
+        if (!labelsProduced) {
+            monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", res1, res2));
+        }
         for (GraphFeature feature : dataFeatures) {
             double[] features = feature.extractFeatures(res1, res2);
             featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, res1, res2));
         }
         return featureSet;
     }
-/*
+    /*
     @SuppressWarnings("UseSpecificCatch")
     public static void main(String[] args) {
         try {

@@ -4,8 +4,8 @@ import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatList;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -13,6 +13,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Random;
@@ -29,11 +30,49 @@ import java.util.Random;
  */
 public class FastPPR {
 
+    private static class IntMap {
+        private static int INIT_CAP = 1024;
+        private int[] data;
+        private int cap = 0;
+        
+        public void put(int i, int j) {
+            if(data == null) {
+                cap = INIT_CAP;
+                while(cap <= i) {
+                    cap <<= 1;
+                }
+                data = new int[cap];
+                Arrays.fill(data, -1);
+            } else if(i >= cap) {
+                while(cap <= i) {
+                    cap <<= 1;
+                }
+                int[] d2 = new int[cap];
+                Arrays.fill(d2, -1);
+                System.arraycopy(data, 0, d2, 0, data.length);
+                data = d2;
+            }
+            data[i] = j;
+        }
+        
+        public void remove(int i) { 
+            data[i] = -1;
+        }
+        
+        public boolean containsKey(int i) { 
+            return i < data.length && data[i] != -1;
+        }
+        
+        public int get(int i) { 
+            return data[i] == -1 ? 0 : data[i];
+        }
+    }
+    
     private static class HeapMappedPriorityQueue {
 
         private final FloatList priorities = new FloatArrayList(); //the first entry will be ignored to make arithmetic simpler
 
-        private final Int2IntMap itemToIndex = new Int2IntOpenHashMap();
+        private final IntMap itemToIndex = new IntMap();
         private final IntList indexToItem;
 
         public HeapMappedPriorityQueue() {
@@ -145,6 +184,8 @@ public class FastPPR {
 
         private final ArrayList<GraphNode> nodes = new ArrayList<>();
 
+        public final SimpleCache<Integer, Pair<Int2FloatMap, Float>> inversePPRBalancedCache = new SimpleCache<>(100);
+        
         public int addNode() {
             int id = nodes.size();
             GraphNode node = new GraphNode(id);
@@ -155,6 +196,7 @@ public class FastPPR {
         public void addEdge(int i, int j) {
             nodes.get(i).outboundNodes.add(j);
             nodes.get(j).inboundNodes.add(i);
+            inversePPRBalancedCache.clear();
         }
 
         private GraphNode getNodeById(int startId) {
@@ -445,6 +487,12 @@ public class FastPPR {
      * @return (inversePPREstimates, reversePPRSignificanceThreshold)
      */
     private static Pair<Int2FloatMap, Float> estimateInversePPRBalanced(DirectedGraph graph, int targetId, FastPPRConfiguration config) {
+        synchronized(graph.inversePPRBalancedCache) {
+            return graph.inversePPRBalancedCache.get(targetId, id -> _estimateInversePPRBalanced(graph, id, config));
+        }
+    }
+    
+    private static Pair<Int2FloatMap, Float> _estimateInversePPRBalanced(DirectedGraph graph, int targetId, FastPPRConfiguration config) {
         HeapMappedPriorityQueue inversePPRResiduals = new HeapMappedPriorityQueue();
         Int2FloatMap inversePPREstimates = new Int2FloatOpenHashMap(); // inversePPREstimates(uId) estimates ppr(u, target)
         inversePPRResiduals.insert(targetId, config.teleportProbability);

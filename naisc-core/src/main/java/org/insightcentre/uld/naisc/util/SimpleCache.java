@@ -2,14 +2,17 @@ package org.insightcentre.uld.naisc.util;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.function.Function;
 
 /**
  * A LRU cache for any objects. Please note that this is NOT thread-safe!
- * 
+ *
  * @author John McCrae
  */
-public class SimpleCache<E,F> {
+public class SimpleCache<E, F> {
+
     private static final class CacheEntry<E> {
+
         public final E i;
         public int age;
 
@@ -18,50 +21,52 @@ public class SimpleCache<E,F> {
             this.age = age;
         }
     }
-    
+
     /**
      * SAM to compute a cached entry
+     *
      * @param <E> The key type
      * @param <F> The value type
      */
-    public static interface Get<E,F> {
+    public static interface Get<E, F> {
+
         public F get(E e);
     }
-    
+
     private final HashMap<E, CacheEntry<F>> data = new HashMap<>();
     private int age = 0;
     private final int capacity;
-    private final int threshold;
     private int tooOld = 0;
 
     /**
      * Create a cache
+     *
      * @param capacity The maximum capacity
      */
     public SimpleCache(int capacity) {
         this.capacity = capacity;
-        this.threshold = capacity * 10 / 9;
     }
 
     /**
      * Get the object for the key or use get to compute it
+     *
      * @param e The key
      * @param get The value computer
      * @return The result of get.get(e) possibly from the cache
      */
-    public F get(E e, Get<E, F> get) {
-        if(data.containsKey(e)) {
+    public F get(E e, Function<E, F> get) {
+        if (data.containsKey(e)) {
             CacheEntry<F> ce = data.get(e);
             ce.age = age++;
             return ce.i;
         } else {
-            CacheEntry<F> ce = new CacheEntry(get.get(e), age++);
+            CacheEntry<F> ce = new CacheEntry(get.apply(e), age++);
             data.put(e, ce);
-            while(data.size() > capacity) {
-                tooOld += Math.max(1,capacity / 10);
+            while (data.size() > capacity) {
+                tooOld += Math.max(1, capacity / 10);
                 Iterator<CacheEntry<F>> iter = data.values().iterator();
-                while(iter.hasNext()) {
-                    if(iter.next().age < tooOld) {
+                while (iter.hasNext()) {
+                    if (iter.next().age < tooOld) {
                         iter.remove();
                     }
                 }
@@ -69,4 +74,21 @@ public class SimpleCache<E,F> {
             return ce.i;
         }
     }
+
+    /**
+     * Invalidate the whole cache
+     */
+    public void clear() {
+        if (age > 0) {
+            data.clear();
+            tooOld = 0;
+            age = 0;
+        }
+    }
+    
+    /**
+     * The number of currently cached values
+     * @return 
+     */
+    public int size() { return data.size(); }
 }

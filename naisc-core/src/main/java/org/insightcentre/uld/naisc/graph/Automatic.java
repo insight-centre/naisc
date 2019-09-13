@@ -37,7 +37,13 @@ public class Automatic implements GraphFeatureFactory {
                 propMatches.add(new Pair<>(mr.leftUri, mr.rightUri));
         }
         if(!propMatches.isEmpty()) {
-            listener.message(NaiscListener.Stage.INITIALIZING, NaiscListener.Level.INFO, "Using the following properties as values matches: " + propMatches.toString());
+            StringBuilder sb = new StringBuilder("Using the following properties as values matches: \n");
+            
+            for(Pair<String,String>  propMatch : propMatches) {
+                sb.append(String.format("%s <-> %s\n", propMatch._1, propMatch._2));
+                
+            }
+            listener.message(NaiscListener.Stage.INITIALIZING, NaiscListener.Level.INFO, sb.toString());
         }
         boolean pprAnalysis = false;
         if(_analysis.isWellConnected()) {

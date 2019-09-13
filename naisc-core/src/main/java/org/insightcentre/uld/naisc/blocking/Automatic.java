@@ -18,6 +18,7 @@ import org.insightcentre.uld.naisc.analysis.LabelResult;
 import org.insightcentre.uld.naisc.analysis.MatchResult;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
+import org.insightcentre.uld.naisc.util.URI2Label;
 
 /**
  * The smart, automatic blocking strategy
@@ -66,9 +67,12 @@ public class Automatic implements BlockingStrategyFactory {
         // 4. Find any potential good pre-blocks
         Set<Pair<String,String>> preblocks = new HashSet<>();
         for(MatchResult mr : analysis.matching) {
-            if(mr.coversData() 
-                    && leftUniqueness.getDouble(mr.leftUri) > 0.1 
-                    && rightUniqueness.getDouble(mr.rightUri) > 0.1) {
+            String leftString = URI2Label.fromURI(mr.leftUri).toLowerCase();
+            String rightString = URI2Label.fromURI(mr.rightUri).toLowerCase();
+            if(leftString.equals(rightString)
+                    && mr.coversData() 
+                    && leftUniqueness.getDouble(mr.leftUri) > 0.9 
+                    && rightUniqueness.getDouble(mr.rightUri) > 0.9) {
                 preblocks.add(new Pair<>(mr.leftUri,mr.rightUri));
             }
         }

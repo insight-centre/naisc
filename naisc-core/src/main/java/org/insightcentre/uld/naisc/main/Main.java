@@ -191,7 +191,7 @@ public class Main {
         try {
             Lazy<Analysis> analysis = Lazy.fromClosure(() -> {
                 DatasetAnalyzer analyzer = new DatasetAnalyzer();
-                return analyzer.analyseModel(leftModel, 
+                return analyzer.analyseModel(leftModel,
                         rightModel);
             });
             monitor.updateStatus(Stage.INITIALIZING, "Loading blocking strategy");
@@ -244,11 +244,11 @@ public class Main {
                                 monitor.updateStatus(Stage.SCORING, "Scoring (" + c + " done)");
                             }
                             FeatureSet featureSet = new FeatureSet(block._1, block._2);
+                            boolean labelsProduced = false;
                             for (Lens lens : lenses) {
                                 Option<LangStringPair> oFacet = lens.extract(block._1, block._2, monitor);
-                                if (!oFacet.has()) {
-                                    monitor.updateStatus(Stage.SCORING, String.format("Lens produced no label for %s %s", block._1, block._2));
-                                } else {
+                                if (oFacet.has()) {
+                                    labelsProduced = true;
                                     monitor.addLensResult(block._1, block._2, lens.id(), oFacet.get());
                                 }
                                 LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
@@ -261,11 +261,15 @@ public class Main {
                                     }
                                 }
                             }
+
+                            if (!labelsProduced) {
+                                monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block._1, block._2));
+                            }
                             for (GraphFeature feature : dataFeatures) {
                                 double[] features = feature.extractFeatures(block._1, block._2, monitor);
                                 featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
                             }
-                            if(featureSet.isEmpty()) {
+                            if (featureSet.isEmpty()) {
                                 monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "An empty feature set was created");
                             }
                             for (Scorer scorer : scorers) {
@@ -284,9 +288,9 @@ public class Main {
             executor.shutdown();
             executor.awaitTermination(30, TimeUnit.DAYS);
             monitor.updateStatus(Stage.SCORING, String.format("Scored %d pairs", count.get()));
-            if(blocksEmpty) {
+            if (blocksEmpty) {
                 monitor.message(Stage.BLOCKING, NaiscListener.Level.CRITICAL, "Blocking failed to extract any pairs");
-            } else if(count.get() == 0) {
+            } else if (count.get() == 0) {
                 monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "Failed to extract any pairs!");
             }
 
@@ -411,8 +415,9 @@ public class Main {
         }
 
     }
-    
+
     private static class TmpAlignment {
+
         private final Resource left, right;
         private final ScoreResult result;
         private final String relation;
@@ -423,7 +428,7 @@ public class Main {
             this.result = result;
             this.relation = relation;
         }
-        
+
         public Alignment toAlignment() {
             return new Alignment(left, right, result.value(), relation);
         }
