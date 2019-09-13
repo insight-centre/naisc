@@ -66,13 +66,27 @@ public class DataView {
         "http://www.w3.org/2002/07/owl#withRestrictions"
     };
 
+    public static final String[] INV_PROPERTIES = new String [] {
+        "http://www.w3.org/2000/01/rdf-schema#subClassOf",
+        "http://www.w3.org/2004/02/skos/core#broader",
+        "http://www.w3.org/2004/02/skos/core#broaderTransitive"
+    };
+    
     private static Set<String> blackProps = null;
+    private static Set<String> invProps = null;
     
     public static Set<String> blackProperties() {
         if(blackProps == null) {
             blackProps = new HashSet<>(Arrays.asList(BLACK_PROPERTIES));
         }
         return blackProps;
+    }
+    
+    public static Set<String> invProperties() {
+        if(invProps == null) {
+            invProps = new HashSet<>(Arrays.asList(INV_PROPERTIES));
+        }
+        return invProps;
     }
     
     public final List<DataViewEntry> entries;
@@ -159,21 +173,22 @@ public class DataView {
                     || blackProperties().contains(s.getPredicate().getURI())) {
                 continue;
             }
-            Resource o = s.getObject().asResource();
-            if (roots.containsKey(s.getSubject())) {
-                if (roots.containsKey(o) && roots.get(o).contains(s.getSubject())) {
+            Resource subj = invProperties().contains(s.getPredicate().getURI()) ? s.getObject().asResource() : s.getSubject();
+            Resource obj = invProperties().contains(s.getPredicate().getURI()) ? s.getSubject() : s.getObject().asResource();
+            if (roots.containsKey(subj)) {
+                if (roots.containsKey(obj) && roots.get(obj).contains(subj)) {
                     continue; // This would be a loop
                 }
-                for(Resource r : roots.getInv(o)) {
-                    roots.remove(r, o);
-                    roots.addAll(r, roots.get(s.getSubject()));
+                for(Resource r : roots.getInv(obj)) {
+                    roots.remove(r, obj);
+                    roots.addAll(r, roots.get(subj));
                 }
             } else {
-                for(Resource r : roots.getInv(o)) {
-                    roots.remove(r, o);
-                    roots.put(r, s.getSubject());
+                for(Resource r : roots.getInv(obj)) {
+                    roots.remove(r, obj);
+                    roots.put(r, subj);
                 }
-                roots.put(o, s.getSubject());
+                roots.put(obj, subj);
             }
         }
         return roots.values().stream().flatMap(x -> x.stream()).collect(Collectors.toSet());
@@ -196,7 +211,8 @@ public class DataView {
         while (iter.hasNext()) {
             Statement s = iter.next();
             if (!s.getObject().isResource() || s.getObject().asResource().equals(s.getSubject())
-                    || blackProperties().contains(s.getPredicate().getURI())) {
+                    || blackProperties().contains(s.getPredicate().getURI())
+                    || invProperties().contains(s.getPredicate().getURI())) {
                 continue;
             }
             Resource o = s.getObject().asResource();
@@ -204,6 +220,22 @@ public class DataView {
                 continue;
             }
             adjacencies.get(current).add(s);
+            visited.add(o);
+            toVisit.add(o);
+        }
+        iter = d.listStatements(null, null, current);
+        while (iter.hasNext()) {
+            Statement s = iter.next();
+            if (!s.getObject().isResource() || s.getObject().asResource().equals(s.getSubject())
+                    || blackProperties().contains(s.getPredicate().getURI())
+                    || !invProperties().contains(s.getPredicate().getURI())) {
+                continue;
+            }
+            Resource o = s.getSubject();
+            if (visited.contains(o)) {
+                continue;
+            }
+            adjacencies.get(current).add(s.getModel().createStatement(current, s.getPredicate(), o));
             visited.add(o);
             toVisit.add(o);
         }
@@ -228,7 +260,13 @@ public class DataView {
         for (Statement s : t.adjacencies.get(n)) {
             if (!paths.containsKey(s.getObject().asResource())) {
                 List<String> l = new ArrayList<>(currentPath);
-                l.add(s.getPredicate().getURI());
+                final String path;
+                if(invProperties().contains(s.getPredicate().getURI())) {
+                    path = s.getPredicate().getURI() + " -";
+                } else {
+                    path = s.getPredicate().getURI();
+                }
+                l.add(path);
                 paths.put(s.getObject().asResource(), l);
                 buildPaths(paths, t, s.getObject().asResource(), l);
             }

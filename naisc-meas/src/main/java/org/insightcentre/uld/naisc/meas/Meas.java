@@ -10,10 +10,10 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.TreeMap;
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.main.Configuration;
@@ -50,7 +50,7 @@ public class Meas {
         try {
             File f = new File("configs/");
             if (f.exists() && f.isDirectory()) {
-                Map<String, Configuration> configs = new HashMap<>();
+                Map<String, Configuration> configs = new TreeMap<>();
                 for (File f2 : f.listFiles()) {
                     if (f2.getPath().endsWith(".json")) {
                         try {
@@ -80,6 +80,7 @@ public class Meas {
                         datasets.add(f2.getName());
                     }
                 }
+                Collections.sort(datasets);
                 return datasets;
             }
         } catch (Exception x) {
