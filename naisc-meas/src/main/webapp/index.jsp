@@ -49,48 +49,6 @@
                 </table>
             </div>
             <div class="row">
-                <h3>Previous runs</h3>
-            </div>
-            <div class="row">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <td>Run Identifier</td>
-                            <td>Configuration</td>
-                            <td>Dataset</td>
-                            <td>Precision</td>
-                            <td>Recall</td>
-                            <td>F-Measure</td>
-                            <td>Time</td>
-                            <td class="icon-table-col"></td>
-                            <td class="icon-table-col"></td>
-                            <td class="icon-table-col"></td>
-                        </tr>
-                    </thead>
-                    <tr v-for="run in runs">
-                        <td><a v-bind:href="'results.jsp?id=' + run.identifier" v-if="!run.isTrain">{{run.identifier}}</a>
-                            <span v-if="run.isTrain">{{run.identifier}}</span></td>
-                        <td>{{run.configName}}</td>
-                        <td>{{run.datasetName}}</td>
-                        <td v-if="run.precision >= 0">{{(run.precision*100).toFixed(2)}}%</td>
-                        <td v-if="run.precision < 0 && !run.isTrain">n/a</td>
-                        <td v-if="run.recall >= 0">{{(run.recall*100).toFixed(2)}}%</td>
-                        <td v-if="run.recall < 0 && !run.isTrain">n/a</td>
-                        <td v-if="run.fmeasure >= 0">{{(run.fmeasure*100).toFixed(2)}}%</td>
-                        <td v-if="run.fmeasure < 0 && !run.isTrain">n/a</td>
-                        <td v-if="run.isTrain">Train</td>
-                        <td v-if="run.isTrain">Train</td>
-                        <td v-if="run.isTrain">Train</td>
-                        <!--<td v-if="run.correlation >= -1">{{run.correlation.toFixed(3)}}</td>
-                        <td v-if="run.correlation < -1">n/a</td>-->
-                        <td>{{(run.time / 1000).toFixed(3)}}s</td>
-                        <td><a class="btn btn-info" v-bind:href="'results.jsp?id=' + run.identifier" v-if="!run.isTrain" style="font-weight:bold;">View Results</a></td>
-                        <td><a class="btn btn-info" v-on:click="showMessages(run.identifier)" title="Show messages"><i class="fa fa-info" aria-hidden="true"></i></button></td>
-                        <td><button class="btn btn-danger" v-on:click="delRun(run.identifier)" title="Delete this run"><i class="fa fa-trash" aria-hidden="true"></i></button></td>
-                    </tr>
-                </table>
-            </div>
-            <div class="row">
                 <h3>New run</h3>
             </div>
             <div class="row">
@@ -291,6 +249,48 @@
                         </div>
                     </div>
                 </div>          
+            </div>
+            <div class="row">
+                <h3>Previous runs</h3>
+            </div>
+            <div class="row">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <td>Run Identifier</td>
+                            <td>Configuration</td>
+                            <td>Dataset</td>
+                            <td>Precision</td>
+                            <td>Recall</td>
+                            <td>F-Measure</td>
+                            <td>Time</td>
+                            <td class="icon-table-col"></td>
+                            <td class="icon-table-col"></td>
+                            <td class="icon-table-col"></td>
+                        </tr>
+                    </thead>
+                    <tr v-for="run in runs">
+                        <td><a v-bind:href="'results.jsp?id=' + run.identifier" v-if="!run.isTrain">{{run.identifier}}</a>
+                            <span v-if="run.isTrain">{{run.identifier}}</span></td>
+                        <td>{{run.configName}}</td>
+                        <td>{{run.datasetName}}</td>
+                        <td v-if="run.precision >= 0">{{(run.precision*100).toFixed(2)}}%</td>
+                        <td v-if="run.precision < 0 && !run.isTrain">n/a</td>
+                        <td v-if="run.recall >= 0">{{(run.recall*100).toFixed(2)}}%</td>
+                        <td v-if="run.recall < 0 && !run.isTrain">n/a</td>
+                        <td v-if="run.fmeasure >= 0">{{(run.fmeasure*100).toFixed(2)}}%</td>
+                        <td v-if="run.fmeasure < 0 && !run.isTrain">n/a</td>
+                        <td v-if="run.isTrain">Train</td>
+                        <td v-if="run.isTrain">Train</td>
+                        <td v-if="run.isTrain">Train</td>
+                        <!--<td v-if="run.correlation >= -1">{{run.correlation.toFixed(3)}}</td>
+                        <td v-if="run.correlation < -1">n/a</td>-->
+                        <td>{{(run.time / 1000).toFixed(3)}}s</td>
+                        <td><a class="btn btn-info" v-bind:href="'results.jsp?id=' + run.identifier" v-if="!run.isTrain" style="font-weight:bold;">View Results</a></td>
+                        <td><a class="btn btn-info" v-on:click="showMessages(run.identifier)" title="Show messages"><i class="fa fa-info" aria-hidden="true"></i></button></td>
+                        <td><button class="btn btn-danger" v-on:click="delRun(run.identifier)" title="Delete this run"><i class="fa fa-trash" aria-hidden="true"></i></button></td>
+                    </tr>
+                </table>
             </div>
         </div>
 
@@ -554,7 +554,7 @@ var app = new Vue({
                                                 app.activeRuns.splice(j, 1);
                                             }
                                         }
-                                        app.runs.push(data2);
+                                        app.runs.splice(0,0,data2);
                                     }
                                 });
                             }

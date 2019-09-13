@@ -50,6 +50,7 @@ public class EvaluateTest {
         System.out.println("evaluate");
         AlignmentSet output = new AlignmentSet();
         output.add(new Alignment(r("file:id1"), r("file:id2"), 0.0, Alignment.SKOS_EXACT_MATCH));
+        output.add(new Alignment(r("file:id2"), r("file:id1"), 0.01, Alignment.SKOS_EXACT_MATCH));
         output.add(new Alignment(r("file:id2"), r("file:id3"), 0.56, Alignment.SKOS_EXACT_MATCH));
         output.add(new Alignment(r("file:id3"), r("file:id1"), 1.0, Alignment.SKOS_EXACT_MATCH));
         output.add(new Alignment(r("file:id1"), r("file:id2"), 0.3, "file:customProp"));

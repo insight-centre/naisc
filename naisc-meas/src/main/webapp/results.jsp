@@ -264,7 +264,7 @@ var app = new Vue({
     changeRight(idx, currentValue) {
         var self = this;
         jQuery.ajax({
-            url: '<%= System.getProperties().getProperty("base.url", "")  %>/manage/alternatives?id=<%=request.getParameter("id")%>&left=' + self.results[idx].subject,
+            url: '<%= System.getProperties().getProperty("base.url", "")  %>/manage/alternatives?id=<%=request.getParameter("id")%>&left=' + encodeURIComponent(self.results[idx].subject),
             success: function(result) {
                 self.elems = [];
                 for(var i = 0; i < result.length; i++) {
@@ -286,7 +286,7 @@ var app = new Vue({
         var remoteIdx = this.results[idx].idx;
         var self = this;
         jQuery.ajax({
-            url: '<%= System.getProperties().getProperty("base.url", "")  %>/manage/alternatives?id=<%=request.getParameter("id")%>&right=' + self.results[idx].object,
+            url: '<%= System.getProperties().getProperty("base.url", "")  %>/manage/alternatives?id=<%=request.getParameter("id")%>&right=' + encodeURIComponent(self.results[idx].object),
             success: function(result) {
                 self.elems = [];
                 for(var i = 0; i < result.length; i++) {

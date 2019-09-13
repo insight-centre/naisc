@@ -106,7 +106,9 @@ public class ManageServlet extends HttpServlet {
             }
         } else if (path.equals("/alternatives")) {
             try {
+                System.err.println(req.getQueryString());
                 String leftId = req.getParameter("left");
+                System.err.println(leftId);
                 String rightId = req.getParameter("right");
                 String executionId = req.getParameter("id");
                 if (executionId != null) {

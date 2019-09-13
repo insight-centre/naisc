@@ -107,23 +107,38 @@ public class Evaluate {
                 double gScore = galign.get().score;
                 outputScores.add(align.score);
                 goldScores.add(gScore);
-                er.tp++;
+                if(gScore > 0 && align.score > 0)
+                    er.tp++;
+                else if(gScore <= 0 && align.score > 0)
+                    er.fp++;
                 for (int i = 0; 0.1 * i <= align.score; i++) {
-                    er.thresholds.get(i)._2.tp++;
+                    if(gScore > 0 && align.score > 0)
+                        er.thresholds.get(i)._2.tp++;
+                    else if(gScore <= 0)
+                        er.thresholds.get(i)._2.fp++;
                 }
-                align.valid = Valid.yes;
+                if(gScore > 0 && align.score > 0)
+                    align.valid = Valid.yes;
+                else
+                    align.valid = Valid.no;
                 seen.add(galign.get());
             } else {
-                er.fp++;
+                if(align.score > 0)
+                    er.fp++;
                 for (int i = 0; 0.1 * i <= align.score; i++) {
-                    er.thresholds.get(i)._2.fp++;
+                    if(align.score > 0)
+                        er.thresholds.get(i)._2.fp++;
                 }
-                align.valid = Valid.no;
+                if(align.score > 0)
+                    align.valid = Valid.no;
+                else
+                    align.valid = Valid.yes;
             }
         }
         int goldSize = 0;
         for (Alignment a : gold.getAlignments()) {
-            goldSize++;
+            if(a.score > 0)
+                goldSize++;
             try {
                 if (!seen.contains(a)) {
                     output.add(new Alignment(a, a.score, Valid.novel));
