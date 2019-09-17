@@ -77,8 +77,9 @@ public class RAdLR implements ScorerFactory {
     @Override
     public Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property, File modelFile) {
         ObjectMapper mapper = new ObjectMapper();
-        if(modelFile == null)
+        if (modelFile == null) {
             throw new RuntimeException("Model file cannot be null");
+        }
         Configuration config = mapper.convertValue(params, Configuration.class);
         RAdLRModel model = new RAdLRModel();
         model.property = property;
@@ -136,15 +137,31 @@ public class RAdLR implements ScorerFactory {
         @Override
         public ScoreResult similarity(FeatureSet features, NaiscListener log) {
             DoubleList weights = new DoubleArrayList(features.names.length);
-            List<ScoreResult> result = new ArrayList<>(features.names.length);
+            double[] result = new double[features.names.length];
+            LogGap[] loggaps = new LogGap[features.names.length];
+            boolean allComplete = true;
+            //List<ScoreResult> result = new ArrayList<>(features.names.length);
             for (int i = 0; i < features.names.length; i++) {
                 weights.add(model.weights.getOrDefault(features.names[i], 1.0));
-                if (!feats.containsKey(features.names[i])) {
-                    feats.put(features.names[i], new LogGap());
+                synchronized (feats) {
+                    final LogGap lg;
+                    if (!feats.containsKey(features.names[i])) {
+                        feats.put(features.names[i], lg = new LogGap());
+                    } else {
+                        lg = feats.get(features.names[i]);
+                    }
+                    //result.add(feats.get(features.names[i]).result(features.values[i]));
+                    lg.addResult(features.values[i]);
+                    result[i] = features.values[i];
+                    loggaps[i] = lg;
+                    allComplete = allComplete && lg.isComplete();
                 }
-                result.add(feats.get(features.names[i]).result(features.values[i]));
             }
-            return new LogGapScorer(result, weights, model);
+            if(allComplete) {
+                return ScoreResult.fromDouble(new LogGapScorer(result, weights, model, loggaps).value());
+            } else {
+                return new LogGapScorer(result, weights, model, loggaps);
+            }
         }
 
         @Override
@@ -160,23 +177,27 @@ public class RAdLR implements ScorerFactory {
 
     private static class LogGapScorer implements ScoreResult {
 
-        private final List<ScoreResult> features;
+        private final double[] features;
         private final DoubleList weights;
         private final RAdLRModel model;
+        private final LogGap[] feats;
 
-        public LogGapScorer(List<ScoreResult> features, DoubleList weights, RAdLRModel model) {
+        public LogGapScorer(double[] features, DoubleList weights, RAdLRModel model, LogGap[] feats) {
             this.features = features;
             this.weights = weights;
             this.model = model;
+            this.feats = feats;
         }
+
 
         @Override
         public double value() {
             double x = 0.0;
             int n = 0;
-            for (int i = 0; i < features.size(); i++) {
-                if (Double.isFinite(features.get(i).value())) {
-                    x += weights.get(i) * features.get(i).value();
+            for (int i = 0; i < features.length; i++) {
+                if (Double.isFinite(features[i])) {
+                    //x += weights.get(i) * features.get(i).value();
+                    x += weights.get(i) * feats[i].normalize(features[i]);
                     n++;
                 }
             }
@@ -280,15 +301,16 @@ public class RAdLR implements ScorerFactory {
 
         private void normalizeSoln(double[] soln) {
             double sumSq = 0.0;
-            for(int i = 2; i < soln.length; i++) {
+            for (int i = 2; i < soln.length; i++) {
                 sumSq += soln[i] * soln[i];
             }
-            if(sumSq == 0.0 || soln.length == 2)
+            if (sumSq == 0.0 || soln.length == 2) {
                 return;
+            }
             sumSq /= soln.length - 2;
             sumSq = Math.sqrt(sumSq);
             soln[0] *= sumSq;
-            for(int i = 2; i < soln.length; i++) {
+            for (int i = 2; i < soln.length; i++) {
                 soln[i] /= sumSq;
             }
         }
@@ -498,4 +520,3 @@ public class RAdLR implements ScorerFactory {
     }
 
 }
-

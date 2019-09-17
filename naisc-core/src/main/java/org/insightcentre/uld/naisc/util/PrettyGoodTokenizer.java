@@ -28,8 +28,6 @@ public final class PrettyGoodTokenizer {
     private final static DoTokenize doTokenize = new DoTokenize();
 
     public static String[] tokenize(String s) {
-        synchronized(cache) {
-            return cache.get(s, doTokenize);
-        }
+        return cache.get(s, doTokenize);
     }
 }

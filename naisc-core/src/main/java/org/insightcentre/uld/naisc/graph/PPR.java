@@ -40,7 +40,7 @@ public class PPR implements GraphFeatureFactory {
 
     public static class Configuration {
 
-        float pprSignificanceThreshold = 1.0e-6f;
+        float pprSignificanceThreshold = 1.0e-3f;
         float reversePPRApproximationFactor = 1.0f / 6.0f;
         float teleportProbability = 0.2f;
         float forwardStepsPerReverseStep = 6.7f;

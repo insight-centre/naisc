@@ -31,20 +31,21 @@ import java.util.Random;
 public class FastPPR {
 
     private static class IntMap {
+
         private static int INIT_CAP = 1024;
         private int[] data;
         private int cap = 0;
-        
+
         public void put(int i, int j) {
-            if(data == null) {
+            if (data == null) {
                 cap = INIT_CAP;
-                while(cap <= i) {
+                while (cap <= i) {
                     cap <<= 1;
                 }
                 data = new int[cap];
                 Arrays.fill(data, -1);
-            } else if(i >= cap) {
-                while(cap <= i) {
+            } else if (i >= cap) {
+                while (cap <= i) {
                     cap <<= 1;
                 }
                 int[] d2 = new int[cap];
@@ -54,20 +55,20 @@ public class FastPPR {
             }
             data[i] = j;
         }
-        
-        public void remove(int i) { 
+
+        public void remove(int i) {
             data[i] = -1;
         }
-        
-        public boolean containsKey(int i) { 
+
+        public boolean containsKey(int i) {
             return i < data.length && data[i] != -1;
         }
-        
-        public int get(int i) { 
+
+        public int get(int i) {
             return data[i] == -1 ? 0 : data[i];
         }
     }
-    
+
     private static class HeapMappedPriorityQueue {
 
         private final FloatList priorities = new FloatArrayList(); //the first entry will be ignored to make arithmetic simpler
@@ -157,8 +158,8 @@ public class FastPPR {
         }
 
         float getPriority(int a) {
-            
-            if(!itemToIndex.containsKey(a)) {
+
+            if (!itemToIndex.containsKey(a)) {
                 return 0.0f;
             } else {
                 return priorities.get(itemToIndex.get(a));
@@ -185,7 +186,7 @@ public class FastPPR {
         private final ArrayList<GraphNode> nodes = new ArrayList<>();
 
         public final SimpleCache<Integer, Pair<Int2FloatMap, Float>> inversePPRBalancedCache = new SimpleCache<>(100);
-        
+
         public int addNode() {
             int id = nodes.size();
             GraphNode node = new GraphNode(id);
@@ -233,7 +234,6 @@ public class FastPPR {
             return true;
         }
 
-        
     }
 
     private static class GraphNode {
@@ -247,16 +247,18 @@ public class FastPPR {
             this.inboundNodes = new IntOpenHashSet();
             this.outboundNodes = new IntOpenHashSet();
         }
-        
-        private int outboundCount() { return outboundNodes.size(); }
+
+        private int outboundCount() {
+            return outboundNodes.size();
+        }
 
         private Option<Integer> randomOutboundNode() {
-            if(outboundNodes.isEmpty()) {
+            if (outboundNodes.isEmpty()) {
                 return new None<>();
             } else {
                 int i = new Random().nextInt(outboundNodes.size());
                 IntIterator iter = outboundNodes.iterator();
-                while(i > 0) {
+                while (i > 0) {
                     i--;
                     iter.next();
                 }
@@ -298,20 +300,19 @@ public class FastPPR {
             return "GraphNode{" + "outboundNodes=" + outboundNodes + ", id=" + id + '}';
         }
 
-        
     }
 
     public static class FastPPRConfiguration {
 
-        float pprSignificanceThreshold = 1.0e-6f;
-        float reversePPRApproximationFactor = 1.0f/6.0f;
+        float pprSignificanceThreshold = 1.0e-3f;
+        float reversePPRApproximationFactor = 1.0f / 6.0f;
         float teleportProbability = 0.2f;
         float forwardStepsPerReverseStep = 6.7f;
-        float nWalksConstant = (float)(24 *  Math.log(1.0e6));
-
+        float nWalksConstant = (float) (24 * Math.log(1.0e6));
+        
         public FastPPRConfiguration() {
         }
-        
+
         public FastPPRConfiguration(float pprSignificanceThreshold, float reversePPRApproximationFactor, float teleportProbability, float forwardStepsPerReverseStep, float nWalksConstant) {
             this.pprSignificanceThreshold = pprSignificanceThreshold;
             this.reversePPRApproximationFactor = reversePPRApproximationFactor;
@@ -319,10 +320,9 @@ public class FastPPR {
             this.forwardStepsPerReverseStep = forwardStepsPerReverseStep;
             this.nWalksConstant = nWalksConstant;
         }
-        
 
         private int walkCount(float forwardPPRSignificanceThreshold) {
-            return (int)(nWalksConstant / forwardPPRSignificanceThreshold);
+            return (int) (nWalksConstant / forwardPPRSignificanceThreshold);
         }
     }
 
@@ -487,11 +487,9 @@ public class FastPPR {
      * @return (inversePPREstimates, reversePPRSignificanceThreshold)
      */
     private static Pair<Int2FloatMap, Float> estimateInversePPRBalanced(DirectedGraph graph, int targetId, FastPPRConfiguration config) {
-        synchronized(graph.inversePPRBalancedCache) {
-            return graph.inversePPRBalancedCache.get(targetId, id -> _estimateInversePPRBalanced(graph, id, config));
-        }
+        return graph.inversePPRBalancedCache.get(targetId, id -> _estimateInversePPRBalanced(graph, id, config));
     }
-    
+
     private static Pair<Int2FloatMap, Float> _estimateInversePPRBalanced(DirectedGraph graph, int targetId, FastPPRConfiguration config) {
         HeapMappedPriorityQueue inversePPRResiduals = new HeapMappedPriorityQueue();
         Int2FloatMap inversePPREstimates = new Int2FloatOpenHashMap(); // inversePPREstimates(uId) estimates ppr(u, target)
@@ -516,6 +514,7 @@ public class FastPPR {
                 reverseSteps += 1;
             }
         }
+        //System.err.printf("Total reverse steps: %d\n", reverseSteps);
         final float pprErrorTolerance;
 
         if (inversePPRResiduals.isEmpty()) {

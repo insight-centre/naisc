@@ -7,20 +7,34 @@ import org.insightcentre.uld.naisc.ScoreResult;
 
 /**
  * Provides a normalization of the values in a sequence, such that when sorted
- * the gap between values is proportional to the log of the gap between the input.
- * 
+ * the gap between values is proportional to the log of the gap between the
+ * input.
+ *
  * @author John McCrae
  */
 public class LogGap {
 
+    public static final int MAX_VALUES = 100000;
     private final DoubleList valuesBuilder = new DoubleArrayList();
     private double[] values = null;
     private double[] diffs = null;
     private double sumdiff = 0.0;
 
+    public boolean isComplete() {
+        return valuesBuilder.size() >= MAX_VALUES;
+    }
+    
+    public void addResult(double d) {
+        if (valuesBuilder.size() < MAX_VALUES) {
+            valuesBuilder.add(d);
+        }
+    }
+
     public ScoreResult result(double d) {
-        valuesBuilder.add(d);
-        if(values != null) {
+        if (valuesBuilder.size() < MAX_VALUES) {
+            valuesBuilder.add(d);
+        }
+        if (values != null) {
             values = null;
             diffs = null;
         }
@@ -39,11 +53,16 @@ public class LogGap {
         for (int i = 1; i < values.length; i++) {
             diffs[i] = diffs[i - 1] + diffs[i] / sumdiff;
         }
+        valuesBuilder.clear();
     }
 
     public double normalize(double d) {
-        if(values.length <= 1)
+        if (values == null) {
+            makeModel(valuesBuilder.toDoubleArray());
+        }
+        if (values.length <= 1) {
             return d;
+        }
         int i = Arrays.binarySearch(values, d);
         if (i >= 0) {
             return diffs[i];
@@ -62,19 +81,20 @@ public class LogGap {
     }
 
     private class LogGapResult implements ScoreResult {
+
         private final double d;
 
         public LogGapResult(double d) {
             this.d = d;
         }
-        
+
         @Override
         public double value() {
-            if(values == null) {
+            if (values == null) {
                 makeModel(valuesBuilder.toDoubleArray());
             }
             return normalize(d);
         }
-        
+
     }
 }

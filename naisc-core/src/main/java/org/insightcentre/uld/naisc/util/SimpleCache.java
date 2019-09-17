@@ -55,12 +55,16 @@ public class SimpleCache<E, F> {
      * @return The result of get.get(e) possibly from the cache
      */
     public F get(E e, Function<E, F> get) {
-        if (data.containsKey(e)) {
-            CacheEntry<F> ce = data.get(e);
-            ce.age = age++;
-            return ce.i;
-        } else {
-            CacheEntry<F> ce = new CacheEntry(get.apply(e), age++);
+        synchronized (data) {
+            if (data.containsKey(e)) {
+                final CacheEntry<F> ce;
+                ce = data.get(e);
+                ce.age = age++;
+                return ce.i;
+            }
+        }
+        CacheEntry<F> ce = new CacheEntry(get.apply(e), age++);
+        synchronized (data) {
             data.put(e, ce);
             while (data.size() > capacity) {
                 tooOld += Math.max(1, capacity / 10);
@@ -71,8 +75,8 @@ public class SimpleCache<E, F> {
                     }
                 }
             }
-            return ce.i;
         }
+        return ce.i;
     }
 
     /**
@@ -85,10 +89,13 @@ public class SimpleCache<E, F> {
             age = 0;
         }
     }
-    
+
     /**
      * The number of currently cached values
-     * @return 
+     *
+     * @return
      */
-    public int size() { return data.size(); }
+    public int size() {
+        return data.size();
+    }
 }
