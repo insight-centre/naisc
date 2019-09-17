@@ -1,6 +1,11 @@
 package org.insightcentre.uld.naisc.scorer;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
@@ -48,7 +53,10 @@ public class RAdLR implements ScorerFactory {
 
     @Override
     public List<Scorer> makeScorer(Map<String, Object> params, File modelFile) {
+        SimpleModule simpleModule = new SimpleModule();
+        simpleModule.addKeyDeserializer(StringPair.class, new StringPair.StringPairKeyDeserializer(0, StringPair.class));
         ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(simpleModule);
         //Configuration config = mapper.convertValue(params, Configuration.class);
         final List<Scorer> scorers = new ArrayList<>();
         if (modelFile == null || !modelFile.exists()) {
@@ -112,7 +120,7 @@ public class RAdLR implements ScorerFactory {
     public static class RAdLRModel {
 
         public double alpha = 1.0, beta = 0.0;
-        public Object2DoubleMap<StringPair> weights = new Object2DoubleOpenHashMap<>();
+        public Object2DoubleOpenHashMap<StringPair> weights = new Object2DoubleOpenHashMap<>();
         public String property = Alignment.SKOS_EXACT_MATCH;
     }
 

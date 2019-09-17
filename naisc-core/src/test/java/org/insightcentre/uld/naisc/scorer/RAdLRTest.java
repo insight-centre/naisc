@@ -2,6 +2,7 @@ package org.insightcentre.uld.naisc.scorer;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -210,6 +211,22 @@ public class RAdLRTest {
                 x[j] -= 1e-6;
             }
         }
+    }
+    
+    @Test
+    public void testSave() throws Exception {
+        Map<String, Object> params = new HashMap<>();
+        String property = Alignment.SKOS_EXACT_MATCH;
+        RAdLR instance = new RAdLR();
+        File f = File.createTempFile("foo", "bar");
+        f.deleteOnExit();
+        Option<ScorerTrainer> trainer2 = instance.makeTrainer(params, property, f);
+        List<FeatureSetWithScore> fss = new ArrayList<>();
+        fss.add(new FeatureSetWithScore(1.0, new StringPair[] { new StringPair("foo","bar") }, new double[] { 1.0 }, "e1", "e2"));
+        fss.add(new FeatureSetWithScore(0.0, new StringPair[] { new StringPair("foo","bar") }, new double[] { 0.0 }, "e3", "e4"));
+        Scorer scorer = trainer2.get().train(fss, NaiscListener.DEFAULT);
+        trainer2.get().save(scorer);
+        instance.makeScorer(params, f);
     }
 
 }
