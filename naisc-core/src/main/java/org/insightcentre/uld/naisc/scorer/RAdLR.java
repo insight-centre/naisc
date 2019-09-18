@@ -1,11 +1,15 @@
 package org.insightcentre.uld.naisc.scorer;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.deser.std.StdKeyDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
@@ -54,7 +58,17 @@ public class RAdLR implements ScorerFactory {
     @Override
     public List<Scorer> makeScorer(Map<String, Object> params, File modelFile) {
         SimpleModule simpleModule = new SimpleModule();
-        simpleModule.addKeyDeserializer(StringPair.class, new StringPair.StringPairKeyDeserializer(0, StringPair.class));
+        simpleModule.addKeyDeserializer(StringPair.class, new StdKeyDeserializer(0, StringPair.class) {
+            @Override
+            public Object deserializeKey(String key, DeserializationContext ctxt) throws IOException {
+                String[] ss = key.split("--");
+                if (ss.length != 2) {
+                    throw new RuntimeException("String pair not in correct format: " + key);
+                }
+                return new StringPair(ss[0].replaceAll("\\\\-", "-"), ss[1].replaceAll("\\\\-", "--"));
+            }
+        }
+        );
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(simpleModule);
         //Configuration config = mapper.convertValue(params, Configuration.class);
@@ -96,6 +110,15 @@ public class RAdLR implements ScorerFactory {
         public TrainSerializer(File modelFile, ObjectMapper mapper) {
             this.modelFile = modelFile;
             this.mapper = mapper;
+            SimpleModule module = new SimpleModule();
+            module.addKeySerializer(StringPair.class, new StdSerializer<StringPair>(StringPair.class) {
+                @Override
+                public void serialize(StringPair t, JsonGenerator jg, SerializerProvider sp) throws IOException {
+                    jg.writeFieldName(t._1.replaceAll("-", "\\\\-") + "--" + t._2.replaceAll("-", "\\\\-"));
+                }
+            });
+            mapper.registerModule(module);
+
         }
 
         public void save(String property, RAdLRModel model) throws IOException {
@@ -157,7 +180,7 @@ public class RAdLR implements ScorerFactory {
                     allComplete = allComplete && lg.isComplete();
                 }
             }
-            if(allComplete) {
+            if (allComplete) {
                 return ScoreResult.fromDouble(new LogGapScorer(result, weights, model, loggaps).value());
             } else {
                 return new LogGapScorer(result, weights, model, loggaps);
@@ -189,19 +212,22 @@ public class RAdLR implements ScorerFactory {
             this.feats = feats;
         }
 
-
         @Override
         public double value() {
             double x = 0.0;
             int n = 0;
             for (int i = 0; i < features.length; i++) {
                 if (Double.isFinite(features[i])) {
+                    System.err.printf("%.4f -> %.4f\n", features[i], feats[i].normalize(features[i]));
                     //x += weights.get(i) * features.get(i).value();
                     x += weights.get(i) * feats[i].normalize(features[i]);
                     n++;
                 }
             }
-            x /= n;
+            if (n > 0) {
+                x /= n;
+            }
+            System.err.printf("%.4f\n", x);
             return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
         }
 

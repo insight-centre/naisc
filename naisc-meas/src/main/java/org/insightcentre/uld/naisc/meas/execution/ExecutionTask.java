@@ -51,6 +51,9 @@ public class ExecutionTask implements Runnable {
             isActive = true;
             File f = new File("runs");
             f.mkdirs();
+            File f2 = new File(f, id + ".db");
+            if(f2.exists())
+                f2.delete();
             long time = System.currentTimeMillis();
             final Evaluate.EvaluationResults er;
             final AlignmentSet alignment;

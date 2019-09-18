@@ -34,6 +34,7 @@ public class Automatic implements BlockingStrategyFactory {
         // 1. If OntoLex URIs are used assume that we are matching an OntoLex model
         for(String prop : OntoLex.LEXICAL_ENTRY_URLS) {
             if(analysis.leftClasses.contains(prop) || analysis.rightClasses.contains(prop)) {
+                listener.message(Stage.INITIALIZING, NaiscListener.Level.INFO, "Treating as OntoLex matching task");
                 return new OntoLex().makeBlockingStrategy(params, _analysis, listener);
             }
         }

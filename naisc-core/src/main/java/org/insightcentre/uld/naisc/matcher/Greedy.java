@@ -4,20 +4,21 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.insightcentre.uld.naisc.constraint.UnsolvableConstraint;
 import org.insightcentre.uld.naisc.constraint.Constraint;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.Matcher;
 import org.insightcentre.uld.naisc.MatcherFactory;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.main.Configuration.ConstraintConfiguration;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
 
 /**
  * Solve the alignment problem greedily
- * 
+ *
  * @author John McCrae
  */
 public class Greedy implements MatcherFactory {
@@ -26,6 +27,7 @@ public class Greedy implements MatcherFactory {
      * The configuration of the greedy matcher.
      */
     public static class Configuration {
+
         /**
          * The constraint that the searcher will optimize
          */
@@ -39,13 +41,13 @@ public class Greedy implements MatcherFactory {
 
     }
 
-
     @Override
     public Matcher makeMatcher(Map<String, Object> params) {
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
-        if(config.constraint == null)
+        if (config.constraint == null) {
             throw new ConfigurationException("Greedy matcher requires a constraint");
-        
+        }
+
         return new GreedySearch(config.threshold, config.constraint.make());
     }
 
@@ -53,7 +55,7 @@ public class Greedy implements MatcherFactory {
     public String id() {
         return "greedy";
     }
-    
+
     private static class GreedySearch implements Matcher {
 
         private final double threshold;
@@ -67,8 +69,8 @@ public class Greedy implements MatcherFactory {
         @Override
         public AlignmentSet alignWith(AlignmentSet matches, AlignmentSet initial, ExecuteListener listener) {
             Constraint constraint = initialScore;
-            for(Alignment init : initial) {
-                if(!constraint.canAdd(init)) {
+            for (Alignment init : initial) {
+                if (!constraint.canAdd(init)) {
                     listener.updateStatus(ExecuteListener.Stage.MATCHING, "A link from the initial set is not valid with the constraint.");
                 }
                 //constraint = constraint.add(init);
@@ -76,24 +78,33 @@ public class Greedy implements MatcherFactory {
             }
             Constraint lastComplete = constraint.complete() ? constraint : null;
             matches.sortAlignments();
-            for(Alignment alignment : matches.getAlignments()) {
-                if(alignment.score >= threshold && constraint.canAdd(alignment)) {
+            if (matches.getAlignments().isEmpty()) {
+                listener.updateStatus(NaiscListener.Stage.MATCHING, "No alignments generated");
+            }
+            int overThreshold = 0;
+            for (Alignment alignment : matches.getAlignments()) {
+                if (alignment.score >= threshold && constraint.canAdd(alignment)) {
+                    overThreshold++;
                     //Constraint newConstraint = constraint.add(alignment);
                     double newScore = constraint.score + constraint.delta(alignment);
-                    if(newScore > constraint.score)  {
+                    if (newScore > constraint.score) {
                         //constraint = newConstraint;
                         constraint.add(alignment);
                     }
-                    if(lastComplete == null || constraint.canComplete(alignment) && newScore > lastComplete.score) {
+                    if (lastComplete == null || constraint.canComplete(alignment) && newScore > lastComplete.score) {
                         lastComplete = constraint.copy();
                         lastComplete.add(alignment);
                     }
                 }
             }
-            if(lastComplete != null)
-                return new AlignmentSet(lastComplete.alignments());
-            else
+
+            if (lastComplete != null) {
+                List<Alignment> alignment = lastComplete.alignments();
+                listener.updateStatus(NaiscListener.Stage.MATCHING, String.format("Predicted %d/%d alignments", alignment.size(), overThreshold));
+                return new AlignmentSet(alignment);
+            } else {
                 throw new UnsolvableConstraint("No complete solution was generated");
+            }
         }
 
     }

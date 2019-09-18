@@ -50,6 +50,9 @@ public class LogGap {
             diffs[i + 1] = Math.log(values[i + 1] - values[i] + 1);
             sumdiff += diffs[i + 1];
         }
+        if(sumdiff == 0.0) { // i.e., all values are the same
+            sumdiff = 1.0;
+        }
         for (int i = 1; i < values.length; i++) {
             diffs[i] = diffs[i - 1] + diffs[i] / sumdiff;
         }
