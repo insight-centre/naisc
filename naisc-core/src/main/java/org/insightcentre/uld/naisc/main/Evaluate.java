@@ -15,6 +15,7 @@ import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.AlignmentSet;
+import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
 import org.insightcentre.uld.naisc.util.Option;
@@ -81,7 +82,7 @@ public class Evaluate {
         EvaluationResults er = evaluate(output, goldAlignments, monitor);
 
         final PrintStream out;
-        if(outputFile != null) {
+        if (outputFile != null) {
             out = new PrintStream(outputFile);
         } else {
             out = System.out;
@@ -107,38 +108,67 @@ public class Evaluate {
                 double gScore = galign.get().score;
                 outputScores.add(align.score);
                 goldScores.add(gScore);
-                if(gScore > 0 && align.score > 0)
+                if (gScore > 0 && align.score > 0) {
                     er.tp++;
-                else if(gScore <= 0 && align.score > 0)
+                } else if (gScore <= 0 && align.score > 0) {
                     er.fp++;
-                for (int i = 0; 0.1 * i <= align.score; i++) {
-                    if(gScore > 0 && align.score > 0)
-                        er.thresholds.get(i)._2.tp++;
-                    else if(gScore <= 0)
-                        er.thresholds.get(i)._2.fp++;
                 }
-                if(gScore > 0 && align.score > 0)
+                for (int i = 0; 0.1 * i <= align.score; i++) {
+                    if (gScore > 0 && align.score > 0) {
+                        er.thresholds.get(i)._2.tp++;
+                    } else if (gScore <= 0) {
+                        er.thresholds.get(i)._2.fp++;
+                    }
+                }
+                if (gScore > 0 && align.score > 0) {
                     align.valid = Valid.yes;
-                else
+                } else {
                     align.valid = Valid.no;
+                }
                 seen.add(galign.get());
             } else {
-                if(align.score > 0)
+                if (align.score > 0) {
                     er.fp++;
-                for (int i = 0; 0.1 * i <= align.score; i++) {
-                    if(align.score > 0)
-                        er.thresholds.get(i)._2.fp++;
                 }
-                if(align.score > 0)
+                for (int i = 0; 0.1 * i <= align.score; i++) {
+                    if (align.score > 0) {
+                        er.thresholds.get(i)._2.fp++;
+                    }
+                }
+                if (align.score > 0) {
                     align.valid = Valid.no;
-                else
+                } else {
                     align.valid = Valid.yes;
+                }
+            }
+        }
+        if (er.tp == 0) { // Debug message 
+            monitor.updateStatus(Stage.EVALUATION, String.format("No true positives! %d in output, %d in gold", output.size(), gold.size()));
+            if (!output.isEmpty() && !gold.isEmpty()) {
+                StringBuilder sb = new StringBuilder("First few results from output and gold\n\nOutput:\n");
+                int i = 0;
+                for (Alignment a : output) {
+                    sb.append(a).append("\n");
+                    if (i++ > 5) {
+                        break;
+                    }
+                }
+                i = 0;
+                sb.append("\nGold:\n");
+                for (Alignment a : gold) {
+                    sb.append(a).append("\n");
+                    if (i++ > 5) {
+                        break;
+                    }
+                }
+                monitor.updateStatus(Stage.EVALUATION, sb.toString());
             }
         }
         int goldSize = 0;
         for (Alignment a : gold.getAlignments()) {
-            if(a.score > 0)
+            if (a.score > 0) {
                 goldSize++;
+            }
             try {
                 if (!seen.contains(a)) {
                     output.add(new Alignment(a, a.score, Valid.novel));
@@ -198,9 +228,9 @@ public class Evaluate {
                 badOptions(p, gold.getName() + " does not exist");
                 return;
             }
-            
-            final File outputFile = (File)os.valueOf("o");
-            
+
+            final File outputFile = (File) os.valueOf("o");
+
             Evaluate.evaluate(test, gold, outputFile,
                     os.has("q") ? NONE : STDERR);
 
