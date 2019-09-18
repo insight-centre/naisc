@@ -218,8 +218,6 @@ public class RAdLR implements ScorerFactory {
             int n = 0;
             for (int i = 0; i < features.length; i++) {
                 if (Double.isFinite(features[i])) {
-                    System.err.printf("%.4f -> %.4f\n", features[i], feats[i].normalize(features[i]));
-                    //x += weights.get(i) * features.get(i).value();
                     x += weights.get(i) * feats[i].normalize(features[i]);
                     n++;
                 }
@@ -227,7 +225,6 @@ public class RAdLR implements ScorerFactory {
             if (n > 0) {
                 x /= n;
             }
-            System.err.printf("%.4f\n", x);
             return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
         }
 

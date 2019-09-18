@@ -82,6 +82,7 @@ public class Greedy implements MatcherFactory {
                 listener.updateStatus(NaiscListener.Stage.MATCHING, "No alignments generated");
             }
             int overThreshold = 0;
+            int nonFinite = 0;
             for (Alignment alignment : matches.getAlignments()) {
                 if (alignment.score >= threshold && constraint.canAdd(alignment)) {
                     overThreshold++;
@@ -95,12 +96,14 @@ public class Greedy implements MatcherFactory {
                         lastComplete = constraint.copy();
                         lastComplete.add(alignment);
                     }
+                } else if(!Double.isFinite(alignment.score)) {
+                    nonFinite++;
                 }
             }
 
             if (lastComplete != null) {
                 List<Alignment> alignment = lastComplete.alignments();
-                listener.updateStatus(NaiscListener.Stage.MATCHING, String.format("Predicted %d/%d alignments", alignment.size(), overThreshold));
+                listener.updateStatus(NaiscListener.Stage.MATCHING, String.format("Predicted %d/%d alignments (%d non-finite)", alignment.size(), overThreshold, nonFinite));
                 return new AlignmentSet(alignment);
             } else {
                 throw new UnsolvableConstraint("No complete solution was generated");
