@@ -204,6 +204,7 @@ public class ManageServlet extends HttpServlet {
                 try (PrintWriter out = new PrintWriter("configs/" + configId + ".json")) {
                     mapper.writeValue(out, config);
                 }
+                Meas.data.configs.put(configId, config);
             } catch (IOException x) {
                 x.printStackTrace();
                 throw new ServletException(x);
