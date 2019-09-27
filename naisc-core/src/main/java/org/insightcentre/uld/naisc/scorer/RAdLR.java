@@ -216,8 +216,10 @@ public class RAdLR implements ScorerFactory {
         public double value() {
             double x = 0.0;
             int n = 0;
+            //StringBuilder sb = new StringBuilder("[");
             for (int i = 0; i < features.length; i++) {
                 if (Double.isFinite(features[i])) {
+                    //sb.append(String.format("%.4f, ", feats[i].normalize(features[i])));
                     x += weights.get(i) * feats[i].normalize(features[i]);
                     n++;
                 }
@@ -225,7 +227,11 @@ public class RAdLR implements ScorerFactory {
             if (n > 0) {
                 x /= n;
             }
-            return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
+            //sb.replace(sb.length()-2, sb.length(), " ");
+            //sb.append(String.format("] = %.4f", x));//1.0 / (1.0 + exp(-model.alpha * x - model.beta))));
+            //System.err.println(sb.toString());
+           // return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
+           return x;
         }
 
     }

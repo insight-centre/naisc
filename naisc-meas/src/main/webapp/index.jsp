@@ -100,7 +100,6 @@
                                 <div v-if="configName" id="configMain">
                                     <%= Java2Vue.java2vue(Configuration.class) %>
                                 </div>
-                                {{config}}
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal" v-on:click="saveConfig">Save</button>
@@ -595,11 +594,22 @@ var app = new Vue({
         }
     },
     saveConfig() {
-        jQuery.ajax({
-            url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/save_config/" + this.configName,
-            method: "POST",
-            data: JSON.stringify(unflatten_config(this.config))
-        });
+        var newConfig = true;
+        for(var config in this.configs) {
+            if(config === this.configName) {
+                newConfig = false;
+            }
+        }
+        if(newConfig) {
+            this.$set(this.configs, this.configName, unflatten_config(this.config));
+        }
+        if(newConfig || confirm("This will overwrite the existing configuration on disk. You may run this configuration without saving it. Are you sure you wish to overwrite the configuration?")) {
+            jQuery.ajax({
+                url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/save_config/" + this.configName,
+                method: "POST",
+                data: JSON.stringify(unflatten_config(this.config))
+            });
+        }
     },
     showMessages(id) {
         jQuery.ajax({
