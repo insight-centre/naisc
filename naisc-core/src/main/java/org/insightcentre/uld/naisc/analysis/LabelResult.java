@@ -31,7 +31,7 @@ public class LabelResult {
     }
     
     public boolean isLabelLens() {
-        return this.coverage > 0.5 && this.uniqueness > 0.1 && (this.uri.equals("") || this.isDataProperty && this.naturalLangLike > 0.5);
+        return this.coverage > 0.5 && this.uniqueness > 0.1 && (this.uri.equals("") || this.isDataProperty) && this.naturalLangLike > 0.5;
     }
 
 

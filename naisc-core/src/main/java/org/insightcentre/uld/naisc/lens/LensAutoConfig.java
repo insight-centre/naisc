@@ -42,11 +42,11 @@ public class LensAutoConfig {
                 if (prop.uri.equals("") && leftCandidates.contains("")) {
                     lenses.add(new URI.URIImpl("uri", URI.LabelLocation.infer, URI.LabelForm.smart, "_"));
                     leftCandidates.remove("");
-                    log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, "Using URIs as a lens");
+                    log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, String.format("Using URIs as a lens (%.4f)", prop.naturalLangLike));
                 } else if (leftCandidates.contains(prop.uri)) {
                     lenses.add(new Label.LabelImpl(prop.uri, prop.uri, null, prop.uri, leftModel, null));
                     leftCandidates.remove(prop.uri);
-                    log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, "Using " +  prop.uri +" as a lens");
+                    log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, String.format("Using %s as a lens (%.4f)", prop.uri, prop.naturalLangLike));
                 } else {
                     rightCandidates.add(prop.uri);
                 }

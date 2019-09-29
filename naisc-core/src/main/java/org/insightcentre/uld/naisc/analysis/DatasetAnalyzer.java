@@ -67,7 +67,8 @@ public class DatasetAnalyzer {
 
                 leftResult.add(new LabelResult(e.getKey(), leftPropBySubj.get(e.getKey()).size(),
                         (double) leftPropBySubj.get(e.getKey()).size() / leftSubjects.size(),
-                        -1.0,
+                        //-1.0,
+                        naturalLangLike(e.getValue()),
                         uniqueness(e.getValue()),
                         diversity(e.getValue()), false));
             }
@@ -91,7 +92,8 @@ public class DatasetAnalyzer {
 
                 rightResult.add(new LabelResult(e.getKey(), rightPropBySubj.get(e.getKey()).size(),
                         (double) rightPropBySubj.get(e.getKey()).size() / rightSubjects.size(),
-                        -1.0,
+                        //-1.0,
+                        naturalLangLike(e.getValue()),
                         uniqueness(e.getValue()),
                         diversity(e.getValue()), false));
             }
