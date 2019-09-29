@@ -74,7 +74,6 @@
                         <select class="form-control" v-model="configName" @change="setConfig()">
                             <option v-for="(c,config) in configs" v-bind:value="config">{{config}}<span v-if="c.description"> - {{c.description}}</span></option>
                         </select>
-                        {{configs}}
                         <button type="button" class="btn btn-user btn-primary float-right" data-toggle="modal" data-target="#addConfig">
                             <i class="fas fa-plus-circle"></i>New Configuration</button>
                         <button type="button" class="btn btn-user btn-primary float-right" data-toggle="modal" data-target="#configure" v-show="configName">

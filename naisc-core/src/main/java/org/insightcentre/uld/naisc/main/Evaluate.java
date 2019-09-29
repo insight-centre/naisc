@@ -113,7 +113,7 @@ public class Evaluate {
                 } else if (gScore <= 0 && align.score > 0) {
                     er.fp++;
                 }
-                for (int i = 0; 0.1 * i <= align.score; i++) {
+                for (int i = 0; 0.1 * i <= align.score && 0.1 * i <= 1.0; i++) {
                     if (gScore > 0 && align.score > 0) {
                         er.thresholds.get(i)._2.tp++;
                     } else if (gScore <= 0) {

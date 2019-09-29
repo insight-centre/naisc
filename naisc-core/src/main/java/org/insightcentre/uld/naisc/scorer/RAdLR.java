@@ -1,18 +1,14 @@
 package org.insightcentre.uld.naisc.scorer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.deser.std.StdKeyDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -219,7 +215,7 @@ public class RAdLR implements ScorerFactory {
             //StringBuilder sb = new StringBuilder("[");
             for (int i = 0; i < features.length; i++) {
                 if (Double.isFinite(features[i])) {
-                    //sb.append(String.format("%.4f, ", feats[i].normalize(features[i])));
+                    //sb.append(String.format("%.4f(%.4f), ", feats[i].normalize(features[i]), features[i]));
                     x += weights.get(i) * feats[i].normalize(features[i]);
                     n++;
                 }

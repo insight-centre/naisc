@@ -14,7 +14,7 @@ import org.insightcentre.uld.naisc.ScoreResult;
  */
 public class LogGap {
 
-    public static final int MAX_VALUES = 1000;
+    public static final int MAX_VALUES = 10000;
     private final DoubleList valuesBuilder = new DoubleArrayList();
     private double[] values = null;
     private double[] diffs = null;
