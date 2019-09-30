@@ -26,6 +26,7 @@ import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
@@ -156,7 +157,9 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     lefts.add(r);
                 }
             }
+            int nLeft = lefts.size();
             lefts.removeAll(leftPreBlocks);
+            log.message(Stage.BLOCKING, NaiscListener.Level.INFO, String.format("%d entities in left dataset (%d preblocked)", lefts.size(), nLeft - lefts.size()));
 
             final List<Resource> rights = new ArrayList<>();
             final ResIterator rightIter;
@@ -172,7 +175,9 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     rights.add(r);
                 }
             }
+            int nRight = rights.size();
             rights.removeAll(rightPreBlocks);
+            log.message(Stage.BLOCKING, NaiscListener.Level.INFO, String.format("%d entities in right dataset (%d preblocked)", rights.size(), nRight - rights.size()));
 
             final Map<String, Map<Resource, FreqLen>> ngrams = new HashMap<>();
             for (Resource r : rights) {
@@ -184,9 +189,9 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                     Property rightProp = right.createProperty(rightProperty);
                     NodeIterator iter = right.listObjectsOfProperty(r, rightProp);
                     while (iter.hasNext()) {
-                        RDFNode n = iter.next();
-                        if (n.isLiteral()) {
-                            String s = n.asLiteral().getLexicalForm();
+                        RDFNode node = iter.next();
+                        if (node.isLiteral()) {
+                            String s = node.asLiteral().getLexicalForm();
                             if(lowercase) s = s.toLowerCase();
                             extractNgram(s, ngrams, r);
                         }
@@ -194,12 +199,15 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                 }
             }
             // Heuristically remove any very common n-grams
+            int ngramsSize = ngrams.size();
             Iterator<Map.Entry<String, Map<Resource, FreqLen>>> ngramsIter = ngrams.entrySet().iterator();
             while(ngramsIter.hasNext()) {
                 Map.Entry<String, Map<Resource, FreqLen>> e = ngramsIter.next();
-                if(e.getValue().size() > 100)
+                if(e.getValue().size() > 1000)
                     ngramsIter.remove();
             }
+            if((double)ngrams.size() / ngramsSize < 0.9)
+                log.message(Stage.BLOCKING, NaiscListener.Level.WARNING, "N-Gram in blocking leads to poor matching, consider changing the value of the parameter ngrams (current value=" + ngramsSize + ")");
             final List<Pair<Resource, List<String>>> labels = new ArrayList<>();
             for (Resource r : lefts) {
                 if (property.equals("")) {
@@ -696,6 +704,11 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         public FreqLen(double freq, double len) {
             this.freq = freq;
             this.len = len;
+        }
+
+        @Override
+        public String toString() {
+            return "FreqLen{" + "freq=" + freq + ", len=" + len + '}';
         }
 
         

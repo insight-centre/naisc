@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.insightcentre.uld.naisc.constraint.UnsolvableConstraint;
 import org.insightcentre.uld.naisc.constraint.Constraint;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 import org.insightcentre.uld.naisc.Alignment;
@@ -83,14 +85,22 @@ public class Greedy implements MatcherFactory {
             }
             int overThreshold = 0;
             int nonFinite = 0;
+            PrintWriter out;
+            try {
+                out = new PrintWriter("tmp.data");
+            } catch(IOException x) { out = null; }
             for (Alignment alignment : matches.getAlignments()) {
-                if (alignment.score >= threshold && constraint.canAdd(alignment)) {
+                out.printf("%s,%s,%.4f,", alignment.entity1, alignment.entity2, alignment.score);
+                if (alignment.score > threshold && constraint.canAdd(alignment)) {
                     overThreshold++;
                     //Constraint newConstraint = constraint.add(alignment);
                     double newScore = constraint.score + constraint.delta(alignment);
-                    if (newScore > constraint.score) {
+                    if (newScore > constraint.score || (newScore == constraint.score && threshold < 0)) {
                         //constraint = newConstraint;
                         constraint.add(alignment);
+                        out.println("TRUE");
+                    }  else {
+                        out.println("NOGAIN");
                     }
                     if (lastComplete == null || constraint.canComplete(alignment) && newScore > lastComplete.score) {
                         lastComplete = constraint.copy();
@@ -98,12 +108,16 @@ public class Greedy implements MatcherFactory {
                     }
                 } else if(!Double.isFinite(alignment.score)) {
                     nonFinite++;
+                    out.println("NONFINITE");
+                } else {
+                    out.println("CONSTRAINT");
                 }
             }
 
+            out.close();
             if (lastComplete != null) {
                 List<Alignment> alignment = lastComplete.alignments();
-                listener.updateStatus(NaiscListener.Stage.MATCHING, String.format("Predicted %d/%d alignments (%d non-finite)", alignment.size(), overThreshold, nonFinite));
+                listener.updateStatus(NaiscListener.Stage.MATCHING, String.format("Predicted %d/%d alignments (%d non-finite, score=%.4f)", alignment.size(), overThreshold, nonFinite, lastComplete.score));
                 return new AlignmentSet(alignment);
             } else {
                 throw new UnsolvableConstraint("No complete solution was generated");

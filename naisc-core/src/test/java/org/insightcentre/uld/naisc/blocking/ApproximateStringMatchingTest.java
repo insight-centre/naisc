@@ -287,4 +287,26 @@ public class ApproximateStringMatchingTest {
         assert(result.hasNext());
         assertEquals(new Pair<>(left.createResource("file:id1"), right.createResource("file:id2")), result.next());
     }
+    
+    
+    @Test
+    public void testNgramNearest3() {
+        ApproximateStringMatching asm = new ApproximateStringMatching();
+        Map<String, Object> config = new HashMap<>();
+        config.put("maxMatches", 1);
+        config.put("lowercase", true);
+        BlockingStrategy strat = asm.makeBlockingStrategy(config, Lazy.fromClosure(() -> null), NaiscListener.DEFAULT);
+        Model left = ModelFactory.createDefaultModel();
+        left.add(left.createResource("file:id1"), left.createProperty(Label.RDFS_LABEL), left.createLiteral("frontal artery"));
+        Model right = ModelFactory.createDefaultModel();
+        right.add(right.createResource("file:id1"), right.createProperty(Label.RDFS_LABEL), "Frontal Lobe");
+        right.add(right.createResource("file:id2"), right.createProperty(Label.RDFS_LABEL), "Frontal Bone");
+        right.add(right.createResource("file:id3"), right.createProperty(Label.RDFS_LABEL), "Frontal Sinus");
+        right.add(right.createResource("file:id4"), right.createProperty(Label.RDFS_LABEL), "Frontal Gyrus");
+        right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Frontal Nerve");
+        right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Frontal Artery");
+        Iterator<Pair<Resource, Resource>> result = strat.block(new ModelDataset(left), new ModelDataset(right)).iterator();
+        assert(result.hasNext());
+        assertEquals(new Pair<>(left.createResource("file:id1"), right.createResource("file:id6")), result.next());
+    }
 }
