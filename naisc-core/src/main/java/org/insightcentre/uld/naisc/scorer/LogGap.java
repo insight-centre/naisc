@@ -3,6 +3,7 @@ package org.insightcentre.uld.naisc.scorer;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import java.util.Arrays;
+import java.util.function.Function;
 import org.insightcentre.uld.naisc.ScoreResult;
 
 /**
@@ -41,10 +42,10 @@ public class LogGap {
         return new LogGapResult(d);
     }
 
-    static double[] dedupe(double[] sorted) {
+    public static double[] dedupe(double[] sorted) {
         int n = sorted.length;
         for (int i = 0; i < n - 1; i++) {
-            if (sorted[i+1] - sorted[i] < 1e-12) {
+            if (sorted[i + 1] - sorted[i] < 1e-12) {
                 int j = i + 1;
                 for (; j < n && sorted[j] - sorted[i] < 1e-12; j++) {
                 }
@@ -68,8 +69,8 @@ public class LogGap {
         this.sumdiff = 0;
         for (int i = 0; i < values.length - 1; i++) {
             diffs[i + 1] = Math.log(values[i + 1] - values[i] + 1);
-            if(!Double.isFinite(diffs[i+1])) {
-                throw new RuntimeException("values too close " + values[i+1] + " - " + values[i] + "=" + (values[i+1] - values[i]));
+            if (!Double.isFinite(diffs[i + 1])) {
+                throw new RuntimeException("values too close " + values[i + 1] + " - " + values[i] + "=" + (values[i + 1] - values[i]));
             }
             sumdiff += diffs[i + 1];
         }
@@ -104,7 +105,7 @@ public class LogGap {
             int n = 1;
             int m = 0;
             while (a + b == 0) {
-                if ((n > m || i - n <= 0) && i + m  + 1 < values.length ) {
+                if ((n > m || i - n <= 0) && i + m + 1 < values.length) {
                     m++;
                     b = Math.log(values[i + m] - d + 1);
                 } else if (i - n > 0) {
@@ -136,4 +137,4 @@ public class LogGap {
         }
 
     }
-}
+        }

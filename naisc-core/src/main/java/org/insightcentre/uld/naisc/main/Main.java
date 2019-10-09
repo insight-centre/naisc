@@ -5,6 +5,7 @@ import eu.monnetproject.lang.Language;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -35,6 +36,7 @@ import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
+import org.insightcentre.uld.naisc.Rescaler;
 import org.insightcentre.uld.naisc.ScoreResult;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
@@ -211,6 +213,8 @@ public class Main {
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Matcher");
             Matcher matcher = config.makeMatcher();
+            
+            Rescaler rescaler = config.makeRescaler();
 
             monitor.updateStatus(Stage.BLOCKING, "Blocking");
             Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel, monitor);
@@ -298,8 +302,7 @@ public class Main {
                 scorer.close();
             }
 
-            AlignmentSet alignmentSet = new AlignmentSet();
-            alignmentSet.addAll(alignments.stream().map(x -> x.toAlignment()).collect(Collectors.toSet()));
+            AlignmentSet alignmentSet = convertAligns(alignments, rescaler);
 
             monitor.updateStatus(Stage.MATCHING, "Matching");
             if (partialSoln.has()) {
@@ -415,6 +418,21 @@ public class Main {
         }
 
     }
+    
+    private static AlignmentSet convertAligns(ConcurrentLinkedQueue<TmpAlignment> tmpAligns, Rescaler rescaler) {
+        List<Alignment> aligns = new ArrayList<>();
+        double[] scores = new double[tmpAligns.size()];
+        int i = 0;
+        for(TmpAlignment t : tmpAligns) {
+            scores[i++] = t.result.value();
+        }
+        i = 0;
+        scores = rescaler.rescale(scores);
+        for(TmpAlignment t : tmpAligns) {
+            aligns.add(new Alignment(t.left, t.right, scores[i++], t.relation));
+        }
+        return new AlignmentSet(aligns);
+    }
 
     private static class TmpAlignment {
 
@@ -427,10 +445,6 @@ public class Main {
             this.right = right;
             this.result = result;
             this.relation = relation;
-        }
-
-        public Alignment toAlignment() {
-            return new Alignment(left, right, result.value(), relation);
         }
     }
 }
