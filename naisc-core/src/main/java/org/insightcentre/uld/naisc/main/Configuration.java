@@ -42,6 +42,7 @@ import org.insightcentre.uld.naisc.TextFeatureFactory;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.GraphFeatureFactory;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.Rescaler;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.blocking.All;
 import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching;
@@ -72,6 +73,7 @@ import org.insightcentre.uld.naisc.matcher.Greedy;
 import org.insightcentre.uld.naisc.matcher.MonteCarloTreeSearch;
 import org.insightcentre.uld.naisc.matcher.Threshold;
 import org.insightcentre.uld.naisc.matcher.UniqueAssignment;
+import org.insightcentre.uld.naisc.rescaling.Percentile;
 import org.insightcentre.uld.naisc.scorer.Average;
 import org.insightcentre.uld.naisc.scorer.LibSVM;
 import org.insightcentre.uld.naisc.scorer.RAdLR;
@@ -227,6 +229,11 @@ public class Configuration {
         WordNet.class,
         org.insightcentre.uld.naisc.feature.Command.class
     };
+
+    public Rescaler makeRescaler() {
+        // TODO: Actually use configuration
+        return new Percentile();
+    }
 
     /**
      * The configuration for text feature extractors. The following extractors
