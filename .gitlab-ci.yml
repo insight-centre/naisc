@@ -44,7 +44,7 @@ cache:
 .verify: &verify
   stage: test
   script:
-    - 'mvn $MAVEN_CLI_OPTS -f naisc-core/pom.xml verify site site:stage'
+    - 'mvn $MAVEN_CLI_OPTS -f naisc-core/pom.xml verify site'
   except:
     - master
 
