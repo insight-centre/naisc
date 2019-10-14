@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>org.insightcentre</groupId>
-            <artifactId>naisc</artifactId>
+            <artifactId>naisc-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
