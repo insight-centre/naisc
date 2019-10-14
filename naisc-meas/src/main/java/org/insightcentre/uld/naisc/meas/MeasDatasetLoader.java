@@ -1,5 +1,15 @@
 package org.insightcentre.uld.naisc.meas;
 
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.riot.adapters.RDFReaderRIOT;
+import org.insightcentre.uld.naisc.Dataset;
+import org.insightcentre.uld.naisc.DatasetLoader;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
+import org.insightcentre.uld.naisc.util.Option;
+import org.insightcentre.uld.naisc.util.Some;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -7,14 +17,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.DatasetLoader;
-import org.insightcentre.uld.naisc.main.DefaultDatasetLoader;
-import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
-import org.insightcentre.uld.naisc.util.Option;
-import org.insightcentre.uld.naisc.util.Some;
 
 /**
  * The Meas loader also creates a SPARQL endpoint for the datasets
@@ -33,7 +35,16 @@ public class MeasDatasetLoader implements DatasetLoader<MeasDatasetLoader.MeasDa
     @Override
     public Dataset fromFile(File file, String name) throws IOException {
         final Model model = ModelFactory.createDefaultModel();
-        model.read(new FileReader(file), file.toURI().toString(), "riot");
+        if(file.getName().endsWith(".rdf")) {
+            model.read(new FileReader(file), file.toURI().toString(), "RDF/XML");
+        } else if(file.getName().endsWith(".ttl")) {
+            model.read(new FileReader(file), file.toURI().toString(), "Turtle");
+        } else if(file.getName().endsWith(".nt")) {
+            model.read(new FileReader(file), file.toURI().toString(), "N-TRIPLES");
+        } else {
+            model.read(new FileReader(file), file.toURI().toString(), "RDF/XML");
+        }
+
         SPARQLEndpointServlet.registerModel(name, model);
         models.add(name);
         return new MeasDataset(name, model);

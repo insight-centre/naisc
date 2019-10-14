@@ -10,7 +10,7 @@ dependencies {
     compile 'org.eclipse.jetty:apache-jstl:9.4.12.RC2'    
 }
 
-task jarWithDeps(type: Jar) {
+task jarWithDeps(type: Jar, dependsOn:build) {
     manifest {
         attributes 'Implementation-Title': 'Naisc Meas Evaluation and Analysis Suite',
         	'Implementation-Version': version,
@@ -21,3 +21,8 @@ task jarWithDeps(type: Jar) {
     with jar
 }
 
+task meas(type: JavaExec, dependsOn:jarWithDeps) {
+    main = "-jar"
+    args = [ "naisc-meas/build/libs/naisc-meas-all-" + project.version + ".jar" ]
+    workingDir = ".."        
+}
