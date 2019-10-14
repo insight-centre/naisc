@@ -69,7 +69,7 @@ public class Train {
             if (m.matches()) {
                 model.removeAll();
                 try {
-                    model.read(new StringReader(m.group(1)), alignmentFile.toURI().toString(), "NTRIPLES");
+                    model.read(new StringReader(m.group(1)), alignmentFile.toURI().toString(), "N-TRIPLES");
                 } catch (RiotException x) {
                     throw new RuntimeException("Could not read line: " + line, x);
                 }

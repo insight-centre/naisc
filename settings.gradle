@@ -1,0 +1,3 @@
+rootProject.name = 'naisc'
+
+include 'naisc-core', 'naisc-meas'
