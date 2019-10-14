@@ -97,4 +97,4 @@ naisc-core/models
 *.iml
 build/
 .gradle
-gradle
+!gradle-wrapper.jar
