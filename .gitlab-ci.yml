@@ -36,7 +36,7 @@ cache:
 .validate: &validate
   stage: build
   script:
-    - 'mvn $MAVEN_CLI_OPTS -f naisc-core/pom.xml test-compile'
+    - 'mvn $MAVEN_CLI_OPTS -f pom.xml test-compile'
       #    - 'mvn $MAVEN_CLI_OPTS -f naisc-meas/pom.xml test-compile'
 
 # For merge requests do not `deploy` but only run `verify`.
@@ -44,7 +44,7 @@ cache:
 .verify: &verify
   stage: test
   script:
-    - 'mvn $MAVEN_CLI_OPTS -f naisc-core/pom.xml verify site'
+    - 'mvn $MAVEN_CLI_OPTS -f pom.xml verify site'
   except:
     - master
 

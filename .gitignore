@@ -93,3 +93,5 @@ munkres.tmp
 out
 naisc-core/src/test/resources/model.libsvm
 naisc-core/models
+.idea
+*.iml
