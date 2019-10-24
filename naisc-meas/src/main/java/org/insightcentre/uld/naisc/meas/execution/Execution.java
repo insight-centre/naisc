@@ -12,12 +12,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.AlignmentSet;
@@ -28,6 +24,7 @@ import org.insightcentre.uld.naisc.meas.DataView;
 import org.insightcentre.uld.naisc.meas.DataView.DataViewEntry;
 import org.insightcentre.uld.naisc.meas.DataView.DataViewPath;
 import org.insightcentre.uld.naisc.meas.ExecuteServlet;
+import org.insightcentre.uld.naisc.meas.Meas;
 import org.insightcentre.uld.naisc.meas.Meas.Run;
 import org.insightcentre.uld.naisc.meas.Meas.RunResultRow;
 import org.insightcentre.uld.naisc.util.LangStringPair;
@@ -377,6 +374,79 @@ public class Execution implements ExecuteListener {
             }
         }
     }
+
+    private static void populateCompareResults(String id, ObjectMapper mapper, List<Meas.CompareResultRow> crss) {
+        try (Connection connection = connection(id)) {
+            try (Statement stat = connection.createStatement()) {
+                final String query = "SELECT res1, prop, res2, lens, score, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order";
+                try (ResultSet rs = stat.executeQuery(query)) {
+                    while (rs.next()) {
+                        Meas.CompareResultRow rrr = new Meas.CompareResultRow();
+                        rrr.subject = rs.getString(1);
+                        rrr.property = rs.getString(2);
+                        rrr.object = rs.getString(3);
+                        rrr.lens = mapper.readValue(rs.getString(4), mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class));
+                        rrr.firstScore = rs.getDouble(5);
+                        rrr.firstValid = Valid.valueOf(rs.getString(6));
+                        rrr.idx = rs.getInt(7);
+                        crss.add(rrr);
+                    }
+                }
+            }
+        } catch(SQLException | IOException x) {
+            throw new RuntimeException(x);
+        }
+
+    }
+
+    public static Meas.CompareResult loadCompare(String id1, String id2) {
+        ObjectMapper mapper = new ObjectMapper();
+        if (!new File("runs/" + id1 + ".db").exists()) {
+            return null;
+        }
+        List<Meas.CompareResultRow> crrs1 = new ArrayList<>();
+        List<Meas.CompareResultRow> crrs2 = new ArrayList<>();
+        synchronized (databaseLock) {
+            populateCompareResults(id1, mapper, crrs1);
+            populateCompareResults(id2, mapper, crrs2);
+        }
+        Comparator<Meas.CompareResultRow> comp = new Comparator<Meas.CompareResultRow>() {
+            @Override
+            public int compare(Meas.CompareResultRow x, Meas.CompareResultRow y) {
+
+                int i = x.subject.compareTo(y.subject);
+            if(i != 0) return i;
+            i = x.property.compareTo(y.property);
+            if(i != 0) return i;
+            i = x.object.compareTo(x.object);
+            if(i != 0) return i;
+            return 0;
+            }
+        };
+        crrs1.sort(comp);
+        crrs2.sort(comp);
+        Iterator<Meas.CompareResultRow> it1 = crrs1.iterator();
+        Iterator<Meas.CompareResultRow> it2 = crrs2.iterator();
+        Meas.CompareResultRow crr1 = it1.hasNext() ? it1.next() : null, crr2 = it2.hasNext() ? it2.next() : null;
+        Meas.CompareResult cr = new Meas.CompareResult();
+        while(it1.hasNext() && it2.hasNext()) {
+            if(crr1 == null && crr2 != null) {
+                switch(crr2.firstValid) {
+                    case yes:
+                        cr.firstCorrect.add(new Meas.CompareResultRow(crr2.subject, crr2.property, crr2.object, crr2.lens, 0.0, Valid.no, crr2.firstScore, crr2.firstValid, crr2.idx);
+                        break;
+                    case no:
+                        cr.firstCorrect.add(new Meas.CompareResultRow(crr2.subject, crr2.property, crr2.object, crr2.lens, 0.0, Valid.yes, crr2.firstScore, crr2.firstValid, crr2.idx);
+                        break;
+                }
+            } else if (crr2 == null) {
+
+            } else {
+                int c = comp.compare(crr1, crr2);
+            }
+        }
+    }
+
 
     private static void simplifyView(List<RunResultRow> rrrs) {
         String lastLeftRoot = "";

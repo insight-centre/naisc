@@ -239,4 +239,40 @@ public class Meas {
         public List<String> rightPath;
     }
 
+    public static String loadComparison(String first, String second) throws JsonProcessingException, IOException {
+        if(!first.matches(ExecuteServlet.VALID_ID) || !second.matches(ExecuteServlet.VALID_ID)) {
+            throw new IllegalArgumentException("Bad ID");
+        }
+        CompareResult rows = Execution.loadCompare(first, second);
+        return mapper.writeValueAsString(rows);
+    }
+
+
+    public static class CompareResult {
+        public List<CompareResultRow> firstCorrect = new ArrayList<>(), secondCorrect = new ArrayList<>();
+    }
+
+    public static class CompareResultRow {
+        public String subject;
+        public String property;
+        public String object;
+        public Map<String, LangStringPair> lens;
+        public double firstScore, secondScore;
+        public Valid firstValid, secondValid;
+
+        public CompareResultRow() {
+        }
+
+        public CompareResultRow(String subject, String property, String object, Map<String, LangStringPair> lens, double firstScore, double secondScore, Valid firstValid, Valid secondValid) {
+            this.subject = subject;
+            this.property = property;
+            this.object = object;
+            this.lens = lens;
+            this.firstScore = firstScore;
+            this.secondScore = secondScore;
+            this.firstValid = firstValid;
+            this.secondValid = secondValid;
+        }
+    }
+
 }
