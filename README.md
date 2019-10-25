@@ -2,7 +2,7 @@
 
 _'Naisc' means 'links' in Irish and is pronounced 'nashk'._
 
-![Naisc Logo]("Naisc Logo.png")
+![Naisc Logo](Naisc Logo.png)
 
 ## Installation
 
