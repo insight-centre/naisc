@@ -243,13 +243,8 @@ public class Meas {
         if(!first.matches(ExecuteServlet.VALID_ID) || !second.matches(ExecuteServlet.VALID_ID)) {
             throw new IllegalArgumentException("Bad ID");
         }
-        CompareResult rows = Execution.loadCompare(first, second);
+        List<CompareResultRow> rows = Execution.loadCompare(first, second);
         return mapper.writeValueAsString(rows);
-    }
-
-
-    public static class CompareResult {
-        public List<CompareResultRow> firstCorrect = new ArrayList<>(), secondCorrect = new ArrayList<>();
     }
 
     public static class CompareResultRow {

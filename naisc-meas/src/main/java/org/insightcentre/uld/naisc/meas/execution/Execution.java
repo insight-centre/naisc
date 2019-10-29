@@ -374,77 +374,132 @@ public class Execution implements ExecuteListener {
             }
         }
     }
+//
+//    private static void populateCompareResults(String id, ObjectMapper mapper, List<Meas.CompareResultRow> crss) {
+//        try (Connection connection = connection(id)) {
+//            try (Statement stat = connection.createStatement()) {
+//                final String query = "SELECT res1, prop, res2, lens, score, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order";
+//                try (ResultSet rs = stat.executeQuery(query)) {
+//                    while (rs.next()) {
+//                        Meas.CompareResultRow rrr = new Meas.CompareResultRow();
+//                        rrr.subject = rs.getString(1);
+//                        rrr.property = rs.getString(2);
+//                        rrr.object = rs.getString(3);
+//                        rrr.lens = mapper.readValue(rs.getString(4), mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class));
+//                        rrr.firstScore = rs.getDouble(5);
+//                        rrr.firstValid = Valid.valueOf(rs.getString(6));
+//                        rrr.idx = rs.getInt(7);
+//                        crss.add(rrr);
+//                    }
+//                }
+//            }
+//        } catch(SQLException | IOException x) {
+//            throw new RuntimeException(x);
+//        }
+//
+//    }
+//
+//    public static Meas.CompareResult loadCompare(String id1, String id2) {
+//        ObjectMapper mapper = new ObjectMapper();
+//        if (!new File("runs/" + id1 + ".db").exists()) {
+//            return null;
+//        }
+//        List<Meas.CompareResultRow> crrs1 = new ArrayList<>();
+//        List<Meas.CompareResultRow> crrs2 = new ArrayList<>();
+//        synchronized (databaseLock) {
+//            populateCompareResults(id1, mapper, crrs1);
+//            populateCompareResults(id2, mapper, crrs2);
+//        }
+//        Comparator<Meas.CompareResultRow> comp = new Comparator<Meas.CompareResultRow>() {
+//            @Override
+//            public int compare(Meas.CompareResultRow x, Meas.CompareResultRow y) {
+//
+//                int i = x.subject.compareTo(y.subject);
+//            if(i != 0) return i;
+//            i = x.property.compareTo(y.property);
+//            if(i != 0) return i;
+//            i = x.object.compareTo(x.object);
+//            if(i != 0) return i;
+//            return 0;
+//            }
+//        };
+//        crrs1.sort(comp);
+//        crrs2.sort(comp);
+//        Iterator<Meas.CompareResultRow> it1 = crrs1.iterator();
+//        Iterator<Meas.CompareResultRow> it2 = crrs2.iterator();
+//        Meas.CompareResultRow crr1 = it1.hasNext() ? it1.next() : null, crr2 = it2.hasNext() ? it2.next() : null;
+//        Meas.CompareResult cr = new Meas.CompareResult();
+//        while(it1.hasNext() && it2.hasNext()) {
+//            if(crr1 == null && crr2 != null) {
+//                switch(crr2.firstValid) {
+//                    case yes:
+//                        cr.firstCorrect.add(new Meas.CompareResultRow(crr2.subject, crr2.property, crr2.object, crr2.lens, 0.0, Valid.no, crr2.firstScore, crr2.firstValid, crr2.idx);
+//                        break;
+//                    case no:
+//                        cr.firstCorrect.add(new Meas.CompareResultRow(crr2.subject, crr2.property, crr2.object, crr2.lens, 0.0, Valid.yes, crr2.firstScore, crr2.firstValid, crr2.idx);
+//                        break;
+//                }
+//            } else if (crr2 == null) {
+//
+//            } else {
+//                int c = comp.compare(crr1, crr2);
+//                if(c == 0) {
+//                    if(crr1.firstValid != crr2.firstValid) {
+//                        if(crr1.firstValid == Valid.yes || crr2.firstValid == Valid.no) {
+//                            cr.firstCorrect.add(new Meas.CompareResultRow(crr2.subject, crr2.property, crr2.object, crr2.lens, crr1.firstScore, crr2.firstScore, crr1.firstValid, crr2.firstValid));
+//                        } else if(crr1.firstValid == Valid.no || crr2.firstValid == Valid.yes) {
+//                            cr.secondCorrect.add(new Meas.CompareResultRow(crr2.subject, crr2.property, crr2.object, crr2.lens, crr1.firstScore, crr2.firstScore, crr1.firstValid, crr2.firstValid));
+//                        }
+//                    }
+//                } else if(c < 0) {
+//                    if(crr1.firstValid == Valid.yes) {
+//                        cr.firstCorrect.add(new Meas.CompareResultRow(crr2.subject, crr2.property, crr2.object, crr2.lens, crr1.firstScore, 0.0, crr1.firstValid, Valid.no));
+//                    } else if(crr1.firstValid == Valid.no) {
+//                        cr.secondCorrect.add(new Meas.CompareResultRow(crr2.subject, crr2.property, crr2.object, crr2.lens, crr1.firstScore, 0.0, crr1.firstValid, Valid));
+//
+//
+//            }
+//        }
+//    }
 
-    private static void populateCompareResults(String id, ObjectMapper mapper, List<Meas.CompareResultRow> crss) {
-        try (Connection connection = connection(id)) {
-            try (Statement stat = connection.createStatement()) {
-                final String query = "SELECT res1, prop, res2, lens, score, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order";
-                try (ResultSet rs = stat.executeQuery(query)) {
-                    while (rs.next()) {
-                        Meas.CompareResultRow rrr = new Meas.CompareResultRow();
-                        rrr.subject = rs.getString(1);
-                        rrr.property = rs.getString(2);
-                        rrr.object = rs.getString(3);
-                        rrr.lens = mapper.readValue(rs.getString(4), mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class));
-                        rrr.firstScore = rs.getDouble(5);
-                        rrr.firstValid = Valid.valueOf(rs.getString(6));
-                        rrr.idx = rs.getInt(7);
-                        crss.add(rrr);
-                    }
-                }
-            }
-        } catch(SQLException | IOException x) {
-            throw new RuntimeException(x);
-        }
-
-    }
-
-    public static Meas.CompareResult loadCompare(String id1, String id2) {
+    public static List<Meas.CompareResultRow> loadCompare(String id1, String id2) {
         ObjectMapper mapper = new ObjectMapper();
         if (!new File("runs/" + id1 + ".db").exists()) {
             return null;
         }
-        List<Meas.CompareResultRow> crrs1 = new ArrayList<>();
-        List<Meas.CompareResultRow> crrs2 = new ArrayList<>();
+        if (!new File("runs/" + id2 + ".db").exists()) {
+            return null;
+        }
+        List<Meas.CompareResultRow> crrs = new ArrayList<>();
         synchronized (databaseLock) {
-            populateCompareResults(id1, mapper, crrs1);
-            populateCompareResults(id2, mapper, crrs2);
-        }
-        Comparator<Meas.CompareResultRow> comp = new Comparator<Meas.CompareResultRow>() {
-            @Override
-            public int compare(Meas.CompareResultRow x, Meas.CompareResultRow y) {
-
-                int i = x.subject.compareTo(y.subject);
-            if(i != 0) return i;
-            i = x.property.compareTo(y.property);
-            if(i != 0) return i;
-            i = x.object.compareTo(x.object);
-            if(i != 0) return i;
-            return 0;
-            }
-        };
-        crrs1.sort(comp);
-        crrs2.sort(comp);
-        Iterator<Meas.CompareResultRow> it1 = crrs1.iterator();
-        Iterator<Meas.CompareResultRow> it2 = crrs2.iterator();
-        Meas.CompareResultRow crr1 = it1.hasNext() ? it1.next() : null, crr2 = it2.hasNext() ? it2.next() : null;
-        Meas.CompareResult cr = new Meas.CompareResult();
-        while(it1.hasNext() && it2.hasNext()) {
-            if(crr1 == null && crr2 != null) {
-                switch(crr2.firstValid) {
-                    case yes:
-                        cr.firstCorrect.add(new Meas.CompareResultRow(crr2.subject, crr2.property, crr2.object, crr2.lens, 0.0, Valid.no, crr2.firstScore, crr2.firstValid, crr2.idx);
-                        break;
-                    case no:
-                        cr.firstCorrect.add(new Meas.CompareResultRow(crr2.subject, crr2.property, crr2.object, crr2.lens, 0.0, Valid.yes, crr2.firstScore, crr2.firstValid, crr2.idx);
-                        break;
+            try (Connection connection = connection(id2)) {
+                try(PreparedStatement stat = connection.prepareStatement("ATTACH DATABASE ? AS db2")) {
+                    stat.setString(1, "runs/" + id2 + ".db");
+                    stat.execute();
                 }
-            } else if (crr2 == null) {
+                try(PreparedStatement stat = connection.prepareStatement("SELECT main.results.res1, main.results.prop, " +
+                    "main.results.res2, main.results.scores, main.results.lens, db2.results.score, main.results.valid, db2.results.valid " +
+                    "FROM main.results JOIN db2.results ON " +
+                    "main.results.res1 == db2.results.res1 AND " +
+                    "main.results.prop == db2.results.prop AND " +
+                    "main.results.res2 == db2.results.res2 " +
+                    "WHERE main.results.valid != db2.results.valid")) {
+                    ResultSet rs = stat.executeQuery();
+                    while(rs.next()) {
+                        crrs.add(new Meas.CompareResultRow(
+                            rs.getString(1), rs.getString(2), rs.getString(3),
+                            mapper.readValue(rs.getString(4), mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class)),
+                            rs.getFloat(5), rs.getFloat(6),
+                            Valid.valueOf(rs.getString(7)), Valid.valueOf(rs.getString(8))));
 
-            } else {
-                int c = comp.compare(crr1, crr2);
+                    }
+                }
+            } catch(SQLException|JsonProcessingException x) {
+                throw new RuntimeException(x);
             }
         }
+        return crrs;
+
     }
 
 
