@@ -37,6 +37,10 @@ fun main(args : Array<String>) {
         badOptions(p, x.message ?: "Unknown error")
         return
     }
+    if(os.nonOptionArguments().size != 1) {
+        badOptions(p, "Wrong number of arguments. Please specify at least one argument")
+        return
+    }
     val alignment = mutableListOf<CILIAlignment>()
     for(i in 0..10) {
         alignment.add(randomAlignment());
