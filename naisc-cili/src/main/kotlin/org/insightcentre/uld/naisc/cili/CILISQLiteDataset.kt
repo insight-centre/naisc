@@ -6,6 +6,7 @@ import org.apache.jena.rdf.model.*
 import org.apache.jena.rdf.model.impl.NodeIteratorImpl
 import org.apache.jena.rdf.model.impl.ResIteratorImpl
 import org.apache.jena.rdf.model.impl.StmtIteratorImpl
+import org.apache.jena.util.iterator.ExtendedIterator
 import org.insightcentre.uld.naisc.Dataset
 import org.insightcentre.uld.naisc.util.None
 import org.insightcentre.uld.naisc.util.Option
@@ -13,6 +14,8 @@ import java.io.File
 import java.net.URL
 import java.sql.Connection
 import java.sql.DriverManager
+import java.util.function.Function
+import java.util.function.Predicate
 
 class CILISQLiteDataset(dbFile : File) : Dataset {
     companion object {
@@ -49,7 +52,7 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
 
     private fun lemmas(connection : Connection, ili : Int) : List<Lemma> {
         val stat = connection.prepareStatement(
-            "SELECT UNIQUE f.lemma, lang.bcp47, pos.def FROM f " +
+            "SELECT DISTINCT f.lemma, lang.bcp47, pos.def FROM f " +
                     "JOIN s ON s.id = f.id " +
                     "JOIN ss on ss.id = s.ss_id " +
                     "JOIN lang on lang.id = f.lang_id " +
@@ -70,7 +73,7 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
 
     private fun ilisWithLemma(connection : Connection, lemma : String, lang : String) : List<Int> {
         val stat = connection.prepareStatement(
-            "SELECT UNIQUE ss.ili_id FROM f " +
+            "SELECT DISTINCT ss.ili_id FROM f " +
                     "JOIN s ON s.id = f.id " +
                     "JOIN ss on ss.id = s.ss_id " +
                     "JOIN lang on lang.id = f.lang_id " +
@@ -92,7 +95,7 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
 
     private fun ilisWithPos(connection : Connection, pos : String) : List<Int> {
         val stat = connection.prepareStatement(
-            "SELECT UNIQUE ss.ili_id FROM f " +
+            "SELECT DISTINCT ss.ili_id FROM f " +
                     "JOIN s ON s.id = f.id " +
                     "JOIN ss on ss.id = s.ss_id " +
                     "JOIN lang on lang.id = f.lang_id " +
@@ -115,7 +118,7 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
 
     private fun links(connection : Connection, ili : Int) : List<Relation> {
         val stat = connection.prepareStatement(
-            "SELECT UNIQUE ss2.ili_id, ssrel.rel FROM sslink " + // TODO: Ask Francis about ssrel.rel
+            "SELECT DISTINCT ss2.ili_id, ssrel.rel FROM sslink " + // TODO: Ask Francis about ssrel.rel
                     "JOIN ss AS ss1 ON ss1.id = sslink.ss1_id " +
                     "JOIN ss AS ss2 ON ss2.id = sslink.ss2_id " +
                     "JOIN ssrel ON ssrel.id = sslink.ssrel_id " +
@@ -135,7 +138,7 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
 
     private fun iliWithLink(connection : Connection, prop : String) : List<Int> {
         val stat = connection.prepareStatement(
-            "SELECT UNIQUE ss1.ili_id FROM sslink " + // TODO: Ask Francis about ssrel.rel
+            "SELECT DISTINCT ss1.ili_id FROM sslink " + // TODO: Ask Francis about ssrel.rel
                     "JOIN ss AS ss1 ON ss1.id = sslink.ss1_id " +
                     "JOIN ssrel ON ssrel.id = sslink.ssrel_id " +
                     "WHERE ssrel.rel=?")
@@ -154,7 +157,7 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
 
     private fun iliWithLinkTarget(connection : Connection, prop : String, targ : Int) : List<Int> {
         val stat = connection.prepareStatement(
-            "SELECT UNIQUE ss1.ili_id FROM sslink " + // TODO: Ask Francis about ssrel.rel
+            "SELECT DISTINCT ss1.ili_id FROM sslink " + // TODO: Ask Francis about ssrel.rel
                     "JOIN ss AS ss1 ON ss1.id = sslink.ss1_id " +
                     "JOIN ss AS ss2 ON ss2.id = sslink.ss2_id " +
                     "JOIN ssrel ON ssrel.id = sslink.ssrel_id " +
@@ -175,8 +178,8 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
 
     private fun examples(connection : Connection, ili : Int) : List<Text> {
         val stat = connection.prepareStatement(
-            "SELECT UNIQUE ssexe.ssexe, lang.bcp47 FROM ssexe" +
-                    "JOIN ss ON ss.id = ssexe.ss_id" +
+            "SELECT DISTINCT ssexe.ssexe, lang.bcp47 FROM ssexe " +
+                    "JOIN ss ON ss.id = ssexe.ss_id " +
                     "JOIN lang on lang.id = ssexe.lang_id " +
                     "WHERE ss.ili_id=?");
         var examples = mutableListOf<Text>()
@@ -194,8 +197,8 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
 
     private fun ilisWithExample(connection : Connection, example : Text) : List<Int> {
         val stat = connection.prepareStatement(
-            "SELECT UNIQUE ss.ili_id FROM ssexe" +
-                    "JOIN ss ON ss.id = ssexe.ss_id" +
+            "SELECT DISTINCT ss.ili_id FROM ssexe " +
+                    "JOIN ss ON ss.id = ssexe.ss_id " +
                     "JOIN lang on lang.id = ssexe.lang_id " +
                     "WHERE ssexe.ssexe=? AND lang.bcp47=?");
         var ilis = mutableListOf<Int>()
@@ -214,9 +217,9 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
 
     private fun definitions(connection : Connection, ili : Int) : List<Text> {
          val stat = connection.prepareStatement(
-            "SELECT UNIQUE def.def, lang.bcp47 FROM def" +
-                    "JOIN ss ON ss.id = def.ss_id" +
-                    "JOIN lang on lang.id = ssexe.lang_id " +
+            "SELECT DISTINCT def.def, lang.bcp47 FROM def " +
+                    "JOIN ss ON ss.id = def.ss_id " +
+                    "JOIN lang on lang.id = def.lang_id " +
                     "WHERE ss.ili_id=?");
         var defs = mutableListOf<Text>()
         stat.use {
@@ -233,9 +236,9 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
     }
     private fun ilisWithDefinition(connection : Connection, defn : Text) : List<Int> {
          val stat = connection.prepareStatement(
-            "SELECT UNIQUE ss.ili_id FROM def" +
-                    "JOIN ss ON ss.id = def.ss_id" +
-                    "JOIN lang on lang.id = ssexe.lang_id " +
+            "SELECT DISTINCT ss.ili_id FROM def " +
+                    "JOIN ss ON ss.id = def.ss_id " +
+                    "JOIN lang on lang.id = def.lang_id " +
                     "WHERE def.def=? AND lang.bcp47=?");
         var ilis = mutableListOf<Int>()
         stat.use {
@@ -432,16 +435,14 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
 
     override fun listStatements(): StmtIterator {
         val connection = conn()
-        connection.use {
-            val iter = defs.keys.asSequence().flatMap { ili ->
-                (lemmasAsStatements(lemmas(connection, ili), ili) +
-                examplesAsStatements(examples(connection, ili), ili) +
-                linksAsStatements(links(connection, ili), ili) +
-                definitionsAsStatements(definitions(connection, ili), ili)
-                ).asSequence()
-            }
-            return StmtIteratorImpl(iter.iterator())
+        val iter = defs.keys.asSequence().flatMap { ili ->
+            (lemmasAsStatements(lemmas(connection, ili), ili) +
+            examplesAsStatements(examples(connection, ili), ili) +
+            linksAsStatements(links(connection, ili), ili) +
+            definitionsAsStatements(definitions(connection, ili), ili)
+            ).asSequence()
         }
+        return SQLStmtIteratorImpl(StmtIteratorImpl(iter.iterator()), connection)
     }
 
     override fun createQuery(query: Query?): QueryExecution {
@@ -459,3 +460,22 @@ data class Lemma(val lemma : String, val lang : String, val pos : String)
 data class Relation(val targ : Int, val type : String)
 
 data class Text(val text : String, val lang : String)
+
+class SQLStmtIteratorImpl(val i: StmtIterator, val connection: Connection) : StmtIterator {
+    override fun nextStatement() = i.nextStatement()
+    override fun removeNext() = i.removeNext()
+    override fun remove() = i.remove()
+    override fun <U : Any?> mapWith(p0: Function<Statement, U>?) = i.mapWith(p0)
+    override fun toSet() = i.toSet()
+    override fun filterDrop(p0: Predicate<Statement>?) = i.filterDrop(p0)
+    override fun next() = i.next()
+    override fun filterKeep(p0: Predicate<Statement>?) = i.filterKeep(p0)
+    override fun <X : Statement?> andThen(p0: MutableIterator<X>?) = i.andThen(p0)
+    override fun toList() = i.toList()
+    override fun hasNext() = i.hasNext()
+    override fun close() {
+        i.close()
+        connection.close()
+    }
+
+}

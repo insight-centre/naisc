@@ -1,11 +1,20 @@
 package org.insightcentre.uld.naisc.cili
 
-import org.junit.Assert.*
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.rdf.model.Resource
+import org.insightcentre.uld.naisc.cili.CILISQLiteDataset.Companion.ILI
+import org.insightcentre.uld.naisc.cili.CILISQLiteDataset.Companion.RDFS_LABEL
+import org.insightcentre.uld.naisc.cili.CILISQLiteDataset.Companion.WN
+import org.insightcentre.uld.naisc.cili.CILISQLiteDataset.Companion.WN_DEF
+import org.insightcentre.uld.naisc.cili.CILISQLiteDataset.Companion.WN_EXAMPLE
+import org.insightcentre.uld.naisc.cili.CILISQLiteDataset.Companion.WN_POS
+import org.junit.Assert.*;
 import java.io.File
 import java.sql.DriverManager
 
 class CILISQLiteDatasetTest {
     val file : File
+    val model = ModelFactory.createDefaultModel()
     init {
         file = File.createTempFile("cilisql", ".db")
         file.deleteOnExit()
@@ -117,34 +126,67 @@ class CILISQLiteDatasetTest {
 
     @org.junit.Test
     fun listSubjects() {
+        val dataset = CILISQLiteDataset(file)
+        val result = dataset.listSubjects().toList()
+        val expResult = listOf(model.createResource(CILISQLiteDataset.ILI + "i1"))
+        assertEquals(expResult, result)
     }
 
-    @org.junit.Test
-    fun createProperty() {
-    }
-
-    @org.junit.Test
-    fun createResource() {
-    }
 
     @org.junit.Test
     fun listSubjectsWithProperty() {
+        val dataset = CILISQLiteDataset(file)
+        val result = dataset.listSubjectsWithProperty(model.createProperty(WN + "hypernym")).toList()
+        val expResult = listOf(model.createResource(CILISQLiteDataset.ILI + "i1"))
+        assertEquals(expResult, result)
+        val result2 = dataset.listSubjectsWithProperty(model.createProperty(WN + "hyponym")).toList()
+        val expResult2 = listOf<Resource>()
+        assertEquals(expResult2, result2)
     }
 
     @org.junit.Test
     fun listSubjectsWithProperty1() {
-    }
+        val dataset = CILISQLiteDataset(file)
+        val result1 = dataset.listSubjectsWithProperty(model.createProperty(WN + "hypernym"),
+            model.createResource(ILI + "i1")).toList()
+        val expResult = listOf(model.createResource(CILISQLiteDataset.ILI + "i1"))
+        assertEquals(expResult, result1)
+        val result2 = dataset.listSubjectsWithProperty(model.createProperty(RDFS_LABEL),
+                model.createLiteral("able","en")).toList()
+        assertEquals(expResult, result2)
+        val result3 = dataset.listSubjectsWithProperty(model.createProperty(WN_POS),
+                model.createResource(WN + "noun")).toList()
+        assertEquals(expResult, result3)
+        val result4 = dataset.listSubjectsWithProperty(model.createProperty(WN_DEF),
+                model.createLiteral("definition","en")).toList()
+        assertEquals(expResult, result4)
+        val result5 = dataset.listSubjectsWithProperty(model.createProperty(WN_EXAMPLE),
+                model.createLiteral("example","en")).toList()
+        assertEquals(expResult, result5)
+        val result6 = dataset.listSubjectsWithProperty(model.createProperty(WN + "hypernym"),
+                model.createResource(ILI + "i2")).toList()
+        assertEquals(listOf<Resource>(), result6)
+     }
 
     @org.junit.Test
     fun listObjectsOfProperty() {
+        val dataset = CILISQLiteDataset(file)
+        val subj = model.createResource(ILI + "i1")
+        val result1 = dataset.listSubjectsWithProperty(model.createProperty(WN + "hypernym"), subj).toList()
+        assertEquals(listOf(subj), result1)
     }
 
     @org.junit.Test
     fun listStatements() {
+        val dataset = CILISQLiteDataset(file)
+        val result = dataset.listStatements().toSet()
+        val subj = model.createResource(ILI + "i1")
+        val expResult = setOf(
+            model.createStatement(subj, model.createProperty(RDFS_LABEL), model.createLiteral("able","en")),
+            model.createStatement(subj, model.createProperty(WN_POS), model.createResource(WN + "noun")),
+            model.createStatement(subj, model.createProperty(WN_DEF), model.createLiteral("definition","en")),
+            model.createStatement(subj, model.createProperty(WN_EXAMPLE), model.createLiteral("example","en")),
+            model.createStatement(subj, model.createProperty(WN + "hypernym"), subj))
+        assertEquals(expResult, result)
     }
-
-    @org.junit.Test
-    fun listStatements1() {
-    }
-
 }
