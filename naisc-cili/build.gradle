@@ -33,6 +33,8 @@ compileTestKotlin {
 
 dependencies {
     compile project(':naisc-core')
+    testCompile 'junit:junit:4.12'
+    compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.28.0'
 }
 
 
