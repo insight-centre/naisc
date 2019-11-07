@@ -461,7 +461,7 @@ data class Relation(val targ : Int, val type : String)
 
 data class Text(val text : String, val lang : String)
 
-class SQLStmtIteratorImpl(val i: StmtIterator, val connection: Connection) : StmtIterator {
+class SQLStmtIteratorImpl(private val i: StmtIterator, private val connection: Connection) : StmtIterator {
     override fun nextStatement() = i.nextStatement()
     override fun removeNext() = i.removeNext()
     override fun remove() = i.remove()
