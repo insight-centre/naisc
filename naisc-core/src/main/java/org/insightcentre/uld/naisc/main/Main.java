@@ -200,7 +200,13 @@ public class Main {
             BlockingStrategy blocking = config.makeBlockingStrategy(analysis, monitor);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading lenses");
-            Dataset combined = loader.combine(leftModel, rightModel, name + "/combined");
+            Dataset combined;
+            if(loader != null) {
+                combined = loader.combine(leftModel, rightModel, name + "/combined");
+            } else {
+                monitor.updateStatus(Stage.INITIALIZING, "Combining both models simply, querying is not enabled");
+                combined = new CombinedDataset(leftModel, rightModel);
+            }
             List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Feature Extractors");
