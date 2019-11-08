@@ -1,5 +1,8 @@
 package org.insightcentre.uld.naisc.cili
 
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.rdf.model.Statement
+import org.insightcentre.uld.naisc.cili.CILISQLiteDataset.Companion.WN_DEF
 import org.junit.Test
 
 import org.junit.Assert.*
@@ -120,6 +123,7 @@ class GWADatasetTest {
             "        </Synset>\n" +
             "        <!-- You must include all targets of relations -->\n" +
             "        <Synset id=\"example-en-10162692-n\" ili=\"i90292\" partOfSpeech=\"n\">\n" +
+            "           <Example>This is an example</Example>\n" +
             "        </Synset>\n" +
             "    </Lexicon>\n" +
             "    <Lexicon id=\"example_sv\"\n" +
@@ -145,6 +149,7 @@ class GWADatasetTest {
             "    </Lexicon>\n" +
             "</LexicalResource>"
     val file = File.createTempFile("lmf",".xml")
+    val prefix = "file:" + file.absolutePath + "#"
     init {
         file.deleteOnExit()
         val out = PrintWriter(file)
@@ -156,26 +161,75 @@ class GWADatasetTest {
     @Test
     fun listSubjects() {
         val dataset = GWADataset(file)
+        val model = ModelFactory.createDefaultModel()
+        val expResult = setOf(
+                model.createResource(prefix + "example-en-10161911-n"),
+                model.createResource(prefix + "example-en-1-n"),
+            model.createResource(prefix + "example-en-10162692-n"))
+        val result = dataset.listSubjects().toSet()
+        assertEquals(expResult, result)
     }
 
     @Test
     fun listSubjectsWithProperty() {
         val dataset = GWADataset(file)
+        val model = ModelFactory.createDefaultModel()
+        val expResult = setOf(
+                model.createResource(prefix + "example-en-10161911-n"),
+                model.createResource(prefix + "example-en-1-n"))
+        val result = dataset.listSubjectsWithProperty(model.createProperty(WN_DEF)).toSet()
+        assertEquals(expResult, result)
+
     }
 
     @Test
     fun listSubjectsWithProperty1() {
         val dataset = GWADataset(file)
+        val model = ModelFactory.createDefaultModel()
+        val expResult = setOf(
+                model.createResource(prefix + "example-en-10161911-n"))
+        val result = dataset.listSubjectsWithProperty(model.createProperty(WN_DEF),
+            model.createLiteral("the father of your father or mother", "en")).toSet()
+        assertEquals(expResult, result)
     }
 
     @Test
     fun listObjectsOfProperty() {
         val dataset = GWADataset(file)
+        val model = ModelFactory.createDefaultModel()
+        val expResult = setOf(
+            model.createLiteral("the father of your father or mother", "en"))
+        val result = dataset.listObjectsOfProperty(
+            model.createResource(prefix + "example-en-10161911-n"),
+            model.createProperty(WN_DEF)).toSet()
+        assertEquals(expResult, result)
     }
 
     @Test
     fun listStatements() {
         val dataset = GWADataset(file)
+        val model = ModelFactory.createDefaultModel()
+        val expResult = buildSynsets().flatMap { ss -> ss.statements(model, prefix) }.toMutableSet()
+        val expResult2 = mutableSetOf<Statement>() + expResult
+        val result = dataset.listStatements().toSet()
+        expResult.removeAll(result)
+        println("Not generated")
+        println(expResult.joinToString("\n"))
+        result.removeAll(expResult2)
+        println("Over generated")
+        println(result.joinToString("\n"))
+        assert(expResult.isEmpty())
+        assert(result.isEmpty())
     }
+
+    fun buildSynsets() : List<Synset> {
+        return listOf(
+            Synset("example-en-10161911-n", "en", listOf("grandfather"), "noun", listOf("the father of your father or mother"),
+                listOf(), listOf(Pair("hypernym","example-en-10162692-n"))),
+            Synset("example-en-1-n", "en", listOf("paternal grandfather"), "noun", listOf("A father's father; a paternal grandfather"),
+                listOf(), listOf()),
+                Synset("example-en-10162692-n", "en", listOf(), "noun", listOf(), listOf("This is an example"), listOf()))
+    }
+
 
 }
