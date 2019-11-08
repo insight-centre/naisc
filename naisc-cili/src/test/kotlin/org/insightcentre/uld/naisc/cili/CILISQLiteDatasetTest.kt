@@ -130,6 +130,7 @@ class CILISQLiteDatasetTest {
         val result = dataset.listSubjects().toList()
         val expResult = listOf(model.createResource(CILISQLiteDataset.ILI + "i1"))
         assertEquals(expResult, result)
+        dataset.close()
     }
 
 
@@ -142,6 +143,7 @@ class CILISQLiteDatasetTest {
         val result2 = dataset.listSubjectsWithProperty(model.createProperty(WN + "hyponym")).toList()
         val expResult2 = listOf<Resource>()
         assertEquals(expResult2, result2)
+        dataset.close()
     }
 
     @org.junit.Test
@@ -166,6 +168,7 @@ class CILISQLiteDatasetTest {
         val result6 = dataset.listSubjectsWithProperty(model.createProperty(WN + "hypernym"),
                 model.createResource(ILI + "i2")).toList()
         assertEquals(listOf<Resource>(), result6)
+        dataset.close()
      }
 
     @org.junit.Test
@@ -174,6 +177,7 @@ class CILISQLiteDatasetTest {
         val subj = model.createResource(ILI + "i1")
         val result1 = dataset.listSubjectsWithProperty(model.createProperty(WN + "hypernym"), subj).toList()
         assertEquals(listOf(subj), result1)
+        dataset.close()
     }
 
     @org.junit.Test
@@ -188,5 +192,6 @@ class CILISQLiteDatasetTest {
             model.createStatement(subj, model.createProperty(WN_EXAMPLE), model.createLiteral("example","en")),
             model.createStatement(subj, model.createProperty(WN + "hypernym"), subj))
         assertEquals(expResult, result)
+        dataset.close()
     }
 }

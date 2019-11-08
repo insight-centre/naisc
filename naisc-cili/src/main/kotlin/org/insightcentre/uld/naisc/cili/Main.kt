@@ -44,11 +44,7 @@ fun main(args : Array<String>) {
         badOptions(p, x.message ?: "Unknown error")
         return
     }
-    if(os.nonOptionArguments().size != 1) {
-        badOptions(p, "Wrong number of arguments. Please specify at least one argument")
-        return
-    }
-    if(os.has("random")) {
+   if(os.has("random")) {
         val alignment = mutableListOf<CILIAlignment>()
         for(i in 0..10) {
             alignment.add(randomAlignment());
@@ -58,6 +54,10 @@ fun main(args : Array<String>) {
         mapper.writeValue(System.out, alignment);
         System.out.println()
     } else {
+        if(os.nonOptionArguments().size != 1) {
+            badOptions(p, "Wrong number of arguments. Please specify at least one argument")
+            return
+        }
         val dbFile = File(os.valueOf(dbOpt) ?: "omw/db/omw.db")
         val xmlFile = File(os.valueOf(xmlOpt) ?: "unreachable")
         if(!dbFile.exists()) {
@@ -77,5 +77,10 @@ fun main(args : Array<String>) {
         val config = mapper.readValue(File(configFilename),  Configuration::class.java)
 
         val alignment = NaiscMain.execute("cili", xmlDataset, ciliDataset, config, None(), listener, setOf(), setOf(), null)
+        ciliDataset.close()
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        mapper.writeValue(System.out, alignment.map { a -> naisc2cili(a, xmlDataset.prefix) })
+        System.out.println()
+
     }
 }

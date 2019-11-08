@@ -22,6 +22,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 class GWADataset(xmlFile : File) : Dataset {
     val stats : List<Statement>
     val model = ModelFactory.createDefaultModel()
+    val prefix : String
     companion object {
         val POS_MAP = mapOf(
             "n" to "noun",
@@ -64,7 +65,7 @@ class GWADataset(xmlFile : File) : Dataset {
                 }
             }
         }
-        val prefix = "file:" + xmlFile.absolutePath + "#"
+        prefix = "file:" + xmlFile.absolutePath + "#"
         stats = synsetsTemp.flatMap { ss -> ss.statements(model, prefix) }
     }
 
@@ -140,6 +141,8 @@ class GWADataset(xmlFile : File) : Dataset {
                 }
             }
         }
+
+        // TODO: ILI
 
         return Synset(id, lang, synset2lemmas.get(id) ?: listOf(),
             pos, defs, exs, rels)

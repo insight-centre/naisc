@@ -6,35 +6,39 @@ import org.apache.jena.rdf.model.*
 import org.apache.jena.rdf.model.impl.NodeIteratorImpl
 import org.apache.jena.rdf.model.impl.ResIteratorImpl
 import org.apache.jena.rdf.model.impl.StmtIteratorImpl
-import org.apache.jena.util.iterator.ExtendedIterator
 import org.insightcentre.uld.naisc.Dataset
 import org.insightcentre.uld.naisc.util.None
 import org.insightcentre.uld.naisc.util.Option
+import java.io.Closeable
 import java.io.File
 import java.net.URL
 import java.sql.Connection
 import java.sql.DriverManager
+import java.sql.PreparedStatement
 import java.util.function.Function
 import java.util.function.Predicate
 
-class CILISQLiteDataset(dbFile : File) : Dataset {
+class CILISQLiteDataset(dbFile : File) : Dataset, Closeable {
+    override fun close() {
+        connection.close()
+    }
+
     companion object {
         const val ILI = "http://ili.globalwordnet.org/ili/"
         const val RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label"
         const val WN = "http://wordnet-rdf.princeton.edu/ontology#"
         const val WN_POS = WN + "partOfSpeech"
         const val WN_EXAMPLE = WN + "example"
-        const val WN_DEF = "http://www.w3.org/2004/02/skos/core#"
+        const val WN_DEF = "http://www.w3.org/2004/02/skos/core#definition"
     }
 
     private val defs : Map<Int, String>
     private val model = ModelFactory.createDefaultModel()
     private val dbFile = dbFile
+    private val connection = CILIConnection(DriverManager.getConnection("jdbc:sqlite:" + dbFile.absolutePath))
 
     init {
-        val connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.absolutePath)
         var defsTemp = mutableMapOf<Int, String>()
-        connection.use {
             val stat = connection.createStatement()
             stat.use {
                 val rs = stat.executeQuery("SELECT id, def FROM ili")
@@ -44,22 +48,14 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
                     }
                 }
             }
-        }
         defs = defsTemp
     }
 
-    private fun conn() : Connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.absolutePath)
+    //private fun conn() : CILIConnection = CILIConnection(DriverManager.getConnection("jdbc:sqlite:" + dbFile.absolutePath))
 
-    private fun lemmas(connection : Connection, ili : Int) : List<Lemma> {
-        val stat = connection.prepareStatement(
-            "SELECT DISTINCT f.lemma, lang.bcp47, pos.def FROM f " +
-                    "JOIN s ON s.id = f.id " +
-                    "JOIN ss on ss.id = s.ss_id " +
-                    "JOIN lang on lang.id = f.lang_id " +
-                    "JOIN pos on pos.id = f.pos_id " +
-                    "WHERE ss.ili_id=?");
+    private fun lemmas(connection : CILIConnection, ili : Int) : List<Lemma> {
+        val stat = connection.lemmaStat
         var lemmas = mutableListOf<Lemma>()
-        stat.use {
             stat.setInt(1, ili);
             val rs = stat.executeQuery();
             rs.use {
@@ -67,20 +63,12 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
                     lemmas.add(Lemma(rs.getString(1), rs.getString(2), rs.getString(3)))
                 }
             }
-        }
         return lemmas
     }
 
-    private fun ilisWithLemma(connection : Connection, lemma : String, lang : String) : List<Int> {
-        val stat = connection.prepareStatement(
-            "SELECT DISTINCT ss.ili_id FROM f " +
-                    "JOIN s ON s.id = f.id " +
-                    "JOIN ss on ss.id = s.ss_id " +
-                    "JOIN lang on lang.id = f.lang_id " +
-                    "JOIN pos on pos.id = f.pos_id " +
-                    "WHERE f.lemma=? AND lang.bcp47=?");
+    private fun ilisWithLemma(connection : CILIConnection, lemma : String, lang : String) : List<Int> {
+        val stat = connection.lemmasByIliStat
         var ilis = mutableListOf<Int>()
-        stat.use {
             stat.setString(1, lemma)
             stat.setString(2, lang)
             val rs = stat.executeQuery();
@@ -89,20 +77,12 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
                     ilis.add(rs.getInt(1))
                 }
             }
-        }
         return ilis
     }
 
-    private fun ilisWithPos(connection : Connection, pos : String) : List<Int> {
-        val stat = connection.prepareStatement(
-            "SELECT DISTINCT ss.ili_id FROM f " +
-                    "JOIN s ON s.id = f.id " +
-                    "JOIN ss on ss.id = s.ss_id " +
-                    "JOIN lang on lang.id = f.lang_id " +
-                    "JOIN pos on pos.id = f.pos_id " +
-                    "WHERE pos.def=?")
+    private fun ilisWithPos(connection : CILIConnection, pos : String) : List<Int> {
+        val stat = connection.ilisByPosStat
         var ilis = mutableListOf<Int>()
-        stat.use {
             stat.setString(1, pos)
             val rs = stat.executeQuery();
             rs.use {
@@ -110,21 +90,14 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
                     ilis.add(rs.getInt(1))
                 }
             }
-        }
         return ilis
     }
 
 
 
-    private fun links(connection : Connection, ili : Int) : List<Relation> {
-        val stat = connection.prepareStatement(
-            "SELECT DISTINCT ss2.ili_id, ssrel.rel FROM sslink " + // TODO: Ask Francis about ssrel.rel
-                    "JOIN ss AS ss1 ON ss1.id = sslink.ss1_id " +
-                    "JOIN ss AS ss2 ON ss2.id = sslink.ss2_id " +
-                    "JOIN ssrel ON ssrel.id = sslink.ssrel_id " +
-                    "WHERE ss1.ili_id=?")
+    private fun links(connection : CILIConnection, ili : Int) : List<Relation> {
+        val stat = connection.linksStat
         var links = mutableListOf<Relation>()
-        stat.use {
             stat.setInt(1, ili)
             val rs = stat.executeQuery()
             rs.use {
@@ -132,18 +105,12 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
                     links.add(Relation(rs.getInt(1), rs.getString(2)))
                 }
             }
-        }
         return links
     }
 
-    private fun iliWithLink(connection : Connection, prop : String) : List<Int> {
-        val stat = connection.prepareStatement(
-            "SELECT DISTINCT ss1.ili_id FROM sslink " + // TODO: Ask Francis about ssrel.rel
-                    "JOIN ss AS ss1 ON ss1.id = sslink.ss1_id " +
-                    "JOIN ssrel ON ssrel.id = sslink.ssrel_id " +
-                    "WHERE ssrel.rel=?")
+    private fun iliWithLink(connection : CILIConnection, prop : String) : List<Int> {
+        val stat = connection.iliWithLinkStat
         var ilis = mutableListOf<Int>()
-        stat.use {
             stat.setString(1, prop)
             val rs = stat.executeQuery()
             rs.use {
@@ -151,19 +118,12 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
                     ilis.add(rs.getInt(1))
                 }
             }
-        }
         return ilis
     }
 
-    private fun iliWithLinkTarget(connection : Connection, prop : String, targ : Int) : List<Int> {
-        val stat = connection.prepareStatement(
-            "SELECT DISTINCT ss1.ili_id FROM sslink " + // TODO: Ask Francis about ssrel.rel
-                    "JOIN ss AS ss1 ON ss1.id = sslink.ss1_id " +
-                    "JOIN ss AS ss2 ON ss2.id = sslink.ss2_id " +
-                    "JOIN ssrel ON ssrel.id = sslink.ssrel_id " +
-                    "WHERE ssrel.rel=? AND ss2.ili_id=?")
+    private fun iliWithLinkTarget(connection : CILIConnection, prop : String, targ : Int) : List<Int> {
+        val stat = connection.iliWithLinkTargetStat
         var ilis = mutableListOf<Int>()
-        stat.use {
             stat.setString(1, prop)
             stat.setInt(2, targ)
             val rs = stat.executeQuery()
@@ -172,18 +132,12 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
                     ilis.add(rs.getInt(1))
                 }
             }
-        }
         return ilis
     }
 
-    private fun examples(connection : Connection, ili : Int) : List<Text> {
-        val stat = connection.prepareStatement(
-            "SELECT DISTINCT ssexe.ssexe, lang.bcp47 FROM ssexe " +
-                    "JOIN ss ON ss.id = ssexe.ss_id " +
-                    "JOIN lang on lang.id = ssexe.lang_id " +
-                    "WHERE ss.ili_id=?");
+    private fun examples(connection : CILIConnection, ili : Int) : List<Text> {
+        val stat = connection.examplesStat
         var examples = mutableListOf<Text>()
-        stat.use {
             stat.setInt(1, ili)
             val rs = stat.executeQuery()
             rs.use {
@@ -191,18 +145,12 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
                     examples.add(Text(rs.getString(1), rs.getString(2)))
                 }
             }
-        }
         return examples
     }
 
-    private fun ilisWithExample(connection : Connection, example : Text) : List<Int> {
-        val stat = connection.prepareStatement(
-            "SELECT DISTINCT ss.ili_id FROM ssexe " +
-                    "JOIN ss ON ss.id = ssexe.ss_id " +
-                    "JOIN lang on lang.id = ssexe.lang_id " +
-                    "WHERE ssexe.ssexe=? AND lang.bcp47=?");
+    private fun ilisWithExample(connection : CILIConnection, example : Text) : List<Int> {
+        val stat = connection.iliWithExamplesStat
         var ilis = mutableListOf<Int>()
-        stat.use {
             stat.setString(1, example.text)
             stat.setString(2, example.lang)
             val rs = stat.executeQuery()
@@ -211,18 +159,12 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
                     ilis.add(rs.getInt(1))
                 }
             }
-        }
         return ilis
     }
 
-    private fun definitions(connection : Connection, ili : Int) : List<Text> {
-         val stat = connection.prepareStatement(
-            "SELECT DISTINCT def.def, lang.bcp47 FROM def " +
-                    "JOIN ss ON ss.id = def.ss_id " +
-                    "JOIN lang on lang.id = def.lang_id " +
-                    "WHERE ss.ili_id=?");
+    private fun definitions(connection : CILIConnection, ili : Int) : List<Text> {
+         val stat = connection.definitionsStat;
         var defs = mutableListOf<Text>()
-        stat.use {
             stat.setInt(1, ili)
             val rs = stat.executeQuery()
             rs.use {
@@ -230,18 +172,12 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
                     defs.add(Text(rs.getString(1), rs.getString(2)))
                 }
             }
-        }
         return defs
 
     }
-    private fun ilisWithDefinition(connection : Connection, defn : Text) : List<Int> {
-         val stat = connection.prepareStatement(
-            "SELECT DISTINCT ss.ili_id FROM def " +
-                    "JOIN ss ON ss.id = def.ss_id " +
-                    "JOIN lang on lang.id = def.lang_id " +
-                    "WHERE def.def=? AND lang.bcp47=?");
+    private fun ilisWithDefinition(connection : CILIConnection, defn : Text) : List<Int> {
+         val stat = connection.ilisWithDefinitionStat;
         var ilis = mutableListOf<Int>()
-        stat.use {
             stat.setString(1, defn.text)
             stat.setString(2, defn.lang)
             val rs = stat.executeQuery()
@@ -250,7 +186,6 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
                     ilis.add(rs.getInt(1))
                 }
             }
-        }
         return ilis
     }
 
@@ -325,10 +260,7 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
             return listSubjects()
         } else if(property.uri.startsWith(WN)) {
             val prop = property.uri.substring(WN.length)
-            val connection = conn()
-            connection.use {
-                return ilisAsResources(iliWithLink(connection, prop))
-            }
+            return ilisAsResources(iliWithLink(connection, prop))
 
         } else {
             return emptyRes()
@@ -341,8 +273,6 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
         if(property == null || obj == null) {
             throw UnsupportedOperationException("Property or object cannot be null")
         }
-        val connection = conn()
-        connection.use {
             if(property.uri == RDFS_LABEL) {
                 if(!obj.isLiteral) {
                     return emptyRes()
@@ -373,7 +303,6 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
             } else {
                 return emptyRes()
             }
-        }
     }
 
     override fun listObjectsOfProperty(r: Resource?, property: Property?): NodeIterator {
@@ -383,31 +312,19 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
             } else {
                 val ili = r.uri.substring(ILI.length + 1).toInt()
                 if(property.uri == RDFS_LABEL || property.uri == WN_POS) {
-                    val connection = conn();
-                    connection.use {
                         return NodeIteratorImpl(lemmasAsStatements(lemmas(connection, ili), ili).filter { s ->
                             s.predicate == property
                         }.map { s -> s.`object` }.iterator(), null)
-                    }
                 } else if (property.uri == WN_DEF) {
-                    val connection = conn();
-                    connection.use {
                         return NodeIteratorImpl(definitionsAsStatements(definitions(connection, ili), ili).map { s ->
                             s.`object` }.iterator(), null)
-                    }
                 } else if(property.uri == WN_EXAMPLE) {
-                    val connection = conn();
-                    connection.use {
                         return NodeIteratorImpl(examplesAsStatements(examples(connection, ili), ili).map { s ->
                             s.`object` }.iterator(), null)
-                    }
                 } else {
-                    val connection = conn();
-                    connection.use {
                         return NodeIteratorImpl(linksAsStatements(links(connection, ili), ili).filter { s ->
                             s.predicate == property
                         }.map { s -> s.`object` }.iterator(), null)
-                    }
                 }
             }
         } else {
@@ -416,8 +333,6 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
     }
 
     override fun listStatements(source: Resource?, prop: Property?, rdfNode: RDFNode?): StmtIterator {
-        val connection = conn()
-        connection.use {
             val iter = defs.keys.asSequence().flatMap { ili ->
                 (lemmasAsStatements(lemmas(connection, ili), ili) +
                 examplesAsStatements(examples(connection, ili), ili) +
@@ -430,11 +345,9 @@ class CILISQLiteDataset(dbFile : File) : Dataset {
                         (rdfNode == null || rdfNode == s.`object`)
             }
             return StmtIteratorImpl(iter.iterator())
-        }
     }
 
     override fun listStatements(): StmtIterator {
-        val connection = conn()
         val iter = defs.keys.asSequence().flatMap { ili ->
             (lemmasAsStatements(lemmas(connection, ili), ili) +
             examplesAsStatements(examples(connection, ili), ili) +
@@ -461,7 +374,7 @@ data class Relation(val targ : Int, val type : String)
 
 data class Text(val text : String, val lang : String)
 
-class SQLStmtIteratorImpl(private val i: StmtIterator, private val connection: Connection) : StmtIterator {
+class SQLStmtIteratorImpl(private val i: StmtIterator, private val connection: CILIConnection) : StmtIterator {
     override fun nextStatement() = i.nextStatement()
     override fun removeNext() = i.removeNext()
     override fun remove() = i.remove()
@@ -478,4 +391,100 @@ class SQLStmtIteratorImpl(private val i: StmtIterator, private val connection: C
         connection.close()
     }
 
+}
+
+class CILIConnection(private val connection : Connection) : Closeable {
+    override fun close() {
+        connection.close()
+    }
+
+    val lemmaStat : PreparedStatement by lazy {
+        connection.prepareStatement(
+            "SELECT DISTINCT f.lemma, lang.bcp47, pos.def FROM f " +
+                    "JOIN s ON s.id = f.id " +
+                    "JOIN ss on ss.id = s.ss_id " +
+                    "JOIN lang on lang.id = f.lang_id " +
+                    "JOIN pos on pos.id = f.pos_id " +
+                    "WHERE ss.ili_id=?")
+    }
+
+    val lemmasByIliStat : PreparedStatement by lazy {
+        connection.prepareStatement(
+            "SELECT DISTINCT ss.ili_id FROM f " +
+                    "JOIN s ON s.id = f.id " +
+                    "JOIN ss on ss.id = s.ss_id " +
+                    "JOIN lang on lang.id = f.lang_id " +
+                    "JOIN pos on pos.id = f.pos_id " +
+                    "WHERE f.lemma=? AND lang.bcp47=?")
+    }
+
+    val ilisByPosStat by lazy {
+        connection.prepareStatement(
+            "SELECT DISTINCT ss.ili_id FROM f " +
+                    "JOIN s ON s.id = f.id " +
+                    "JOIN ss on ss.id = s.ss_id " +
+                    "JOIN lang on lang.id = f.lang_id " +
+                    "JOIN pos on pos.id = f.pos_id " +
+                    "WHERE pos.def=?")
+    }
+
+    val linksStat by lazy {
+        connection.prepareStatement(
+            "SELECT DISTINCT ss2.ili_id, ssrel.rel FROM sslink " + // TODO: Ask Francis about ssrel.rel
+                    "JOIN ss AS ss1 ON ss1.id = sslink.ss1_id " +
+                    "JOIN ss AS ss2 ON ss2.id = sslink.ss2_id " +
+                    "JOIN ssrel ON ssrel.id = sslink.ssrel_id " +
+                    "WHERE ss1.ili_id=?")
+    }
+
+    val iliWithLinkStat by lazy {
+        connection.prepareStatement(
+            "SELECT DISTINCT ss1.ili_id FROM sslink " + // TODO: Ask Francis about ssrel.rel
+                    "JOIN ss AS ss1 ON ss1.id = sslink.ss1_id " +
+                    "JOIN ssrel ON ssrel.id = sslink.ssrel_id " +
+                    "WHERE ssrel.rel=?")
+    }
+
+    val iliWithLinkTargetStat by lazy {
+        connection.prepareStatement(
+            "SELECT DISTINCT ss1.ili_id FROM sslink " + // TODO: Ask Francis about ssrel.rel
+                    "JOIN ss AS ss1 ON ss1.id = sslink.ss1_id " +
+                    "JOIN ss AS ss2 ON ss2.id = sslink.ss2_id " +
+                    "JOIN ssrel ON ssrel.id = sslink.ssrel_id " +
+                    "WHERE ssrel.rel=? AND ss2.ili_id=?")
+    }
+
+    val examplesStat by lazy {
+        connection.prepareStatement(
+            "SELECT DISTINCT ssexe.ssexe, lang.bcp47 FROM ssexe " +
+                    "JOIN ss ON ss.id = ssexe.ss_id " +
+                    "JOIN lang on lang.id = ssexe.lang_id " +
+                    "WHERE ss.ili_id=?")
+    }
+
+    val iliWithExamplesStat by lazy {
+        connection.prepareStatement(
+            "SELECT DISTINCT ss.ili_id FROM ssexe " +
+                    "JOIN ss ON ss.id = ssexe.ss_id " +
+                    "JOIN lang on lang.id = ssexe.lang_id " +
+                    "WHERE ssexe.ssexe=? AND lang.bcp47=?")
+    }
+
+    val definitionsStat by lazy {
+        connection.prepareStatement(
+            "SELECT DISTINCT def.def, lang.bcp47 FROM def " +
+                    "JOIN ss ON ss.id = def.ss_id " +
+                    "JOIN lang on lang.id = def.lang_id " +
+                    "WHERE ss.ili_id=?")
+    }
+
+    val ilisWithDefinitionStat by lazy {
+        connection.prepareStatement(
+            "SELECT DISTINCT ss.ili_id FROM def " +
+                    "JOIN ss ON ss.id = def.ss_id " +
+                    "JOIN lang on lang.id = def.lang_id " +
+                    "WHERE def.def=? AND lang.bcp47=?")
+    }
+
+    fun createStatement() = connection.createStatement()
 }
