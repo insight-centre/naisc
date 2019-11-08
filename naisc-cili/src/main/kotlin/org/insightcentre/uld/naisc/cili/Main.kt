@@ -3,8 +3,13 @@ package org.insightcentre.uld.naisc.cili
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import joptsimple.OptionParser
+import org.insightcentre.uld.naisc.main.Configuration
+import org.insightcentre.uld.naisc.main.ExecuteListeners
+import org.insightcentre.uld.naisc.util.None
+import java.io.File
 import java.lang.Exception
 import java.util.*
+import org.insightcentre.uld.naisc.main.Main as NaiscMain
 
 fun badOptions(p : OptionParser, msg : String) {
     System.err.println("Error: " + msg);
@@ -29,8 +34,10 @@ fun randomAlignment() : CILIAlignment {
 
 fun main(args : Array<String>) {
     val p = OptionParser()
-    p.accepts("d", "The location of the CILI database").withRequiredArg().ofType(String::class.java)
-    p.nonOptions("The GWA-LMF file to align to")
+    val dbOpt = p.accepts("d", "The location of the CILI database").withRequiredArg().ofType(String::class.java)
+    val configOpt = p.accepts("c", "The Naisc configuration to use").withRequiredArg().ofType(String::class.java)
+    p.accepts("random", "Generate random testing results")
+    val xmlOpt = p.nonOptions("The GWA-LMF file to align to")
     val os = try {
         p.parse(*args)
     } catch(x : Exception) {
@@ -41,12 +48,34 @@ fun main(args : Array<String>) {
         badOptions(p, "Wrong number of arguments. Please specify at least one argument")
         return
     }
-    val alignment = mutableListOf<CILIAlignment>()
-    for(i in 0..10) {
-        alignment.add(randomAlignment());
+    if(os.has("random")) {
+        val alignment = mutableListOf<CILIAlignment>()
+        for(i in 0..10) {
+            alignment.add(randomAlignment());
+        }
+        val mapper = ObjectMapper()
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        mapper.writeValue(System.out, alignment);
+        System.out.println()
+    } else {
+        val dbFile = File(os.valueOf(dbOpt) ?: "omw/db/omw.db")
+        val xmlFile = File(os.valueOf(xmlOpt) ?: "unreachable")
+        if(!dbFile.exists()) {
+            badOptions(p, dbFile.path + " does not exist")
+            return
+        }
+        if(!xmlFile.exists()) {
+            badOptions(p, xmlFile.path + " does not exist")
+        }
+        val xmlDataset = GWADataset(xmlFile)
+        val ciliDataset = CILISQLiteDataset(dbFile)
+
+        val listener = ExecuteListeners.STDERR
+
+        val configFilename = os.valueOf(configOpt) ?: "configs/cili.json"
+        val mapper = ObjectMapper()
+        val config = mapper.readValue(File(configFilename),  Configuration::class.java)
+
+        val alignment = NaiscMain.execute("cili", xmlDataset, ciliDataset, config, None(), listener, setOf(), setOf(), null)
     }
-    val mapper = ObjectMapper()
-    mapper.enable(SerializationFeature.INDENT_OUTPUT);
-    mapper.writeValue(System.out, alignment);
-    System.out.println()
 }
