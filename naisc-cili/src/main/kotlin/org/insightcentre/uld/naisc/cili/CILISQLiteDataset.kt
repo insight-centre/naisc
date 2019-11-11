@@ -56,13 +56,13 @@ class CILISQLiteDataset(dbFile : File) : Dataset, Closeable {
     private fun lemmas(connection : CILIConnection, ili : Int) : List<Lemma> {
         val stat = connection.lemmaStat
         var lemmas = mutableListOf<Lemma>()
-            stat.setInt(1, ili);
-            val rs = stat.executeQuery();
-            rs.use {
-                while(rs.next()) {
-                    lemmas.add(Lemma(rs.getString(1), rs.getString(2), rs.getString(3)))
-                }
+        stat.setInt(1, ili);
+        val rs = stat.executeQuery();
+        rs.use {
+            while(rs.next()) {
+                lemmas.add(Lemma(rs.getString(1), rs.getString(2), rs.getString(3)))
             }
+        }
         return lemmas
     }
 
@@ -260,7 +260,7 @@ class CILISQLiteDataset(dbFile : File) : Dataset, Closeable {
             return listSubjects()
         } else if(property.uri.startsWith(WN)) {
             val prop = property.uri.substring(WN.length)
-            return ilisAsResources(iliWithLink(connection, prop))
+            return synchronized(connection, { ilisAsResources(iliWithLink(connection, prop)) })
 
         } else {
             return emptyRes()
@@ -277,29 +277,29 @@ class CILISQLiteDataset(dbFile : File) : Dataset, Closeable {
                 if(!obj.isLiteral) {
                     return emptyRes()
                 }
-                return ilisAsResources(ilisWithLemma(connection, obj.asLiteral().lexicalForm, obj.asLiteral().language))
+                return ilisAsResources(synchronized(connection, { ilisWithLemma(connection, obj.asLiteral().lexicalForm, obj.asLiteral().language) }))
             } else if(property.uri == WN_POS) {
                 if(!obj.isURIResource) {
                     return emptyRes()
                 }
-                return ilisAsResources(ilisWithPos(connection, obj.asResource().uri.substring(WN.length)))
+                return ilisAsResources(synchronized(connection, { ilisWithPos(connection, obj.asResource().uri.substring(WN.length)) }))
             } else if(property.uri == WN_EXAMPLE) {
                 if(!obj.isLiteral) {
                     return emptyRes()
                 }
-                return ilisAsResources(ilisWithExample(connection, Text(obj.asLiteral().lexicalForm, obj.asLiteral().language)))
+                return ilisAsResources(synchronized(connection, { ilisWithExample(connection, Text(obj.asLiteral().lexicalForm, obj.asLiteral().language)) }))
             } else if(property.uri == WN_DEF) {
                 if(!obj.isLiteral) {
                     return emptyRes()
                 }
-                return ilisAsResources(ilisWithDefinition(connection, Text(obj.asLiteral().lexicalForm, obj.asLiteral().language)))
+                return ilisAsResources(synchronized(connection, { ilisWithDefinition(connection, Text(obj.asLiteral().lexicalForm, obj.asLiteral().language)) }))
             } else if(property.uri.startsWith(WN)) {
                 if(!obj.isURIResource || !obj.asResource().uri.startsWith(ILI + "i")) {
                     return emptyRes()
                 }
                 val targ = obj.asResource().uri.substring(ILI.length + 1).toInt()
                 val prop = property.uri.substring(WN.length)
-                return ilisAsResources(iliWithLinkTarget(connection, prop, targ))
+                return ilisAsResources(synchronized(connection, {iliWithLinkTarget(connection, prop, targ) }))
             } else {
                 return emptyRes()
             }
@@ -312,17 +312,17 @@ class CILISQLiteDataset(dbFile : File) : Dataset, Closeable {
             } else {
                 val ili = r.uri.substring(ILI.length + 1).toInt()
                 if(property.uri == RDFS_LABEL || property.uri == WN_POS) {
-                        return NodeIteratorImpl(lemmasAsStatements(lemmas(connection, ili), ili).filter { s ->
+                        return NodeIteratorImpl(lemmasAsStatements(synchronized(connection, { lemmas(connection, ili) }), ili).filter { s ->
                             s.predicate == property
                         }.map { s -> s.`object` }.iterator(), null)
                 } else if (property.uri == WN_DEF) {
-                        return NodeIteratorImpl(definitionsAsStatements(definitions(connection, ili), ili).map { s ->
+                        return NodeIteratorImpl(definitionsAsStatements(synchronized(connection, { definitions(connection, ili) }), ili).map { s ->
                             s.`object` }.iterator(), null)
                 } else if(property.uri == WN_EXAMPLE) {
-                        return NodeIteratorImpl(examplesAsStatements(examples(connection, ili), ili).map { s ->
+                        return NodeIteratorImpl(examplesAsStatements(synchronized(connection, { examples(connection, ili) }), ili).map { s ->
                             s.`object` }.iterator(), null)
                 } else {
-                        return NodeIteratorImpl(linksAsStatements(links(connection, ili), ili).filter { s ->
+                        return NodeIteratorImpl(linksAsStatements(synchronized(connection, { links(connection, ili) }), ili).filter { s ->
                             s.predicate == property
                         }.map { s -> s.`object` }.iterator(), null)
                 }
@@ -334,10 +334,10 @@ class CILISQLiteDataset(dbFile : File) : Dataset, Closeable {
 
     override fun listStatements(source: Resource?, prop: Property?, rdfNode: RDFNode?): StmtIterator {
             val iter = defs.keys.asSequence().flatMap { ili ->
-                (lemmasAsStatements(lemmas(connection, ili), ili) +
-                examplesAsStatements(examples(connection, ili), ili) +
-                linksAsStatements(links(connection, ili), ili) +
-                definitionsAsStatements(definitions(connection, ili), ili)
+                (lemmasAsStatements(synchronized(connection, { lemmas(connection, ili) }), ili) +
+                examplesAsStatements(synchronized(connection, { examples(connection, ili) }), ili) +
+                linksAsStatements(synchronized(connection, { links(connection, ili) }), ili) +
+                definitionsAsStatements(synchronized(connection, { definitions(connection, ili) }), ili)
                 ).asSequence()
             }.filter { s ->
                 (source == null || source == s.subject) &&
@@ -349,10 +349,10 @@ class CILISQLiteDataset(dbFile : File) : Dataset, Closeable {
 
     override fun listStatements(): StmtIterator {
         val iter = defs.keys.asSequence().flatMap { ili ->
-            (lemmasAsStatements(lemmas(connection, ili), ili) +
-            examplesAsStatements(examples(connection, ili), ili) +
-            linksAsStatements(links(connection, ili), ili) +
-            definitionsAsStatements(definitions(connection, ili), ili)
+            (lemmasAsStatements(synchronized(connection, { lemmas(connection, ili) }), ili) +
+            examplesAsStatements(synchronized(connection, { examples(connection, ili) }), ili) +
+            linksAsStatements(synchronized(connection, { links(connection, ili) }), ili) +
+            definitionsAsStatements(synchronized(connection, { definitions(connection, ili) }), ili)
             ).asSequence()
         }
         return SQLStmtIteratorImpl(StmtIteratorImpl(iter.iterator()), connection)

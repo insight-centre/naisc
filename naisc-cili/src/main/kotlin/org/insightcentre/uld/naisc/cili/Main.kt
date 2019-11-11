@@ -76,7 +76,7 @@ fun main(args : Array<String>) {
         val mapper = ObjectMapper()
         val config = mapper.readValue(File(configFilename),  Configuration::class.java)
 
-        val alignment = NaiscMain.execute("cili", xmlDataset, ciliDataset, config, None(), listener, setOf(), setOf(), null)
+        val alignment = NaiscMain.execute("cili", xmlDataset, ciliDataset, config, None(), listener, null, null, null)
         ciliDataset.close()
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.writeValue(System.out, alignment.map { a -> naisc2cili(a, xmlDataset.prefix) })
