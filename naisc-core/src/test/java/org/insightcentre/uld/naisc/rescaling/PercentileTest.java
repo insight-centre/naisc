@@ -45,4 +45,17 @@ public class PercentileTest {
         assertArrayEquals(expResult, result, 0.01);
     }
 
+    /**
+     * Test of rescale method, of class Percentile.
+     */
+    @Test
+    public void testRescale2() {
+        System.out.println("rescale2");
+        double[] value = new double [] {1,2,3,1,8,8};
+        Percentile instance = new Percentile();
+        double[] expResult = new double [] { 0.0, 0.5, 0.75, 0.0, 1.0,1.0 };
+        double[] result = instance.rescale(value);
+        assertArrayEquals(expResult, result, 0.01);
+    }
+
 }

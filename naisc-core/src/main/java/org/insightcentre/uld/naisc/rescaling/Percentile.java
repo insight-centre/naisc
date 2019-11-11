@@ -21,9 +21,10 @@ public class Percentile implements Rescaler {
         int[] freqs = dedupeFreq(value);
         if(freqs.length != value.length)
             value = Arrays.copyOf(value, freqs.length);
+        int numerator = output.length - freqs[value.length - 1] + freqs[value.length - 2];
         for(int i = 0; i < output.length; i++) {
             int idx = Arrays.binarySearch(value, output[i]);
-            output[i] = (double)freqs[idx] / (output.length - 1);
+            output[i] = (double)freqs[idx] / numerator;
         }
         return output;
     }
