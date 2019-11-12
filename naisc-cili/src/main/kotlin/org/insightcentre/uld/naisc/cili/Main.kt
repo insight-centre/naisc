@@ -29,7 +29,7 @@ fun randString(r : Random) : String {
 
 fun randomAlignment() : CILIAlignment {
     val r = Random()
-    return CILIAlignment(randString(r), r.nextInt(10000), r.nextDouble(), "http://www.w3.org/2004/02/skos/core#exactMatch")
+    return CILIAlignment(randString(r), r.nextInt(10000), r.nextDouble(), "http://www.w3.org/2004/02/skos/core#exactMatch", null)
 }
 
 fun main(args : Array<String>) {
