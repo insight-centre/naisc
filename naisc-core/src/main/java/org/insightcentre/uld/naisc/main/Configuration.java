@@ -124,6 +124,12 @@ public class Configuration {
      */
     public boolean includeFeatures = false;
 
+    /**
+     * Whether to ignore any elements that are already linked, otherwise new, alternative links will be suggested for these
+     * elements
+     */
+    public boolean ignorePreexisting = false;
+
     @JsonCreator
     public Configuration(
             @JsonProperty("blocking") BlockingStrategyConfiguration blocking,
