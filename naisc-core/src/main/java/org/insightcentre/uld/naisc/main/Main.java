@@ -207,9 +207,7 @@ public class Main {
             List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Feature Extractors");
-            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocking.block(leftModel, rightModel)));
             List<TextFeature> textFeatures = config.makeTextFeatures();
-            List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Scorers");
             List<Scorer> scorers = config.makeScorer();
@@ -220,10 +218,16 @@ public class Main {
             Rescaler rescaler = config.makeRescaler();
 
             monitor.updateStatus(Stage.BLOCKING, "Blocking");
-            Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel, monitor);
+            final Iterable<Pair<Resource, Resource>> _blocks = blocking.block(leftModel, rightModel, monitor);
+            final Iterable<Pair<Resource, Resource>> blocks;
             if (left != null && right != null) {
-                blocks = new FilterBlocks(blocks, left, right);
+                blocks = new FilterBlocks(_blocks, left, right);
+            } else {
+                blocks = _blocks;
             }
+            monitor.updateStatus(Stage.INITIALIZING, "Loading Graph Extractors");
+            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocks));
+            List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
             monitor.updateStatus(Stage.SCORING, "Scoring");
             //int count = 0;
