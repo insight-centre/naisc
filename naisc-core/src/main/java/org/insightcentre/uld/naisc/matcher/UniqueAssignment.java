@@ -21,15 +21,9 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import static java.lang.Math.max;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+
+import java.util.*;
+
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
@@ -121,7 +115,7 @@ public class UniqueAssignment implements MatcherFactory {
                 Object2IntMap<Resource> rights = new Object2IntOpenHashMap<>();
                 Int2ObjectMap<Resource> linv = new Int2ObjectArrayMap<>();
                 Int2ObjectMap<Resource> rinv = new Int2ObjectArrayMap<>();
-                Object2DoubleMap<IntStringTriple> scores = new Object2DoubleLinkedOpenHashMap<>();
+                HashMap<IntStringTriple, Alignment> origAligns = new HashMap<>();
 
                 for (Alignment alignment : matches.getAlignments()) {
                     if (rel.equals(alignment.relation) && alignment.score >= threshold &&
@@ -136,9 +130,9 @@ public class UniqueAssignment implements MatcherFactory {
                             rights.put(alignment.entity2, rights.size());
                         }
                         relations.add(alignment.relation);
-                        scores.put(new IntStringTriple(lefts.getInt(alignment.entity1),
+                        origAligns.put(new IntStringTriple(lefts.getInt(alignment.entity1),
                                 rights.getInt(alignment.entity2), alignment.relation),
-                                alignment.score);
+                                alignment);
                     }
                 }
                 SparseMat m = new SparseMat(lefts.size(), rights.size());
@@ -156,8 +150,14 @@ public class UniqueAssignment implements MatcherFactory {
                 //double[] sim = m.sim();
                 for (IntPair ip : munkRes.execute()) {
                     if(linv.containsKey(ip._1) && rinv.containsKey(ip._2)) {
-                        alignmentSet.add(new Alignment(linv.get(ip._1), rinv.get(ip._2),
-                            scores.getOrDefault(new IntStringTriple(ip._1, ip._2, rel), baseProbability), rel));
+                        Alignment orig = origAligns.get(new IntStringTriple(ip._1, ip._2, rel));
+                        if(orig != null) {
+                            alignmentSet.add(new Alignment(linv.get(ip._1), rinv.get(ip._2),
+                                orig.score, rel, orig.features));
+                        } else {
+                            alignmentSet.add(new Alignment(linv.get(ip._1), rinv.get(ip._2),
+                                    baseProbability, rel, null));
+                        }
                     }
                 }
                 //System.err.printf("Produced %d matches from %d x %d (%s)\n", alignmentSet.size(), lefts.size(), rights.size(), rel);

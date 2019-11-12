@@ -1,10 +1,19 @@
 package org.insightcentre.uld.naisc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
 import java.util.Objects;
+
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 
@@ -18,10 +27,12 @@ public class Alignment {
     /**
      * The first entity that is aligned
      */
+     @JsonSerialize(using=ResourceSerializer.class)
     public final Resource entity1;
     /**
      * The second entity that is aligned
      */
+    @JsonSerialize(using=ResourceSerializer.class)
     public final Resource entity2;
     /**
      * The score (between 0 and 1) of the alignment
@@ -35,6 +46,11 @@ public class Alignment {
      * The evaluation mark for this alignment
      */
     public Valid valid = Valid.unknown;
+    /**
+     * The features used to calculate the score
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Object2DoubleMap<String> features;
 
     public static final String SKOS_EXACT_MATCH = "http://www.w3.org/2004/02/skos/core#exactMatch";
 
@@ -50,12 +66,13 @@ public class Alignment {
 
     public Alignment(Resource entity1,
             Resource entity2,
-            double score, String relation) {
+            double score, String relation, Object2DoubleMap<String> features) {
         this.entity1 = entity1;
         this.entity2 = entity2;
         this.score = score;
         this.relation = relation;
         assert (score >= 0 && score <= 1);
+        this.features = features;
     }
     
     public Alignment(Alignment a, double score, Valid valid) {
@@ -136,4 +153,15 @@ public class Alignment {
         novel
     }
 
+    private static class ResourceSerializer extends JsonSerializer<Resource> {
+
+        @Override
+        public void serialize(Resource resource, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+            if(resource.isURIResource()) {
+                jsonGenerator.writeString(resource.getURI());
+            } else {
+                jsonGenerator.writeString("_:" + resource.getId().getLabelString());
+            }
+        }
+    }
 }

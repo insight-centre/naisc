@@ -63,10 +63,10 @@ public class CrossFoldTest {
         Model model = ModelFactory.createDefaultModel();
         Property p = model.createProperty(Alignment.SKOS_EXACT_MATCH);
         AlignmentSet alignments = new AlignmentSet();
-        alignments.add(new Alignment(r("file:left#e1"), r("file:right#e1"), 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("file:left#e2"), r("file:right#e2"), 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("file:left#e3"), r("file:right#e3"), 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("file:left#e4"), r("file:right#e4"), 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("file:left#e1"), r("file:right#e1"), 1.0, SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("file:left#e2"), r("file:right#e2"), 1.0, SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("file:left#e3"), r("file:right#e3"), 1.0, SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("file:left#e4"), r("file:right#e4"), 1.0, SKOS_EXACT_MATCH, null));
         int folds = 4;
         CrossFold.Folds result = CrossFold.splitDataset(alignments, folds);
         assertEquals(folds,result.leftSplit.size());
@@ -86,7 +86,7 @@ public class CrossFoldTest {
         for(int i = 0; i < 1000; i++) {
             int l = rand.nextInt(100);
             int r = rand.nextInt(100);
-            alignments.add(new Alignment(r("file:left#e" + l), r("file:right#e" + r), 1.0, SKOS_EXACT_MATCH));
+            alignments.add(new Alignment(r("file:left#e" + l), r("file:right#e" + r), 1.0, SKOS_EXACT_MATCH, null));
             
         }
         int folds = 10;
@@ -109,11 +109,11 @@ public class CrossFoldTest {
         System.out.println("testResult");
         Model model = ModelFactory.createDefaultModel();
         AlignmentSet alignments = new AlignmentSet();
-        alignments.add(new Alignment(r("file:left#e1"), r("file:right#e1"), 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("file:left#e2"), r("file:right#e2"), 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("file:left#e2"), r("file:right#e3"), 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("file:left#e3"), r("file:right#e3"), 1.0, SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("file:left#e4"), r("file:right#e4"), 1.0, SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("file:left#e1"), r("file:right#e1"), 1.0, SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("file:left#e2"), r("file:right#e2"), 1.0, SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("file:left#e2"), r("file:right#e3"), 1.0, SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("file:left#e3"), r("file:right#e3"), 1.0, SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("file:left#e4"), r("file:right#e4"), 1.0, SKOS_EXACT_MATCH, null));
         List<Set<Resource>> leftSplit = new ArrayList<>();
         leftSplit.add(new HashSet<>());
         leftSplit.get(0).add(r("file:left#e1"));
