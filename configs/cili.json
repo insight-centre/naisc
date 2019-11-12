@@ -20,7 +20,7 @@
   "textFeatures": [{
     "name": "feature.WordEmbeddings",
     "embeddingPath": "models/glove.6B.100d.txt",
-    "features": ["fp"]
+    "features": ["ham"]
   }],
   "graphFeatures": [{
     "name": "graph.PPR"

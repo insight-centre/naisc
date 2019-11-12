@@ -225,10 +225,10 @@ class GWADatasetTest {
     fun buildSynsets() : List<Synset> {
         return listOf(
             Synset("example-en-10161911-n", "en", listOf("grandfather"), "noun", listOf("the father of your father or mother"),
-                listOf(), listOf(Pair("hypernym","example-en-10162692-n"))),
+                listOf(), listOf(Pair("hypernym","example-en-10162692-n")), 90287),
             Synset("example-en-1-n", "en", listOf("paternal grandfather"), "noun", listOf("A father's father; a paternal grandfather"),
-                listOf(), listOf()),
-                Synset("example-en-10162692-n", "en", listOf(), "noun", listOf(), listOf("This is an example"), listOf()))
+                listOf(), listOf(), 0),
+                Synset("example-en-10162692-n", "en", listOf(), "noun", listOf(), listOf("This is an example"), listOf(), 90292))
     }
 
 

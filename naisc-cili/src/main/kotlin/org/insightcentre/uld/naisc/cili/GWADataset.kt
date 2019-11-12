@@ -6,7 +6,9 @@ import org.apache.jena.rdf.model.*
 import org.apache.jena.rdf.model.impl.NodeIteratorImpl
 import org.apache.jena.rdf.model.impl.ResIteratorImpl
 import org.apache.jena.rdf.model.impl.StmtIteratorImpl
+import org.insightcentre.uld.naisc.Alignment.SKOS_EXACT_MATCH
 import org.insightcentre.uld.naisc.Dataset
+import org.insightcentre.uld.naisc.cili.CILISQLiteDataset.Companion.ILI
 import org.insightcentre.uld.naisc.cili.CILISQLiteDataset.Companion.RDFS_LABEL
 import org.insightcentre.uld.naisc.cili.CILISQLiteDataset.Companion.WN
 import org.insightcentre.uld.naisc.cili.CILISQLiteDataset.Companion.WN_DEF
@@ -125,6 +127,11 @@ class GWADataset(xmlFile : File) : Dataset {
         } else {
             pos = POS_MAP.get(partOfSpeech.textContent) ?: throw LMFFormatException("Unsupported pos value: " + partOfSpeech.textContent)
         }
+        val iliAttr = elem.attributes.getNamedItem("ili")
+        var ili = 0
+        if(iliAttr != null && iliAttr.textContent.matches("i\\d+".toRegex())) {
+            ili = iliAttr.textContent.substring(1).toInt()
+        }
         val relations = elem.getElementsByTagName("SynsetRelation")
         val rels = mutableListOf<Pair<String,String>>()
         if(relations != null) {
@@ -140,10 +147,8 @@ class GWADataset(xmlFile : File) : Dataset {
             }
         }
 
-        // TODO: ILI
-
         return Synset(id, lang, synset2lemmas.get(id) ?: listOf(),
-            pos, defs, exs, rels)
+            pos, defs, exs, rels, ili)
 
     }
 
@@ -206,7 +211,7 @@ class GWADataset(xmlFile : File) : Dataset {
 }
 
 data class Synset(val id : String, val lang : String, val lemmas : List<String>, val pos : String, val definitions : List<String>,
-    val examples : List<String>, val relations : List<Pair<String, String>>) {
+    val examples : List<String>, val relations : List<Pair<String, String>>, val ili : Int) {
     fun statements(model : Model, prefix : String) : List<Statement> {
         val subj = model.createResource(prefix + id)
         return lemmas.map { l ->
@@ -235,7 +240,13 @@ data class Synset(val id : String, val lang : String, val lemmas : List<String>,
                 model.createProperty(WN + r.first),
                 model.createResource(prefix + r.second)
             )
-         }
+         } + (if(ili > 0) {
+            listOf(model.createStatement(subj,
+                model.createProperty(SKOS_EXACT_MATCH),
+                model.createResource(ILI + "i" + ili)))
+        } else {
+            listOf<Statement>()
+        })
     }
 }
 
