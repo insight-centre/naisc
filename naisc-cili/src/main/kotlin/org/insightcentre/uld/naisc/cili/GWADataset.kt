@@ -76,7 +76,7 @@ class GWADataset(xmlFile : File) : Dataset {
             throw LMFFormatException("LexicalEntry without Lemma")
         }
         val pos = POS_MAP.get(lemma.item(0)?.attributes?.getNamedItem("partOfSpeech")?.textContent) ?: throw LMFFormatException("Unknown part of speech value" + lemma.item(0)?.attributes?.getNamedItem("partOfSpeech")?.textContent)
-        val lemmaText : String = lemma.item(0).attributes.getNamedItem("writtenForm").textContent
+        val lemmaText : String? = lemma.item(0)?.attributes?.getNamedItem("writtenForm")?.textContent
         if(lemmaText == null) {
             throw LMFFormatException("Lemma without @writtenForm")
         }
@@ -90,9 +90,7 @@ class GWADataset(xmlFile : File) : Dataset {
                 throw LMFFormatException("Sense without synset")
             }
             synset2lemmas.put(synset, (synset2lemmas.get(synset)?: listOf<String>()) + lemmaText)
-            if(pos != null) {
-                entryPos.put(synset, pos)
-            }
+            entryPos.put(synset, pos)
         }
     }
 

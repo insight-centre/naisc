@@ -1,7 +1,8 @@
 {
   "blocking": {
     "name": "blocking.ApproximateStringMatching",
-    "maxMatches": 20
+    "maxMatches": 20,
+    "property": "http://www.w3.org/2004/02/skos/core#definition"
   },
   "lenses": [{
     "name": "lens.Label",

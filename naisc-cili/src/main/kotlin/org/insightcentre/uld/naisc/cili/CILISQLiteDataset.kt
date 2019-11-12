@@ -430,7 +430,7 @@ class CILIConnection(private val connection : Connection) : Closeable {
 
     val linksStat by lazy {
         connection.prepareStatement(
-            "SELECT DISTINCT ss2.ili_id, ssrel.rel FROM sslink " + // TODO: Ask Francis about ssrel.rel
+            "SELECT DISTINCT ss2.ili_id, ssrel.rel FROM sslink " +
                     "JOIN ss AS ss1 ON ss1.id = sslink.ss1_id " +
                     "JOIN ss AS ss2 ON ss2.id = sslink.ss2_id " +
                     "JOIN ssrel ON ssrel.id = sslink.ssrel_id " +
@@ -439,7 +439,7 @@ class CILIConnection(private val connection : Connection) : Closeable {
 
     val iliWithLinkStat by lazy {
         connection.prepareStatement(
-            "SELECT DISTINCT ss1.ili_id FROM sslink " + // TODO: Ask Francis about ssrel.rel
+            "SELECT DISTINCT ss1.ili_id FROM sslink " +
                     "JOIN ss AS ss1 ON ss1.id = sslink.ss1_id " +
                     "JOIN ssrel ON ssrel.id = sslink.ssrel_id " +
                     "WHERE ssrel.rel=?")
@@ -447,7 +447,7 @@ class CILIConnection(private val connection : Connection) : Closeable {
 
     val iliWithLinkTargetStat by lazy {
         connection.prepareStatement(
-            "SELECT DISTINCT ss1.ili_id FROM sslink " + // TODO: Ask Francis about ssrel.rel
+            "SELECT DISTINCT ss1.ili_id FROM sslink " +
                     "JOIN ss AS ss1 ON ss1.id = sslink.ss1_id " +
                     "JOIN ss AS ss2 ON ss2.id = sslink.ss2_id " +
                     "JOIN ssrel ON ssrel.id = sslink.ssrel_id " +
