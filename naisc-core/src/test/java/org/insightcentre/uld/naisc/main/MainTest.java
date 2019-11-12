@@ -1,7 +1,19 @@
 package org.insightcentre.uld.naisc.main;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+
+import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.insightcentre.uld.naisc.AlignmentSet;
+import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.util.None;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -48,5 +60,31 @@ public class MainTest {
         Main.execute("test", leftFile, rightFile, configuration, outputFile, new None<>(), outputXML, NONE, new DefaultDatasetLoader());
     }
 
-    
+
+    @Test
+    public void testExecuteWithOutput() throws Exception {
+        System.out.println("executeWithOutput");
+        Model leftModel = ModelFactory.createDefaultModel();
+        leftModel.add(leftModel.createStatement(leftModel.createResource("http://www.example.com/foo"),
+            leftModel.createProperty(RDFS_LABEL), leftModel.createLiteral("foo", "en")));
+        Model rightModel = ModelFactory.createDefaultModel();
+        rightModel.add(rightModel.createStatement(rightModel.createResource("file:foo"),
+            rightModel.createProperty(RDFS_LABEL), rightModel.createLiteral("foo", "en")));
+        Dataset leftDataset = new DefaultDatasetLoader.ModelDataset(leftModel);
+        Dataset rightDataset = new DefaultDatasetLoader.ModelDataset(rightModel);
+        Configuration config = new Configuration(
+            new Configuration.BlockingStrategyConfiguration("blocking.All", new HashMap<>()),
+            Arrays.asList(new Configuration.LensConfiguration("lens.Label", new HashMap<>(), null)),
+            new ArrayList<>(),
+            Arrays.asList(new Configuration.TextFeatureConfiguration("feature.BasicString", new HashMap<>(), Collections.EMPTY_SET)),
+            Arrays.asList(new Configuration.ScorerConfiguration("scorer.Average", new HashMap<>(), null)),
+            new Configuration.MatcherConfiguration("matcher.Threshold", new HashMap<>()),
+            "test case");
+        config.includeFeatures = true;
+        AlignmentSet align = Main.execute("test", leftDataset, rightDataset, config, new None<>(), ExecuteListeners.NONE,
+            null, null, new DefaultDatasetLoader());
+        String text = new ObjectMapper().writeValueAsString(align);
+        System.out.println(text);
+        assert(text.contains("containment-label"));
+    }
 }
