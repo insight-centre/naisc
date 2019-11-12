@@ -35,7 +35,7 @@ public class Label implements LensFactory {
     @Override
     public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
         Configuration config = mapper.convertValue(params, Configuration.class);
-        return new LabelImpl(config.property, config.rightProperty, config.language, tag, dataset, config.id);
+        return new LabelImpl(config.property, config.rightProperty == null ? config.property : config.rightProperty, config.language, tag, dataset, config.id);
     }
 
     static class LabelImpl implements Lens {
@@ -127,7 +127,7 @@ public class Label implements LensFactory {
          * property on both models
          */
         @ConfigurationParameter(description = "The property to extract", defaultValue = "[\"http://www.w3.org/2000/01/rdf-schema#label\"]")
-        public String rightProperty = RDFS_LABEL;
+        public String rightProperty = null;
         /**
          * The language to extract. Default is <code>null</code> for all
          * languages.

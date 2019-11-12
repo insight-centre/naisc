@@ -160,7 +160,8 @@ public class WordEmbeddings implements TextFeatureFactory {
         public double[] extractFeatures(LangStringPair facet, NaiscListener log) {
             double[] d = new double[featureNames.length];
             if (facet.lang1.equals(facet.lang2)) {
-                return  _extractFeatures(facet._1, facet._2, wordAligner);
+                d = _extractFeatures(facet._1, facet._2, wordAligner);
+                return d;
             } else {
                 throw new IllegalArgumentException();
             }

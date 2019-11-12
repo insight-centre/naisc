@@ -17,10 +17,10 @@ public class AlignmentFeatures {
         for(int i = 0; i < alignment.getSourceSize(); i++) {
             double sum = 0.0;
             for(int j = 0; j < alignment.getTargetSize(); j++) {
-                sum += alignment.alignment(i, j);
+                sum += abs(alignment.alignment(i, j));
             }
             for(int j = 0; j < alignment.getTargetSize(); j++) {
-                if(alignment.alignment(i, j) / sum > ALIGN_THRESH) {
+                if(abs(alignment.alignment(i, j)) / sum > ALIGN_THRESH) {
                     n++;
                     break;
                 }
@@ -38,10 +38,10 @@ public class AlignmentFeatures {
         for(int j = 0; j < alignment.getTargetSize(); j++) {
             double sum = 0.0;
             for(int i = 0; i < alignment.getSourceSize(); i++) {
-                sum += alignment.alignment(i, j);
+                sum += abs(alignment.alignment(i, j));
             }
             for(int i = 0; i < alignment.getSourceSize(); i++) {
-                if(alignment.alignment(i, j) / sum > ALIGN_THRESH) {
+                if(abs(alignment.alignment(i, j)) / sum > ALIGN_THRESH) {
                     n++;
                     break;
                 }
