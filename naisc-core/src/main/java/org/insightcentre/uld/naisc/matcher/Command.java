@@ -104,7 +104,7 @@ public class Command implements MatcherFactory {
                     }
                     result.add(new Alignment(model.createResource(elems[0]),
                             model.createResource(elems[2]), Double.parseDouble(elems[3]),
-                            elems[1]));
+                            elems[1], null));
                     line = in.readLine();
                 }
 

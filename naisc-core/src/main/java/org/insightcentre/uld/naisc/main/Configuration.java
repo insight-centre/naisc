@@ -119,6 +119,11 @@ public class Configuration {
      */
     public int nThreads = 10;
 
+    /**
+     * Whether to include the features into the final output
+     */
+    public boolean includeFeatures = false;
+
     @JsonCreator
     public Configuration(
             @JsonProperty("blocking") BlockingStrategyConfiguration blocking,

@@ -153,7 +153,7 @@ public class ExecuteServlet extends HttpServlet {
         Model model = ModelFactory.createDefaultModel();
         for (Meas.RunResultRow rrr : data) {
             if (rrr.valid == Valid.yes || rrr.valid == Valid.novel) {
-                as.add(new Alignment(model.createResource(rrr.subject), model.createResource(rrr.object), rrr.score, rrr.property));
+                as.add(new Alignment(model.createResource(rrr.subject), model.createResource(rrr.object), rrr.score, rrr.property, null));
             }
         }
         return as;

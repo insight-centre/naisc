@@ -17,6 +17,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.jena.rdf.model.Resource;
@@ -284,7 +287,7 @@ public class Main {
                             }
                             for (Scorer scorer : scorers) {
                                 ScoreResult score = scorer.similarity(featureSet, monitor);
-                                alignments.add(new TmpAlignment(block._1, block._2, score, scorer.relation()));
+                                alignments.add(new TmpAlignment(block._1, block._2, score, scorer.relation(), config.includeFeatures ? featureSet : null));
                             }
                         } catch (Exception x) {
                             monitor.updateStatus(Stage.FAILED, String.format("Failed to score %s <-> %s due to %s (%s)\n", block._1, block._2, x.getMessage(), x.getClass().getName()));
@@ -435,7 +438,7 @@ public class Main {
         i = 0;
         scores = rescaler.rescale(scores);
         for(TmpAlignment t : tmpAligns) {
-            aligns.add(new Alignment(t.left, t.right, scores[i++], t.relation));
+            aligns.add(new Alignment(t.left, t.right, scores[i++], t.relation, t.features));
         }
         return new AlignmentSet(aligns);
     }
@@ -445,12 +448,21 @@ public class Main {
         private final Resource left, right;
         private final ScoreResult result;
         private final String relation;
+        private final Object2DoubleMap<String> features;
 
-        public TmpAlignment(Resource left, Resource right, ScoreResult result, String relation) {
+        public TmpAlignment(Resource left, Resource right, ScoreResult result, String relation, FeatureSet featureSet) {
             this.left = left;
             this.right = right;
             this.result = result;
             this.relation = relation;
+            if(featureSet != null) {
+                this.features = new Object2DoubleOpenHashMap<>();
+                for(int i = 0; i < featureSet.names.length; i++) {
+                    this.features.put(featureSet.names[i]._1 + "-" + featureSet.names[i]._2, featureSet.values[i]);
+                }
+            } else {
+                this.features = null;
+            }
         }
     }
 }

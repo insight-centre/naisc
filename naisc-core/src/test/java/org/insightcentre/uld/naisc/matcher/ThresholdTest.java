@@ -70,16 +70,16 @@ public class ThresholdTest {
         Threshold instance = new Threshold();
         Matcher matcher = instance.makeMatcher(params);
         List<Alignment> alignments = new ArrayList<>();
-        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH, null));
         AlignmentSet result = matcher.align(new AlignmentSet(alignments));
         assert(result.size() == 3);
-        assert(result.contains(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH, null)));
+        assert(result.contains(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH, null)));
+        assert(result.contains(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH, null)));
     }
 
 }
