@@ -20,13 +20,13 @@
   "textFeatures": [{
     "name": "feature.WordEmbeddings",
     "embeddingPath": "models/glove.6B.100d.txt",
-    "features": ["ham"]
+    "features": ["max"]
   }],
   "graphFeatures": [{
     "name": "graph.PPR"
   }],
   "scorers": [{
-    "name": "scorer.Average"
+    "name": "scorer.RAdLR"
   }],
   "matcher": {
     "name": "matcher.Threshold",
