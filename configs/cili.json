@@ -33,5 +33,6 @@
     "threshold": 0.7
   },
   "includeFeatures": true,
+  "ignorePreexisting": true,
   "description": "The default setting using automatic blocking and lenses"
 }
