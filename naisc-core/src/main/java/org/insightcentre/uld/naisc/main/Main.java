@@ -5,11 +5,7 @@ import eu.monnetproject.lang.Language;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -224,8 +220,11 @@ public class Main {
             Rescaler rescaler = config.makeRescaler();
 
             monitor.updateStatus(Stage.BLOCKING, "Blocking");
-            final Iterable<Pair<Resource, Resource>> _blocks = blocking.block(leftModel, rightModel, monitor);
+            Iterable<Pair<Resource, Resource>> _blocks = blocking.block(leftModel, rightModel, monitor);
             final Iterable<Pair<Resource, Resource>> blocks;
+            if(config.ignorePreexisting) {
+                _blocks = ExistingLinks.filterBlocking(_blocks, ExistingLinks.findPreexisting(scorers, leftModel, rightModel));
+            }
             if (left != null && right != null) {
                 blocks = new FilterBlocks(_blocks, left, right);
             } else {
