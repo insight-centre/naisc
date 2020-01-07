@@ -20,7 +20,37 @@
     <body>
         <div class="container" id="app">
             <div class="row">
-                <h1><a href="<%= System.getProperties().getProperty("base.url", "")  %>/"><img src= "<%= System.getProperties().getProperty("base.url", "")  %>/imgs/logo.png" height="90px"/></a><br>Results for <%= request.getParameter("id") %></h1>
+                    <h1><a href="<%= System.getProperties().getProperty("base.url", "")  %>/"><img src= "<%= System.getProperties().getProperty("base.url", "")  %>/imgs/logo.png" height="90px"/></a><br>Comparing <%= request.getParameter("first") %> and <%= request.getParameter("second")%></h1>
+
+                <h3 class="results_title">Differences</h3>
+                <table class="table table-striped">
+                    <tr>
+                        <th>Subject</th>
+                        <th>Property</th>
+                        <th>Object</th>
+                        <th>Scores</th>
+                        <th>Evaluation</th>
+                    </tr>
+                    <tr v-for="(result, idx) in comparison">
+                        <td>
+                            <a v-bind:href="result.subject">{{displayUrl(result.subject)}}</a>
+                        </td>
+                        <td>
+                            <a v-bind:href="result.subject">{{displayUrl(result.property)}}</a>
+                        </td>
+                        <td>
+                            <a v-bind:href="result.subject">{{displayUrl(result.object)}}</a>
+                        </td>
+                        <td>
+                            <b>First:</b> {{result.firstScore}}<br/>
+                            <b>Second:</b> {{result.secondScore}}
+                        </td>
+                        <td>
+                            <b>First:</b> {{result.firstValid}}<br/>
+                            <b>Second:</b> {{result.secondValid}}
+                        </td>
+                    </tr>
+                </table>
             </div>
         </div>
         <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/jquery-3.3.1.min.js"
@@ -31,19 +61,26 @@
     <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/vue.js"></script>
     <script>
 var data = {
-   "first":<%= Meas.loadRunResult(request.getParameter("first"), request.getParameter("firstOffset") == null ? 0  : Integer.parseInt(request.getParameter("firstOffset")), limit) %>,
-   "second":<%= Meas.loadRunResult(request.getParameter("second"), request.getParameter("secondOffset") == null ? 0  : Integer.parseInt(request.getParameter("secondOffset")), limit) %>
+   "comparison":<%= Meas.loadComparison(request.getParameter("first"), request.getParameter("second")) %>
    };
-
-data.totalResults = <%= Execution.noResults(request.getParameter("id")) %>;
-data.offset = <%= request.getParameter("offset") == null ? 0  : Integer.parseInt(request.getParameter("offset")) %>;
-data.tp = <%= Execution.truePositives(request.getParameter("id")) %>;
-data.fp = <%= Execution.falsePositives(request.getParameter("id")) %>;
-data.fn = <%= Execution.falseNegatives(request.getParameter("id")) %>;
-data.currentElem = "";
-data.elems = new Set();
-data.left = true;
-data.updateIdx = 0;
+var app = new Vue({
+  el: '#app',
+  data: data,
+  methods: {
+    displayUrl(url) {
+        if(url == null) { return "null"; }
+        var hashIndex = url.indexOf('#');
+        if(hashIndex > 0) {
+            return url.substring(hashIndex + 1);
+        }
+        var slashIndex = url.lastIndexOf('/');
+        if(slashIndex > 0) {
+            return url.substring(slashIndex + 1);
+        }
+        return url;
+    }
+  }
+});
     </script>
   </body>
 </html>

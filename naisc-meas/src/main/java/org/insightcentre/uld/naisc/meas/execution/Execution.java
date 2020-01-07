@@ -472,25 +472,28 @@ public class Execution implements ExecuteListener {
         }
         List<Meas.CompareResultRow> crrs = new ArrayList<>();
         synchronized (databaseLock) {
-            try (Connection connection = connection(id2)) {
+            try (Connection connection = connection(id1)) {
                 try(PreparedStatement stat = connection.prepareStatement("ATTACH DATABASE ? AS db2")) {
                     stat.setString(1, "runs/" + id2 + ".db");
                     stat.execute();
                 }
-                try(PreparedStatement stat = connection.prepareStatement("SELECT main.results.res1, main.results.prop, " +
-                    "main.results.res2, main.results.scores, main.results.lens, db2.results.score, main.results.valid, db2.results.valid " +
-                    "FROM main.results JOIN db2.results ON " +
-                    "main.results.res1 == db2.results.res1 AND " +
-                    "main.results.prop == db2.results.prop AND " +
-                    "main.results.res2 == db2.results.res2 " +
-                    "WHERE main.results.valid != db2.results.valid")) {
+                try(PreparedStatement stat = connection.prepareStatement("SELECT results.res1, results.prop, " +
+                    "results.res2, results.score, results.lens, db2results.score, results.valid, db2results.valid " +
+                    "FROM results LEFT JOIN db2.results AS db2results ON " +
+                    "results.res1 = db2results.res1 AND " +
+                    "results.prop = db2results.prop AND " +
+                    "results.res2 = db2results.res2 " +
+                    "WHERE db2results.valid IS NULL OR results.valid != db2results.valid")) {
                     ResultSet rs = stat.executeQuery();
                     while(rs.next()) {
+                        Valid v = Valid.valueOf(rs.getString(7)); // Left validity
                         crrs.add(new Meas.CompareResultRow(
                             rs.getString(1), rs.getString(2), rs.getString(3),
-                            mapper.readValue(rs.getString(4), mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class)),
-                            rs.getFloat(5), rs.getFloat(6),
-                            Valid.valueOf(rs.getString(7)), Valid.valueOf(rs.getString(8))));
+                            mapper.readValue(rs.getString(5), mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class)),
+                            rs.getFloat(4), rs.getFloat(6),
+                            v,
+                            rs.getString(8) != null ? Valid.valueOf(rs.getString(8))
+                                : (v == Valid.yes || v == Valid.novel) ? Valid.no : (v == Valid.no ?  Valid.yes : Valid.unknown)));
 
                     }
                 }

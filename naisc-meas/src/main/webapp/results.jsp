@@ -55,6 +55,7 @@
                             <td>Right Identifier</td>
                             <td>Score</td>
                             <td>Evaluation</td>
+                         </tr>
                     </thead>
                     <tr v-for="(result,idx) in results" v-bind:class="{'valid-yes':result.valid === 'yes','valid-no':result.valid === 'no','valid-unknown':result.valid === 'unknown','valid-novel':result.valid === 'novel'}">
                         <td>
