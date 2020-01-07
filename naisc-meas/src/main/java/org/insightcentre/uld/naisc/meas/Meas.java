@@ -3,6 +3,7 @@ package org.insightcentre.uld.naisc.meas;
 import org.insightcentre.uld.naisc.meas.execution.Execution;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
+
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.main.Configuration;
@@ -42,6 +44,14 @@ public class Meas {
             data.availableDatasets = getAvailableDataset();
             return mapper.writeValueAsString(data);
         } catch (JsonProcessingException x) {
+            throw new RuntimeException(x);
+        }
+    }
+
+    public static String runsJson() {
+        try {
+            return mapper.writeValueAsString(data.runs);
+        } catch(JsonProcessingException x) {
             throw new RuntimeException(x);
         }
     }
@@ -86,7 +96,7 @@ public class Meas {
         } catch (Exception x) {
             x.printStackTrace();
         }
-        return new ArrayList<>();   
+        return new ArrayList<>();
     }
 
     private static List<Run> runs() {
@@ -137,8 +147,8 @@ public class Meas {
                         openConnection().getInputStream()))) {
             List<String> datasets = new ArrayList<>();
             String line = in.readLine();
-            while(line != null) {
-                if(line.contains("[DIR]")) {
+            while (line != null) {
+                if (line.contains("[DIR]")) {
                     int i1 = line.indexOf("href=\"") + 6;
                     int i2 = line.indexOf("\"", i1) - 1;
                     datasets.add(line.substring(i1, i2));
@@ -217,6 +227,9 @@ public class Meas {
     }
 
     public static String loadRunResult(String id, int offset, int limit) throws JsonProcessingException, IOException {
+        if (id == null) {
+            return "[]";
+        }
         if (!id.matches(ExecuteServlet.VALID_ID)) {
             throw new IllegalArgumentException("Bad ID");
         }
@@ -237,6 +250,43 @@ public class Meas {
         public String rightRoot;
         public List<String> leftPath;
         public List<String> rightPath;
+    }
+
+    public static String loadComparison(String first, String second) throws JsonProcessingException, IOException {
+
+        if (!first.matches(ExecuteServlet.VALID_ID) || !second.matches(ExecuteServlet.VALID_ID)) {
+            throw new IllegalArgumentException("Bad ID");
+        }
+        try {
+            List<CompareResultRow> rows = Execution.loadCompare(first, second);
+            return mapper.writeValueAsString(rows);
+        } catch (Exception x) {
+            x.printStackTrace();
+            return "[]";
+        }
+    }
+
+    public static class CompareResultRow {
+        public String subject;
+        public String property;
+        public String object;
+        public Map<String, LangStringPair> lens;
+        public double firstScore, secondScore;
+        public Valid firstValid, secondValid;
+
+        public CompareResultRow() {
+        }
+
+        public CompareResultRow(String subject, String property, String object, Map<String, LangStringPair> lens, double firstScore, double secondScore, Valid firstValid, Valid secondValid) {
+            this.subject = subject;
+            this.property = property;
+            this.object = object;
+            this.lens = lens;
+            this.firstScore = firstScore;
+            this.secondScore = secondScore;
+            this.firstValid = firstValid;
+            this.secondValid = secondValid;
+        }
     }
 
 }
