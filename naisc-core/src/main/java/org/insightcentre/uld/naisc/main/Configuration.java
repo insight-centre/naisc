@@ -35,6 +35,8 @@ import org.insightcentre.uld.naisc.Matcher;
 import org.insightcentre.uld.naisc.MatcherFactory;
 import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerFactory;
+import org.insightcentre.uld.naisc.rescaling.MinMax;
+import org.insightcentre.uld.naisc.rescaling.NoRescaling;
 import org.insightcentre.uld.naisc.util.Services;
 import org.insightcentre.uld.naisc.ScorerTrainer;
 import org.insightcentre.uld.naisc.TextFeature;
@@ -111,6 +113,10 @@ public class Configuration {
      */
     public final MatcherConfiguration matcher;
     /**
+     * The rescaling method to use
+     */
+    public final RescalerMethod rescaler;
+    /**
      * The description of the configuration
      */
     public final String description;
@@ -118,6 +124,17 @@ public class Configuration {
      * The number of threads to use
      */
     public int nThreads = 10;
+
+    /**
+     * Whether to include the features into the final output
+     */
+    public boolean includeFeatures = false;
+
+    /**
+     * Whether to ignore any elements that are already linked, otherwise new, alternative links will be suggested for these
+     * elements
+     */
+    public boolean ignorePreexisting = false;
 
     @JsonCreator
     public Configuration(
@@ -127,7 +144,8 @@ public class Configuration {
             @JsonProperty("textFeatures") List<TextFeatureConfiguration> textFeatures,
             @JsonProperty("scorers") List<ScorerConfiguration> scorers,
             @JsonProperty("matcher") MatcherConfiguration matcher,
-            @JsonProperty("description") String description) {
+            @JsonProperty("description") String description,
+            @JsonProperty("rescaler") RescalerMethod rescaler) {
         if (blocking == null) {
             throw new ConfigurationException("Blocking strategy not specified");
         }
@@ -147,6 +165,7 @@ public class Configuration {
         this.matcher = matcher;
         this.lenses = lenses == null ? Collections.EMPTY_LIST : lenses;
         this.description = description;
+        this.rescaler = rescaler;
     }
 
     public List<GraphFeature> makeGraphFeatures(Dataset model, Lazy<Analysis> analysis,
@@ -231,8 +250,15 @@ public class Configuration {
     };
 
     public Rescaler makeRescaler() {
-        // TODO: Actually use configuration
-        return new Percentile();
+        if(rescaler == null || rescaler == RescalerMethod.NoScaling) {
+            return new NoRescaling();
+        } else if(rescaler == RescalerMethod.Percentile) {
+            return new Percentile();
+        } else if(rescaler == RescalerMethod.MinMax) {
+            return new MinMax();
+        } else {
+            throw new ConfigurationException(rescaler + " is not a valid value for the rescaler");
+        }
     }
 
     /**
@@ -1135,6 +1161,16 @@ public class Configuration {
             gen.writeEndObject();
         }
     }
+
+    /**
+     * Values for the rescaler
+     */
+     public static enum RescalerMethod {
+        NoScaling,
+        MinMax,
+        Percentile
+    }
+
 
     @Override
     public int hashCode() {

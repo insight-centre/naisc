@@ -60,11 +60,11 @@ public class GreedyTest {
         Greedy instance = new Greedy();
         Matcher matcher = instance.makeMatcher(params);
         List<Alignment> alignments = new ArrayList<>();
-        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH, null));
         AlignmentSet result = matcher.align(new AlignmentSet(alignments));
         assert(result.size() == 5);
         //assert(result.contains(new Alignment("id1", "id1", 0.5, Alignment.SKOS_EXACT_MATCH)));
@@ -85,15 +85,15 @@ public class GreedyTest {
         Greedy instance = new Greedy();
         Matcher matcher = instance.makeMatcher(params);
         List<Alignment> alignments = new ArrayList<>();
-        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH, null));
         AlignmentSet result = matcher.align(new AlignmentSet(alignments));
         assert(result.size() == 2);
-        assert(result.contains(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH, null)));
+        assert(result.contains(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH, null)));
     }
 
     /**
@@ -119,19 +119,19 @@ public class GreedyTest {
         Greedy instance = new Greedy();
         Matcher matcher = instance.makeMatcher(params);
         List<Alignment> alignments = new ArrayList<>();
-        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id3"), r("id1"), 0.1, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id3"), r("id1"), 0.1, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH, null));
         AlignmentSet initial = new AlignmentSet();
-        initial.add(new Alignment(r("id1"), r("id2"), 1.0, Alignment.SKOS_EXACT_MATCH));
+        initial.add(new Alignment(r("id1"), r("id2"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
         AlignmentSet result = matcher.alignWith(new AlignmentSet(alignments), initial, NONE);
         assert(result.size() == 3);
-        assert(result.contains(new Alignment(r("id1"), r("id2"), 1.0, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment(r("id3"), r("id1"), 0.1, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id1"), r("id2"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
+        assert(result.contains(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH, null)));
+        assert(result.contains(new Alignment(r("id3"), r("id1"), 0.1, Alignment.SKOS_EXACT_MATCH, null)));
         
     }
 }

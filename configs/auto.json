@@ -25,5 +25,6 @@
             "name": "constraint.Bijective"
         }
     },
-    "description": "The default setting using automatic blocking and lenses"
+    "description": "The default setting using automatic blocking and lenses",
+    "rescaler": "Percentile"
 }

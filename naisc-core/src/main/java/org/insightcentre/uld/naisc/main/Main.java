@@ -5,11 +5,7 @@ import eu.monnetproject.lang.Language;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -17,6 +13,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.jena.rdf.model.Resource;
@@ -200,13 +199,17 @@ public class Main {
             BlockingStrategy blocking = config.makeBlockingStrategy(analysis, monitor);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading lenses");
-            Dataset combined = loader.combine(leftModel, rightModel, name + "/combined");
+            Dataset combined;
+            if(loader != null) {
+                combined = loader.combine(leftModel, rightModel, name + "/combined");
+            } else {
+                monitor.updateStatus(Stage.INITIALIZING, "Combining both models simply, querying is not enabled");
+                combined = new CombinedDataset(leftModel, rightModel);
+            }
             List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Feature Extractors");
-            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocking.block(leftModel, rightModel)));
             List<TextFeature> textFeatures = config.makeTextFeatures();
-            List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Scorers");
             List<Scorer> scorers = config.makeScorer();
@@ -217,10 +220,19 @@ public class Main {
             Rescaler rescaler = config.makeRescaler();
 
             monitor.updateStatus(Stage.BLOCKING, "Blocking");
-            Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel, monitor);
-            if (left != null && right != null) {
-                blocks = new FilterBlocks(blocks, left, right);
+            Iterable<Pair<Resource, Resource>> _blocks = blocking.block(leftModel, rightModel, monitor);
+            final Iterable<Pair<Resource, Resource>> blocks;
+            if(config.ignorePreexisting) {
+                _blocks = ExistingLinks.filterBlocking(_blocks, ExistingLinks.findPreexisting(scorers, leftModel, rightModel));
             }
+            if (left != null && right != null) {
+                blocks = new FilterBlocks(_blocks, left, right);
+            } else {
+                blocks = _blocks;
+            }
+            monitor.updateStatus(Stage.INITIALIZING, "Loading Graph Extractors");
+            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocks));
+            List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
             monitor.updateStatus(Stage.SCORING, "Scoring");
             //int count = 0;
@@ -278,7 +290,7 @@ public class Main {
                             }
                             for (Scorer scorer : scorers) {
                                 ScoreResult score = scorer.similarity(featureSet, monitor);
-                                alignments.add(new TmpAlignment(block._1, block._2, score, scorer.relation()));
+                                alignments.add(new TmpAlignment(block._1, block._2, score, scorer.relation(), config.includeFeatures ? featureSet : null));
                             }
                         } catch (Exception x) {
                             monitor.updateStatus(Stage.FAILED, String.format("Failed to score %s <-> %s due to %s (%s)\n", block._1, block._2, x.getMessage(), x.getClass().getName()));
@@ -429,7 +441,7 @@ public class Main {
         i = 0;
         scores = rescaler.rescale(scores);
         for(TmpAlignment t : tmpAligns) {
-            aligns.add(new Alignment(t.left, t.right, scores[i++], t.relation));
+            aligns.add(new Alignment(t.left, t.right, scores[i++], t.relation, t.features));
         }
         return new AlignmentSet(aligns);
     }
@@ -439,12 +451,21 @@ public class Main {
         private final Resource left, right;
         private final ScoreResult result;
         private final String relation;
+        private final Object2DoubleMap<String> features;
 
-        public TmpAlignment(Resource left, Resource right, ScoreResult result, String relation) {
+        public TmpAlignment(Resource left, Resource right, ScoreResult result, String relation, FeatureSet featureSet) {
             this.left = left;
             this.right = right;
             this.result = result;
             this.relation = relation;
+            if(featureSet != null) {
+                this.features = new Object2DoubleOpenHashMap<>();
+                for(int i = 0; i < featureSet.names.length; i++) {
+                    this.features.put(featureSet.names[i]._1 + "-" + featureSet.names[i]._2, featureSet.values[i]);
+                }
+            } else {
+                this.features = null;
+            }
         }
     }
 }
