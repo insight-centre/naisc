@@ -48,6 +48,14 @@ public class Meas {
         }
     }
 
+    public static String runsJson() {
+        try {
+            return mapper.writeValueAsString(data.runs);
+        } catch(JsonProcessingException x) {
+            throw new RuntimeException(x);
+        }
+    }
+
     private static Map<String, Configuration> configNames() {
         try {
             File f = new File("configs/");

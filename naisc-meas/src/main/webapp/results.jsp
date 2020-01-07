@@ -41,7 +41,7 @@
                 <center>
                     <a href="<%= System.getProperties().getProperty("base.url", "")  %>/manage/download_all/<%= request.getParameter("id") %>"><button type="button" class="btn btn-user btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' or 'No'"><i class="fas fa-download"></i> Download output links</button></a>
                     <a href="<%= System.getProperties().getProperty("base.url", "")  %>/manage/download_valid/<%= request.getParameter("id") %>"><button type="button" class="btn btn-user btn-info" data-toggle="tooltip" data-placement="top" title="Downloads links evaluated as 'Yes' and new links"><i class="fas fa-check-double"></i> Download validated</button></a>
-                
+                    <button type="button" class="btn btn-user btn-info" data-toggle="tooltip" data-placement="top" title="Compare this run with another run" v-on:click="compare()"><i class="fas fa-not-equal"></i> Compare Results</button>
                 </center>
                 </div>
             </div>
@@ -147,7 +147,35 @@
                             </div>
                         </div>
                     </div>
-                </div>                  
+                </div>
+
+                <div class="modal fade" id="compareModal" tabindex="-1" role="dialog" aria-labelledby="compareModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document" style="min-width:90%;">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="compareModalLabel">Compare Results</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form method="get" action="<%= System.getProperties().getProperty("base.url", "")  %>/compare.jsp">
+                                    <input type="hidden" value="<%= request.getParameter("id") %>" name="first"/>
+                                    <div class="form-group">
+                                        <label for="compareTarget">Compare to:</label>
+                                        <select class="form-control" name="second">
+                                            <option v-for="elem in otherDatasets" v-bind:value="elem.identifier">{{elem.identifier}}</option>
+                                        </select>
+                                    </div>
+                                    <div class="modal-footer" style="text-align:center;">
+                                        <button type="submit" class="btn btn-success">Compare</button>
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/jquery-3.3.1.min.js"
@@ -157,7 +185,10 @@
     <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
     <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/vue.js"></script>
 <script>
-var data = {"results":<%= Meas.loadRunResult(request.getParameter("id"), request.getParameter("offset") == null ? 0  : Integer.parseInt(request.getParameter("offset")), limit) %>};
+var data = {
+    "results":<%= Meas.loadRunResult(request.getParameter("id"), request.getParameter("offset") == null ? 0  : Integer.parseInt(request.getParameter("offset")), limit) %>,
+    "otherDatasets": <%= Meas.runsJson() %>
+    };
 
 data.totalResults = <%= Execution.noResults(request.getParameter("id")) %>;
 data.offset = <%= request.getParameter("offset") == null ? 0  : Integer.parseInt(request.getParameter("offset")) %>;
@@ -393,6 +424,9 @@ var app = new Vue({
             error: function(er){ document.write(er.responseText); }
         });
         } 
+    },
+    compare() {
+        $('#compareModal').modal('show');
     }
   }
 });
