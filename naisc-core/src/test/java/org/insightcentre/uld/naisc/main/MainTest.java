@@ -81,7 +81,7 @@ public class MainTest {
             Arrays.asList(new Configuration.TextFeatureConfiguration("feature.BasicString", new HashMap<>(), Collections.EMPTY_SET)),
             Arrays.asList(new Configuration.ScorerConfiguration("scorer.Average", new HashMap<>(), null)),
             new Configuration.MatcherConfiguration("matcher.Threshold", new HashMap<>()),
-            "test case");
+            "test case", null);
         config.includeFeatures = true;
         AlignmentSet align = Main.execute("test", leftDataset, rightDataset, config, new None<>(), ExecuteListeners.NONE,
             null, null, new DefaultDatasetLoader());
@@ -111,7 +111,7 @@ public class MainTest {
             Arrays.asList(new Configuration.TextFeatureConfiguration("feature.BasicString", new HashMap<>(), Collections.EMPTY_SET)),
             Arrays.asList(new Configuration.ScorerConfiguration("scorer.Average", new HashMap<>(), null)),
             new Configuration.MatcherConfiguration("matcher.Threshold", new HashMap<>()),
-            "test case");
+            "test case", null);
         config.includeFeatures = true;
         config.ignorePreexisting = true;
         AlignmentSet align = Main.execute("test", leftDataset, rightDataset, config, new None<>(), ExecuteListeners.NONE,
