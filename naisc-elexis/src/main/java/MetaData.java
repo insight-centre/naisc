@@ -2,7 +2,6 @@ import java.util.ArrayList;
 
 /**
  * Stores the MetaData about the dictionary
- *
  * @author Suruchi Gupta
  */
 public class MetaData {
@@ -16,7 +15,6 @@ public class MetaData {
 
     /**
      * Set release type
-     *
      * @param release
      */
     public void setRelease(String release) {
@@ -25,7 +23,6 @@ public class MetaData {
 
     /**
      * Get the release type
-     *
      * @return release
      */
     public String getRelease(){
@@ -34,7 +31,6 @@ public class MetaData {
 
     /**
      * Set the Source Language Code
-     *
      * @param sourceLanguageCode
      */
     public void setSourceLanguage(String sourceLanguageCode) {
@@ -43,7 +39,6 @@ public class MetaData {
 
     /**
      * Get the Source Language code
-     *
      * @return sourceLanguageCode
      */
     public String getSourceLanguage() {
@@ -52,7 +47,6 @@ public class MetaData {
 
     /**
      * Set list of all target language code
-     *
      * @param targetLanguage
      */
     public void setTargetLanguage(ArrayList targetLanguage) {
@@ -61,7 +55,6 @@ public class MetaData {
 
     /**
      * Get list of all target language code
-     *
      * @return targetLanguageCode
      */
     public ArrayList getTargetLanguage() {
@@ -70,7 +63,6 @@ public class MetaData {
 
     /**
      * Set list of all genre
-     *
      * @param genre
      */
     public void setGenre(ArrayList genre) {
@@ -79,7 +71,6 @@ public class MetaData {
 
     /**
      * Get the list of all genre
-     *
      * @return genre
      */
     public ArrayList getGenre() {
@@ -88,7 +79,6 @@ public class MetaData {
 
     /**
      * Set license URL
-     *
      * @param license
      */
     public void setLicense(String license) {
@@ -97,7 +87,6 @@ public class MetaData {
 
     /**
      * Get license URL
-     *
      * @return licenseURL
      */
     public String getLicense(){
@@ -106,7 +95,6 @@ public class MetaData {
 
     /**
      * Set the list of creator of the dictionary
-     *
      * @param creator
      */
     public void setCreator(ArrayList<Creator> creator) {
@@ -115,7 +103,6 @@ public class MetaData {
 
     /**
      * Get the list of all creator
-     *
      * @return creator
      */
     public ArrayList getCreator(){
@@ -124,7 +111,6 @@ public class MetaData {
 
     /**
      * Set the list of publisher of the dictionary
-     *
      * @param publisher
      */
     public void setPublisher(ArrayList<Publisher> publisher) {
@@ -133,7 +119,6 @@ public class MetaData {
 
     /**
      * Get the list of all publisher
-     *
      * @return publisher
      */
     public ArrayList getPublisher(){

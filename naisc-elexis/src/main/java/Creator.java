@@ -1,6 +1,5 @@
 /**
  * Stores details of creator of the dictionary
- *
  * @author Suruchi Gupta
  */
 public class Creator {
@@ -9,7 +8,6 @@ public class Creator {
 
     /**
      * Set name of creator
-     *
      * @param name
      */
     public void setName(String name) {
@@ -18,7 +16,6 @@ public class Creator {
 
     /**
      * Get name of the Creator
-     *
      * @return name
      */
     public String getName(){
@@ -27,7 +24,6 @@ public class Creator {
 
     /**
      * Set the email of the creator
-     *
      * @param email
      */
     public void setEmail(String email) {
@@ -36,7 +32,6 @@ public class Creator {
 
     /**
      * Get email of the Creator
-     *
      * @return email
      */
     public String getEmail(){

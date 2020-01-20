@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -29,7 +30,7 @@ public class ELEXISRest {
      * @param endpoint
      */
     public ELEXISRest(URL endpoint) {
-        this.endpoint = endpoint;
+        ELEXISRest.endpoint = endpoint;
     }
 
     /**
@@ -62,7 +63,7 @@ public class ELEXISRest {
     }
 
     /**
-     * Calls dictionaries endpoint
+     * Calls dictionaries endpoint and returns list of available dictionaries
      *
      * @return List of all dictionaries available
      */
@@ -80,6 +81,14 @@ public class ELEXISRest {
         return dictionaries;
     }
 
+    /**
+     * Fetches the MetaData of the provided dictionary
+     *
+     * @param dictionary
+     * @return MetaData
+     * @throws MalformedURLException
+     * @throws JsonProcessingException
+     */
     public MetaData aboutDictionary(String dictionary) throws MalformedURLException, JsonProcessingException {
         URL aboutDictEndPoint = new URL(endpoint.toString()+"/about/"+dictionary);
         String response = executeAPICall(aboutDictEndPoint);
@@ -88,5 +97,41 @@ public class ELEXISRest {
         MetaData metaData = objectMapper.readValue(response, MetaData.class);
 
         return metaData;
+    }
+
+    /**
+     * Returns all the lemmas in the given dictionary
+     *
+     * @param dictionary
+     * @return List of Lemmas
+     * @throws MalformedURLException
+     */
+    public Lemma[] getAllLemmas(String dictionary) throws MalformedURLException, JsonProcessingException {
+        URL allLemmasEndPoint = new URL(endpoint.toString()+"/list/"+dictionary);
+        String response = executeAPICall(allLemmasEndPoint);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        Lemma[] allLemmas = objectMapper.readValue(response, Lemma[].class);
+
+        return allLemmas;
+    }
+
+    /**
+     * Returns list of entries for the given headword in a dictionary
+     *
+     * @param dictionary
+     * @param headword
+     * @return List of entries under the given headword
+     * @throws JsonProcessingException
+     * @throws MalformedURLException
+     */
+    public Lemma[] getAllHeadWords(String dictionary, String headword) throws JsonProcessingException, MalformedURLException {
+        URL headWordsEndPoint = new URL(endpoint.toString()+"/lemma/"+dictionary+"/"+headword);
+        String response = executeAPICall(headWordsEndPoint);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        Lemma[] allHeadWords = objectMapper.readValue(response, Lemma[].class);
+
+        return allHeadWords;
     }
 }

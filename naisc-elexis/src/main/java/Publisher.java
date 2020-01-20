@@ -1,6 +1,5 @@
 /**
  * Stores details of publisher of the dictionary
- *
  * @author Suruchi Gupta
  */
 public class Publisher {
@@ -8,7 +7,6 @@ public class Publisher {
 
     /**
      * Set name of publisher
-     *
      * @param name
      */
     public void setName(String name) {
@@ -17,7 +15,6 @@ public class Publisher {
 
     /**
      * Get name of the publisher
-     *
      * @return name
      */
     public String getName() {
