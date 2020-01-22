@@ -1,16 +1,11 @@
+package elexis.rest.service;
 
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -23,6 +18,7 @@ import org.json.JSONObject;
  */
 public class ELEXISRest {
     private static URL endpoint;
+    APIConnection apiConnection;
 
     /**
      * Creating a new object
@@ -31,35 +27,7 @@ public class ELEXISRest {
      */
     public ELEXISRest(URL endpoint) {
         ELEXISRest.endpoint = endpoint;
-    }
-
-    /**
-     * Generic method to execute get API calls
-     *
-     * @param endpoint
-     * @return API response as String
-     */
-    public String executeAPICall(URL endpoint) {
-        String apiResponse = null;
-        try {
-            HttpURLConnection conn = (HttpURLConnection) endpoint.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Accept", "application/json");
-
-            if (conn.getResponseCode() != 200) {
-                throw new RuntimeException("Failed : HTTP error code : " + conn.getResponseCode());
-            }
-
-            BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-            apiResponse = br.readLine();
-            conn.disconnect();
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return apiResponse;
+        apiConnection = new APIConnection(endpoint);
     }
 
     /**
@@ -69,7 +37,7 @@ public class ELEXISRest {
      */
     public List<String> getDictionaries() throws MalformedURLException {
         URL dictEndpoint = new URL(endpoint.toString()+"/dictionaries");
-        String response = executeAPICall(dictEndpoint);
+        String response = apiConnection.executeAPICall(dictEndpoint);
 
         JSONObject jsonResponse = new JSONObject(response);
 
@@ -82,16 +50,16 @@ public class ELEXISRest {
     }
 
     /**
-     * Fetches the MetaData of the provided dictionary
+     * Fetches the elexis.rest.service.MetaData of the provided dictionary
      *
      * @param dictionary
-     * @return MetaData
+     * @return elexis.rest.service.MetaData
      * @throws MalformedURLException
      * @throws JsonProcessingException
      */
     public MetaData aboutDictionary(String dictionary) throws MalformedURLException, JsonProcessingException {
         URL aboutDictEndPoint = new URL(endpoint.toString()+"/about/"+dictionary);
-        String response = executeAPICall(aboutDictEndPoint);
+        String response = apiConnection.executeAPICall(aboutDictEndPoint);
 
         ObjectMapper objectMapper = new ObjectMapper();
         MetaData metaData = objectMapper.readValue(response, MetaData.class);
@@ -108,7 +76,7 @@ public class ELEXISRest {
      */
     public Lemma[] getAllLemmas(String dictionary) throws MalformedURLException, JsonProcessingException {
         URL allLemmasEndPoint = new URL(endpoint.toString()+"/list/"+dictionary);
-        String response = executeAPICall(allLemmasEndPoint);
+        String response = apiConnection.executeAPICall(allLemmasEndPoint);
 
         ObjectMapper objectMapper = new ObjectMapper();
         Lemma[] allLemmas = objectMapper.readValue(response, Lemma[].class);
@@ -125,13 +93,30 @@ public class ELEXISRest {
      * @throws JsonProcessingException
      * @throws MalformedURLException
      */
-    public Lemma[] getAllHeadWords(String dictionary, String headword) throws JsonProcessingException, MalformedURLException {
+    public Lemma[] getHeadWordLookup(String dictionary, String headword) throws JsonProcessingException, MalformedURLException {
         URL headWordsEndPoint = new URL(endpoint.toString()+"/lemma/"+dictionary+"/"+headword);
-        String response = executeAPICall(headWordsEndPoint);
+        String response = apiConnection.executeAPICall(headWordsEndPoint);
 
         ObjectMapper objectMapper = new ObjectMapper();
         Lemma[] allHeadWords = objectMapper.readValue(response, Lemma[].class);
 
         return allHeadWords;
     }
+
+    /**
+     * Returns the entry in the dictionary in form of JSONObject
+     *
+     * @param dictionary
+     * @param id
+     * @return dictionary entry As JSON
+     * @throws MalformedURLException
+     */
+    public JSONObject getEntryAsJSON(String dictionary, String id) throws MalformedURLException {
+        URL entryAsJSONEndPoint = new URL(endpoint.toString()+"/json/"+dictionary+"/"+id);
+        String response = apiConnection.executeAPICall(entryAsJSONEndPoint);
+
+        JSONObject entryAsJSON = new JSONObject(response);
+        return entryAsJSON;
+    }
+
 }

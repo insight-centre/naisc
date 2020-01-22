@@ -1,3 +1,5 @@
+package elexis.rest.service;
+
 /**
  * Stores details of creator of the dictionary
  * @author Suruchi Gupta
