@@ -1,0 +1,24 @@
+{
+    "blocking": {
+        "name": "blocking.ApproximateStringMatching",
+        "maxMatches": 5,
+        "property": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "lenses": [{
+        "name": "lens.Label"
+    }],
+    "textFeatures": [{
+        "name": "feature.BasicString",
+        "features": ["jaccard"]
+    }],
+    "scorers": [{
+        "name": "scorer.Average",
+        "softmax": false
+    }],
+    "matcher": {
+        "name": "matcher.Threshold",
+        "threshold": 1.0
+    },
+    "description": "Simple string matching without machine learning"
+}
+

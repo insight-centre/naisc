@@ -1,0 +1,25 @@
+{
+    "blocking": {
+        "name": "blocking.ApproximateStringMatching",
+        "maxMatches": 5,
+        "property": "http://www.w3.org/2000/01/rdf-schema#label"
+    },
+    "lenses": [{
+        "name": "lens.Label"
+    }],
+    "textFeatures": [{
+        "name": "feature.BasicString",
+        "wordWeights": "models/idf",
+        "ngramWeights": "models/ngidf",
+        "labelChar": true,
+        "features": ["jaccard","lcs"]
+    }],
+    "scorers": [{
+        "name": "scorer.LibSVM",
+        "modelFile": "models/jaccard.libsvm"
+    }],
+    "matcher": {
+        "name": "matcher.UniqueAssignment"
+    },
+    "description": "Simple baseline method using string metrics and a SVM"
+}

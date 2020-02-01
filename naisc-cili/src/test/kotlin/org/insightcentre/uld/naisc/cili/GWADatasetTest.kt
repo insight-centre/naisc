@@ -192,7 +192,7 @@ class GWADatasetTest {
             model.createLiteral("the father of your father or mother", "en")).toSet()
         assertEquals(expResult, result)
     }
-
+    
     @Test
     fun listObjectsOfProperty() {
         val dataset = GWADataset(file)
