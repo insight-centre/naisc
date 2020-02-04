@@ -1,5 +1,6 @@
 package elexis.rest.service;
 
+import java.io.ByteArrayInputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -7,6 +8,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -117,6 +120,24 @@ public class ELEXISRest {
 
         JSONObject entryAsJSON = new JSONObject(response);
         return entryAsJSON;
+    }
+
+    /**
+     * Returns the entry in the dictionary in form of RDF
+     *
+     * @param dictionary
+     * @param id
+     * @return dictionary entry as RDF
+     * @throws MalformedURLException
+     */
+    public Model getEntryAsTurtle(String dictionary, String id) throws MalformedURLException {
+        URL entryAsJSONEndPoint = new URL(endpoint.toString()+"/ontolex/"+dictionary+"/"+id);
+        String response = apiConnection.executeAPICall(entryAsJSONEndPoint);
+
+        Model entryAsTurtle = ModelFactory.createDefaultModel();
+        entryAsTurtle.read(new ByteArrayInputStream(response.getBytes()), null, "TTL");
+
+        return entryAsTurtle;
     }
 
 }

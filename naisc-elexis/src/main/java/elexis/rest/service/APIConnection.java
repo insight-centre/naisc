@@ -40,7 +40,15 @@ public class APIConnection {
             }
 
             BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-            apiResponse = br.readLine();
+            StringBuilder sb = new StringBuilder();
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                sb.append(line+"\n");
+            }
+            br.close();
+            apiResponse =  sb.toString();
+
             conn.disconnect();
 
         } catch (MalformedURLException e) {
