@@ -27,6 +27,10 @@ public class ELEXISRest {
     private static URL endpoint;
     private static String xslFilePath = "src/main/java/elexis/rest/service/TEI2Ontolex.xsl";
     APIConnection apiConnection;
+    private static final String xmlStart = "<TEI version=\"3.3.0\" xmlns=\"http://www.tei-c.org/ns/1.0\"> " +
+            "<teiHeader> </teiHeader> <text> <body>";
+
+    private static final String xmlEnd = "</body> </text> </TEI>";
 
     /**
      * Creating a new object
@@ -157,6 +161,9 @@ public class ELEXISRest {
     public Model getEntryAsTEI(String dictionary, String id) throws MalformedURLException, TransformerException {
         URL entryAsTEIEndPoint = new URL(endpoint.toString()+"/tei/"+dictionary+"/"+id);
         String response = apiConnection.executeAPICall(entryAsTEIEndPoint);
+
+        // Appending the start and end XML tags for proper transformation
+        response = xmlStart+response+xmlEnd;
 
         // Using the xsl file to process the API response
         TransformerFactory factory = TransformerFactory.newInstance();
