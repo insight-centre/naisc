@@ -134,7 +134,11 @@ public class Evaluate {
                 if (gScore > 0 && align.score > 0) {
                     align.valid = Valid.yes;
                 } else {
-                    align.valid = Valid.no;
+                    if(gold.hasLink(align.entity1, align.entity2)) {
+                        align.valid = Valid.bad_link;
+                    } else {
+                        align.valid = Valid.no;
+                    }
                 }
                 seen.add(galign.get());
             } else {
@@ -149,7 +153,11 @@ public class Evaluate {
                     }
                 }
                 if (align.score > 0) {
-                    align.valid = Valid.no;
+                    if(gold.hasLink(align.entity1, align.entity2)) {
+                        align.valid = Valid.bad_link;
+                    } else {
+                        align.valid = Valid.no;
+                    }
                 } else {
                     align.valid = Valid.yes;
                 }

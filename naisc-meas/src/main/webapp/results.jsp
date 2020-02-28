@@ -36,6 +36,21 @@
                     <div class="percentage-title">F-Measure</div>
                 </div>
             </div>
+            <div class="row" v-if="le > 0">
+                <div class="col percentage percentage-bordered">
+                    <div class="percentage-large">{{linkPrecision()}}</div>
+                    <div class="percentage-title">Link Precision</div>
+                </div>
+                <div class="col percentage percentage-bordered">
+                    <div class="percentage-large">{{linkRecall()}}</div>
+                    <div class="percentage-title">Link Recall</div>
+                </div>
+                <div class="col percentage">
+                    <div class="percentage-large">{{linkFmeasure()}}</div>
+                    <div class="percentage-title">Link F-Measure</div>
+                </div>
+            </div>
+
             <div class="row">
                 <div class="col">
                 <center>
@@ -57,14 +72,14 @@
                             <td>Evaluation</td>
                          </tr>
                     </thead>
-                    <tr v-for="(result,idx) in results" v-bind:class="{'valid-yes':result.valid === 'yes','valid-no':result.valid === 'no','valid-unknown':result.valid === 'unknown','valid-novel':result.valid === 'novel'}">
+                    <tr v-for="(result,idx) in results" v-bind:class="{'valid-yes':result.valid === 'yes','valid-no':result.valid === 'no' || result.valid === 'bad_link','valid-unknown':result.valid === 'unknown','valid-novel':result.valid === 'novel'}">
                         <td>
                             <span v-if="result.leftRoot && result.leftRoot !== result.subject"><a v-bind:href="result.leftRoot" class="root">{{displayUrl(result.leftRoot)}}</a><br/></span>
                             <div v-for="(lp, lpidx) in result.leftPath">
                                 <span v-if="lp"><a v-bind:href="lp" class="treeLink" v-bind:style="{ marginLeft: (lpidx*10 + 10) + 'px' }">{{displayUrl(lp)}}</a><br/></span>
                             </div>
                             <a v-bind:href="result.subject" v-bind:style="{ marginLeft: (result.leftPath.length*10 + 20) + 'px' }">{{displayUrl(result.subject)}}</a>
-                            <button type="button" class="btn btn-info" title="Change this entity" v-if="result.valid==='no'" v-on:click.prevent="changeLeft(idx,result.subject)">
+                            <button type="button" class="btn btn-info" title="Change this entity" v-if="result.valid==='no' || result.valid === 'bad_link'" v-on:click.prevent="changeLeft(idx,result.subject)">
                                 <i class="fas fa-wrench"></i></button>
                             <div v-for="(l, lensid) in result.lens" v-bind:style="{ marginLeft: (result.leftPath.length*10 + 20) + 'px' }">
                                 <span class="lens-id">{{lensid}}:</span> <span class="lens-content">{{l._1}}</span> <span class="lens-language">{{l.lang1}}</span>
@@ -77,7 +92,7 @@
                                 <span v-if="lp"><a v-bind:href="lp" class="treeLink" v-bind:style="{ marginLeft: (lpidx*10 + 10) + 'px' }">{{displayUrl(lp)}}</a><br/></span>
                             </div>
                             <a v-bind:href="result.object" v-bind:style="{ marginLeft: (result.rightPath.length*10 + 20) + 'px' }">{{displayUrl(result.object)}}</a>
-                            <button type="button" class="btn btn-info" title="Change this entity" v-if="result.valid==='no'" v-on:click.prevent="changeRight(idx,result.object)">
+                            <button type="button" class="btn btn-info" title="Change this entity" v-if="result.valid==='no' || result.valid === 'bad_link'" v-on:click.prevent="changeRight(idx,result.object)">
                                 <i class="fas fa-wrench"></i></button>
                             <div v-for="(l, lensid) in result.lens" v-bind:style="{ marginLeft: (result.rightPath.length*10 + 20) + 'px' }">
                                 <span class="lens-id">{{lensid}}:</span> <span class="lens-content">{{l._2}}</span> <span class="lens-language">{{l.lang2}}</span>
@@ -94,7 +109,7 @@
                         <td>
                             <div class="btn-group" role="group" v-if="result.valid !== 'novel'">
                                 <button type="button" class="btn" v-bind:class="{'btn-primary': result.valid === 'yes', 'btn-secondary':result.valid !== 'yes'}" v-on:click="updateLink(idx,'yes')">Yes</button>
-                                <button type="button" class="btn" v-bind:class="{'btn-primary': result.valid === 'no', 'btn-secondary':result.valid !== 'no'}" v-on:click="updateLink(idx,'no')">No</button>
+                                <button type="button" class="btn" v-bind:class="{'btn-primary': result.valid === 'no' || result.valid === 'bad_link', 'btn-secondary':result.valid !== 'no' && result.valid !== 'bad_link'}" v-on:click="updateLink(idx,'no')">No</button>
                                 <button type="button" class="btn" v-bind:class="{'btn-primary': result.valid === 'unknown', 'btn-secondary':result.valid !== 'unknown'}" v-on:click="updateLink(idx,'unknown')">?</button>
                             </div>
                             <div v-if="result.valid === 'novel'">
@@ -194,6 +209,7 @@ data.totalResults = <%= Execution.noResults(request.getParameter("id")) %>;
 data.offset = <%= request.getParameter("offset") == null ? 0  : Integer.parseInt(request.getParameter("offset")) %>;
 data.tp = <%= Execution.truePositives(request.getParameter("id")) %>;
 data.fp = <%= Execution.falsePositives(request.getParameter("id")) %>;
+data.le = <%= Execution.linkErrors(request.getParameter("id")) %>;
 data.fn = <%= Execution.falseNegatives(request.getParameter("id")) %>;
 data.currentElem = "";
 data.elems = new Set();
@@ -218,13 +234,13 @@ var app = new Vue({
     },
     updateLink(idx, value) {
         if(this.results[idx].valid === 'yes') {
-            if(value === 'no') {
+            if(value === 'no' || value === 'bad_link') {
                 this.tp -= 1;
                 this.fp += 1;
             } else if(value === 'unknown') {
                 this.tp -= 1;
             }
-        } else if (this.results[idx].valid === 'no') {
+        } else if (this.results[idx].valid === 'no' || this.results[idx].valid  === 'bad_link') {
             if(value === 'yes') {
                 this.tp += 1;
                 this.fp -= 1;
@@ -234,7 +250,7 @@ var app = new Vue({
         } else if(this.results[idx].valid === 'unknown') {
             if(value === 'yes') {
                 this.tp += 1;
-            } else if(value === 'no') {
+            } else if(value === 'no' || value === 'bad_link') {
                 this.fp += 1;
             }
         }
@@ -258,6 +274,13 @@ var app = new Vue({
             return "n/a";
         }
     },
+    linkPrecision() {
+        if(this.tp > 0 || this.fp > 0) {
+            return (100 * (this.tp + this.le) / (this.tp + this.fp)).toFixed(1) + "%";
+        } else {
+            return "n/a";
+        }
+    },
     recall() {
         if(this.tp > 0 || this.fn > 0) {
             return (100 *this.tp / (this.tp + this.fn)).toFixed(1) + "%";
@@ -265,9 +288,24 @@ var app = new Vue({
             return "n/a";
         }
     },
+    linkRecall() {
+        if(this.tp > 0 || this.fn > 0) {
+            return (100 * (this.tp + this.le) / (this.tp + this.fn)).toFixed(1) + "%";
+        } else {
+            return "n/a";
+        }
+    },
+
     fmeasure() {
         if(this.tp > 0 || this.fn > 0 || this.fp > 0) {
             return (200 *this.tp / (2*this.tp + this.fn + this.fp)).toFixed(1) + "%";
+        } else {
+            return "n/a";
+        }
+    },
+    linkFmeasure() {
+        if(this.tp > 0 || this.fn > 0 || this.fp > 0) {
+            return (200 * (this.tp + this.le) / (2*this.tp + this.fn + this.fp)).toFixed(1) + "%";
         } else {
             return "n/a";
         }

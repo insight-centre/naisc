@@ -493,7 +493,7 @@ public class Execution implements ExecuteListener {
                             rs.getFloat(4), rs.getFloat(6),
                             v,
                             rs.getString(8) != null ? Valid.valueOf(rs.getString(8))
-                                : (v == Valid.yes || v == Valid.novel) ? Valid.no : (v == Valid.no ?  Valid.yes : Valid.unknown)));
+                                : (v == Valid.yes || v == Valid.novel) ? Valid.no : (v == Valid.no || v == Valid.bad_link ?  Valid.yes : Valid.unknown)));
 
                     }
                 }
@@ -564,7 +564,11 @@ public class Execution implements ExecuteListener {
     }
 
     public static int falsePositives(String id) {
-        return count(id, "no");
+        return count(id, "no") + count(id, "bad_link");
+    }
+
+    public static int linkErrors(String id) {
+        return count(id, "bad_link");
     }
 
     public static int falseNegatives(String id) {
