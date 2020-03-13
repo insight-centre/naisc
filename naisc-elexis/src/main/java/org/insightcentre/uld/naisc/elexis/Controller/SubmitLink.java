@@ -20,6 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author Sampritha Manjunath
@@ -30,7 +31,12 @@ public class SubmitLink {
     static ExecuteListener listener;
     static AlignmentSet alignmentSet;
 
-
+    /**
+     *
+     * @return
+     * @throws MalformedURLException
+     * @throws JSONException
+     */
     @GetMapping("/")
     public List<String> test() throws MalformedURLException, JSONException {
         URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
@@ -47,6 +53,8 @@ public class SubmitLink {
      */
     @RequestMapping(value = "/submit", method = RequestMethod.POST)
     public List<Model> submitLinkRequest(@RequestBody MessageBody messageBody) throws MalformedURLException, JSONException, JsonProcessingException {
+//      Generate unique name for each submit request
+        String uniqueID = UUID.randomUUID().toString();
 //        Test connection string
         URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
 //        URL endpoint = new URL(messageBody.getSource().getEndpoint());
@@ -64,7 +72,7 @@ public class SubmitLink {
         Configuration config = messageBody.getConfiguration().getSome();
 //        alignmentSet = org.insightcentre.uld.naisc.main.Main.execute("uniqueID", null, null,
 //                config, new None<>(), listener, new DefaultDatasetLoader() );
-        alignmentSet = org.insightcentre.uld.naisc.main.Main.execute("name1", null, null, config,
+        alignmentSet = org.insightcentre.uld.naisc.main.Main.execute(uniqueID, null, null, config,
                 new None<>(), listener, new DatasetLoader() {
                     @Override
                     public Dataset fromFile(File file, String name) throws IOException {
@@ -84,13 +92,21 @@ public class SubmitLink {
         return modelObj;
     }
 
+    /**
+     *
+     * @return
+     */
     @GetMapping("/status")
-    public String getLinkingStatus()
+    public ExecuteListener getLinkingStatus()
     {
-        return listener.toString();
+        return listener;
     }
 
 
+    /**
+     *
+     * @return
+     */
     @GetMapping("/result")
     public AlignmentSet getResults()
     {
