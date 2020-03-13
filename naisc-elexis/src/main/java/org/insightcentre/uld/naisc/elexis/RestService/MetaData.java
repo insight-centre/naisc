@@ -1,4 +1,4 @@
-package elexis.rest.service;
+package org.insightcentre.uld.naisc.elexis.RestService;
 
 import java.util.ArrayList;
 

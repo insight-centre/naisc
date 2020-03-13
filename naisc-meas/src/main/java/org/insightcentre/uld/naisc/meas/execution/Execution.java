@@ -4,16 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
 import eu.monnetproject.lang.Language;
-import java.io.File;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.*;
-
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.AlignmentSet;
@@ -29,6 +19,11 @@ import org.insightcentre.uld.naisc.meas.Meas.Run;
 import org.insightcentre.uld.naisc.meas.Meas.RunResultRow;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Pair;
+
+import java.io.File;
+import java.io.IOException;
+import java.sql.*;
+import java.util.*;
 
 /**
  * Manages the execution and how it is saved to the database

@@ -1,7 +1,6 @@
-package elexis.rest.service;
+package org.insightcentre.uld.naisc.elexis.RestService;
 
 import java.util.ArrayList;
-import java.util.function.IntFunction;
 
 /**
  * Stores the detail of each Lemma
