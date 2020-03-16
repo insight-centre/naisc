@@ -186,6 +186,44 @@ public class Main {
         }
     }
 
+    /**
+     * Execute NAISC, limiting the results to a gold set
+     *
+     * @param name The identifier for this run
+     * @param leftFile The left RDF dataset to align
+     * @param rightFile The right RDF dataset to align
+     * @param goldFile The gold standard
+     * @param config The configuration
+     * @param partialSoln A partial solution
+     * @param monitor Listener for status updates
+     * @param loader The loader of datasets
+     * @return The alignment
+     */
+    @SuppressWarnings("UseSpecificCatch")
+    public static AlignmentSet executeLimitedToGold(String name, File leftFile, File rightFile, File goldFile, Configuration config,
+            Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
+        try {
+            monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
+            Dataset leftModel = loader.fromFile(leftFile, name + "/left");
+
+            monitor.updateStatus(Stage.INITIALIZING, "Reading right dataset");
+            Dataset rightModel = loader.fromFile(rightFile, name + "/right");
+
+            monitor.updateStatus(Stage.INITIALIZING, "Reading gold dataset");
+            AlignmentSet gold = Train.readAlignments(goldFile);
+
+            Set<Resource> left = gold.stream().map(a -> a.entity1).collect(Collectors.toSet());
+            Set<Resource> right = gold.stream().map(a -> a.entity2).collect(Collectors.toSet());
+
+            return execute(name, leftModel, rightModel, config, partialSoln, monitor, left, right, loader);
+
+        } catch (Exception x) {
+            x.printStackTrace();
+            monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
+            return null;
+        }
+    }
+
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute(String name, Dataset leftModel, Dataset rightModel, Configuration config,
             Option<AlignmentSet> partialSoln, ExecuteListener monitor, Set<Resource> left, Set<Resource> right, DatasetLoader loader) {

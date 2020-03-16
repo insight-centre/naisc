@@ -4,16 +4,7 @@ import org.insightcentre.uld.naisc.util.Option;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.PrintStream;
-import java.util.AbstractCollection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.jena.rdf.model.Resource;
@@ -49,15 +40,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
      */
     public Option<Alignment> find(Resource id1, Resource id2, String property) {
         if(index == null) {
-            Map<String, Map<Pair<Resource,Resource>, Alignment>> map = new HashMap<>();
-            for(Alignment alignment : alignments) {
-                if(!map.containsKey(alignment.relation)) {
-                    map.put(alignment.relation, new HashMap<>());
-                }
-                map.get(alignment.relation).put(new Pair<>(alignment.entity1,
-                            alignment.entity2), alignment);
-            }
-            index = map;
+            buildIndex();
         }
         Map<Pair<Resource, Resource>, Alignment> byPair = index.get(property);
         if(byPair == null)
@@ -66,29 +49,62 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
         return byPair.containsKey(sp) ? new Some<>(byPair.get(sp)) : new None<>();
 
     }
-    
-    /**
-     * Does this set contain a particular alignment
-     * @param alignment The alignment
-     * @return True if the alignment is in the set
-     */
-    public boolean contains(Alignment alignment) {
-        return find(alignment.entity1, alignment.entity2, alignment.relation).has();
+
+    private void buildIndex() {
+        Map<String, Map<Pair<Resource,Resource>, Alignment>> map = new HashMap<>();
+        for(Alignment alignment : alignments) {
+            if(!map.containsKey(alignment.relation)) {
+                map.put(alignment.relation, new HashMap<>());
+            }
+            map.get(alignment.relation).put(new Pair<>(alignment.entity1,
+                    alignment.entity2), alignment);
+        }
+        index = map;
     }
-    
+
+
+    /**
+     * Is there a link the assignment set between two resources
+     *
+     * @param id1 The left id
+     * @param id2 The right id
+     * @return True if a link exists between these resources
+     */
+    public boolean hasLink(Resource id1, Resource id2) {
+        if(index == null) {
+            buildIndex();
+        }
+        for(Map<Pair<Resource,Resource>, Alignment> byPair : index.values()) {
+            final Pair<Resource, Resource> sp = new Pair<>(id1, id2);
+            if(byPair.containsKey(sp)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+        /**
+         * Does this set contain a particular alignment
+         * @param alignment The alignment
+         * @return True if the alignment is in the set
+         */
+        public boolean contains(Alignment alignment) {
+            return find(alignment.entity1, alignment.entity2, alignment.relation).has();
+        }
+
     public boolean remove(Alignment alignment) {
         boolean rv = alignments.remove(alignment);
         if(index != null) {
             index.get(alignment.relation).remove(new Pair<>(alignment.entity1, alignment.entity2));
         }
         return rv;
-        
+
     }
 
     public List<Alignment> getAlignments() {
         return Collections.unmodifiableList(alignments);
     }
-    
+
     @SuppressWarnings("Convert2Lambda")
     public void sortAlignments() {
         alignments.sort(new Comparator<Alignment>() {
@@ -115,7 +131,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
         }
         return rv;
     }
-    
+
     @Override
     public Iterator<Alignment> iterator() {
         final Iterator<Alignment> iter = alignments.iterator();
@@ -143,7 +159,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
     public int size() {
         return alignments.size();
     }
-    
+
     private String toXML(String rel) {
         if(rel == null ? Alignment.SKOS_EXACT_MATCH == null : rel.equals(Alignment.SKOS_EXACT_MATCH)) {
             return "=";
@@ -161,11 +177,11 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
             throw new RuntimeException("Relation not supported by XML");
         }
     }
-    
+
     public void toXML(PrintStream out) {
         out.println("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
         out.println("<rdf:RDF xmlns=\"http://knowledgeweb.semanticweb.org/heterogeneity/alignment\"");
-        out.println("  xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\""); 
+        out.println("  xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"");
         out.println("  xmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\">");
         out.println("<Alignment>");
         out.println("  <xml>yes</xml>");
@@ -177,7 +193,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
             out.println(String.format("      <entity1 rdf:resource=\"%s\"/>", StringEscapeUtils.escapeXml11(alignment.entity1.getURI())));
             out.println(String.format("      <entity2 rdf:resource=\"%s\"/>", StringEscapeUtils.escapeXml11(alignment.entity2.getURI())));
             out.println(String.format("      <measure rdf:datatype=\"xsd:float\">%.6f</measure>", alignment.score));
-            out.println(String.format("      <relation>%s</relation>", toXML(alignment.relation))); 
+            out.println(String.format("      <relation>%s</relation>", toXML(alignment.relation)));
             out.println("    </Cell>");
             out.println("  </map>");
         }
@@ -185,17 +201,17 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
         out.println("</rdf:RDF>");
         out.flush();
     }
-    
+
     public void toRDF(PrintStream out) {
         for(Alignment alignment : alignments) {
             out.println(String.format("<%s> <%s> <%s> . # %.4f", alignment.entity1, alignment.relation, alignment.entity2, alignment.score));
         }
     }
-    
+
     public Set<String> properties() {
         return alignments.stream().map(x -> x.relation).collect(Collectors.toSet());
     }
-    
+
     private ObjectMapper mapper;
 
     @Override
@@ -203,7 +219,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
         return "AlignmentSet{" + "alignments=" + alignments + '}';
     }
 
-   
+
 
 
     @Override
@@ -227,7 +243,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
         }
         return true;
     }
-    
+
     /**
      * Get the ith alignment
      * @param i The index
@@ -236,5 +252,5 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
     public Alignment get(int i) {
         return alignments.get(i);
     }
-    
+
 }

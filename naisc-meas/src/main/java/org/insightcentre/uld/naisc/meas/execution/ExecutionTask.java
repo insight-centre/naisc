@@ -62,7 +62,11 @@ public class ExecutionTask implements Runnable {
                     // We are re-running so we need to clear the tables for the new alignments
                     listener.clearAlignments(); 
                 }
-                alignment = Main.execute2(id, ds.left(), ds.right(), config, userAligns, listener, loader);
+                if(ds.align().has() && ds.trainAlign().has()) {
+                    alignment = Main.executeLimitedToGold(id, ds.left(), ds.right(), ds.align().get(), config, userAligns, listener, loader);
+                } else {
+                    alignment = Main.execute2(id, ds.left(), ds.right(), config, userAligns, listener, loader);
+                }
                 if (alignment == null) {
                     return;
                 }
@@ -71,7 +75,7 @@ public class ExecutionTask implements Runnable {
                 if (alignFile.has()) {
                     listener.updateStatus(ExecuteListener.Stage.EVALUATION, "Evaluating");
                     AlignmentSet gold = Train.readAlignments(alignFile.get());
-                    er = Evaluate.evaluate(alignment, gold, listener);
+                    er = Evaluate.evaluate(alignment, gold, listener, ds.trainAlign().has());
                 } else {
                     er = null;
                 }

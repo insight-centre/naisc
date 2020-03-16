@@ -144,6 +144,10 @@ public class Alignment {
          */
         no,
         /**
+         * Incorrect but only due to the link type
+         */
+        bad_link,
+        /**
          * Not marked
          */
         unknown,

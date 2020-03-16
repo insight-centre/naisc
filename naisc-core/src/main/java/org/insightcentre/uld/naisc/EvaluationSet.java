@@ -82,6 +82,21 @@ public class EvaluationSet {
     }
 
     /**
+     * Get the training alignment file
+     *
+     * @return Some if the file exists or none if there is no training alignment
+     */
+    public Option<File> trainAlign() {
+        for (String suffix : Arrays.asList(".rdf", ".nt", ".ttl", ".xml")) {
+            final File f = new File(folder, "align-train" + suffix);
+            if (f.exists()) {
+                return new Some<>(f);
+            }
+        }
+        return new None<>();
+    }
+
+    /**
      * Checks if the required dataset files are present
      *
      * @param f The folder to check

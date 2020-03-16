@@ -140,7 +140,7 @@ public class CrossFold {
         monitor.foldNo = 0;
 
         monitor.updateStatus(ExecuteListener.Stage.EVALUATION, "Starting Evaluation");
-        Evaluate.EvaluationResults er = Evaluate.evaluate(as, folds.achievableGold(goldAlignments), monitor);
+        Evaluate.EvaluationResults er = Evaluate.evaluate(as, folds.achievableGold(goldAlignments), monitor, false);
         return new CrossFoldResult(as, er);
     }
 
