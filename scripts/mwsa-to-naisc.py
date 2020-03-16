@@ -45,6 +45,9 @@ def to_lang(l):
     else:
         return l
 
+def escape_literal(l):
+    return l.replace("\"","\\\"")
+
 def write_dataset(name, lterms):
     with open("datasets/mwsa_%s/%s.nt" % (sys.argv[3], name), "w") as left:
         for (lemma, pos, defn) in lterms:
@@ -52,8 +55,8 @@ def write_dataset(name, lterms):
             sense_id = "<%s#sense%d>" % (BASE_URL, term2id[(lemma, pos, defn)]) 
             left.write("%s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/ns/lemon/ontolex#LexicalEntry> .\n" % entry_id)
             left.write("%s <http://www.w3.org/ns/lemon/ontolex#sense> %s .\n" % (entry_id, sense_id))
-            left.write("%s <http://www.w3.org/2000/01/rdf-schema#label> \"%s\"@%s .\n" % (entry_id, lemma, to_lang(sys.argv[3])))
-            left.write("%s <http://www.w3.org/2004/02/skos/core#definition> \"%s\"@%s .\n" % (sense_id, defn, to_lang(sys.argv[3])))
+            left.write("%s <http://www.w3.org/2000/01/rdf-schema#label> \"%s\"@%s .\n" % (entry_id, escape_literal(lemma), to_lang(sys.argv[3])))
+            left.write("%s <http://www.w3.org/2004/02/skos/core#definition> \"%s\"@%s .\n" % (sense_id, escape_literal(defn), to_lang(sys.argv[3])))
  
 
 def write_align(name, links):
