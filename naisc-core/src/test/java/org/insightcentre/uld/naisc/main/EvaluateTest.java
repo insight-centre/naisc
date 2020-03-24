@@ -63,7 +63,7 @@ public class EvaluateTest {
         expResult.tp = 1;
         expResult.fp = 3;
         expResult.fn = 2;
-        Evaluate.EvaluationResults result = Evaluate.evaluate(output, gold, STDERR, false);
+        Evaluate.EvaluationResults result = Evaluate.evaluate(output, gold, STDERR);
         assertEquals(expResult.tp, result.tp);
         assertEquals(expResult.fp, result.fp);
         assertEquals(expResult.fn, result.fn);

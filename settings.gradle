@@ -1,3 +1,5 @@
 rootProject.name = 'naisc'
 
-include 'naisc-core', 'naisc-meas', 'naisc-cili'
+include 'naisc-core', 'naisc-meas', 'naisc-cili', 'naisc-elexis'
+include 'naisc-elexis'
+
