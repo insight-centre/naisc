@@ -2,9 +2,8 @@ package org.insightcentre.uld.naisc.main;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
+
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -18,7 +17,11 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.vocabulary.RDFS;
+import org.apache.jena.vocabulary.SKOS;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.BlockingStrategy;
@@ -59,6 +62,7 @@ public class Main {
         p.printHelpOn(System.err);
         System.exit(-1);
     }
+
     final static ObjectMapper mapper = new ObjectMapper();
 
     private static final LangStringPair EMPTY_LANG_STRING_PAIR = new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "", "");
@@ -66,20 +70,20 @@ public class Main {
     /**
      * Execute NAISC
      *
-     * @param name The identifier for this run
-     * @param leftFile The left RDF dataset to align
-     * @param rightFile The right RDF dataset to align
+     * @param name          The identifier for this run
+     * @param leftFile      The left RDF dataset to align
+     * @param rightFile     The right RDF dataset to align
      * @param configuration The configuration file
-     * @param outputFile The output file to write to (null for STDOUT)
-     * @param partialSoln A partial solution
-     * @param outputXML If true output XML
-     * @param monitor Listener for status updates
-     * @param loader The loader of datasets
+     * @param outputFile    The output file to write to (null for STDOUT)
+     * @param partialSoln   A partial solution
+     * @param outputXML     If true output XML
+     * @param monitor       Listener for status updates
+     * @param loader        The loader of datasets
      */
     @SuppressWarnings("UseSpecificCatch")
     public static void execute(String name, File leftFile, File rightFile, File configuration,
-            File outputFile, Option<File> partialSoln, boolean outputXML, ExecuteListener monitor,
-            DatasetLoader loader) {
+                               File outputFile, Option<File> partialSoln, boolean outputXML, ExecuteListener monitor,
+                               DatasetLoader loader) {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading Configuration");
             final Configuration config = mapper.readValue(configuration, Configuration.class);
@@ -93,19 +97,19 @@ public class Main {
     /**
      * Execute NAISC
      *
-     * @param name The identifier for this run
-     * @param leftFile The left RDF dataset to align
-     * @param rightFile The right RDF dataset to align
-     * @param config The configuration
-     * @param outputFile The output file to write to (null for STDOUT)
+     * @param name        The identifier for this run
+     * @param leftFile    The left RDF dataset to align
+     * @param rightFile   The right RDF dataset to align
+     * @param config      The configuration
+     * @param outputFile  The output file to write to (null for STDOUT)
      * @param partialSoln A partial solution
-     * @param outputXML If true output XML
-     * @param monitor Listener for status updates
-     * @param loader The loader of datasets
+     * @param outputXML   If true output XML
+     * @param monitor     Listener for status updates
+     * @param loader      The loader of datasets
      */
     @SuppressWarnings("UseSpecificCatch")
     public static void execute(String name, File leftFile, File rightFile, Configuration config,
-            File outputFile, Option<File> partialSoln, boolean outputXML, ExecuteListener monitor, DatasetLoader loader) {
+                               File outputFile, Option<File> partialSoln, boolean outputXML, ExecuteListener monitor, DatasetLoader loader) {
         try {
             AlignmentSet finalAlignment = execute(name, leftFile, rightFile, config, partialSoln, monitor, loader);
             monitor.updateStatus(Stage.FINALIZING, "Saving");
@@ -125,18 +129,18 @@ public class Main {
     /**
      * Execute NAISC
      *
-     * @param name The identifier for this run
-     * @param leftFile The left RDF dataset to align
-     * @param rightFile The right RDF dataset to align
-     * @param config The configuration
+     * @param name        The identifier for this run
+     * @param leftFile    The left RDF dataset to align
+     * @param rightFile   The right RDF dataset to align
+     * @param config      The configuration
      * @param partialSoln A partial solution
-     * @param monitor Listener for status updates
-     * @param loader The loader of datasets
+     * @param monitor     Listener for status updates
+     * @param loader      The loader of datasets
      * @return The alignment
      */
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute(String name, File leftFile, File rightFile, Configuration config,
-            Option<File> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
+                                       Option<File> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
         try {
 
             final Option<AlignmentSet> partial;
@@ -158,18 +162,18 @@ public class Main {
     /**
      * Execute NAISC
      *
-     * @param name The identifier for this run
-     * @param leftFile The left RDF dataset to align
-     * @param rightFile The right RDF dataset to align
-     * @param config The configuration
+     * @param name        The identifier for this run
+     * @param leftFile    The left RDF dataset to align
+     * @param rightFile   The right RDF dataset to align
+     * @param config      The configuration
      * @param partialSoln A partial solution
-     * @param monitor Listener for status updates
-     * @param loader The loader of datasets
+     * @param monitor     Listener for status updates
+     * @param loader      The loader of datasets
      * @return The alignment
      */
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute2(String name, File leftFile, File rightFile, Configuration config,
-            Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
+                                        Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
             Dataset leftModel = loader.fromFile(leftFile, name + "/left");
@@ -189,19 +193,19 @@ public class Main {
     /**
      * Execute NAISC, limiting the results to a gold set
      *
-     * @param name The identifier for this run
-     * @param leftFile The left RDF dataset to align
-     * @param rightFile The right RDF dataset to align
-     * @param goldFile The gold standard
-     * @param config The configuration
+     * @param name        The identifier for this run
+     * @param leftFile    The left RDF dataset to align
+     * @param rightFile   The right RDF dataset to align
+     * @param goldFile    The gold standard
+     * @param config      The configuration
      * @param partialSoln A partial solution
-     * @param monitor Listener for status updates
-     * @param loader The loader of datasets
+     * @param monitor     Listener for status updates
+     * @param loader      The loader of datasets
      * @return The alignment
      */
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet executeLimitedToGold(String name, File leftFile, File rightFile, File goldFile, Configuration config,
-            Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
+                                                    Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
             Dataset leftModel = loader.fromFile(leftFile, name + "/left");
@@ -226,7 +230,7 @@ public class Main {
 
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute(String name, Dataset leftModel, Dataset rightModel, Configuration config,
-            Option<AlignmentSet> partialSoln, ExecuteListener monitor, Set<Resource> left, Set<Resource> right, DatasetLoader loader) {
+                                       Option<AlignmentSet> partialSoln, ExecuteListener monitor, Set<Resource> left, Set<Resource> right, DatasetLoader loader) {
         try {
             Lazy<Analysis> analysis = Lazy.fromClosure(() -> {
                 DatasetAnalyzer analyzer = new DatasetAnalyzer();
@@ -238,7 +242,7 @@ public class Main {
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading lenses");
             Dataset combined;
-            if(loader != null) {
+            if (loader != null) {
                 combined = loader.combine(leftModel, rightModel, name + "/combined");
             } else {
                 monitor.updateStatus(Stage.INITIALIZING, "Combining both models simply, querying is not enabled");
@@ -254,13 +258,13 @@ public class Main {
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Matcher");
             Matcher matcher = config.makeMatcher();
-            
+
             Rescaler rescaler = config.makeRescaler();
 
             monitor.updateStatus(Stage.BLOCKING, "Blocking");
             Iterable<Pair<Resource, Resource>> _blocks = blocking.block(leftModel, rightModel, monitor);
             final Iterable<Pair<Resource, Resource>> blocks;
-            if(config.ignorePreexisting) {
+            if (config.ignorePreexisting) {
                 _blocks = ExistingLinks.filterBlocking(_blocks, ExistingLinks.findPreexisting(scorers, leftModel, rightModel));
             }
             if (left != null && right != null) {
@@ -368,6 +372,117 @@ public class Main {
         }
     }
 
+    public static void executeMWSA(File mwsaFile, File configFile, File outputFile, ExecuteListener monitor, DatasetLoader loader) {
+
+        try {
+            monitor.updateStatus(Stage.INITIALIZING, "Reading Configuration");
+            final Configuration config = mapper.readValue(configFile, Configuration.class);
+
+            Model leftModel = ModelFactory.createDefaultModel();
+            Dataset left = new DefaultDatasetLoader.ModelDataset(leftModel);
+
+            Model rightModel = ModelFactory.createDefaultModel();
+            Dataset right = new DefaultDatasetLoader.ModelDataset(rightModel);
+
+
+            Map<String, Resource> leftResByDef = new HashMap<>(), rightResByDef = new HashMap<>();
+            try (BufferedReader br = new BufferedReader(new FileReader(mwsaFile))) {
+                String line;
+                Map<Pair<String, String>, Set<String>> leftDefns = new HashMap<>(), rightDefns = new HashMap<>();
+                while ((line = br.readLine()) != null) {
+                    String[] elems = line.split("\t");
+                    if (elems.length == 3) {
+                        Pair<String, String> key = new Pair<>(elems[0], "");
+                        if (!leftDefns.containsKey(key)) {
+                            leftDefns.put(key, new HashSet<>());
+                        }
+                        leftDefns.get(key).add(elems[1]);
+                        if (!rightDefns.containsKey(key)) {
+                            rightDefns.put(key, new HashSet<>());
+                        }
+                        rightDefns.get(key).add(elems[2]);
+                    } else if (elems.length == 4) {
+                        Pair<String, String> key = new Pair<>(elems[0], elems[1]);
+                        if (!leftDefns.containsKey(key)) {
+                            leftDefns.put(key, new HashSet<>());
+                        }
+                        leftDefns.get(key).add(elems[2]);
+                        if (!rightDefns.containsKey(key)) {
+                            rightDefns.put(key, new HashSet<>());
+                        }
+                        rightDefns.get(key).add(elems[3]);
+                    }
+                }
+                buildMWSADataset(leftModel, leftDefns, leftResByDef);
+                buildMWSADataset(rightModel, rightDefns, rightResByDef);
+            }
+            AlignmentSet set = execute("naisc", left, right, config, new None<>(), monitor, null, null, loader);
+
+            Map<Pair<Resource, Resource>, String> results = new HashMap<>();
+            for (Alignment a : set) {
+                results.put(new Pair<>(a.entity1, a.entity2), a.relation);
+            }
+            try (BufferedReader br = new BufferedReader(new FileReader(mwsaFile))) {
+                try (PrintWriter out = new PrintWriter(outputFile)) {
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        String[] elems = line.split("\t");
+                        Resource r1 = leftResByDef.get(elems[elems.length - 2] + "\t" + elems[0]);
+                        Resource r2 = rightResByDef.get(elems[elems.length - 1] + "\t" + elems[0]);
+                        if (r1 == null || r2 == null) {
+                            throw new RuntimeException("file changed?");
+                        }
+                        String result = results.get(new Pair<>(r1, r2));
+                        if(result != null) {
+                            out.println(line + "\t" + mapResult(result));
+                        } else {
+                            out.println(line + "\tnone");
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception x) {
+            x.printStackTrace();
+            monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
+            monitor.message(Stage.FAILED, NaiscListener.Level.CRITICAL, "The process failed due to an exception: " + x.getClass().getName() + ": " + x.getMessage());
+        }
+    }
+
+    private static String mapResult(String result) {
+        if(result.equals(Alignment.SKOS_EXACT_MATCH)) {
+            return "exact";
+        } else if(result.equals(SKOS.narrowMatch.toString())) {
+            return "narrower";
+        } else if(result.equals(SKOS.broadMatch.toString())) {
+            return "narrower";
+        } else if(result.equals(SKOS.relatedMatch.toString())) {
+            return "narrower";
+        } else {
+            System.err.println("Unrecognized relation: " + result);
+            return "none";
+        }
+    }
+
+    private static void buildMWSADataset(Model model, Map<Pair<String, String>, Set<String>> defns, Map<String, Resource> resByDef) {
+        int i = 0;
+        for (Map.Entry<Pair<String, String>, Set<String>> e : defns.entrySet()) {
+            for (String defn : e.getValue()) {
+                Resource r = model.createResource("entry" + i++);
+                if (resByDef.containsKey(defn + "\t" + e.getKey()._1)) {
+                    throw new RuntimeException("Duplicate definition: " + defn);
+                }
+                resByDef.put(defn + "\t" + e.getKey()._1, r);
+                r.addLiteral(SKOS.definition, defn);
+                r.addLiteral(RDFS.label, e.getKey()._1);
+                if (!e.getKey()._2.equalsIgnoreCase("")) {
+                    r.addLiteral(model.createProperty("http://www.lexinfo.net/ontology/2.0/lexinfo#partOfSpeech"),
+                            model.createResource("http://www.lexinfo.net/ontology/2.0/lexinfo#" + e.getKey()._2));
+                }
+            }
+        }
+    }
+
     @SuppressWarnings("UseSpecificCatch")
     public static void main(String[] args) {
         try {
@@ -378,6 +493,7 @@ public class Main {
                     accepts("p", "A partial matching that will be used as the basis for matching").withRequiredArg().ofType(File.class);
                     accepts("xml", "Output as XML");
                     accepts("q", "Suppress output");
+                    accepts("mwsa", "A MWSA file to link").withRequiredArg().ofType(File.class);
                     nonOptions("Two RDF files");
                 }
             };
@@ -388,35 +504,43 @@ public class Main {
                 badOptions(p, x.getMessage());
                 return;
             }
-            // Validate options
-            if (os.nonOptionArguments().size() != 2) {
-                badOptions(p, "Wrong number of RDF files specified");
-                return;
-            }
-            final File left = new File(os.nonOptionArguments().get(0).toString());
-            if (!left.exists()) {
-                badOptions(p, left.getName() + " does not exist");
-                return;
-            }
-            final File right = new File(os.nonOptionArguments().get(1).toString());
-            if (!right.exists()) {
-                badOptions(p, right.getName() + " does not exist");
-                return;
-            }
             final File outputFile = (File) os.valueOf("o");
             final File configuration = (File) os.valueOf("c");
             if (configuration == null || !configuration.exists()) {
                 badOptions(p, "Configuration does not exist or not specified");
             }
-            final Option<File> partialSoln = os.valueOf("p") == null ? new None<>() : new Some<>((File) os.valueOf("p"));
-            //final boolean example = os.has("x");
-            final boolean outputXML = os.has("xml");
-            //final boolean hard = !os.has("easy");
-            execute("naisc", left, right, configuration, outputFile,
-                    partialSoln, outputXML,
-                    os.valueOf("q").equals(Boolean.TRUE)
-                    ? ExecuteListeners.NONE : ExecuteListeners.STDERR,
-                    new DefaultDatasetLoader());
+            if (os.hasArgument("mwsa")) {
+                executeMWSA((File) os.valueOf("mwsa"), configuration, outputFile, os.valueOf("q") != null && os.valueOf("q").equals(Boolean.TRUE)
+                                ? ExecuteListeners.NONE : ExecuteListeners.STDERR,
+                        new DefaultDatasetLoader());
+
+            } else {
+                // Validate options
+                if (os.nonOptionArguments().size() != 2) {
+                    badOptions(p, "Wrong number of RDF files specified");
+                    return;
+                }
+                final File left = new File(os.nonOptionArguments().get(0).toString());
+                if (!left.exists()) {
+                    badOptions(p, left.getName() + " does not exist");
+                    return;
+                }
+                final File right = new File(os.nonOptionArguments().get(1).toString());
+                if (!right.exists()) {
+                    badOptions(p, right.getName() + " does not exist");
+                    return;
+                }
+
+                final Option<File> partialSoln = os.valueOf("p") == null ? new None<>() : new Some<>((File) os.valueOf("p"));
+                //final boolean example = os.has("x");
+                final boolean outputXML = os.has("xml");
+                //final boolean hard = !os.has("easy");
+                execute("naisc", left, right, configuration, outputFile,
+                        partialSoln, outputXML,
+                        os.valueOf("q") != null && os.valueOf("q").equals(Boolean.TRUE)
+                                ? ExecuteListeners.NONE : ExecuteListeners.STDERR,
+                        new DefaultDatasetLoader());
+            }
         } catch (Throwable x) {
             x.printStackTrace();
             System.exit(-1);
@@ -468,17 +592,17 @@ public class Main {
         }
 
     }
-    
+
     private static AlignmentSet convertAligns(ConcurrentLinkedQueue<TmpAlignment> tmpAligns, Rescaler rescaler) {
         List<Alignment> aligns = new ArrayList<>();
         double[] scores = new double[tmpAligns.size()];
         int i = 0;
-        for(TmpAlignment t : tmpAligns) {
+        for (TmpAlignment t : tmpAligns) {
             scores[i++] = t.result.value();
         }
         i = 0;
         scores = rescaler.rescale(scores);
-        for(TmpAlignment t : tmpAligns) {
+        for (TmpAlignment t : tmpAligns) {
             aligns.add(new Alignment(t.left, t.right, scores[i++], t.relation, t.features));
         }
         return new AlignmentSet(aligns);
@@ -496,9 +620,9 @@ public class Main {
             this.right = right;
             this.result = result;
             this.relation = relation;
-            if(featureSet != null) {
+            if (featureSet != null) {
                 this.features = new Object2DoubleOpenHashMap<>();
-                for(int i = 0; i < featureSet.names.length; i++) {
+                for (int i = 0; i < featureSet.names.length; i++) {
                     this.features.put(featureSet.names[i]._1 + "-" + featureSet.names[i]._2, featureSet.values[i]);
                 }
             } else {
