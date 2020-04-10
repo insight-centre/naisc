@@ -5,6 +5,7 @@ import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.Dataset;
+import org.insightcentre.uld.naisc.Feature;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.main.ExecuteListeners;
@@ -56,17 +57,24 @@ public class CommandTest {
             params.put("id", "test");
             Command instance = new Command();
             GraphFeature feature = instance.makeFeature(sparqlData, params, null, null, ExecuteListeners.NONE);
-            double[] result = feature.extractFeatures(model.createResource("http://www.example.com/example"),
+            Feature[] result = feature.extractFeatures(model.createResource("http://www.example.com/example"),
                     model.createResource("http://www.example.com/anotherExample"));
             double[] expResult = new double[]{"http://www.example.com/example".length(),
                 "http://www.example.com/anotherExample".length()
             };
             assertArrayEquals(new String[]{"length1", "length2"}, feature.getFeatureNames());
-            assertArrayEquals(expResult, result, 0.0);
+            assertArrayEquals(expResult, toDbA(result), 0.0);
         } catch (ExternalCommandException x) {
             x.printStackTrace();
         }
         }
+    }
+ private double[] toDbA(Feature[] f) {
+        double[] d = new double[f.length];
+        for(int i = 0; i < f.length; i++) {
+            d[i] = f[i].value;
+        }
+        return d;
     }
 
 }

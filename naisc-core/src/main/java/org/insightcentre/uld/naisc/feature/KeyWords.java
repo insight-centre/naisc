@@ -100,7 +100,7 @@ public class KeyWords implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LensResult lsp, NaiscListener log) {
+        public Feature[] extractFeatures(LensResult lsp, NaiscListener log) {
             IntSet s1 = findKeywords(lsp.string1.toLowerCase());
             IntSet s2 = findKeywords(lsp.string2.toLowerCase());
             double A = s1.size();
@@ -109,7 +109,7 @@ public class KeyWords implements TextFeatureFactory {
             double AB = s1.size();
             double dice = 2.0 * AB / (A + B);
             double jaccard = AB / (A + B - AB);
-            return new double[]{dice, jaccard};
+            return Feature.mkArray(new double[]{dice, jaccard}, getFeatureNames());
         }
 
         @Override

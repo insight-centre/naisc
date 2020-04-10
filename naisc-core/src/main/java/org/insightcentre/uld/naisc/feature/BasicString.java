@@ -358,7 +358,7 @@ public class BasicString implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LensResult sp, NaiscListener log) {
+        public org.insightcentre.uld.naisc.Feature[] extractFeatures(LensResult sp, NaiscListener log) {
             DoubleArrayList featureValues = new DoubleArrayList();
             final String label1 = lowerCase ? sp.string1.toLowerCase() : sp.string1;
             final String label2 = lowerCase ? sp.string2.toLowerCase() : sp.string2;
@@ -370,7 +370,7 @@ public class BasicString implements TextFeatureFactory {
                 buildFeatures(sp.lang2, "char-", featureValues, label1, label2, label1.split(""), label2.split(""), true);
             }
 
-            return featureValues.toDoubleArray();
+            return org.insightcentre.uld.naisc.Feature.mkArray(featureValues.toDoubleArray(), getFeatureNames());
         }
 
         public static double longestCommonSubsequence(String[] s1, String[] s2) {

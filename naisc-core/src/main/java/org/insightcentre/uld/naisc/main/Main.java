@@ -300,9 +300,9 @@ public class Main {
                                 for (TextFeature featureExtractor : textFeatures) {
                                     if (featureExtractor.tags() == null || lens.tag() == null
                                             || featureExtractor.tags().contains(lens.tag())) {
-                                        double[] features = featureExtractor.extractFeatures(facet, monitor);
-                                        featureSet = featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
-                                                lens.id(), features, block._1, block._2));
+                                        Feature[] features = featureExtractor.extractFeatures(facet, monitor);
+                                        featureSet = featureSet.add(new FeatureSet(features,
+                                                lens.id(), block._1, block._2));
                                     }
                                 }
                             }
@@ -311,8 +311,8 @@ public class Main {
                                 monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block._1, block._2));
                             }
                             for (GraphFeature feature : dataFeatures) {
-                                double[] features = feature.extractFeatures(block._1, block._2, monitor);
-                                featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, block._1, block._2));
+                                Feature[] features = feature.extractFeatures(block._1, block._2, monitor);
+                                featureSet = featureSet.add(new FeatureSet(features, feature.id(), block._1, block._2));
                             }
                             if (featureSet.isEmpty()) {
                                 monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "An empty feature set was created");
@@ -322,7 +322,7 @@ public class Main {
                                 alignments.add(new TmpAlignment(block._1, block._2, score, scorer.relation(), config.includeFeatures ? featureSet : null));
                             }
                         } catch (Exception x) {
-                            monitor.updateStatus(Stage.FAILED, String.format("Failed to score %s <-> %s due to %s (%s)\n", block._1, block._2, x.getMessage(), x.getClass().getName()));
+                            monitor.updateStatus(Stage.FAILED, String.format("Failed to probability %s <-> %s due to %s (%s)\n", block._1, block._2, x.getMessage(), x.getClass().getName()));
                             x.printStackTrace();
 
                         }
@@ -407,7 +407,7 @@ public class Main {
 
             Map<Pair<Resource, Resource>, String> results = new HashMap<>();
             for (Alignment a : set) {
-                results.put(new Pair<>(a.entity1, a.entity2), a.relation);
+                results.put(new Pair<>(a.entity1, a.entity2), a.property);
             }
             try (BufferedReader br = new BufferedReader(new FileReader(mwsaFile))) {
                 try (PrintWriter out = new PrintWriter(outputFile)) {
@@ -446,7 +446,7 @@ public class Main {
         } else if(result.equals(SKOS.relatedMatch.toString())) {
             return "narrower";
         } else {
-            System.err.println("Unrecognized relation: " + result);
+            System.err.println("Unrecognized property: " + result);
             return "none";
         }
     }

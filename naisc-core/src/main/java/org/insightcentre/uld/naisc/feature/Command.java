@@ -127,10 +127,10 @@ public class Command implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LensResult facet, NaiscListener log) {
+        public Feature[] extractFeatures(LensResult facet, NaiscListener log) {
             try {
                 out.get().println(mapper.writeValueAsString(facet));
-                return mapper.readValue(in.get().readLine(), double[].class);
+                return mapper.readValue(in.get().readLine(), Feature[].class);
             } catch (IOException x) {
                 throw new RuntimeException();
             }

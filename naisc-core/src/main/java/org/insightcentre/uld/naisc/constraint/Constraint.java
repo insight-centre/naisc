@@ -10,21 +10,21 @@ import org.insightcentre.uld.naisc.Alignment;
  */
 public abstract class Constraint {
     /** An epsilon value that can be used in calculating scores. Generally
-     * the delta in score should be <code>Math.log(p + 1.0 + EPS)</code>
+     * the delta in probability should be <code>Math.log(p + 1.0 + EPS)</code>
      */
     public static final double EPS = 1e-10;
-    /** The score of this alignment */
+    /** The probability of this alignment */
     public double score;
     
     /** 
-     * The alignments that this score is calculated from 
+     * The alignments that this probability is calculated from
      * @return The list passed
      */
     public abstract List<Alignment> alignments();
     
     /**
-     * Create an score
-     * @param score The score
+     * Create an probability
+     * @param score The probability
      */
     protected Constraint(double score) {
         this.score = score;
@@ -32,13 +32,13 @@ public abstract class Constraint {
 
     
     /**
-     * Calculate the change in score that would happen if the alignment were added
+     * Calculate the change in probability that would happen if the alignment were added
      * to the current set of alignments
      * @param alignment The alignment to add
-     * @return The score delta, i.e., <code>this.add(alignment).score - this.score</code>
+     * @return The probability delta, i.e., <code>this.add(alignment).probability - this.probability</code>
      */
     public double delta(Alignment alignment) {
-        return Math.log(alignment.score + 1.0 + EPS);
+        return Math.log(alignment.probability + 1.0 + EPS);
     }
 
     /**

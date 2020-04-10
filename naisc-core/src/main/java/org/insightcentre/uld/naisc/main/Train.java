@@ -18,7 +18,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
@@ -30,8 +29,6 @@ import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
-import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
-import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
 import org.insightcentre.uld.naisc.matcher.Prematcher;
 import org.insightcentre.uld.naisc.util.Lazy;
 
@@ -261,7 +258,7 @@ public class Train {
 
                 if (a.has()) {
                     FeatureSet featureSet = makeFeatures(block._1, block._2, lenses, monitor, textFeatures, dataFeatures);
-                    trainingData.get(prop).add(featureSet.withScore(a.get().score));
+                    trainingData.get(prop).add(featureSet.withScore(a.get().probability));
                     goldAlignments.remove(a.get());
                     positives.put(prop, positives.getInt(prop) + 1);
                 } else {
@@ -278,7 +275,7 @@ public class Train {
         for (Alignment a : goldAlignments) {
             FeatureSet featureSet = makeFeatures(a.entity1,
                     a.entity2, lenses, monitor, textFeatures, dataFeatures);
-            trainingData.get(a.relation).add(featureSet.withScore(a.score));
+            trainingData.get(a.property).add(featureSet.withScore(a.probability));
             unblockedGold++;
         }
 
@@ -342,9 +339,9 @@ public class Train {
             for (TextFeature featureExtractor : textFeatures) {
                 if (featureExtractor.tags() == null || lens.tag() == null
                         || featureExtractor.tags().contains(lens.tag())) {
-                    double[] features = featureExtractor.extractFeatures(facet);
-                    featureSet = featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
-                            lens.id(), features, res1, res2));
+                    Feature[] features = featureExtractor.extractFeatures(facet);
+                    featureSet = featureSet.add(new FeatureSet(features,
+                            lens.id(), res1, res2));
                 }
             }
         }
@@ -352,8 +349,8 @@ public class Train {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", res1, res2));
         }
         for (GraphFeature feature : dataFeatures) {
-            double[] features = feature.extractFeatures(res1, res2);
-            featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, res1, res2));
+            Feature[] features = feature.extractFeatures(res1, res2);
+            featureSet = featureSet.add(new FeatureSet(features, feature.id(), res1, res2));
         }
         return featureSet;
     }
@@ -366,7 +363,7 @@ public class Train {
                     accepts("c", "The configuration to use").withRequiredArg().ofType(File.class);
                     accepts("q", "Quiet (suppress output)");
                     accepts("n", "Negative Sampling rate (number of negative examples/positive example)").withRequiredArg().ofType(Double.class);
-                    nonOptions("Two RDF files and One Alignment RDF files (N-Triples, one per line with score after as a comment)");
+                    nonOptions("Two RDF files and One Alignment RDF files (N-Triples, one per line with probability after as a comment)");
                 }
             };
             final OptionSet os;

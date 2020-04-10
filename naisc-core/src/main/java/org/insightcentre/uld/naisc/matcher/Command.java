@@ -19,8 +19,8 @@ import org.insightcentre.uld.naisc.util.ExternalCommandException;
 
 /**
  * Use an external command for matching. The command will get as input the
- * problem as tab-seperated values consisting of `entity1`, `relation`,
- * `entity2` and `score`
+ * problem as tab-seperated values consisting of `entity1`, `property`,
+ * `entity2` and `probability`
  *
  * Input:  <code>
  * http://www.example.com/uri1  http://www.w3.org/2004/02/skos/core#exactMatch  http://www.example.com/uri2 0.5
@@ -29,7 +29,7 @@ import org.insightcentre.uld.naisc.util.ExternalCommandException;
  * </code>
  *
  * The command is expected to print only those lines that are in the final
- * matching. A score of Infinity means that the match must be included
+ * matching. A probability of Infinity means that the match must be included
  *
  * @author John McCrae
  */
@@ -86,10 +86,10 @@ public class Command implements MatcherFactory {
                         try (PrintWriter out = new PrintWriter(pr.getOutputStream())) {
                             for (Alignment as : matches) {
                                 if(partialMatches.contains(as)) {
-                                    out.println(as.entity1 + "\t" + as.relation + "\t" + as.entity2 + "\tInfinity");
+                                    out.println(as.entity1 + "\t" + as.property + "\t" + as.entity2 + "\tInfinity");
                                     
                                 } else {
-                                    out.println(as.entity1 + "\t" + as.relation + "\t" + as.entity2 + "\t" + as.score);
+                                    out.println(as.entity1 + "\t" + as.property + "\t" + as.entity2 + "\t" + as.probability);
                                 }
                             }
                             out.flush();

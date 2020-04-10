@@ -12,11 +12,11 @@ def main():
         cell = map.find("{http://knowledgeweb.semanticweb.org/heterogeneity/alignment}Cell")
         e1 = cell.find("{http://knowledgeweb.semanticweb.org/heterogeneity/alignment}entity1").attrib["{http://www.w3.org/1999/02/22-rdf-syntax-ns#}resource"]
         e2 = cell.find("{http://knowledgeweb.semanticweb.org/heterogeneity/alignment}entity2").attrib["{http://www.w3.org/1999/02/22-rdf-syntax-ns#}resource"]
-        score = cell.find("{http://knowledgeweb.semanticweb.org/heterogeneity/alignment}measure").text
-        if cell.find("{http://knowledgeweb.semanticweb.org/heterogeneity/alignment}relation").text == "=":
-            print("<%s> <http://www.w3.org/2004/02/skos/core#exactMatch> <%s> . # %s" % (e1, e2, score))
+        probability = cell.find("{http://knowledgeweb.semanticweb.org/heterogeneity/alignment}measure").text
+        if cell.find("{http://knowledgeweb.semanticweb.org/heterogeneity/alignment}property").text == "=":
+            print("<%s> <http://www.w3.org/2004/02/skos/core#exactMatch> <%s> . # %s" % (e1, e2, probability))
         else:
-            print("Unsupported " + cell.find("{http://knowledgeweb.semanticweb.org/heterogeneity/alignment}relation").text)
+            print("Unsupported " + cell.find("{http://knowledgeweb.semanticweb.org/heterogeneity/alignment}property").text)
 
 
 if __name__ == "__main__":

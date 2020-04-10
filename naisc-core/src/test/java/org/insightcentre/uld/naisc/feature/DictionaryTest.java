@@ -52,8 +52,8 @@ public class DictionaryTest {
         params.put("dict","src/test/resources/example.dict");
         Dictionary instance = new Dictionary();
         TextFeature extractor = instance.makeFeatureExtractor(tags, params);
-        assertEquals(extractor.extractFeatures(new LensResult(Language.ENGLISH, Language.ENGLISH, "cat", "feline", null))[0],1.0,0.0);
-        assertEquals(extractor.extractFeatures(new LensResult(Language.ENGLISH, Language.ENGLISH, "cat", "canine", null))[0],0.0,0.0);
+        assertEquals(extractor.extractFeatures(new LensResult(Language.ENGLISH, Language.ENGLISH, "cat", "feline", null))[0].value,1.0,0.0);
+        assertEquals(extractor.extractFeatures(new LensResult(Language.ENGLISH, Language.ENGLISH, "cat", "canine", null))[0].value,0.0,0.0);
         
     }
 

@@ -116,7 +116,7 @@ public class CrossFold {
      * @param config The alignment configuration
      * @param _monitor A listener for events
      * @param loader The dataset loader
-     * @return The alignment and evaluation score
+     * @return The alignment and evaluation probability
      * @throws IOException If an error occurs reading a file
      */
     public static CrossFoldResult execute(String name, Dataset leftModel, Dataset rightModel,

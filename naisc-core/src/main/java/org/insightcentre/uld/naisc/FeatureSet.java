@@ -72,6 +72,21 @@ public class FeatureSet {
         assert(this.names.length == this.values.length);
     }
 
+    public FeatureSet(Feature[] features, String lensName, Resource entity1, Resource entity2) {
+        this.names = new StringPair[features.length];
+        this.values = new double[features.length];
+        int i = 0;
+        for(Feature f : features) {
+            this.names[i] = new StringPair(features[i].name, lensName);
+            this.values[i] = features[i].value;
+            i++;
+        }
+        assert(entity1 != null);
+        assert(entity2 != null);
+        this.entity1 = entity1.getURI();
+        this.entity2 = entity2.getURI();
+    }
+
 //    /**
 //     * Add this dataset to another adding a string to the names of each element. 
 //     * This should be used when combining two similar feature sets from different
@@ -114,7 +129,7 @@ public class FeatureSet {
         Set<StringPair> nameSet = new HashSet<>(Arrays.asList(names));
         for(int i = 0; i < other.names.length; i++) {
             if(nameSet.contains(other.names[i])) {
-                throw new IllegalArgumentException("Adding features with duplicate names");
+                throw new IllegalArgumentException("Adding features with duplicate names: " + other.names[i]);
             } else {
                 nameSet.add(other.names[i]);
             }

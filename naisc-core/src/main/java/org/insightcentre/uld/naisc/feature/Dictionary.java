@@ -87,12 +87,12 @@ public class Dictionary implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LensResult lsp, NaiscListener log) {
+        public Feature[] extractFeatures(LensResult lsp, NaiscListener log) {
             StringPair sp1 = new StringPair(lsp.string1, lsp.string2);
             StringPair sp2 = new StringPair(lsp.string2, lsp.string1);
-            return new double[] {
+            return Feature.mkArray(new double[] {
                 dictionary.contains(sp1) || dictionary.contains(sp2) ? 1.0 : 0.0
-            };
+            }, featName);
         }
 
         private static final String[] featName = new String[] { "dict" };

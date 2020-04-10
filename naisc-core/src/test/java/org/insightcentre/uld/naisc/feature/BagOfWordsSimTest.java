@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.insightcentre.uld.naisc.Feature;
 import org.insightcentre.uld.naisc.LensResult;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.junit.After;
@@ -54,7 +55,15 @@ public class BagOfWordsSimTest {
         TextFeature extractor = instance.makeFeatureExtractor(Collections.EMPTY_SET,   params);
         assertArrayEquals(new String[] { "bow" }, extractor.getFeatureNames());
         assertArrayEquals(new double [] { (1.0-Math.exp(-0.5))/(1.0-Math.exp(-2.5)-Math.exp(-1)+Math.exp(-0.5)) },
-                     extractor.extractFeatures(new LensResult(Language.ABKHAZIAN, Language.ABKHAZIAN, "a b c d e", "a z", null)), 0.0001);
+                     toDbA(extractor.extractFeatures(new LensResult(Language.ABKHAZIAN, Language.ABKHAZIAN, "a b c d e", "a z", null))), 0.0001);
+
+    }
+    private double[] toDbA(Feature[] f) {
+        double[] d = new double[f.length];
+        for(int i = 0; i < f.length; i++) {
+            d[i] = f[i].value;
+        }
+        return d;
     }
 
 }

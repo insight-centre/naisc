@@ -83,15 +83,15 @@ public class ExamineFeature {
                 for (TextFeature featureExtractor : textFeatures) {
                     if (featureExtractor.tags() == null || lens.tag() == null
                             || featureExtractor.tags().contains(lens.tag())) {
-                        double[] features = featureExtractor.extractFeatures(facet);
-                        featureSet = featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
-                                lens.id(), features, res1, res2));
+                        Feature[] features = featureExtractor.extractFeatures(facet);
+                        featureSet = featureSet.add(new FeatureSet(features,
+                                lens.id(), res1, res2));
                     }
                 }
             }
             for (GraphFeature feature : dataFeatures) {
-                double[] features = feature.extractFeatures(res1, res2);
-                featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, res1, res2));
+                Feature[] features = feature.extractFeatures(res1, res2);
+                featureSet = featureSet.add(new FeatureSet(features, feature.id(), res1, res2));
             }
             return featureSet;
 

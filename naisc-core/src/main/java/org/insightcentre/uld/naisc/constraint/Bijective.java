@@ -119,8 +119,8 @@ public class Bijective implements ConstraintFactory {
 
         public BijectiveImpl(SimpleCache<BijectiveCacheEntry, Boolean> cache, 
                 Random random, Alignment alignment, BijectiveImpl parent, Surjection surjection, 
-                double score) {
-            super(score);
+                double probability) {
+            super(probability);
             this.cache = cache;
             this.id = random.nextLong();
             this.random = random;
@@ -133,7 +133,7 @@ public class Bijective implements ConstraintFactory {
 
         @Override
         public Constraint add(Alignment alignment) {
-            double newscore = this.score + delta(alignment);
+            double newscore = this.probability + delta(alignment);
             return new BijectiveImpl(cache, random, alignment, this, surjection, newscore);
         }
 

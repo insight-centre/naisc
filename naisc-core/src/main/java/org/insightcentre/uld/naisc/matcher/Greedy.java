@@ -90,8 +90,8 @@ public class Greedy implements MatcherFactory {
                 out = new PrintWriter("tmp.data");
             } catch(IOException x) { out = null; }
             for (Alignment alignment : matches.getAlignments()) {
-                out.printf("%s,%s,%.4f,", alignment.entity1, alignment.entity2, alignment.score);
-                if (alignment.score > threshold && constraint.canAdd(alignment)) {
+                out.printf("%s,%s,%.4f,", alignment.entity1, alignment.entity2, alignment.probability);
+                if (alignment.probability > threshold && constraint.canAdd(alignment)) {
                     overThreshold++;
                     //Constraint newConstraint = constraint.add(alignment);
                     double newScore = constraint.score + constraint.delta(alignment);
@@ -106,7 +106,7 @@ public class Greedy implements MatcherFactory {
                         lastComplete = constraint.copy();
                         lastComplete.add(alignment);
                     }
-                } else if(!Double.isFinite(alignment.score)) {
+                } else if(!Double.isFinite(alignment.probability)) {
                     nonFinite++;
                     out.println("NONFINITE");
                 } else {
@@ -117,7 +117,7 @@ public class Greedy implements MatcherFactory {
             out.close();
             if (lastComplete != null) {
                 List<Alignment> alignment = lastComplete.alignments();
-                listener.updateStatus(NaiscListener.Stage.MATCHING, String.format("Predicted %d/%d alignments (%d non-finite, score=%.4f)", alignment.size(), overThreshold, nonFinite, lastComplete.score));
+                listener.updateStatus(NaiscListener.Stage.MATCHING, String.format("Predicted %d/%d alignments (%d non-finite, probability=%.4f)", alignment.size(), overThreshold, nonFinite, lastComplete.score));
                 return new AlignmentSet(alignment);
             } else {
                 throw new UnsolvableConstraint("No complete solution was generated");

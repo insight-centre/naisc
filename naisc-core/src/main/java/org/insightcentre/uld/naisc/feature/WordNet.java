@@ -137,14 +137,14 @@ public class WordNet implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LensResult facet, NaiscListener log) {
+        public Feature[] extractFeatures(LensResult facet, NaiscListener log) {
             double[] vec = new double[methods.size() * 2];
             int i = 0;
             for(Method method : methods) {
                 System.arraycopy(score(facet.string1, facet.string2, method), 0, vec, i, 2);
                 i += 2;
             }
-            return vec;
+            return Feature.mkArray(vec, getFeatureNames());
 
         }
 

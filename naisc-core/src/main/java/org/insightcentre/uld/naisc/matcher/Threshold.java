@@ -12,7 +12,7 @@ import org.insightcentre.uld.naisc.MatcherFactory;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
 
 /**
- * Simply extract all links whose score is over a given threshold
+ * Simply extract all links whose probability is over a given threshold
  * 
  * @author John McCrae
  */
@@ -53,7 +53,7 @@ public class Threshold implements MatcherFactory {
             matches.addAll(initial);
             Iterator<Alignment> iter = matches.iterator();
             while(iter.hasNext()) {
-                final double score = iter.next().score;
+                final double score = iter.next().probability;
                 if(score < threshold)
                     iter.remove();
             }

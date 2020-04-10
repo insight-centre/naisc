@@ -144,7 +144,7 @@ public class Execution implements ExecuteListener {
                         + "prop TEXT, "
                         + "res2 TEXT, "
                         + "lens TEXT, "
-                        + "score REAL, "
+                        + "probability REAL, "
                         + "valid TEXT,"
                         + "list_order INTEGER,"
                         + "leftRoot TEXT,"
@@ -196,7 +196,7 @@ public class Execution implements ExecuteListener {
         try (Statement stat = connection.createStatement()) {
             stat.execute("UPDATE results SET list_order = id WHERE list_order = 0");
         }
-        try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,score,valid,leftRoot,rightRoot,leftPath,rightPath) VALUES (?,?,?,?,?,?,?,?,?,?)")) {
+        try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,probability,valid,leftRoot,rightRoot,leftPath,rightPath) VALUES (?,?,?,?,?,?,?,?,?,?)")) {
             for (DataViewEntry dve : dataView.entries) {
                 for (DataViewPath dvp : dve.paths) {
 
@@ -206,10 +206,10 @@ public class Execution implements ExecuteListener {
                     }
                     String lens = m == null ? "{}" : mapper.writeValueAsString(m);
                     pstat.setString(1, dvp.alignment.entity1.getURI());
-                    pstat.setString(2, dvp.alignment.relation);
+                    pstat.setString(2, dvp.alignment.property);
                     pstat.setString(3, dvp.alignment.entity2.getURI());
                     pstat.setString(4, lens);
-                    pstat.setDouble(5, dvp.alignment.score);
+                    pstat.setDouble(5, dvp.alignment.probability);
                     pstat.setString(6, dvp.alignment.valid.toString());
                     pstat.setString(7, dve.root);
                     pstat.setString(8, dvp.rightRoot);
@@ -281,7 +281,7 @@ public class Execution implements ExecuteListener {
                         pstat.close();
                         stat.execute("DELETE FROM results");
                     }
-                    try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,score,valid) VALUES (?,?,?,?,?,?)")) {
+                    try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,probability,valid) VALUES (?,?,?,?,?,?)")) {
 
                         for (RunResultRow rrr : rrrs) {
                             String lens = rrr.lens == null ? "{}" : mapper.writeValueAsString(rrr.lens);
@@ -345,9 +345,9 @@ public class Execution implements ExecuteListener {
                 try (Statement stat = connection.createStatement()) {
                     final String query;
                     if (offset >= 0 && limit > 0) {
-                        query = "SELECT res1, prop, res2, lens, score, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order LIMIT " + limit + " OFFSET " + offset;
+                        query = "SELECT res1, prop, res2, lens, probability, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order LIMIT " + limit + " OFFSET " + offset;
                     } else {
-                        query = "SELECT res1, prop, res2, lens, score, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order";
+                        query = "SELECT res1, prop, res2, lens, probability, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order";
                     }
                     try (ResultSet rs = stat.executeQuery(query)) {
                         while (rs.next()) {
@@ -378,7 +378,7 @@ public class Execution implements ExecuteListener {
 //    private static void populateCompareResults(String id, ObjectMapper mapper, List<Meas.CompareResultRow> crss) {
 //        try (Connection connection = connection(id)) {
 //            try (Statement stat = connection.createStatement()) {
-//                final String query = "SELECT res1, prop, res2, lens, score, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order";
+//                final String query = "SELECT res1, prop, res2, lens, probability, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order";
 //                try (ResultSet rs = stat.executeQuery(query)) {
 //                    while (rs.next()) {
 //                        Meas.CompareResultRow rrr = new Meas.CompareResultRow();
@@ -478,7 +478,7 @@ public class Execution implements ExecuteListener {
                     stat.execute();
                 }
                 try(PreparedStatement stat = connection.prepareStatement("SELECT results.res1, results.prop, " +
-                    "results.res2, results.score, results.lens, db2results.score, results.valid, db2results.valid " +
+                    "results.res2, results.probability, results.lens, db2results.probability, results.valid, db2results.valid " +
                     "FROM results LEFT JOIN db2.results AS db2results ON " +
                     "results.res1 = db2results.res1 AND " +
                     "results.prop = db2results.prop AND " +
@@ -640,7 +640,7 @@ public class Execution implements ExecuteListener {
                 }
                 connection.commit();
 
-                try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,score,valid,list_order) VALUES (?,?,?,?,?,?,?)")) {
+                try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,probability,valid,list_order) VALUES (?,?,?,?,?,?,?)")) {
 
                     String lens = "{}";
                     pstat.setString(1, subject);

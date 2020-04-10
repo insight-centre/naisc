@@ -4,16 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.Map;
-import org.apache.jena.rdf.model.Model;
+
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.GraphFeatureFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.util.FastPPR;
 import org.insightcentre.uld.naisc.util.FastPPR.DirectedGraph;
@@ -72,7 +67,7 @@ public class PPR implements GraphFeatureFactory {
             }
         }
         for (Alignment a : prealign) {
-            if (a.score > 0) {
+            if (a.probability > 0) {
                 final int i, j;
                 if (identifiers.containsKey(a.entity1)) {
                     i = identifiers.getInt(a.entity1);
@@ -111,10 +106,10 @@ public class PPR implements GraphFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
+        public Feature[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
             int i = identifiers.getInt(entity1);
             int j = identifiers.getInt(entity2);
-            return new double[]{FastPPR.estimatePPR(graph, i, j, pprConfig)};
+            return Feature.mkArray(new double[]{FastPPR.estimatePPR(graph, i, j, pprConfig)}, FEAT_NAMES);
         }
 
         @Override

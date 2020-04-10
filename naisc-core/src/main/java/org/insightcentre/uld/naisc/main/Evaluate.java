@@ -112,26 +112,26 @@ public class Evaluate {
             if (align.valid != Valid.unknown) {
                 continue;
             }
-            Option<Alignment> galign = gold.find(align.entity1, align.entity2, align.relation);
+            Option<Alignment> galign = gold.find(align.entity1, align.entity2, align.property);
             if (galign.has()) {
-                double gScore = galign.get().score;
-                outputScores.add(align.score);
+                double gScore = galign.get().probability;
+                outputScores.add(align.probability);
                 goldScores.add(gScore);
-                if (gScore > 0 && align.score > 0) {
+                if (gScore > 0 && align.probability > 0) {
                     er.tp++;
-                } else if (gScore <= 0 && align.score > 0) {
+                } else if (gScore <= 0 && align.probability > 0) {
                     if(!ignoreNotInGold || goldLefts.contains(align.entity1)  || goldRights.contains(align.entity2)) {
                         er.fp++;
                     }
                 }
-                for (int i = 0; 0.1 * i <= align.score && 0.1 * i <= 1.0; i++) {
-                    if (gScore > 0 && align.score > 0) {
+                for (int i = 0; 0.1 * i <= align.probability && 0.1 * i <= 1.0; i++) {
+                    if (gScore > 0 && align.probability > 0) {
                         er.thresholds.get(i)._2.tp++;
                     } else if (gScore <= 0) {
                         er.thresholds.get(i)._2.fp++;
                     }
                 }
-                if (gScore > 0 && align.score > 0) {
+                if (gScore > 0 && align.probability > 0) {
                     align.valid = Valid.yes;
                 } else {
                     if(gold.hasLink(align.entity1, align.entity2)) {
@@ -142,17 +142,17 @@ public class Evaluate {
                 }
                 seen.add(galign.get());
             } else {
-                if (align.score > 0) {
+                if (align.probability > 0) {
                     if(!ignoreNotInGold || goldLefts.contains(align.entity1)  || goldRights.contains(align.entity2)) {
                         er.fp++;
                     }
                 }
-                for (int i = 0; 0.1 * i <= align.score; i++) {
-                    if (align.score > 0) {
+                for (int i = 0; 0.1 * i <= align.probability; i++) {
+                    if (align.probability > 0) {
                         er.thresholds.get(i)._2.fp++;
                     }
                 }
-                if (align.score > 0) {
+                if (align.probability > 0) {
                     if(gold.hasLink(align.entity1, align.entity2)) {
                         align.valid = Valid.bad_link;
                     } else {
@@ -187,12 +187,12 @@ public class Evaluate {
         }
         int goldSize = 0;
         for (Alignment a : gold.getAlignments()) {
-            if (a.score > 0) {
+            if (a.probability > 0) {
                 goldSize++;
             }
             try {
                 if (!seen.contains(a)) {
-                    output.add(new Alignment(a, a.score, Valid.novel));
+                    output.add(new Alignment(a, a.probability, Valid.novel));
                 }
             } catch (UnsupportedOperationException x) {
                 // The alignments cannot be expanded 

@@ -53,10 +53,10 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
     private void buildIndex() {
         Map<String, Map<Pair<Resource,Resource>, Alignment>> map = new HashMap<>();
         for(Alignment alignment : alignments) {
-            if(!map.containsKey(alignment.relation)) {
-                map.put(alignment.relation, new HashMap<>());
+            if(!map.containsKey(alignment.property)) {
+                map.put(alignment.property, new HashMap<>());
             }
-            map.get(alignment.relation).put(new Pair<>(alignment.entity1,
+            map.get(alignment.property).put(new Pair<>(alignment.entity1,
                     alignment.entity2), alignment);
         }
         index = map;
@@ -89,13 +89,13 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
          * @return True if the alignment is in the set
          */
         public boolean contains(Alignment alignment) {
-            return find(alignment.entity1, alignment.entity2, alignment.relation).has();
+            return find(alignment.entity1, alignment.entity2, alignment.property).has();
         }
 
     public boolean remove(Alignment alignment) {
         boolean rv = alignments.remove(alignment);
         if(index != null) {
-            index.get(alignment.relation).remove(new Pair<>(alignment.entity1, alignment.entity2));
+            index.get(alignment.property).remove(new Pair<>(alignment.entity1, alignment.entity2));
         }
         return rv;
 
@@ -110,13 +110,13 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
         alignments.sort(new Comparator<Alignment>() {
             @Override
             public int compare(Alignment o1, Alignment o2) {
-                int i = Double.compare(o1.score, o2.score);
+                int i = Double.compare(o1.probability, o2.probability);
                 if(i != 0) return -i;
                 i = o1.entity1.toString().compareTo(o2.entity1.toString());
                 if(i != 0) return i;
                 i = o1.entity2.toString().compareTo(o2.entity2.toString());
                 if(i != 0) return i;
-                return o1.relation.compareTo(o2.relation);
+                return o1.property.compareTo(o2.property);
             }
         });
     }
@@ -125,9 +125,9 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
     public boolean add(Alignment alignment) {
         boolean rv = this.alignments.add(alignment);
         if(index != null) {
-            if(!index.containsKey(alignment.relation))
-                index.put(alignment.relation, new HashMap<>());
-            index.get(alignment.relation).put(new Pair<>(alignment.entity1, alignment.entity2), alignment);
+            if(!index.containsKey(alignment.property))
+                index.put(alignment.property, new HashMap<>());
+            index.get(alignment.property).put(new Pair<>(alignment.entity1, alignment.entity2), alignment);
         }
         return rv;
     }
@@ -150,7 +150,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
             @Override
             public void remove() {
                 iter.remove();
-                if(index != null) index.get(next.relation).remove(new Pair<>(next.entity1, next.entity2));
+                if(index != null) index.get(next.property).remove(new Pair<>(next.entity1, next.entity2));
             }
         };
     }
@@ -192,8 +192,8 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
             out.println("    <Cell>");
             out.println(String.format("      <entity1 rdf:resource=\"%s\"/>", StringEscapeUtils.escapeXml11(alignment.entity1.getURI())));
             out.println(String.format("      <entity2 rdf:resource=\"%s\"/>", StringEscapeUtils.escapeXml11(alignment.entity2.getURI())));
-            out.println(String.format("      <measure rdf:datatype=\"xsd:float\">%.6f</measure>", alignment.score));
-            out.println(String.format("      <relation>%s</relation>", toXML(alignment.relation)));
+            out.println(String.format("      <measure rdf:datatype=\"xsd:float\">%.6f</measure>", alignment.probability));
+            out.println(String.format("      <property>%s</property>", toXML(alignment.property)));
             out.println("    </Cell>");
             out.println("  </map>");
         }
@@ -204,12 +204,12 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
 
     public void toRDF(PrintStream out) {
         for(Alignment alignment : alignments) {
-            out.println(String.format("<%s> <%s> <%s> . # %.4f", alignment.entity1, alignment.relation, alignment.entity2, alignment.score));
+            out.println(String.format("<%s> <%s> <%s> . # %.4f", alignment.entity1, alignment.property, alignment.entity2, alignment.probability));
         }
     }
 
     public Set<String> properties() {
-        return alignments.stream().map(x -> x.relation).collect(Collectors.toSet());
+        return alignments.stream().map(x -> x.property).collect(Collectors.toSet());
     }
 
     private ObjectMapper mapper;

@@ -82,7 +82,7 @@ public class MonteCarloTreeSearch implements MatcherFactory {
             for (int iter = 0; iter < iterMax; iter++) {
                 if ((iter + 1) % 10000 == 0 && listener != null) {
                     listener.updateStatus(ExecuteListener.Stage.MATCHING,
-                            String.format("Generated %sth candidate (max score=%.2f)", iter,
+                            String.format("Generated %sth candidate (max probability=%.2f)", iter,
                                     bestValid == null ? 0.0 : bestValid.score));
                 }
 

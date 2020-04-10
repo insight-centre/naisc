@@ -7,10 +7,7 @@ import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.GraphFeature;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
@@ -72,9 +69,16 @@ public class PPRTest {
         Lazy<AlignmentSet> prelinking = Lazy.fromClosure(() -> prealign);
         PPR instance = new PPR();
         GraphFeature feat = instance.makeFeature(sparqlData, params, analysis, prelinking, ExecuteListeners.NONE);
-        double[] result = feat.extractFeatures(model.createResource("file:foo2"), model.createResource("file:bar2"));
+        Feature[] result = feat.extractFeatures(model.createResource("file:foo2"), model.createResource("file:bar2"));
         double[] expResult = new double[]{0.113};
-        assertArrayEquals(expResult, result, 0.01);
+        assertArrayEquals(expResult, toDbA(result), 0.01);
+    }
+   private double[] toDbA(Feature[] f) {
+        double[] d = new double[f.length];
+        for(int i = 0; i < f.length; i++) {
+            d[i] = f[i].value;
+        }
+        return d;
     }
 
     /**

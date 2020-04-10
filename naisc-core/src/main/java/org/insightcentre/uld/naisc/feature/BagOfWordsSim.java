@@ -69,7 +69,7 @@ public class BagOfWordsSim implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LensResult lsp, NaiscListener log) {
+        public Feature[] extractFeatures(LensResult lsp, NaiscListener log) {
             Set<String> w1 = new HashSet<>(Arrays.asList(PrettyGoodTokenizer.tokenize(lsp.string1)));
             int a = w1.size();
             Set<String> w2 = new HashSet<>(Arrays.asList(PrettyGoodTokenizer.tokenize(lsp.string2)));
@@ -79,9 +79,9 @@ public class BagOfWordsSim implements TextFeatureFactory {
 
             switch (method) {
                 case jaccard:
-                    return new double[]{(double) ab / (double) (a + b - ab)};
+                    return Feature.mkArray(new double[]{(double) ab / (double) (a + b - ab)}, getFeatureNames());
                 case jaccardExponential:
-                    return new double[]{sigma(ab) / (sigma(a) + sigma(b) - sigma(ab))};
+                    return Feature.mkArray(new double[]{sigma(ab) / (sigma(a) + sigma(b) - sigma(ab))}, getFeatureNames());
                 default:
                     throw new RuntimeException("Unreachable");
 
