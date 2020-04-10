@@ -4,6 +4,8 @@ import eu.monnetproject.lang.Language;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.insightcentre.uld.naisc.LensResult;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -48,8 +50,9 @@ public class KeyWordsTest {
         params.put("keywordsFile", "src/test/resources/keywords.txt");
         KeyWords instance = new KeyWords();
         TextFeature extractor = instance.makeFeatureExtractor(Collections.EMPTY_SET, params);
-        double[] result = extractor.extractFeatures(new LangStringPair(Language.ENGLISH, Language.ENGLISH, 
-                "a cat such as an american shorthair", "american cats include the maine coon and the american shorthair"));
+        double[] result = extractor.extractFeatures(new LensResult(Language.ENGLISH, Language.ENGLISH,
+                "a cat such as an american shorthair", "american cats include the maine coon and the american shorthair",
+                null));
         double[] expResult = new double[] { 2.0/4.0, 1.0/3.0 };
         assertArrayEquals(expResult, result,0.0000001);
     }

@@ -7,6 +7,7 @@ import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.Lens;
+import org.insightcentre.uld.naisc.LensResult;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Option;
@@ -66,8 +67,8 @@ public class OntoLexTest {
         Map<String, Object> params = new HashMap<>();
         OntoLex instance = new OntoLex();
         Lens lens = instance.makeLens(tag, new ModelDataset(sparqlData), params);
-        Option<LangStringPair> result = lens.extract(sparqlData.createResource("http://www.example.com/#foo"), sparqlData.createResource("http://www.example.com/#bar"));
-        Option<LangStringPair> expResult = new Some<>(new LangStringPair(Language.ENGLISH, Language.ENGLISH, "foo", "bar"));
+        Option<LensResult> result = lens.extract(sparqlData.createResource("http://www.example.com/#foo"), sparqlData.createResource("http://www.example.com/#bar"));
+        Option<LensResult> expResult = new Some<>(new LensResult(Language.ENGLISH, Language.ENGLISH, "foo", "bar", tag));
         assertEquals(expResult, result);
     }
 

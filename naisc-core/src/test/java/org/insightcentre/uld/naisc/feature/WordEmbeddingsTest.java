@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import org.insightcentre.uld.naisc.LensResult;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -51,7 +53,7 @@ public class WordEmbeddingsTest {
         params.put("embeddingPath", "src/test/resources/glove.test");
         WordEmbeddings instance = new WordEmbeddings();
         TextFeature extractor = instance.makeFeatureExtractor(tags, params);
-        double[] features = extractor.extractFeatures(new LangStringPair(Language.ENGLISH, Language.ENGLISH, "this is a test", "this is also a test"));
+        double[] features = extractor.extractFeatures(new LensResult(Language.ENGLISH, Language.ENGLISH, "this is a test", "this is also a test", null));
         System.err.println(Arrays.toString(features));
                 
     }

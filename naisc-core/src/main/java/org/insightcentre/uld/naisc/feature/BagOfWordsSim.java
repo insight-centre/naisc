@@ -7,12 +7,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.NaiscListener;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.PrettyGoodTokenizer;
-import org.insightcentre.uld.naisc.TextFeature;
-import org.insightcentre.uld.naisc.TextFeatureFactory;
 
 /**
  * Compare the bag-of-words similarity of a bunch of features. This is often quite
@@ -71,10 +69,10 @@ public class BagOfWordsSim implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair lsp, NaiscListener log) {
-            Set<String> w1 = new HashSet<>(Arrays.asList(PrettyGoodTokenizer.tokenize(lsp._1)));
+        public double[] extractFeatures(LensResult lsp, NaiscListener log) {
+            Set<String> w1 = new HashSet<>(Arrays.asList(PrettyGoodTokenizer.tokenize(lsp.string1)));
             int a = w1.size();
-            Set<String> w2 = new HashSet<>(Arrays.asList(PrettyGoodTokenizer.tokenize(lsp._2)));
+            Set<String> w2 = new HashSet<>(Arrays.asList(PrettyGoodTokenizer.tokenize(lsp.string2)));
             int b = w2.size();
             w1.retainAll(w2);
             int ab = w1.size();

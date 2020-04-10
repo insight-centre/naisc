@@ -16,10 +16,8 @@ import java.util.stream.Collectors;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.DatasetLoader;
+import org.insightcentre.uld.naisc.*;
+
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
 import static org.insightcentre.uld.naisc.main.Main.mapper;
@@ -531,7 +529,7 @@ public class CrossFold {
         }
 
         @Override
-        public void addLensResult(Resource id1, Resource id2, String lensId, LangStringPair res) {
+        public void addLensResult(Resource id1, Resource id2, String lensId, LensResult res) {
             mem.addLensResult(id1, id2, lensId, res);
         }
 

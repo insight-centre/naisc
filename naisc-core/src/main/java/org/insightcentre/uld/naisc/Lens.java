@@ -22,7 +22,7 @@ public interface Lens {
      * @param entity2 The right entity to extract from
      * @return The pair of labels extracted by this lens or None if no label could be extracted
      */
-    default Option<LangStringPair> extract(Resource entity1, Resource entity2) {
+    default Option<LensResult> extract(Resource entity1, Resource entity2) {
         return extract(entity1, entity2, NaiscListener.DEFAULT);
     }
     
@@ -33,7 +33,7 @@ public interface Lens {
      * @param log The listener
      * @return The pair of labels extracted by this lens or None if no label could be extracted
      */
-    Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log);
+    Option<LensResult> extract(Resource entity1, Resource entity2, NaiscListener log);
     
    /**
     * Get a tag associated with this lens, this is used to select the features that are 

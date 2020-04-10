@@ -7,10 +7,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.Map;
 import java.util.Set;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.NaiscListener;
-import org.insightcentre.uld.naisc.TextFeature;
-import org.insightcentre.uld.naisc.TextFeatureFactory;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
@@ -129,7 +127,7 @@ public class Command implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair facet, NaiscListener log) {
+        public double[] extractFeatures(LensResult facet, NaiscListener log) {
             try {
                 out.get().println(mapper.writeValueAsString(facet));
                 return mapper.readValue(in.get().readLine(), double[].class);

@@ -22,24 +22,11 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.vocabulary.RDFS;
 import org.apache.jena.vocabulary.SKOS;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.DatasetLoader;
-import org.insightcentre.uld.naisc.FeatureSet;
-import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.Matcher;
-import org.insightcentre.uld.naisc.Scorer;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Pair;
-import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.util.Option;
-import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
-import org.insightcentre.uld.naisc.Rescaler;
-import org.insightcentre.uld.naisc.ScoreResult;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import org.insightcentre.uld.naisc.matcher.Prematcher;
@@ -304,12 +291,12 @@ public class Main {
                             FeatureSet featureSet = new FeatureSet(block._1, block._2);
                             boolean labelsProduced = false;
                             for (Lens lens : lenses) {
-                                Option<LangStringPair> oFacet = lens.extract(block._1, block._2, monitor);
+                                Option<LensResult> oFacet = lens.extract(block._1, block._2, monitor);
                                 if (oFacet.has()) {
                                     labelsProduced = true;
                                     monitor.addLensResult(block._1, block._2, lens.id(), oFacet.get());
                                 }
-                                LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
+                                LensResult facet = oFacet.getOrElse(LensResult.fromLangStringPair(EMPTY_LANG_STRING_PAIR, lens.tag()));
                                 for (TextFeature featureExtractor : textFeatures) {
                                     if (featureExtractor.tags() == null || lens.tag() == null
                                             || featureExtractor.tags().contains(lens.tag())) {

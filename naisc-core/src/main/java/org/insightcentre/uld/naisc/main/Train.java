@@ -24,20 +24,10 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.riot.RiotException;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.DatasetLoader;
-import org.insightcentre.uld.naisc.FeatureSet;
-import org.insightcentre.uld.naisc.FeatureSetWithScore;
-import org.insightcentre.uld.naisc.Lens;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Pair;
-import org.insightcentre.uld.naisc.ScorerTrainer;
-import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.util.Option;
-import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
@@ -346,9 +336,9 @@ public class Train {
         FeatureSet featureSet = new FeatureSet(res1, res2);
         boolean labelsProduced = false;
         for (Lens lens : lenses) {
-            Option<LangStringPair> oFacet = lens.extract(res1, res2);
+            Option<LensResult> oFacet = lens.extract(res1, res2);
             labelsProduced = labelsProduced || oFacet.has();
-            LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
+            LensResult facet = oFacet.getOrElse(LensResult.fromLangStringPair(EMPTY_LANG_STRING_PAIR, lens.tag()));
             for (TextFeature featureExtractor : textFeatures) {
                 if (featureExtractor.tags() == null || lens.tag() == null
                         || featureExtractor.tags().contains(lens.tag())) {

@@ -12,13 +12,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.DatasetLoader;
-import org.insightcentre.uld.naisc.FeatureSet;
-import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.TextFeature;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import static org.insightcentre.uld.naisc.main.Main.mapper;
@@ -79,13 +73,13 @@ public class ExamineFeature {
             }
             FeatureSet featureSet = new FeatureSet(res1, res2);
             for (Lens lens : lenses) {
-                Option<LangStringPair> oFacet = lens.extract(res1, res2);
+                Option<LensResult> oFacet = lens.extract(res1, res2);
                 if (!oFacet.has()) {
                     monitor.updateStatus(ExecuteListener.Stage.SCORING, String.format("Lens produced no label for %s %s", res1, res2));
                 } else {
                     monitor.addLensResult(res1, res2, lens.id(), oFacet.get());
                 }
-                LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
+                LensResult facet = oFacet.getOrElse(LensResult.fromLangStringPair(EMPTY_LANG_STRING_PAIR, lens.tag()));
                 for (TextFeature featureExtractor : textFeatures) {
                     if (featureExtractor.tags() == null || lens.tag() == null
                             || featureExtractor.tags().contains(lens.tag())) {

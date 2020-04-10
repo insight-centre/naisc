@@ -12,8 +12,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.NaiscListener;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.feature.embeddings.CosineSimAligner;
 import org.insightcentre.uld.naisc.feature.embeddings.SaliencyFeatures;
 import org.insightcentre.uld.naisc.feature.embeddings.StandardWordAlignmentFeatureExtractor;
@@ -21,8 +21,6 @@ import org.insightcentre.uld.naisc.feature.embeddings.WordAligner;
 import org.insightcentre.uld.naisc.feature.embeddings.WordVectorExtractor;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
-import org.insightcentre.uld.naisc.TextFeature;
-import org.insightcentre.uld.naisc.TextFeatureFactory;
 
 /**
  * Word embedding based features. The idea of this feature extractor is that 
@@ -157,10 +155,10 @@ public class WordEmbeddings implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair facet, NaiscListener log) {
+        public double[] extractFeatures(LensResult facet, NaiscListener log) {
             double[] d = new double[featureNames.length];
             if (facet.lang1.equals(facet.lang2)) {
-                d = _extractFeatures(facet._1, facet._2, wordAligner);
+                d = _extractFeatures(facet.string1, facet.string2, wordAligner);
                 return d;
             } else {
                 throw new IllegalArgumentException();

@@ -23,12 +23,9 @@ import java.util.function.BiFunction;
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.apache.commons.text.similarity.SimilarityScore;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.PrettyGoodTokenizer;
-import org.insightcentre.uld.naisc.TextFeature;
-import org.insightcentre.uld.naisc.TextFeatureFactory;
 
 /**
  * The basic features of string similarity
@@ -361,10 +358,10 @@ public class BasicString implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair sp, NaiscListener log) {
+        public double[] extractFeatures(LensResult sp, NaiscListener log) {
             DoubleArrayList featureValues = new DoubleArrayList();
-            final String label1 = lowerCase ? sp._1.toLowerCase() : sp._1;
-            final String label2 = lowerCase ? sp._2.toLowerCase() : sp._2;
+            final String label1 = lowerCase ? sp.string1.toLowerCase() : sp.string1;
+            final String label2 = lowerCase ? sp.string2.toLowerCase() : sp.string2;
             final String[] l1tok = PrettyGoodTokenizer.tokenize(label1),
                     l2tok = PrettyGoodTokenizer.tokenize(label2);
 
