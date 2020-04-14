@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.blocking;
 
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.TreeNode;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,25 +8,14 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import java.util.AbstractCollection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
+
 import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.BlockingStrategyFactory;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
@@ -143,7 +133,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         }
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
+        public Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log) {
             final List<Resource> lefts = new ArrayList<>();
             final ResIterator leftIter;
             if (property.equals("")) {
@@ -229,15 +219,19 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                 }
             }
 
-            return new Iterable<Pair<Resource, Resource>>() {
+            return new AbstractCollection<Blocking>() {
                 @Override
-                public Iterator<Pair<Resource, Resource>> iterator() {
+                public Iterator<Blocking> iterator() {
                     return labels.stream().flatMap(pair -> {
                         return nearest(pair._2, ngrams).stream().
-                                map(x -> new Pair<Resource, Resource>(pair._1, x));
+                                map(x -> new Blocking(pair._1, x, left.id(), right.id()));
                     }).iterator();
                 }
 
+                @Override
+                public int size() {
+                    throw new UnsupportedOperationException();
+                }
             };
         }
 
@@ -332,7 +326,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
 
         @Override
         @SuppressWarnings("Convert2Lambda")
-        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
+        public Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log) {
             final List<Resource> lefts = new ArrayList<>();
             Property leftProp = left.createProperty(property);
             ResIterator leftIter = left.listSubjectsWithProperty(leftProp);
@@ -385,13 +379,17 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             }
 
             // TODO: Should only produce pairs per entry not label as NGram Approximate matcher
-            return new Iterable<Pair<Resource, Resource>>() {
+            return new AbstractCollection<Blocking>() {
                 @Override
-                public Iterator<Pair<Resource, Resource>> iterator() {
+                public Iterator<Blocking> iterator() {
                     return labels.stream().flatMap(pair -> {
                         return trie.nearest(pair._2, maxMatches, queueMax).stream().
-                                map(x -> new Pair<Resource, Resource>(pair._1, x));
+                                map(x -> new Blocking(pair._1, x, left.id(), right.id()));
                     }).iterator();
+                }
+                @Override
+                public int size() {
+                    throw new UnsupportedOperationException();
                 }
 
             };

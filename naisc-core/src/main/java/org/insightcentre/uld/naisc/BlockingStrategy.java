@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc;
 
+import java.util.Collection;
 import java.util.Iterator;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.apache.jena.rdf.model.Model;
@@ -21,7 +22,7 @@ public interface BlockingStrategy {
      * @return A list of all of the pairs where the first element is in left and
      * the right element is in right
      */
-    default Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right) {
+    default Collection<Blocking> block(Dataset left, Dataset right) {
         return block(left, right, NaiscListener.DEFAULT);
     }
     
@@ -35,7 +36,7 @@ public interface BlockingStrategy {
      * @return A list of all of the pairs where the first element is in left and
      * the right element is in right
      */
-    Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log);
+    Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log);
 
     /**
      * Estimate the number of results that blocking will return. Default implementation
@@ -46,7 +47,7 @@ public interface BlockingStrategy {
      * @return The estimated size
      */
     default int estimateSize(Dataset left, Dataset right) {
-        Iterator<Pair<Resource, Resource>> i = block(left, right).iterator();
+        Iterator<Blocking> i = block(left, right).iterator();
         int n = 0;
         while (i.hasNext()) {
             n++;

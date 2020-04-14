@@ -78,9 +78,9 @@ public class AutomaticTest {
             prealign.add(new Alignment(model.createResource("file:foo" + i), model.createResource("file:bar" + i), 1.0));
 
         }
-        Dataset sparqlData = new ModelDataset(model);
+        Dataset sparqlData = new ModelDataset(model,"model");
         Map<String, Object> params = new HashMap<>();
-        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(lmodel), new ModelDataset(rmodel)));
+        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(lmodel,"lmodel"), new ModelDataset(rmodel,"rmodel")));
         Lazy<AlignmentSet> prelinking = Lazy.fromClosure(() -> prealign);
         GraphFeature feat = new Automatic().makeFeature(sparqlData, params, analysis, prelinking, ExecuteListeners.NONE);
         Feature[] result = feat.extractFeatures(lmodel.createResource("file:foo2"), rmodel.createResource("file:bar2"));

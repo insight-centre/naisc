@@ -1,20 +1,39 @@
 package org.insightcentre.uld.naisc;
 
 public class Blocking {
-    private final Resource entity1;
-    private final Resource entity2;
+    public final URIRes entity1;
+    public final URIRes entity2;
 
-    public Blocking(Resource entity1, Resource entity2) {
+    public Blocking(URIRes entity1, URIRes entity2) {
         this.entity1 = entity1;
         this.entity2 = entity2;
     }
 
-    public Resource getEntity1() {
+    public Blocking(org.apache.jena.rdf.model.Resource r1, org.apache.jena.rdf.model.Resource r2, String dataset1, String dataset2) {
+        this.entity1 = URIRes.fromJena(r1, dataset1);
+        this.entity2 = URIRes.fromJena(r2, dataset2);
+    }
+
+    public URIRes getEntity1() {
         return entity1;
     }
 
-    public Resource getEntity2() {
+    public URIRes getEntity2() {
         return entity2;
+    }
+
+    public org.apache.jena.rdf.model.Resource asJena1(Dataset dataset) {
+        if(!dataset.id().equals(entity1.dataset)) {
+            throw new IllegalArgumentException("URIRes not from same dataset");
+        }
+        return dataset.createResource(entity1.uri);
+    }
+
+    public org.apache.jena.rdf.model.Resource asJena2(Dataset dataset) {
+        if(!dataset.id().equals(entity2.dataset)) {
+            throw new IllegalArgumentException("URIRes not from same dataset");
+        }
+        return dataset.createResource(entity2.uri);
     }
 
     @Override

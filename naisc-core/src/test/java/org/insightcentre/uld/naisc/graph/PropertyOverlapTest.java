@@ -51,7 +51,7 @@ public class PropertyOverlapTest {
         Model model = ModelFactory.createDefaultModel();
         Map<String, Object> params = new HashMap<>();
         PropertyOverlap instance = new PropertyOverlap();
-        GraphFeature feature = instance.makeFeature(new ModelDataset(model), params, null, null, ExecuteListeners.NONE);
+        GraphFeature feature = instance.makeFeature(new ModelDataset(model, "model"), params, null, null, ExecuteListeners.NONE);
 
         Resource res1 = model.createResource("http://www.example.com/res1");
         Resource res2 = model.createResource("http://www.example.com/res2");
@@ -71,7 +71,7 @@ public class PropertyOverlapTest {
         
         params.put("properties", new HashSet<String>() {{ add("http://www.example.com/foo"); }});
         
-        feature = instance.makeFeature(new ModelDataset(model), params, null, null, ExecuteListeners.NONE);
+        feature = instance.makeFeature(new ModelDataset(model, "model"), params, null, null, ExecuteListeners.NONE);
         result = feature.extractFeatures(res1, res2);
 
         assertArrayEquals(new double[]{ 2.0 / 3.0, 1.0 / 2.0 }, toDbA(result), 0.000001);

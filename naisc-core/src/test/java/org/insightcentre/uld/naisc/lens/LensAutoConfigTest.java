@@ -66,9 +66,9 @@ public class LensAutoConfigTest {
         model2.add(model2.createStatement(model2.createResource("file:bar4"), model2.createProperty("file:label"), "the label4"));
         model2.add(model2.createStatement(model2.createResource("file:bar5"), model2.createProperty("file:label"), "the label5"));
         String tag = "tmp";
-        Analysis analysis = new DatasetAnalyzer().analyseModel(new ModelDataset(model1), new ModelDataset(model2));
-        Dataset leftModel = new ModelDataset(model1);
-        Dataset rightModel = new ModelDataset(model2);
+        Analysis analysis = new DatasetAnalyzer().analyseModel(new ModelDataset(model1, "model1"), new ModelDataset(model2, "model2"));
+        Dataset leftModel = new ModelDataset(model1, "model1");
+        Dataset rightModel = new ModelDataset(model2, "model2");
         LensAutoConfig instance = new LensAutoConfig();
         List<Lens> result = instance.autoConfiguration(analysis, leftModel, NaiscListener.DEFAULT);
         assertEquals(3, result.size());

@@ -1,14 +1,7 @@
 package org.insightcentre.uld.naisc.blocking;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.NodeIterator;
@@ -17,10 +10,7 @@ import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.vocabulary.RDF;
 import org.apache.jena.vocabulary.RDFS;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.BlockingStrategyFactory;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -97,7 +87,7 @@ public class OntoLex implements BlockingStrategyFactory {
     private static class OntoLexImpl implements BlockingStrategy {
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
+        public Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log) {
             Set<Resource> leftEntries = extractEntries(left);
             if (leftEntries.isEmpty()) {
                 log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, "There were no ontolex:LexicalEntrys in the left dataset");
@@ -108,9 +98,9 @@ public class OntoLex implements BlockingStrategyFactory {
             }
             final Map<LangString, Set<Resource>> leftByLabel = byLabel(leftEntries, left, log);
             final Map<LangString, Set<Resource>> rightByLabel = byLabel(rightEntries, right, log);
-            return new Iterable<Pair<Resource, Resource>>() {
+            return new AbstractCollection<Blocking>() {
                 @Override
-                public Iterator<Pair<Resource, Resource>> iterator() {
+                public Iterator<Blocking> iterator() {
                     return leftByLabel.entrySet().stream().flatMap((Map.Entry<LangString, Set<Resource>> r) -> {
                         if (rightByLabel.containsKey(r.getKey())) {
                             return rightByLabel.get(r.getKey()).stream().flatMap((Resource r2) -> {
@@ -122,6 +112,11 @@ public class OntoLex implements BlockingStrategyFactory {
                             return Collections.EMPTY_SET.stream();
                         }
                     }).iterator();
+                }
+
+                @Override
+                public int size() {
+                    throw new UnsupportedOperationException();
                 }
             };
         }
@@ -209,8 +204,8 @@ public class OntoLex implements BlockingStrategyFactory {
 
         }
 
-        private static List<Pair<Resource, Resource>> getSensePairs(Resource l, Dataset left, Resource r, Dataset right, NaiscListener log) {
-            List<Pair<Resource, Resource>> pairs = new ArrayList<>();
+        private static List<Blocking> getSensePairs(Resource l, Dataset left, Resource r, Dataset right, NaiscListener log) {
+            List<Blocking> pairs = new ArrayList<>();
             for (String senseURL1 : SENSE_URIS) {
                 NodeIterator i1 = left.listObjectsOfProperty(l, left.createProperty(senseURL1));
                 while (i1.hasNext()) {
@@ -222,7 +217,7 @@ public class OntoLex implements BlockingStrategyFactory {
                             while (i2.hasNext()) {
                                 RDFNode n2 = i2.next();
                                 if (n2.isResource()) {
-                                    pairs.add(new Pair<>(n1.asResource(), n2.asResource()));
+                                    pairs.add(new Blocking(n1.asResource(), n2.asResource(), left.id(), right.id()));
                                     success = true;
                                 }
                             }

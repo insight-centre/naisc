@@ -14,12 +14,18 @@ import java.util.Iterator;
 
 public class CombinedDataset implements Dataset {
     private final Dataset dataset1, dataset2;
+    private final String id;
 
     public CombinedDataset(Dataset dataset1, Dataset dataset2) {
         this.dataset1 = dataset1;
         this.dataset2 = dataset2;
+        this.id = dataset1.id() + "+" + dataset2.id();
     }
 
+    @Override
+    public String id() {
+        return id;
+    }
 
     @Override
     public Option<URL> asEndpoint() {

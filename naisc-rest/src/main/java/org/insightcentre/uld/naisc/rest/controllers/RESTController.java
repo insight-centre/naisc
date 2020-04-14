@@ -1,8 +1,10 @@
 package org.insightcentre.uld.naisc.rest.controllers;
 
 import org.insightcentre.uld.naisc.Alignment;
+import org.insightcentre.uld.naisc.Blocking;
 import org.insightcentre.uld.naisc.Feature;
 import org.insightcentre.uld.naisc.LensResult;
+import org.insightcentre.uld.naisc.rest.ConfigurationManager;
 import org.insightcentre.uld.naisc.rest.models.Body;
 
 import javax.ws.rs.*;
@@ -21,7 +23,14 @@ public class RESTController {
     public Response block(@QueryParam("left") String left, @QueryParam("right") String right,
                           @PathParam("config") String config, @Context SecurityContext securityContext)
     throws NotFoundException {
-        return Response.ok().entity(new ArrayList<>()).build();
+        try {
+            Iterable<Blocking> blocks = ConfigurationManager.getStrategy(config, left, right).
+                block(ConfigurationManager.loadDataset(left),
+                        ConfigurationManager.loadDataset(right));
+            return Response.ok().entity(new ArrayList<>()).build();
+        } catch(Exception x) {
+            return Response.status(500).entity(x.getMessage()).build();
+        }
     }
 
     @POST

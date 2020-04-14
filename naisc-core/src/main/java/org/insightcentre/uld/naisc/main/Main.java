@@ -249,18 +249,19 @@ public class Main {
             Rescaler rescaler = config.makeRescaler();
 
             monitor.updateStatus(Stage.BLOCKING, "Blocking");
-            Iterable<Pair<Resource, Resource>> _blocks = blocking.block(leftModel, rightModel, monitor);
-            final Iterable<Pair<Resource, Resource>> blocks;
+            Collection<Blocking> _blocks = blocking.block(leftModel, rightModel, monitor);
+            final Collection<Blocking> blocks;
             if (config.ignorePreexisting) {
                 _blocks = ExistingLinks.filterBlocking(_blocks, ExistingLinks.findPreexisting(scorers, leftModel, rightModel));
             }
             if (left != null && right != null) {
-                blocks = new FilterBlocks(_blocks, left, right);
+                blocks = new FilterBlocks(_blocks, left.stream().map(r -> URIRes.fromJena(r, leftModel.id())).collect(Collectors.toSet()),
+                    right.stream().map(r -> URIRes.fromJena(r, rightModel.id())).collect(Collectors.toSet()));
             } else {
                 blocks = _blocks;
             }
             monitor.updateStatus(Stage.INITIALIZING, "Loading Graph Extractors");
-            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocks));
+            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocks, leftModel, rightModel));
             List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
             monitor.updateStatus(Stage.SCORING, "Scoring");
@@ -271,30 +272,31 @@ public class Main {
                     TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(1000),
                     new ThreadPoolExecutor.CallerRunsPolicy());
             boolean blocksEmpty = true;
-            for (Pair<Resource, Resource> block : blocks) {
+            for (Blocking block : blocks) {
                 blocksEmpty = false;
                 executor.submit(new Runnable() {
                     @Override
                     public void run() {
+                        Resource block1 = block.asJena1(leftModel), block2 = block.asJena2(rightModel);
                         try {
-                            if (block._1.getURI() == null || block._1.getURI().equals("")
-                                    || block._2.getURI() == null || block._2.getURI().equals("")) {
-                                System.err.println(block._1);
-                                System.err.println(block._2);
-                                throw new RuntimeException("Resource without URI");
+                            if (block1.getURI() == null || block1.getURI().equals("")
+                                    || block2.getURI() == null || block2.getURI().equals("")) {
+                                System.err.println(block1);
+                                System.err.println(block2);
+                                throw new RuntimeException("URIRes without URI");
                             }
-                            monitor.addBlock(block._1, block._2);
+                            monitor.addBlock(block1, block2);
                             int c = count.incrementAndGet();
                             if (c % 1000 == 0) {
                                 monitor.updateStatus(Stage.SCORING, "Scoring (" + c + " done)");
                             }
-                            FeatureSet featureSet = new FeatureSet(block._1, block._2);
+                            FeatureSet featureSet = new FeatureSet(block1, block2);
                             boolean labelsProduced = false;
                             for (Lens lens : lenses) {
-                                Option<LensResult> oFacet = lens.extract(block._1, block._2, monitor);
+                                Option<LensResult> oFacet = lens.extract(block1, block2, monitor);
                                 if (oFacet.has()) {
                                     labelsProduced = true;
-                                    monitor.addLensResult(block._1, block._2, lens.id(), oFacet.get());
+                                    monitor.addLensResult(block1, block2, lens.id(), oFacet.get());
                                 }
                                 LensResult facet = oFacet.getOrElse(LensResult.fromLangStringPair(EMPTY_LANG_STRING_PAIR, lens.tag()));
                                 for (TextFeature featureExtractor : textFeatures) {
@@ -302,27 +304,27 @@ public class Main {
                                             || featureExtractor.tags().contains(lens.tag())) {
                                         Feature[] features = featureExtractor.extractFeatures(facet, monitor);
                                         featureSet = featureSet.add(new FeatureSet(features,
-                                                lens.id(), block._1, block._2));
+                                                lens.id(), block1, block2));
                                     }
                                 }
                             }
 
                             if (!labelsProduced) {
-                                monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block._1, block._2));
+                                monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block1, block2));
                             }
                             for (GraphFeature feature : dataFeatures) {
-                                Feature[] features = feature.extractFeatures(block._1, block._2, monitor);
-                                featureSet = featureSet.add(new FeatureSet(features, feature.id(), block._1, block._2));
+                                Feature[] features = feature.extractFeatures(block1, block2, monitor);
+                                featureSet = featureSet.add(new FeatureSet(features, feature.id(), block1, block2));
                             }
                             if (featureSet.isEmpty()) {
                                 monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "An empty feature set was created");
                             }
                             for (Scorer scorer : scorers) {
                                 ScoreResult score = scorer.similarity(featureSet, monitor);
-                                alignments.add(new TmpAlignment(block._1, block._2, score, scorer.relation(), config.includeFeatures ? featureSet : null));
+                                alignments.add(new TmpAlignment(block1, block2, score, scorer.relation(), config.includeFeatures ? featureSet : null));
                             }
                         } catch (Exception x) {
-                            monitor.updateStatus(Stage.FAILED, String.format("Failed to probability %s <-> %s due to %s (%s)\n", block._1, block._2, x.getMessage(), x.getClass().getName()));
+                            monitor.updateStatus(Stage.FAILED, String.format("Failed to probability %s <-> %s due to %s (%s)\n", block1, block2, x.getMessage(), x.getClass().getName()));
                             x.printStackTrace();
 
                         }
@@ -366,10 +368,10 @@ public class Main {
             final Configuration config = mapper.readValue(configFile, Configuration.class);
 
             Model leftModel = ModelFactory.createDefaultModel();
-            Dataset left = new DefaultDatasetLoader.ModelDataset(leftModel);
+            Dataset left = new DefaultDatasetLoader.ModelDataset(leftModel, "left");
 
             Model rightModel = ModelFactory.createDefaultModel();
-            Dataset right = new DefaultDatasetLoader.ModelDataset(rightModel);
+            Dataset right = new DefaultDatasetLoader.ModelDataset(rightModel, "right");
 
 
             Map<String, Resource> leftResByDef = new HashMap<>(), rightResByDef = new HashMap<>();
@@ -534,22 +536,22 @@ public class Main {
         }
     }
 
-    private static class FilterBlocks implements Iterable<Pair<Resource, Resource>> {
+    private static class FilterBlocks extends AbstractCollection<Blocking> {
 
-        private final Iterable<Pair<Resource, Resource>> iter;
-        private final Set<Resource> left, right;
+        private final Collection<Blocking> iter;
+        private final Set<URIRes> left, right;
 
-        public FilterBlocks(Iterable<Pair<Resource, Resource>> iter, Set<Resource> left, Set<Resource> right) {
+        public FilterBlocks(Collection<Blocking> iter, Set<URIRes> left, Set<URIRes> right) {
             this.iter = iter;
             this.left = left;
             this.right = right;
         }
 
         @Override
-        public Iterator<Pair<Resource, Resource>> iterator() {
-            final Iterator<Pair<Resource, Resource>> i = iter.iterator();
-            return new Iterator<Pair<Resource, Resource>>() {
-                Pair<Resource, Resource> p = advance();
+        public Iterator<Blocking> iterator() {
+            final Iterator<Blocking> i = iter.iterator();
+            return new Iterator<Blocking>() {
+                Blocking p = advance();
 
                 @Override
                 public boolean hasNext() {
@@ -557,19 +559,19 @@ public class Main {
                 }
 
                 @Override
-                public Pair<Resource, Resource> next() {
+                public Blocking next() {
                     if (p == null) {
                         throw new NoSuchElementException();
                     }
-                    Pair<Resource, Resource> rval = p;
+                    Blocking rval = p;
                     p = advance();
                     return rval;
                 }
 
-                private Pair<Resource, Resource> advance() {
+                private Blocking advance() {
                     while (i.hasNext()) {
-                        Pair<Resource, Resource> x = i.next();
-                        if (left.contains(x._1) && right.contains(x._2)) {
+                        Blocking x = i.next();
+                        if (left.contains(x.entity1) && right.contains(x.entity2)) {
                             return x;
                         }
                     }
@@ -578,6 +580,10 @@ public class Main {
             };
         }
 
+        @Override
+        public int size() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private static AlignmentSet convertAligns(ConcurrentLinkedQueue<TmpAlignment> tmpAligns, Rescaler rescaler) {

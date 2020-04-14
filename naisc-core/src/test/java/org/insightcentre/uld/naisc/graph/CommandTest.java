@@ -51,7 +51,7 @@ public class CommandTest {
         try {
             System.out.println("makeFeature");
             final Model model = ModelFactory.createDefaultModel();
-            Dataset sparqlData = new ModelDataset(model);
+            Dataset sparqlData = new ModelDataset(model, "sparql");
             Map<String, Object> params = new HashMap<>();
             params.put("command", "python3 src/test/resources/test-graph.py");
             params.put("id", "test");

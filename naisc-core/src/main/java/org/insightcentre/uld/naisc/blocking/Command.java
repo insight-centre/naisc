@@ -5,16 +5,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.util.AbstractCollection;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.BlockingStrategyFactory;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
@@ -61,27 +59,33 @@ public class Command implements BlockingStrategyFactory {
         }
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
+        public Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log) {
             URL leftSparql = left.asEndpoint().getOrExcept(new RuntimeException("Cannot run blocking command with SPARQL endpoint"));
             URL rightSparql = right.asEndpoint().getOrExcept(new RuntimeException("Cannot run blocking command with SPARQL endpoint"));
-            return new Iterable<Pair<Resource, Resource>>() {
+            return new AbstractCollection<Blocking> () {
                 @Override
-                public Iterator<Pair<Resource, Resource>> iterator() {
-                    return new CommandRunner(command, leftSparql, rightSparql);
+                public Iterator<Blocking> iterator() {
+                    return new CommandRunner(command, leftSparql, rightSparql, left.id(), right.id());
+                }
+
+                @Override
+                public int size() {
+                    throw new UnsupportedOperationException();
                 }
             };
         }
     }
 
-    private static class CommandRunner implements Iterator<Pair<Resource, Resource>> {
+    private static class CommandRunner implements Iterator<Blocking> {
 
         Process pr;
         PrintWriter out;
         BufferedReader in;
         String line = null;
         final Model model;
+        final String leftId, rightId;
 
-        public CommandRunner(String command, URL leftSparql, URL rightSparql) {
+        public CommandRunner(String command, URL leftSparql, URL rightSparql, String leftId, String rightId) {
             Runtime rt = Runtime.getRuntime();
             try {
                 String co = command.replace("$SPARQL_LEFT", leftSparql.toString()).
@@ -101,6 +105,8 @@ public class Command implements BlockingStrategyFactory {
                     throw new RuntimeException("Failed to start command");
                 }
                 model = ModelFactory.createDefaultModel();
+                this.leftId = leftId;
+                this.rightId = rightId;
             } catch (IOException x) {
                 throw new RuntimeException(x);
             }
@@ -112,7 +118,7 @@ public class Command implements BlockingStrategyFactory {
         }
 
         @Override
-        public Pair<Resource, Resource> next() {
+        public Blocking next() {
             String[] elems = line.split("\t");
             if (elems.length != 2) {
                 throw new RuntimeException("Bad output from commmand. Must be two URIs separated by a tab");
@@ -126,7 +132,7 @@ public class Command implements BlockingStrategyFactory {
             } catch (IOException x) {
                 throw new RuntimeException(x);
             }
-            return p;
+            return new Blocking(p._1, p._2, leftId, rightId);
         }
 
     }

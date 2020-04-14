@@ -143,7 +143,7 @@ public class Bijective implements ConstraintFactory {
                     (surjection == surjective || !rcontains(alignment.entity2));
         }
 
-        private boolean lcontains(Resource s) {
+        private boolean lcontains(URIRes s) {
             if(alignment == null) {
                 return false;
             } else if (alignment.entity1.equals(s)) {
@@ -159,7 +159,7 @@ public class Bijective implements ConstraintFactory {
             }
         }
         
-        private boolean rcontains(Resource s) {
+        private boolean rcontains(URIRes s) {
             if(alignment == null) {
                 return false;
             } else if (alignment.entity2.equals(s)) {
@@ -190,9 +190,9 @@ public class Bijective implements ConstraintFactory {
 
     private static class BijectiveCacheEntry {
         private final long id;
-        private final Resource text;
+        private final URIRes text;
 
-        public BijectiveCacheEntry(long id, Resource text) {
+        public BijectiveCacheEntry(long id, URIRes text) {
             this.id = id;
             this.text = text;
         }

@@ -8,6 +8,7 @@ import java.util.Set;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
+import org.insightcentre.uld.naisc.Blocking;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
@@ -71,26 +72,26 @@ public class AutomaticTest {
         model2.add(model2.createStatement(model2.createResource("file:bar3"), model2.createProperty("file:label"), "the label3"));
         model2.add(model2.createStatement(model2.createResource("file:bar4"), model2.createProperty("file:label"), "the label4"));
         model2.add(model2.createStatement(model2.createResource("file:bar5"), model2.createProperty("file:label"), "the label5"));
-        Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model1), new ModelDataset(model2)));
+        Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model1, "model1"), new ModelDataset(model2, "model2")));
         Automatic instance = new Automatic();
         BlockingStrategy strat = instance.makeBlockingStrategy(params, _analysis, ExecuteListeners.NONE);
-        Iterable<Pair<Resource,Resource>> _results = strat.block(new ModelDataset(model1), new ModelDataset(model2));
-        Set<Pair<Resource,Resource>> results = new HashSet<>();
-        for(Pair<Resource,Resource> p : _results) {
+        Iterable<Blocking> _results = strat.block(new ModelDataset(model1, "model1"), new ModelDataset(model2, "model2"));
+        Set<Blocking> results = new HashSet<>();
+        for(Blocking p : _results) {
             results.add(p);
         }
-        Set<Pair<Resource,Resource>> expResult = new HashSet<>(Arrays.asList(
-                new Pair<>(model1.createResource("file:foo1"), model2.createResource("file:bar1")),
-                new Pair<>(model1.createResource("file:foo2"), model2.createResource("file:bar2")),
-                new Pair<>(model1.createResource("file:foo3"), model2.createResource("file:bar3")),
-                new Pair<>(model1.createResource("file:foo3"), model2.createResource("file:bar4")),
-                new Pair<>(model1.createResource("file:foo3"), model2.createResource("file:bar5")),
-                new Pair<>(model1.createResource("file:foo4"), model2.createResource("file:bar3")),
-                new Pair<>(model1.createResource("file:foo4"), model2.createResource("file:bar5")),
-                new Pair<>(model1.createResource("file:foo4"), model2.createResource("file:bar4")),
-                new Pair<>(model1.createResource("file:foo5"), model2.createResource("file:bar3")),
-                new Pair<>(model1.createResource("file:foo5"), model2.createResource("file:bar4")),
-                new Pair<>(model1.createResource("file:foo5"), model2.createResource("file:bar5"))
+        Set<Blocking> expResult = new HashSet<>(Arrays.asList(
+                new Blocking(model1.createResource("file:foo1"), model2.createResource("file:bar1"), "model1", "model2"),
+                new Blocking(model1.createResource("file:foo2"), model2.createResource("file:bar2"), "model1", "model2"),
+                new Blocking(model1.createResource("file:foo3"), model2.createResource("file:bar3"), "model1", "model2"),
+                new Blocking(model1.createResource("file:foo3"), model2.createResource("file:bar4"), "model1", "model2"),
+                new Blocking(model1.createResource("file:foo3"), model2.createResource("file:bar5"), "model1", "model2"),
+                new Blocking(model1.createResource("file:foo4"), model2.createResource("file:bar3"), "model1", "model2"),
+                new Blocking(model1.createResource("file:foo4"), model2.createResource("file:bar5"), "model1", "model2"),
+                new Blocking(model1.createResource("file:foo4"), model2.createResource("file:bar4"), "model1", "model2"),
+                new Blocking(model1.createResource("file:foo5"), model2.createResource("file:bar3"), "model1", "model2"),
+                new Blocking(model1.createResource("file:foo5"), model2.createResource("file:bar4"), "model1", "model2"),
+                new Blocking(model1.createResource("file:foo5"), model2.createResource("file:bar5"), "model1", "model2")
         ));
         assertEquals(expResult, results);
     }
@@ -110,18 +111,18 @@ public class AutomaticTest {
         model2.add(model2.createStatement(model2.createResource("file:barfoo1"), model2.createProperty("file:p1"), model2.createResource("adfafafdasf")));
         model2.add(model2.createStatement(model2.createResource("file:barfoo2"), model2.createProperty("file:p1"), model2.createResource("adfafdafdsafaf")));
         model2.add(model2.createStatement(model2.createResource("file:foobar2"), model2.createProperty("file:p1"), model2.createResource("adfadfdafawdf")));
-        Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model1), new ModelDataset(model2)));
+        Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model1, "model1"), new ModelDataset(model2, "model2")));
         Automatic instance = new Automatic();
         BlockingStrategy strat = instance.makeBlockingStrategy(params, _analysis, ExecuteListeners.NONE);
-        Iterable<Pair<Resource,Resource>> _results = strat.block(new ModelDataset(model1), new ModelDataset(model2));
-        Set<Pair<Resource,Resource>> results = new HashSet<>();
-        for(Pair<Resource,Resource> p : _results) {
+        Iterable<Blocking> _results = strat.block(new ModelDataset(model1, "model1"), new ModelDataset(model2, "model2"));
+        Set<Blocking> results = new HashSet<>();
+        for(Blocking p : _results) {
             results.add(p);
         }
-        Set<Pair<Resource,Resource>> expResult = new HashSet<>(Arrays.asList(
-                new Pair<>(model1.createResource("file:foobar2"), model2.createResource("file:foobar2")),
-                new Pair<>(model1.createResource("file:foobar1"), model2.createResource("file:barfoo1")),
-                new Pair<>(model1.createResource("file:foobar1"), model2.createResource("file:barfoo2"))
+        Set<Blocking> expResult = new HashSet<>(Arrays.asList(
+                new Blocking(model1.createResource("file:foobar2"), model2.createResource("file:foobar2"), "model1", "model2"),
+                new Blocking(model1.createResource("file:foobar1"), model2.createResource("file:barfoo1"), "model1", "model2"),
+                new Blocking(model1.createResource("file:foobar1"), model2.createResource("file:barfoo2"), "model1", "model2")
         ));
         assertEquals(expResult, results);
     }

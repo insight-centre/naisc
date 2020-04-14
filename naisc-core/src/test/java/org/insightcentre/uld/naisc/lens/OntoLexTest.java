@@ -66,7 +66,7 @@ public class OntoLexTest {
         sparqlData.read(new StringReader(testDoc), "file:test#", "TURTLE");
         Map<String, Object> params = new HashMap<>();
         OntoLex instance = new OntoLex();
-        Lens lens = instance.makeLens(tag, new ModelDataset(sparqlData), params);
+        Lens lens = instance.makeLens(tag, new ModelDataset(sparqlData,"sparql"), params);
         Option<LensResult> result = lens.extract(sparqlData.createResource("http://www.example.com/#foo"), sparqlData.createResource("http://www.example.com/#bar"));
         Option<LensResult> expResult = new Some<>(new LensResult(Language.ENGLISH, Language.ENGLISH, "foo", "bar", tag));
         assertEquals(expResult, result);

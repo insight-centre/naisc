@@ -52,7 +52,7 @@ public class MeasDatasetLoader implements DatasetLoader<MeasDatasetLoader.MeasDa
 
     @Override
     public Dataset fromEndpoint(URL endpoint) {
-        return new DefaultDatasetLoader.EndpointDataset(endpoint);
+        return new DefaultDatasetLoader.EndpointDataset(endpoint, endpoint.toString());
     }
 
     @Override
@@ -79,7 +79,7 @@ public class MeasDatasetLoader implements DatasetLoader<MeasDatasetLoader.MeasDa
         private final String name;
 
         public MeasDataset(String name, Model model) {
-            super(model);
+            super(model, name);
             this.name = name;
         }
 

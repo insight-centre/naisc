@@ -1,13 +1,15 @@
 package org.insightcentre.uld.naisc;
 
+import org.apache.jena.rdf.model.Resource;
+
 import java.util.HashMap;
 import java.util.Map;
 
-public class Resource {
+public class URIRes {
     public final String uri;
     public final String dataset;
 
-    public Resource(String uri, String dataset) {
+    public URIRes(String uri, String dataset) {
         this.uri = uri;
         this.dataset = dataset;
     }
@@ -18,8 +20,8 @@ public class Resource {
         return datasets.get(dataset).createResource(uri);
     }
 
-    public static Resource fromJena(org.apache.jena.rdf.model.Resource res, String dataset) {
-        return new Resource(res.getURI(), dataset);
+    public static URIRes fromJena(org.apache.jena.rdf.model.Resource res, String dataset) {
+        return new URIRes(res.getURI(), dataset);
     }
 
     public String getUri() {
@@ -33,9 +35,11 @@ public class Resource {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
-        Resource resource = (Resource) o;
+        URIRes resource = (URIRes) o;
 
         if (!uri.equals(resource.uri)) return false;
         return dataset.equals(resource.dataset);
@@ -50,7 +54,7 @@ public class Resource {
 
     @Override
     public String toString() {
-        return "Resource{" +
+        return "URIRes{" +
                 "uri='" + uri + '\'' +
                 ", dataset='" + dataset + '\'' +
                 '}';

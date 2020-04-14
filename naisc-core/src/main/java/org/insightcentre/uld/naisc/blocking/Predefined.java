@@ -4,17 +4,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
+import java.util.AbstractCollection;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.BlockingStrategyFactory;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.NaiscListener;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.main.Train;
@@ -53,13 +48,18 @@ public class Predefined implements BlockingStrategyFactory {
         }
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(final Dataset _left, final Dataset _right, NaiscListener log) {
+        public Collection<Blocking> block(final Dataset _left, final Dataset _right, NaiscListener log) {
             try {
                 final AlignmentSet as = Train.readAlignments(links);
-                return new Iterable<Pair<Resource, Resource>>() {
+                return new AbstractCollection<Blocking>() {
                     @Override
-                    public Iterator<Pair<Resource, Resource>> iterator() {
-                        return new AlignmentSetIterator(as.iterator());
+                    public Iterator<Blocking> iterator() {
+                        return new AlignmentSetIterator(as.iterator(), _left.id(), _right.id());
+                    }
+
+                    @Override
+                    public int size() {
+                        throw new UnsupportedOperationException();
                     }
                 };
             } catch(IOException x) {
@@ -68,21 +68,25 @@ public class Predefined implements BlockingStrategyFactory {
         }
     }
     
-    private static class AlignmentSetIterator implements Iterator<Pair<Resource, Resource>> {
+    private static class AlignmentSetIterator implements Iterator<Blocking> {
         private final Iterator<Alignment> iter;
+        private final String left, right;
 
-        public AlignmentSetIterator(Iterator<Alignment> iter) {
+        public AlignmentSetIterator(Iterator<Alignment> iter, String left, String right) {
             this.iter = iter;
+            this.left = left;
+            this.right = right;
         }
+
         @Override
         public boolean hasNext() {
             return iter.hasNext();
         }
 
         @Override
-        public Pair<Resource, Resource> next() {
+        public Blocking next() {
             Alignment a = iter.next();
-            return new Pair<>(a.entity1, a.entity2);
+            return new Blocking(a.entity1, a.entity2, left, right);
         }
         
         

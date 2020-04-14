@@ -69,7 +69,7 @@ public class ExamineFeature {
 
             if (res1.getURI() == null || res1.getURI().equals("")
                     || res1.getURI() == null || res1.getURI().equals("")) {
-                throw new RuntimeException("Resource with URI");
+                throw new RuntimeException("URIRes with URI");
             }
             FeatureSet featureSet = new FeatureSet(res1, res2);
             for (Lens lens : lenses) {

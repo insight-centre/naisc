@@ -63,9 +63,9 @@ public class PPRTest {
         AlignmentSet prealign = new AlignmentSet();
         prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar1"), 1.0));
         prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar3"), 0.0));
-        Dataset sparqlData = new ModelDataset(model);
+        Dataset sparqlData = new ModelDataset(model, "model");
         Map<String, Object> params = new HashMap<>();
-        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model), new ModelDataset(model)));
+        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model, "model"), new ModelDataset(model, "model")));
         Lazy<AlignmentSet> prelinking = Lazy.fromClosure(() -> prealign);
         PPR instance = new PPR();
         GraphFeature feat = instance.makeFeature(sparqlData, params, analysis, prelinking, ExecuteListeners.NONE);
@@ -98,7 +98,7 @@ public class PPRTest {
         prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar1"), 1.0));
         prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar3"), 0.0));
         Object2IntMap<Resource> identifiers = new Object2IntOpenHashMap<>();
-        FastPPR.DirectedGraph result = PPR.buildGraph(new ModelDataset(model), prealign, identifiers);
+        FastPPR.DirectedGraph result = PPR.buildGraph(new ModelDataset(model, "model"), prealign, identifiers);
     }
 
 

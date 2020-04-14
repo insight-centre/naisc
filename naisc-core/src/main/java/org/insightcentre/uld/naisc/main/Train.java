@@ -214,12 +214,12 @@ public class Train {
         List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
-        Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocking.block(leftModel, rightModel)));
+        Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocking.block(leftModel, rightModel), leftModel, rightModel));
         List<TextFeature> textFeatures = config.makeTextFeatures();
         List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
         monitor.updateStatus(ExecuteListener.Stage.BLOCKING, "Blocking");
-        final Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel);
+        final Iterable<Blocking> blocks = blocking.block(leftModel, rightModel);
 
         monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Constructing Training Data");
         Map<String, List<FeatureSetWithScore>> negData = negativeSampling > 0 ? new HashMap<>() : null;
@@ -247,23 +247,24 @@ public class Train {
         final Object2IntMap<String> positives = new Object2IntOpenHashMap<>(),
                 negatives = new Object2IntOpenHashMap<>();
         int count = 0;
-        for (Pair<Resource, Resource> block : blocks) {
+        for (Blocking block : blocks) {
             blocksGenerated = true;
             if (++count % 10000 == 0) {
                 monitor.updateStatus(ExecuteListener.Stage.SCORING,
                         String.format("Generating Features (%.2f%%)", (double) count / estimatedSize * 100.0));
             }
             for (String prop : goldProps) {
-                Option<Alignment> a = goldAlignments.find(block._1, block._2, prop);
+                Resource block1 = block.asJena1(leftModel), block2 = block.asJena2(rightModel);
+                Option<Alignment> a = goldAlignments.find(block1, block2, prop);
 
                 if (a.has()) {
-                    FeatureSet featureSet = makeFeatures(block._1, block._2, lenses, monitor, textFeatures, dataFeatures);
+                    FeatureSet featureSet = makeFeatures(block1, block2, lenses, monitor, textFeatures, dataFeatures);
                     trainingData.get(prop).add(featureSet.withScore(a.get().probability));
                     goldAlignments.remove(a.get());
                     positives.put(prop, positives.getInt(prop) + 1);
                 } else {
                     if (negData != null && random.nextDouble() < negSampProp) {
-                        FeatureSet featureSet = makeFeatures(block._1, block._2, lenses, monitor, textFeatures, dataFeatures);
+                        FeatureSet featureSet = makeFeatures(block1, block2, lenses, monitor, textFeatures, dataFeatures);
                         trainingData.get(prop).add(featureSet.withScore(0.0));
                         negatives.put(prop, negatives.getInt(prop) + 1);
                     }

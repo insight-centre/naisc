@@ -48,7 +48,7 @@ public class LabelTest {
         Model model = ModelFactory.createDefaultModel();
         Map<String, Object> params = new HashMap<>();
         Label instance = new Label();
-        Lens lens = instance.makeLens(tag, new ModelDataset(model), params);
+        Lens lens = instance.makeLens(tag, new ModelDataset(model, "model"), params);
         final Resource res = model.createResource("http://www.example.com/foo");
         final Resource res2 = model.createResource("http://www.example.com/foo2");
         final Resource res3 = model.createResource("http://www.example.com/foo3");
@@ -81,7 +81,7 @@ public class LabelTest {
         assert(!lens.extract(res, res5).has());
         
         params.put("language", "en");
-        lens = instance.makeLens(tag, new ModelDataset(model), params);
+        lens = instance.makeLens(tag, new ModelDataset(model, "model"), params);
         
         
         assert(!lens.extract(res, res2).has());
@@ -91,7 +91,7 @@ public class LabelTest {
         
         params.remove("language");
         params.put("property", Label.RDFS_LABEL);
-        lens = instance.makeLens(tag, new ModelDataset(model), params);
+        lens = instance.makeLens(tag, new ModelDataset(model, "model"), params);
         
         
         assert(!lens.extract(res, res2).has());

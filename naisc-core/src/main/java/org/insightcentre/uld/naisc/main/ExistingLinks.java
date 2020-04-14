@@ -1,8 +1,10 @@
 package org.insightcentre.uld.naisc.main;
 
 import org.apache.jena.rdf.model.*;
+import org.insightcentre.uld.naisc.Blocking;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Scorer;
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.util.Pair;
 
 import java.util.*;
@@ -14,27 +16,28 @@ import java.util.stream.Stream;
  */
 public class ExistingLinks {
 
-    public static Pair<Set<Resource>, Set<Resource>> findPreexisting(List<Scorer> scorers, Dataset left, Dataset right) {
-        Set<Resource> leftPreexisting = new HashSet<>(), rightPreexisting = new HashSet<>();
+    public static Pair<Set<URIRes>, Set<URIRes>> findPreexisting(List<Scorer> scorers, Dataset left, Dataset right) {
+        Set<URIRes> leftPreexisting = new HashSet<>(), rightPreexisting = new HashSet<>();
         Set<Property> relations = new HashSet<>();
         for(Scorer scorer : scorers) {
             relations.add(left.createProperty(scorer.relation()));
         }
-        Set<Resource> rSubjs = new HashSet<>();
+        Set<URIRes> rSubjs = new HashSet<>();
         ResIterator iter = right.listSubjects();
         while(iter.hasNext()) {
-            rSubjs.add(iter.nextResource());
+            rSubjs.add(URIRes.fromJena(iter.nextResource(), right.id()));
         }
         for(Property p : relations) {
             ResIterator liter = left.listSubjectsWithProperty(p);
             while(liter.hasNext()) {
                 Resource l = liter.nextResource();
+                URIRes l2 = URIRes.fromJena(l, left.id());
                 NodeIterator siter = left.listObjectsOfProperty(l, p);
                 while(siter.hasNext()) {
                     RDFNode n = siter.next();
-                    if(n.isResource() && rSubjs.contains(n.asResource())) {
-                        leftPreexisting.add(l);
-                        rightPreexisting.add(n.asResource());
+                    if(n.isResource() && rSubjs.contains(URIRes.fromJena(n.asResource(), right.id()))) {
+                        leftPreexisting.add(l2);
+                        rightPreexisting.add(URIRes.fromJena(n.asResource(), right.id()));
                     }
                 }
             }
@@ -42,22 +45,27 @@ public class ExistingLinks {
         return new Pair<>(leftPreexisting, rightPreexisting);
     }
 
-    public static Iterable<Pair<Resource, Resource>> filterBlocking(final Iterable<Pair<Resource, Resource>> blocking,
-                                                               final Pair<Set<Resource>, Set<Resource>> preexisting) {
-       return new Iterable<Pair<Resource,Resource>>() {
+    public static Collection<Blocking> filterBlocking(final Collection<Blocking> blocking,
+                                                    final Pair<Set<URIRes>, Set<URIRes>> preexisting) {
+       return new AbstractCollection<Blocking>() {
             @Override
-            public Iterator<Pair<Resource, Resource>> iterator() {
+            public Iterator<Blocking> iterator() {
                 return new FilterIterable(blocking.iterator(), preexisting);
+           }
+
+           @Override
+           public int size() {
+               throw new UnsupportedOperationException();
            }
        };
     }
 
-    private static class FilterIterable implements Iterator<Pair<Resource, Resource>> {
-        private final Iterator<Pair<Resource, Resource>> iter;
-        private Pair<Resource,Resource> next;
-        private final Pair<Set<Resource>, Set<Resource>> preexisting;
+    private static class FilterIterable implements Iterator<Blocking> {
+        private final Iterator<Blocking> iter;
+        private Blocking next;
+        private final Pair<Set<URIRes>, Set<URIRes>> preexisting;
 
-        public FilterIterable(Iterator<Pair<Resource, Resource>> iter, Pair<Set<Resource>, Set<Resource>> preexisting) {
+        public FilterIterable(Iterator<Blocking> iter, Pair<Set<URIRes>, Set<URIRes>> preexisting) {
             this.iter = iter;
             this.preexisting = preexisting;
             advance();
@@ -69,7 +77,7 @@ public class ExistingLinks {
                 return;
             }
             next = iter.next();
-            while(preexisting._1.contains(next._1) || preexisting._2.contains(next._2)) {
+            while(preexisting._1.contains(next.entity1) || preexisting._2.contains(next.entity2)) {
                 if(!iter.hasNext()) {
                     next = null;
                     return;
@@ -84,8 +92,8 @@ public class ExistingLinks {
         }
 
         @Override
-        public Pair<Resource, Resource> next() {
-            Pair<Resource, Resource> r = next;
+        public Blocking next() {
+            Blocking r = next;
             advance();
             return r;
         }

@@ -56,7 +56,7 @@ public class CommandTest {
             System.out.println("makeLens");
             Model model = ModelFactory.createDefaultModel();
             String tag = "command";
-            Dataset dataset = new DefaultDatasetLoader.EndpointDataset(new URL("http://www.example.com"));
+            Dataset dataset = new DefaultDatasetLoader.EndpointDataset(new URL("http://www.example.com"), "model");
             Map<String, Object> params = new HashMap<>();
             params.put("command", "python3 src/test/resources/test-lens.py");
             params.put("id", "test");

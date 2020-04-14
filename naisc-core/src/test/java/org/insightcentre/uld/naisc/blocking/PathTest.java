@@ -9,8 +9,11 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
+import org.insightcentre.uld.naisc.Blocking;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
+
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.util.Lazy;
@@ -76,16 +79,16 @@ public class PathTest {
         right.add(right.createStatement(right.createResource("file:fuzz5"), right.createProperty(Alignment.SKOS_EXACT_MATCH), right.createResource("fuzz6")));
         
         BlockingStrategy strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
-        Iterable<Pair<Resource,Resource>> result = strategy.block(new ModelDataset(left), new ModelDataset(right));
-        Map<Resource,List<Resource>> result2 = new HashMap<>();
-        for(Pair<Resource,Resource> r : result) {
-            if(!result2.containsKey(r._1))
-                result2.put(r._1, new ArrayList<>());
-            result2.get(r._1).add(r._2);
+        Iterable<Blocking> result = strategy.block(new ModelDataset(left, "left"), new ModelDataset(right, "right"));
+        Map<URIRes,List<URIRes>> result2 = new HashMap<>();
+        for(Blocking r : result) {
+            if(!result2.containsKey(r.entity1))
+                result2.put(r.entity1, new ArrayList<>());
+            result2.get(r.entity1).add(r.entity2);
         }
-        assertEquals(2, result2.get(left.createResource("file:foo")).size());
-        assertEquals(2, result2.get(left.createResource("file:foo2")).size());
-        assertEquals(2, result2.get(left.createResource("file:foo4")).size());
+        assertEquals(2, result2.get(new URIRes("file:foo","left")).size());
+        assertEquals(2, result2.get(new URIRes("file:foo2","left")).size());
+        assertEquals(2, result2.get(new URIRes("file:foo4","left")).size());
         
         
     }

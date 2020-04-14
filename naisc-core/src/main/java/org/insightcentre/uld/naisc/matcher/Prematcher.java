@@ -1,12 +1,12 @@
 package org.insightcentre.uld.naisc.matcher;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
+import org.insightcentre.uld.naisc.Blocking;
+import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.util.Pair;
 
 /**
@@ -17,21 +17,22 @@ import org.insightcentre.uld.naisc.util.Pair;
  */
 public class Prematcher {
 
-    public AlignmentSet prematch(Iterable<Pair<Resource,Resource>> blocking) {
+    public AlignmentSet prematch(Collection<Blocking> blocking, Dataset left, Dataset right) {
         AlignmentSet prematch = new AlignmentSet();
         Map<Resource, Resource> l2r = new HashMap<>();
         Map<Resource, Resource> r2l = new HashMap<>();
         Set<Resource> lburnt = new HashSet<>();
         Set<Resource> rburnt = new HashSet<>();
-        for(Pair<Resource,Resource> block : blocking) {
-            if(l2r.containsKey(block._1) || r2l.containsKey(block._2)) {
-                l2r.remove(block._1);
-                r2l.remove(block._2);
-                lburnt.add(block._1);
-                rburnt.add(block._2);
-            } else if(!lburnt.contains(block._1) && !rburnt.contains(block._2)) {
-                l2r.put(block._1, block._2);
-                r2l.put(block._2, block._1);
+        for(Blocking block : blocking) {
+            Resource block1 = block.asJena1(left), block2 = block.asJena2(right);
+            if(l2r.containsKey(block1) || r2l.containsKey(block2)) {
+                l2r.remove(block1);
+                r2l.remove(block2);
+                lburnt.add(block1);
+                rburnt.add(block2);
+            } else if(!lburnt.contains(block1) && !rburnt.contains(block2)) {
+                l2r.put(block1, block2);
+                r2l.put(block2, block1);
             }
         }
         for(Map.Entry<Resource, Resource> e : l2r.entrySet()) {
