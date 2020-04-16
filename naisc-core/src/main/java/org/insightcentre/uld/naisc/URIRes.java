@@ -14,10 +14,8 @@ public class URIRes {
         this.dataset = dataset;
     }
 
-    public static final Map<String, Dataset> datasets = new HashMap<>();
-
-    public org.apache.jena.rdf.model.Resource toJena() {
-        return datasets.get(dataset).createResource(uri);
+    public org.apache.jena.rdf.model.Resource toJena(Dataset dataset) {
+        return dataset.createResource(uri);
     }
 
     public static URIRes fromJena(org.apache.jena.rdf.model.Resource res, String dataset) {

@@ -39,7 +39,8 @@ class RESTController {
             val lenses = ConfigurationManager.getLens(config, body.entity1.dataset, body.entity2.dataset)
             var result = mutableListOf<LensResult>()
             for(lens in lenses) {
-                val r = lens.extract(body.entity1.toJena(), body.entity2.toJena())
+                val r = lens.extract(body.entity1.toJena(ConfigurationManager.loadDataset(body.entity1.dataset)),
+                    body.entity2.toJena(ConfigurationManager.loadDataset(body.entity2.dataset)))
                 if(r.has()) {
                     result.add(r.get())
                 }
@@ -53,13 +54,15 @@ class RESTController {
     @POST
     @Path("/{config}/graph_features")
     @Consumes("application/json")
+    @Produces("application/json")
     @Throws(NotFoundException::class)
     fun graphFeatures(@PathParam("config") config: String, body: ExtractTextRequest, @Context securityContext: SecurityContext): Response {
         try {
             val feats = ConfigurationManager.getGraphFeatures(config, body.entity1.dataset, body.entity2.dataset)
             var result = mutableListOf<Feature>()
             for(feat in feats) {
-                result.addAll(feat.extractFeatures(body.entity1.toJena(), body.entity2.toJena()))
+                result.addAll(feat.extractFeatures(body.entity1.toJena(ConfigurationManager.loadDataset(body.entity1.dataset)),
+                    body.entity2.toJena(ConfigurationManager.loadDataset(body.entity2.dataset))))
             }
             return Response.ok().entity(result).build()
         } catch(x : Exception) {
@@ -71,6 +74,7 @@ class RESTController {
     @POST
     @Path("/{config}/match")
     @Consumes("application/json")
+    @Produces("application/json")
     @Throws(NotFoundException::class)
     fun match(@PathParam("config") config: String, body: List<Alignment>, @Context securityContext: SecurityContext): Response {
         try {
