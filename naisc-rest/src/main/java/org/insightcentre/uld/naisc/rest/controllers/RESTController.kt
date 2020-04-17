@@ -8,7 +8,6 @@ import javax.ws.rs.*
 import javax.ws.rs.core.Context
 import javax.ws.rs.core.Response
 import javax.ws.rs.core.SecurityContext
-import java.util.ArrayList
 
 @Path("/naisc")
 class RESTController {
@@ -20,8 +19,8 @@ class RESTController {
     fun block(@QueryParam("left") left: String, @QueryParam("right") right: String,
               @PathParam("config") config: String, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
         try {
-            val blocks = ConfigurationManager.getStrategy(config, left, right).block(ConfigurationManager.loadDataset(left),
-                    ConfigurationManager.loadDataset(right))
+            val blocks = ConfigurationManager.getStrategy(config, left, right).block(ConfigurationManager.getDataset(left),
+                    ConfigurationManager.getDataset(right))
             return Response.ok().entity(blocks).build()
         } catch (x: Exception) {
             return Response.status(500).entity(x.message).build()
@@ -39,8 +38,8 @@ class RESTController {
             val lenses = ConfigurationManager.getLens(config, body.entity1.dataset, body.entity2.dataset)
             var result = mutableListOf<LensResult>()
             for(lens in lenses) {
-                val r = lens.extract(body.entity1.toJena(ConfigurationManager.loadDataset(body.entity1.dataset)),
-                    body.entity2.toJena(ConfigurationManager.loadDataset(body.entity2.dataset)))
+                val r = lens.extract(body.entity1.toJena(ConfigurationManager.getDataset(body.entity1.dataset)),
+                    body.entity2.toJena(ConfigurationManager.getDataset(body.entity2.dataset)))
                 if(r.has()) {
                     result.add(r.get())
                 }
@@ -61,8 +60,8 @@ class RESTController {
             val feats = ConfigurationManager.getGraphFeatures(config, body.entity1.dataset, body.entity2.dataset)
             var result = mutableListOf<Feature>()
             for(feat in feats) {
-                result.addAll(feat.extractFeatures(body.entity1.toJena(ConfigurationManager.loadDataset(body.entity1.dataset)),
-                    body.entity2.toJena(ConfigurationManager.loadDataset(body.entity2.dataset))))
+                result.addAll(feat.extractFeatures(body.entity1.toJena(ConfigurationManager.getDataset(body.entity1.dataset)),
+                    body.entity2.toJena(ConfigurationManager.getDataset(body.entity2.dataset))))
             }
             return Response.ok().entity(result).build()
         } catch(x : Exception) {
@@ -91,14 +90,13 @@ class RESTController {
     @Produces("application/json")
     @Throws(NotFoundException::class)
     fun score(@PathParam("config") config: String, body: List<Feature>, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
-        //try {
-        //    val scorers = ConfigurationManager.getScorer(config)
-        //    val features = FeatureSet()
-        //    for(f in body) {
-        //        features.add(f)
-        //    }
-        //    return Response.ok().entity(scorers.map { s -> { s.similarity(features) } }
-        throw UnsupportedOperationException("TODO")
+        try {
+            val scorers = ConfigurationManager.getScorer(config)
+            val features = FeatureSet(body)
+            return Response.ok().entity(scorers.map { s -> { s.similarity(features) } }).build()
+        } catch(x : Exception) {
+            return Response.status(500).entity(x.message).build()
+        }
     }
 
     @POST
@@ -107,7 +105,12 @@ class RESTController {
     @Produces("application/json")
     @Throws(NotFoundException::class)
     fun textFeatures(@PathParam("config") config: String, body: LensResult, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
-        throw UnsupportedOperationException("TODO")
+        try {
+            val scorers = ConfigurationManager.getTextFeatures(config)
+            return Response.ok().entity(scorers.flatMap { s -> s.extractFeatures(body).toList() }).build()
+        } catch(x : Exception) {
+            return Response.status(500).entity(x.message).build()
+        }
     }
 
     @PUT
@@ -115,6 +118,20 @@ class RESTController {
     @Consumes("application/rdf+xml", "text/turtle", "application/n-triples")
     @Throws(NotFoundException::class)
     fun upload(@PathParam("id") id: String, body: String, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
+        try {
+            ConfigurationManager.loadDataset(id, body)
+            return Response.ok().build()
+        } catch(x : Exception) {
+            return Response.status(500).entity(x.message).build()
+        }
+    }
+
+    @POST
+    @Path("/{config}/prematch")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @Throws(NotFoundException::class)
+    fun prematch(@PathParam("config") config : String, body: Blocking) : Response {
         throw UnsupportedOperationException("TODO")
     }
 }

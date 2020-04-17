@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+
+import java.util.*;
+
+import it.unimi.dsi.fastutil.objects.*;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.util.StringPair;
 
@@ -55,6 +55,19 @@ public class FeatureSet {
             this.values[i] = features[i].value;
             i++;
         }
+    }
+
+    public FeatureSet(List<Feature> features) {
+        List<StringPair> fnames = new ArrayList<>();
+        Object2IntMap<String> freq = new Object2IntOpenHashMap<>();
+        this.values = new double[features.size()];
+        int i = 0;
+        for(Feature f : features) {
+            fnames.add(new StringPair(f.name, "" + freq.getOrDefault(f.name, 1)));
+            freq.put(f.name, freq.getOrDefault(f.name, 1) + 1);
+            values[i++] = f.value;
+        }
+        this.names = (StringPair[])fnames.toArray();
     }
 
     /**

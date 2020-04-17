@@ -1,21 +1,19 @@
 package org.insightcentre.uld.naisc.rest
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.apache.jena.rdf.model.Resource
+import org.apache.jena.rdf.model.ModelFactory
 import org.insightcentre.uld.naisc.*
 import org.insightcentre.uld.naisc.analysis.Analysis
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer
-import org.insightcentre.uld.naisc.blocking.Prelinking
 import org.insightcentre.uld.naisc.main.CombinedDataset
 import org.insightcentre.uld.naisc.main.Configuration
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader
 import org.insightcentre.uld.naisc.main.ExecuteListeners
 import org.insightcentre.uld.naisc.util.Lazy
-import org.insightcentre.uld.naisc.util.Option
 import org.insightcentre.uld.naisc.util.Pair
 
 
 import java.io.IOException
-import java.util.HashMap
 
 object ConfigurationManager {
 
@@ -41,8 +39,16 @@ object ConfigurationManager {
     }
 
     @Throws(DatasetNotFoundException::class)
-    fun loadDataset(dataset: String): Dataset {
-        throw UnsupportedOperationException("TODO" + dataset)
+    fun getDataset(dataset: String): Dataset {
+        return datasets.getOrElse(dataset, { throw DatasetNotFoundException("$dataset has not been uploaded") })
+    }
+
+    fun loadDataset(dataset : String, content : String) : Dataset {
+        val model = ModelFactory.createDefaultModel()
+        model.read(content)
+        val modelDataset = DefaultDatasetLoader.ModelDataset(model, dataset)
+        datasets[dataset] = modelDataset
+        return modelDataset
     }
 
     fun getAnalysis(dataset1 : Dataset, dataset2 : Dataset) : Lazy<Analysis> {
@@ -62,24 +68,24 @@ object ConfigurationManager {
 
     @Throws(InvalidConfigurationException::class, DatasetNotFoundException::class, IOException::class)
     fun getStrategy(configuration: String, dataset1: String, dataset2: String): BlockingStrategy {
-        val left = loadDataset(dataset1)
-        val right = loadDataset(dataset2)
+        val left = getDataset(dataset1)
+        val right = getDataset(dataset2)
         return loadConfiguration(configuration).makeBlockingStrategy(getAnalysis(left, right), ExecuteListeners.STDERR)
 
     }
 
     @Throws(InvalidConfigurationException::class, DatasetNotFoundException::class)
     fun getLens(configuration: String, dataset1: String, dataset2: String): List<Lens> {
-        val left = loadDataset(dataset1)
-        val right = loadDataset(dataset2)
+        val left = getDataset(dataset1)
+        val right = getDataset(dataset2)
         val combined = CombinedDataset(left, right)
         return loadConfiguration(configuration).makeLenses(combined, getAnalysis(left, right), ExecuteListeners.STDERR)
     }
 
     @Throws(InvalidConfigurationException::class, DatasetNotFoundException::class)
     fun getGraphFeatures(configuration: String, dataset1 : String, dataset2 : String) : List<GraphFeature> {
-        val left = loadDataset(dataset1)
-        val right = loadDataset(dataset2)
+        val left = getDataset(dataset1)
+        val right = getDataset(dataset2)
         val combined = CombinedDataset(left, right)
         return loadConfiguration(configuration).makeGraphFeatures(combined, getAnalysis(left, right), getPrelinking(left, right), ExecuteListeners.STDERR)
     }
@@ -92,6 +98,11 @@ object ConfigurationManager {
     @Throws(InvalidConfigurationException::class)
     fun getScorer(configuration: String) : List<Scorer> {
         return loadConfiguration(configuration).makeScorer()
+    }
+
+    @Throws(InvalidConfigurationException::class)
+    fun getTextFeatures(configuration : String) : List<TextFeature> {
+        return loadConfiguration(configuration).makeTextFeatures()
     }
 
 }
