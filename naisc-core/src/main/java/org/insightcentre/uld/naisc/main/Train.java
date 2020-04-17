@@ -331,7 +331,7 @@ public class Train {
     }
 
     private static FeatureSet makeFeatures(Resource res1, Resource res2, List<Lens> lenses, ExecuteListener monitor, List<TextFeature> textFeatures, List<GraphFeature> dataFeatures) {
-        FeatureSet featureSet = new FeatureSet(res1, res2);
+        FeatureSet featureSet = new FeatureSet();
         boolean labelsProduced = false;
         for (Lens lens : lenses) {
             Option<LensResult> oFacet = lens.extract(res1, res2);
@@ -342,7 +342,7 @@ public class Train {
                         || featureExtractor.tags().contains(lens.tag())) {
                     Feature[] features = featureExtractor.extractFeatures(facet);
                     featureSet = featureSet.add(new FeatureSet(features,
-                            lens.id(), res1, res2));
+                            lens.id()));
                 }
             }
         }
@@ -351,7 +351,7 @@ public class Train {
         }
         for (GraphFeature feature : dataFeatures) {
             Feature[] features = feature.extractFeatures(res1, res2);
-            featureSet = featureSet.add(new FeatureSet(features, feature.id(), res1, res2));
+            featureSet = featureSet.add(new FeatureSet(features, feature.id()));
         }
         return featureSet;
     }

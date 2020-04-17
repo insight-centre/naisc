@@ -71,7 +71,7 @@ public class ExamineFeature {
                     || res1.getURI() == null || res1.getURI().equals("")) {
                 throw new RuntimeException("URIRes with URI");
             }
-            FeatureSet featureSet = new FeatureSet(res1, res2);
+            FeatureSet featureSet = new FeatureSet();
             for (Lens lens : lenses) {
                 Option<LensResult> oFacet = lens.extract(res1, res2);
                 if (!oFacet.has()) {
@@ -85,13 +85,13 @@ public class ExamineFeature {
                             || featureExtractor.tags().contains(lens.tag())) {
                         Feature[] features = featureExtractor.extractFeatures(facet);
                         featureSet = featureSet.add(new FeatureSet(features,
-                                lens.id(), res1, res2));
+                                lens.id()));
                     }
                 }
             }
             for (GraphFeature feature : dataFeatures) {
                 Feature[] features = feature.extractFeatures(res1, res2);
-                featureSet = featureSet.add(new FeatureSet(features, feature.id(), res1, res2));
+                featureSet = featureSet.add(new FeatureSet(features, feature.id()));
             }
             return featureSet;
 

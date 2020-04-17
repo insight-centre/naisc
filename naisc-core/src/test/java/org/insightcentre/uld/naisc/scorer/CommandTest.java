@@ -71,8 +71,7 @@ public class CommandTest {
             Command instance = new Command();
 
             Scorer scorer = instance.makeScorer(params,null).get(0);
-            ScoreResult result = scorer.similarity(new FeatureSet(new String[]{"foo"}, "foo", new double[]{0.2},
-                    model.createResource("http://www.example.com/uri1"), model.createResource("http://www.example.com/uri2")));
+            ScoreResult result = scorer.similarity(new FeatureSet(new String[]{"foo"}, "foo", new double[]{0.2}));
             double expResult = 0.2;
             assertEquals(expResult, result.value(), 0.0);
         } catch (ExternalCommandException x) {

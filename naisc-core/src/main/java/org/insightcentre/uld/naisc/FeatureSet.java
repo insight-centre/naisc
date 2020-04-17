@@ -19,60 +19,34 @@ import org.insightcentre.uld.naisc.util.StringPair;
 public class FeatureSet {
    public final StringPair[] names;
    public final double[] values;
-   public final String entity1, entity2;
 
    /**
     * Create an empty feature set
-    * @param entity1 The first entity
-    * @param entity2 The second entity
     */
-    public FeatureSet(Resource entity1, Resource entity2) {
+    public FeatureSet() {
         this.names = new StringPair[] {};
         this.values = new double[] {};
-        this.entity1 = entity1.getURI();
-        this.entity2 = entity2.getURI();
     }
-   /**
-    * Create an empty feature set
-    * @param entity1id The first entity's ID
-    * @param entity2id The second entity's ID
-    */
-    public FeatureSet(String entity1id, String entity2id) {
-        this.names = new StringPair[] {};
-        this.values = new double[] {};
-        this.entity1 = entity1id;
-        this.entity2 = entity2id;
-    }
-    
+
     @JsonCreator public FeatureSet(@JsonProperty("name") StringPair[] names, 
-        @JsonProperty("values") double[] values, 
-        @JsonProperty("entity1") String entity1, 
-        @JsonProperty("entity2") String entity2) {
+        @JsonProperty("values") double[] values) {
         this.names = names == null ? new StringPair[] {} : names;
         this.values = values == null ? new double[] {} : values;
-        this.entity1 = entity1;
-        this.entity2 = entity2;
         assert(this.names.length == this.values.length);
-        assert(entity1 != null);
-        assert(entity2 != null);
     }
     
     public FeatureSet(String[] featureNames, String lensName,
-        double[] values, Resource entity1, Resource entity2) {
+        double[] values) {
         assert(featureNames != null);
         this.names = new StringPair[featureNames.length];
         for(int i = 0; i < featureNames.length; i++) {
             this.names[i] = new StringPair(featureNames[i], lensName);
         }
         this.values = values == null ? new double[] {} : values;
-        assert(entity1 != null);
-        assert(entity2 != null);
-        this.entity1 = entity1.getURI();
-        this.entity2 = entity2.getURI();
         assert(this.names.length == this.values.length);
     }
 
-    public FeatureSet(Feature[] features, String lensName, Resource entity1, Resource entity2) {
+    public FeatureSet(Feature[] features, String lensName) {
         this.names = new StringPair[features.length];
         this.values = new double[features.length];
         int i = 0;
@@ -81,41 +55,8 @@ public class FeatureSet {
             this.values[i] = features[i].value;
             i++;
         }
-        assert(entity1 != null);
-        assert(entity2 != null);
-        this.entity1 = entity1.getURI();
-        this.entity2 = entity2.getURI();
     }
 
-//    /**
-//     * Add this dataset to another adding a string to the names of each element. 
-//     * This should be used when combining two similar feature sets from different
-//     * sources
-//     * @param other The feature set to combine
-//     * @param thisName The prefix to add to this 
-//     * @param otherName The prefix to add to the other
-//     * @return  The combination of the two datasets
-//     */
-//    public FeatureSet addAliased(FeatureSet other, String thisName, String otherName) {
-//        assert(other.entity1.equals(entity1));
-//        assert(other.entity2.equals(entity2));
-//        // Names must be unique for WEKA!
-//        String[] names2 = new String[names.length + other.names.length];
-//        for(int i = 0; i < names.length; i++) {
-//            names2[i] = names[i] + thisName;
-//        }
-//        for(int i = 0; i < other.names.length; i++) {
-//            names2[i + names.length] = other.names[i] + otherName;
-//        }
-//        double[] values2 = new double[values.length + other.values.length];
-//        System.arraycopy(values, 0, values2, 0, values.length);
-//        System.arraycopy(other.values, 0, values2, values.length, other.values.length);
-//        return new FeatureSet(names2, values2, entity1, entity2);
-//
-//    }
-
-
-    
     /**
      * Add two feature sets together by concatenating features. Does not change
      * this dataset!
@@ -123,8 +64,6 @@ public class FeatureSet {
      * @return The combined result of these datasets
      */
     public FeatureSet add(FeatureSet other) {
-        assert(other.entity1.equals(entity1));
-        assert(other.entity2.equals(entity2));
         // Names must be unique for WEKA!
         Set<StringPair> nameSet = new HashSet<>(Arrays.asList(names));
         for(int i = 0; i < other.names.length; i++) {
@@ -140,11 +79,11 @@ public class FeatureSet {
         double[] values2 = new double[values.length + other.values.length];
         System.arraycopy(values, 0, values2, 0, values.length);
         System.arraycopy(other.values, 0, values2, values.length, other.values.length);
-        return new FeatureSet(names2, values2, entity1, entity2);
+        return new FeatureSet(names2, values2);
     }
 
     public FeatureSetWithScore withScore(double score) {
-        return new FeatureSetWithScore(score, names, values, entity1, entity2);
+        return new FeatureSetWithScore(score, names, values, "", "");
     }
     
     public boolean hasNonMissing() {
@@ -175,8 +114,6 @@ public class FeatureSet {
         int hash = 3;
         hash = 23 * hash + Arrays.deepHashCode(this.names);
         hash = 23 * hash + Arrays.hashCode(this.values);
-        hash = 23 * hash + Objects.hashCode(this.entity1);
-        hash = 23 * hash + Objects.hashCode(this.entity2);
         return hash;
     }
 
@@ -193,12 +130,6 @@ public class FeatureSet {
             return false;
         }
         if (!Arrays.equals(this.values, other.values)) {
-            return false;
-        }
-        if (!Objects.equals(this.entity1, other.entity1)) {
-            return false;
-        }
-        if (!Objects.equals(this.entity2, other.entity2)) {
             return false;
         }
         return true;

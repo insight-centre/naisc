@@ -290,7 +290,7 @@ public class Main {
                             if (c % 1000 == 0) {
                                 monitor.updateStatus(Stage.SCORING, "Scoring (" + c + " done)");
                             }
-                            FeatureSet featureSet = new FeatureSet(block1, block2);
+                            FeatureSet featureSet = new FeatureSet();
                             boolean labelsProduced = false;
                             for (Lens lens : lenses) {
                                 Option<LensResult> oFacet = lens.extract(block1, block2, monitor);
@@ -304,7 +304,7 @@ public class Main {
                                             || featureExtractor.tags().contains(lens.tag())) {
                                         Feature[] features = featureExtractor.extractFeatures(facet, monitor);
                                         featureSet = featureSet.add(new FeatureSet(features,
-                                                lens.id(), block1, block2));
+                                                lens.id()));
                                     }
                                 }
                             }
@@ -314,7 +314,7 @@ public class Main {
                             }
                             for (GraphFeature feature : dataFeatures) {
                                 Feature[] features = feature.extractFeatures(block1, block2, monitor);
-                                featureSet = featureSet.add(new FeatureSet(features, feature.id(), block1, block2));
+                                featureSet = featureSet.add(new FeatureSet(features, feature.id()));
                             }
                             if (featureSet.isEmpty()) {
                                 monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "An empty feature set was created");

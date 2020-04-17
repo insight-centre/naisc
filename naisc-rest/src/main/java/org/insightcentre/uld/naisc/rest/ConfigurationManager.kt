@@ -42,7 +42,7 @@ object ConfigurationManager {
 
     @Throws(DatasetNotFoundException::class)
     fun loadDataset(dataset: String): Dataset {
-        throw UnsupportedOperationException("TODO")
+        throw UnsupportedOperationException("TODO" + dataset)
     }
 
     fun getAnalysis(dataset1 : Dataset, dataset2 : Dataset) : Lazy<Analysis> {
@@ -56,6 +56,7 @@ object ConfigurationManager {
 
     fun getPrelinking(dataset1: Dataset, dataset2 : Dataset) : Lazy<AlignmentSet>  {
         // TODO: Figure out how pre-linking should really work
+        System.err.println(dataset1.id() + dataset2.id());
         return Lazy.fromClosure { AlignmentSet() }
     }
 
@@ -83,9 +84,14 @@ object ConfigurationManager {
         return loadConfiguration(configuration).makeGraphFeatures(combined, getAnalysis(left, right), getPrelinking(left, right), ExecuteListeners.STDERR)
     }
 
-    @Throws(InvalidConfigurationException::class, DatasetNotFoundException::class)
+    @Throws(InvalidConfigurationException::class)
     fun getMatcher(configuration : String) : Matcher {
         return loadConfiguration(configuration).makeMatcher()
+    }
+
+    @Throws(InvalidConfigurationException::class)
+    fun getScorer(configuration: String) : List<Scorer> {
+        return loadConfiguration(configuration).makeScorer()
     }
 
 }

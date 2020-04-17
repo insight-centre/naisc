@@ -18,11 +18,11 @@ class RESTController {
     @Produces("application/json")
     @Throws(NotFoundException::class)
     fun block(@QueryParam("left") left: String, @QueryParam("right") right: String,
-              @PathParam("config") config: String, @Context securityContext: SecurityContext): Response {
+              @PathParam("config") config: String, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
         try {
             val blocks = ConfigurationManager.getStrategy(config, left, right).block(ConfigurationManager.loadDataset(left),
                     ConfigurationManager.loadDataset(right))
-            return Response.ok().entity(ArrayList<Any>()).build()
+            return Response.ok().entity(blocks).build()
         } catch (x: Exception) {
             return Response.status(500).entity(x.message).build()
         }
@@ -34,7 +34,7 @@ class RESTController {
     @Consumes("application/json")
     @Produces("application/json")
     @Throws(NotFoundException::class)
-    fun extractText(@PathParam("config") config: String, body: ExtractTextRequest, @Context securityContext: SecurityContext): Response {
+    fun extractText(@PathParam("config") config: String, body: ExtractTextRequest, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
         try {
             val lenses = ConfigurationManager.getLens(config, body.entity1.dataset, body.entity2.dataset)
             var result = mutableListOf<LensResult>()
@@ -56,7 +56,7 @@ class RESTController {
     @Consumes("application/json")
     @Produces("application/json")
     @Throws(NotFoundException::class)
-    fun graphFeatures(@PathParam("config") config: String, body: ExtractTextRequest, @Context securityContext: SecurityContext): Response {
+    fun graphFeatures(@PathParam("config") config: String, body: ExtractTextRequest, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
         try {
             val feats = ConfigurationManager.getGraphFeatures(config, body.entity1.dataset, body.entity2.dataset)
             var result = mutableListOf<Feature>()
@@ -76,7 +76,7 @@ class RESTController {
     @Consumes("application/json")
     @Produces("application/json")
     @Throws(NotFoundException::class)
-    fun match(@PathParam("config") config: String, body: List<Alignment>, @Context securityContext: SecurityContext): Response {
+    fun match(@PathParam("config") config: String, body: List<Alignment>, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
         try {
             val matcher = ConfigurationManager.getMatcher(config)
             return Response.ok().entity(matcher.align(AlignmentSet(body))).build()
@@ -90,7 +90,14 @@ class RESTController {
     @Consumes("application/json")
     @Produces("application/json")
     @Throws(NotFoundException::class)
-    fun score(@PathParam("config") config: String, body: List<Feature>, @Context securityContext: SecurityContext): Response {
+    fun score(@PathParam("config") config: String, body: List<Feature>, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
+        //try {
+        //    val scorers = ConfigurationManager.getScorer(config)
+        //    val features = FeatureSet()
+        //    for(f in body) {
+        //        features.add(f)
+        //    }
+        //    return Response.ok().entity(scorers.map { s -> { s.similarity(features) } }
         throw UnsupportedOperationException("TODO")
     }
 
@@ -99,7 +106,7 @@ class RESTController {
     @Consumes("application/json")
     @Produces("application/json")
     @Throws(NotFoundException::class)
-    fun textFeatures(@PathParam("config") config: String, body: LensResult, @Context securityContext: SecurityContext): Response {
+    fun textFeatures(@PathParam("config") config: String, body: LensResult, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
         throw UnsupportedOperationException("TODO")
     }
 
@@ -107,7 +114,7 @@ class RESTController {
     @Path("/upload/{id}")
     @Consumes("application/rdf+xml", "text/turtle", "application/n-triples")
     @Throws(NotFoundException::class)
-    fun upload(@PathParam("id") id: String, body: String, @Context securityContext: SecurityContext): Response {
+    fun upload(@PathParam("id") id: String, body: String, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
         throw UnsupportedOperationException("TODO")
     }
 }

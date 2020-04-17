@@ -67,7 +67,7 @@ public class LibSVMTest {
     @Test
     public void testMakeInstances() {
         System.out.println("makeInstances");
-        FeatureSet example = new FeatureSet(new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.5}, "id1", "id2");
+        FeatureSet example = new FeatureSet(new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.5});
         String datasetName = "test";
         String[] featNames = new String[]{"foobar"};
         svm_problem result = LibSVM.makeInstances(example);
@@ -79,7 +79,7 @@ public class LibSVMTest {
     @Test
     public void testAnalyzeFeatures() {
         System.out.println("analyzeFeatures");
-        FeatureSet example = new FeatureSet(new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.5}, "id1", "id2");
+        FeatureSet example = new FeatureSet(new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.5});
         String datasetName = "test";
         String[] featNames = new String[]{"foobar"};
         svm_problem instances = LibSVM.makeInstances(example);
@@ -121,7 +121,7 @@ public class LibSVMTest {
     @Test
     public void testBuildInstance() {
         System.out.println("buildInstance");
-        FeatureSet fss = new FeatureSet(new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.5}, "id1", "id2");
+        FeatureSet fss = new FeatureSet(new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.5});
         String datasetName = "test";
         String[] featNames = new String[]{"foobar"};
         double score = 0.0;

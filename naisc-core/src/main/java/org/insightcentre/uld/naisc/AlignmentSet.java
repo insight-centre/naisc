@@ -1,12 +1,12 @@
 package org.insightcentre.uld.naisc;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.insightcentre.uld.naisc.util.Option;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Pair;

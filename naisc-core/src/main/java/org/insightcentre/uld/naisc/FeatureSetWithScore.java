@@ -19,7 +19,7 @@ public class FeatureSetWithScore extends FeatureSet {
        @JsonProperty("values") double[] values, 
        @JsonProperty("entity1") String entity1, 
        @JsonProperty("entity2") String entity2) {
-        super(names, values, entity1, entity2);
+        super(names, values);
         this.score = score;
     }
    
