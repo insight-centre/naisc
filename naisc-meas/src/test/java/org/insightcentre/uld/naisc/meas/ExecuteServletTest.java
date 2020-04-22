@@ -5,6 +5,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.meas.execution.Execution;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -46,7 +47,7 @@ public class ExecuteServletTest {
             threadPool.submit(new Runnable() {
                 @Override
                 public void run() {
-                    execution.addBlock(model.createResource("foo"), model.createResource("bar"));
+                    execution.addBlock(new URIRes("foo", "left"), new URIRes("bar", "right"));
                 }
             });
         }

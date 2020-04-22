@@ -1,5 +1,7 @@
 package org.insightcentre.uld.naisc;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.monnetproject.lang.Language;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 
@@ -8,7 +10,8 @@ public class LensResult {
     public final Language lang1, lang2;
     public final String tag;
 
-    public LensResult(Language lang1, Language lang2, String string1, String string2, String tag) {
+    @JsonCreator
+    public LensResult(@JsonProperty("lang1") Language lang1, @JsonProperty("lang2") Language lang2, @JsonProperty("string1") String string1, @JsonProperty("string2") String string2, @JsonProperty("tag") String tag) {
         this.string1 = string1;
         this.string2 = string2;
         this.lang1 = lang1;

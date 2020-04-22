@@ -1,8 +1,10 @@
 package org.insightcentre.uld.naisc.rest.controllers
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.insightcentre.uld.naisc.*
 import org.insightcentre.uld.naisc.rest.ConfigurationManager
 import org.insightcentre.uld.naisc.rest.models.ExtractTextRequest
+import org.insightcentre.uld.naisc.rest.models.Score
 
 import javax.ws.rs.*
 import javax.ws.rs.core.Context
@@ -21,8 +23,13 @@ class RESTController {
         try {
             val blocks = ConfigurationManager.getStrategy(config, left, right).block(ConfigurationManager.getDataset(left),
                     ConfigurationManager.getDataset(right))
-            return Response.ok().entity(blocks).build()
+            val blocks2 = mutableListOf<Blocking>()
+            for(b in blocks) {
+                blocks2.add(b)
+            }
+            return Response.ok().entity(blocks2).build()
         } catch (x: Exception) {
+            x.printStackTrace()
             return Response.status(500).entity(x.message).build()
         }
 
@@ -78,7 +85,8 @@ class RESTController {
     fun match(@PathParam("config") config: String, body: List<Alignment>, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
         try {
             val matcher = ConfigurationManager.getMatcher(config)
-            return Response.ok().entity(matcher.align(AlignmentSet(body))).build()
+            val result = matcher.align(AlignmentSet(body))
+            return Response.ok().entity(result).build()
         } catch(x : Exception) {
             return Response.status(500).entity(x.message).build()
         }
@@ -93,8 +101,13 @@ class RESTController {
         try {
             val scorers = ConfigurationManager.getScorer(config)
             val features = FeatureSet(body)
-            return Response.ok().entity(scorers.map { s -> { s.similarity(features) } }).build()
+            val scores = mutableListOf<Score>()
+            for(s in scorers) {
+                scores.add(Score(s.relation(),s.similarity(features).value()))
+            }
+            return Response.ok().entity(scores).build()
         } catch(x : Exception) {
+            x.printStackTrace()
             return Response.status(500).entity(x.message).build()
         }
     }
@@ -120,8 +133,9 @@ class RESTController {
     fun upload(@PathParam("id") id: String, body: String, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
         try {
             ConfigurationManager.loadDataset(id, body)
-            return Response.ok().build()
+            return Response.ok().entity("Uploaded $id").build()
         } catch(x : Exception) {
+            x.printStackTrace()
             return Response.status(500).entity(x.message).build()
         }
     }

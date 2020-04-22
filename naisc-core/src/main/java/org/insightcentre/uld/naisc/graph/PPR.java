@@ -68,18 +68,20 @@ public class PPR implements GraphFeatureFactory {
         }
         for (Alignment a : prealign) {
             if (a.probability > 0) {
+                Resource entity1 = a.entity1.toJena(model);
+                Resource entity2 = a.entity2.toJena(model);
                 final int i, j;
-                if (identifiers.containsKey(a.entity1)) {
-                    i = identifiers.getInt(a.entity1);
+                if (identifiers.containsKey(entity1)) {
+                    i = identifiers.getInt(entity1);
                 } else {
                     i = g.addNode();
-                    identifiers.put(a.entity1, i);
+                    identifiers.put(entity1, i);
                 }
-                if (identifiers.containsKey(a.entity2)) {
-                    j = identifiers.getInt(a.entity2);
+                if (identifiers.containsKey(entity2)) {
+                    j = identifiers.getInt(entity2);
                 } else {
                     j = g.addNode();
-                    identifiers.put(a.entity2, j);
+                    identifiers.put(entity2, j);
                 }
                 g.addEdge(i, j);
             }
@@ -88,7 +90,7 @@ public class PPR implements GraphFeatureFactory {
         return g;
     }
 
-    private final class PPRImpl implements GraphFeature {
+    private final static class PPRImpl implements GraphFeature {
 
         private final DirectedGraph graph;
         private final Object2IntMap<Resource> identifiers;

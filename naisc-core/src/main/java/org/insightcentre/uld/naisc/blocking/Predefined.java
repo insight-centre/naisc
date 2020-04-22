@@ -50,11 +50,11 @@ public class Predefined implements BlockingStrategyFactory {
         @Override
         public Collection<Blocking> block(final Dataset _left, final Dataset _right, NaiscListener log) {
             try {
-                final AlignmentSet as = Train.readAlignments(links);
+                final AlignmentSet as = Train.readAlignments(links, _left.id(), _right.id());
                 return new AbstractCollection<Blocking>() {
                     @Override
                     public Iterator<Blocking> iterator() {
-                        return new AlignmentSetIterator(as.iterator(), _left.id(), _right.id());
+                        return new AlignmentSetIterator(as.iterator());
                     }
 
                     @Override
@@ -70,12 +70,9 @@ public class Predefined implements BlockingStrategyFactory {
     
     private static class AlignmentSetIterator implements Iterator<Blocking> {
         private final Iterator<Alignment> iter;
-        private final String left, right;
 
-        public AlignmentSetIterator(Iterator<Alignment> iter, String left, String right) {
+        public AlignmentSetIterator(Iterator<Alignment> iter) {
             this.iter = iter;
-            this.left = left;
-            this.right = right;
         }
 
         @Override
@@ -86,7 +83,7 @@ public class Predefined implements BlockingStrategyFactory {
         @Override
         public Blocking next() {
             Alignment a = iter.next();
-            return new Blocking(a.entity1, a.entity2, left, right);
+            return new Blocking(a.entity1, a.entity2);
         }
         
         

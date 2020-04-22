@@ -16,6 +16,8 @@ import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import static org.insightcentre.uld.naisc.main.Main.mapper;
+
+import org.insightcentre.uld.naisc.lens.URI;
 import org.insightcentre.uld.naisc.matcher.Prematcher;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Lazy;
@@ -77,7 +79,7 @@ public class ExamineFeature {
                 if (!oFacet.has()) {
                     monitor.updateStatus(ExecuteListener.Stage.SCORING, String.format("Lens produced no label for %s %s", res1, res2));
                 } else {
-                    monitor.addLensResult(res1, res2, lens.id(), oFacet.get());
+                    monitor.addLensResult(new URIRes(res1.getURI(), leftDataset.id()), new URIRes(res2.getURI(), rightDataset.id()), lens.id(), oFacet.get());
                 }
                 LensResult facet = oFacet.getOrElse(LensResult.fromLangStringPair(EMPTY_LANG_STRING_PAIR, lens.tag()));
                 for (TextFeature featureExtractor : textFeatures) {

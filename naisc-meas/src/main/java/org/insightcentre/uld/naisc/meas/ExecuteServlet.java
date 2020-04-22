@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.meas;
 
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.meas.execution.ExecutionMode;
 import org.insightcentre.uld.naisc.meas.execution.ExecutionTask;
 import org.insightcentre.uld.naisc.meas.execution.Execution;
@@ -153,7 +154,7 @@ public class ExecuteServlet extends HttpServlet {
         Model model = ModelFactory.createDefaultModel();
         for (Meas.RunResultRow rrr : data) {
             if (rrr.valid == Valid.yes || rrr.valid == Valid.novel) {
-                as.add(new Alignment(model.createResource(rrr.subject), model.createResource(rrr.object), rrr.score, rrr.property, null));
+                as.add(new Alignment(new URIRes(rrr.subject, "left"), new URIRes(rrr.object, "right"), rrr.score, rrr.property, null));
             }
         }
         return as;

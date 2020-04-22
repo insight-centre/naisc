@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import static org.insightcentre.uld.naisc.constraint.Bijective.Surjection.bijective;
+
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.util.SimpleCache;
 
 /**
@@ -50,11 +52,11 @@ public class Bijective implements ConstraintFactory {
     }
 
     private static class BijectiveImpl extends Constraint {
-        final Map<Resource, List<Alignment>> byLeft;
-        final Map<Resource, List<Alignment>> byRight;
+        final Map<URIRes, List<Alignment>> byLeft;
+        final Map<URIRes, List<Alignment>> byRight;
         final Surjection surjection;
 
-        public BijectiveImpl(Map<Resource, List<Alignment>> byLeft, Map<Resource, List<Alignment>> byRight, Surjection surjection, double score) {
+        public BijectiveImpl(Map<URIRes, List<Alignment>> byLeft, Map<URIRes, List<Alignment>> byRight, Surjection surjection, double score) {
             super(score);
             this.byLeft = byLeft;
             this.byRight = byRight;
@@ -88,8 +90,8 @@ public class Bijective implements ConstraintFactory {
 
         @Override
         public Constraint copy() {
-            Map<Resource, List<Alignment>> newByLeft = new HashMap<>(byLeft);
-            Map<Resource, List<Alignment>> newByRight = new HashMap<>(byRight);
+            Map<URIRes, List<Alignment>> newByLeft = new HashMap<>(byLeft);
+            Map<URIRes, List<Alignment>> newByRight = new HashMap<>(byRight);
             return new BijectiveImpl(newByLeft, newByRight, surjection, score);
         }
         

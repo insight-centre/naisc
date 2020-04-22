@@ -133,7 +133,7 @@ public class Main {
             final Option<AlignmentSet> partial;
             if (partialSoln.has()) {
                 monitor.updateStatus(Stage.INITIALIZING, "Loading partial solution");
-                partial = new Some<>(Train.readAlignments(partialSoln.get()));
+                partial = new Some<>(Train.readAlignments(partialSoln.get(), leftFile.getName(), rightFile.getName()));
             } else {
                 partial = new None<>();
             }
@@ -201,10 +201,10 @@ public class Main {
             Dataset rightModel = loader.fromFile(rightFile, name + "/right");
 
             monitor.updateStatus(Stage.INITIALIZING, "Reading gold dataset");
-            AlignmentSet gold = Train.readAlignments(goldFile);
+            AlignmentSet gold = Train.readAlignments(goldFile, leftModel.id(), rightModel.id());
 
-            Set<Resource> left = gold.stream().map(a -> a.entity1).collect(Collectors.toSet());
-            Set<Resource> right = gold.stream().map(a -> a.entity2).collect(Collectors.toSet());
+            Set<URIRes> left = gold.stream().map(a -> a.entity1).collect(Collectors.toSet());
+            Set<URIRes> right = gold.stream().map(a -> a.entity2).collect(Collectors.toSet());
 
             return execute(name, leftModel, rightModel, config, partialSoln, monitor, left, right, loader);
 
@@ -217,7 +217,7 @@ public class Main {
 
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute(String name, Dataset leftModel, Dataset rightModel, Configuration config,
-                                       Option<AlignmentSet> partialSoln, ExecuteListener monitor, Set<Resource> left, Set<Resource> right, DatasetLoader loader) {
+                                       Option<AlignmentSet> partialSoln, ExecuteListener monitor, Set<URIRes> left, Set<URIRes> right, DatasetLoader loader) {
         try {
             Lazy<Analysis> analysis = Lazy.fromClosure(() -> {
                 DatasetAnalyzer analyzer = new DatasetAnalyzer();
@@ -255,8 +255,7 @@ public class Main {
                 _blocks = ExistingLinks.filterBlocking(_blocks, ExistingLinks.findPreexisting(scorers, leftModel, rightModel));
             }
             if (left != null && right != null) {
-                blocks = new FilterBlocks(_blocks, left.stream().map(r -> URIRes.fromJena(r, leftModel.id())).collect(Collectors.toSet()),
-                    right.stream().map(r -> URIRes.fromJena(r, rightModel.id())).collect(Collectors.toSet()));
+                blocks = new FilterBlocks(_blocks, left, right);
             } else {
                 blocks = _blocks;
             }
@@ -285,7 +284,7 @@ public class Main {
                                 System.err.println(block2);
                                 throw new RuntimeException("URIRes without URI");
                             }
-                            monitor.addBlock(block1, block2);
+                            monitor.addBlock(block.entity1, block.entity2);
                             int c = count.incrementAndGet();
                             if (c % 1000 == 0) {
                                 monitor.updateStatus(Stage.SCORING, "Scoring (" + c + " done)");
@@ -296,7 +295,7 @@ public class Main {
                                 Option<LensResult> oFacet = lens.extract(block1, block2, monitor);
                                 if (oFacet.has()) {
                                     labelsProduced = true;
-                                    monitor.addLensResult(block1, block2, lens.id(), oFacet.get());
+                                    monitor.addLensResult(block.entity1, block.entity2, lens.id(), oFacet.get());
                                 }
                                 LensResult facet = oFacet.getOrElse(LensResult.fromLangStringPair(EMPTY_LANG_STRING_PAIR, lens.tag()));
                                 for (TextFeature featureExtractor : textFeatures) {
@@ -321,7 +320,7 @@ public class Main {
                             }
                             for (Scorer scorer : scorers) {
                                 ScoreResult score = scorer.similarity(featureSet, monitor);
-                                alignments.add(new TmpAlignment(block1, block2, score, scorer.relation(), config.includeFeatures ? featureSet : null));
+                                alignments.add(new TmpAlignment(block.entity1, block.entity2, score, scorer.relation(), config.includeFeatures ? featureSet : null));
                             }
                         } catch (Exception x) {
                             monitor.updateStatus(Stage.FAILED, String.format("Failed to probability %s <-> %s due to %s (%s)\n", block1, block2, x.getMessage(), x.getClass().getName()));
@@ -407,7 +406,7 @@ public class Main {
             }
             AlignmentSet set = execute("naisc", left, right, config, new None<>(), monitor, null, null, loader);
 
-            Map<Pair<Resource, Resource>, String> results = new HashMap<>();
+            Map<Pair<URIRes, URIRes>, String> results = new HashMap<>();
             for (Alignment a : set) {
                 results.put(new Pair<>(a.entity1, a.entity2), a.property);
             }
@@ -603,12 +602,12 @@ public class Main {
 
     private static class TmpAlignment {
 
-        private final Resource left, right;
+        private final URIRes left, right;
         private final ScoreResult result;
         private final String relation;
         private final Object2DoubleMap<String> features;
 
-        public TmpAlignment(Resource left, Resource right, ScoreResult result, String relation, FeatureSet featureSet) {
+        public TmpAlignment(URIRes left, URIRes right, ScoreResult result, String relation, FeatureSet featureSet) {
             this.left = left;
             this.right = right;
             this.result = result;

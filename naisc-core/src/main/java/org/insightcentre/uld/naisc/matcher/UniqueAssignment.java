@@ -23,11 +23,7 @@ import static java.lang.Math.max;
 import java.util.*;
 
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Matcher;
-import org.insightcentre.uld.naisc.MatcherFactory;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
 import org.insightcentre.uld.naisc.util.None;
@@ -99,8 +95,8 @@ public class UniqueAssignment implements MatcherFactory {
                 relations.add(alignment.property);
             }
             for (String rel : relations) {
-                Set<Resource> leftExclusion = new HashSet<>();
-                Set<Resource> rightExclusion = new HashSet<>();
+                Set<URIRes> leftExclusion = new HashSet<>();
+                Set<URIRes> rightExclusion = new HashSet<>();
                 
                 for(Alignment init : initial) {
                     if(init.property.equals(rel)) {
@@ -109,10 +105,10 @@ public class UniqueAssignment implements MatcherFactory {
                     }
                 }
                 
-                Object2IntMap<Resource> lefts = new Object2IntOpenHashMap<>();
-                Object2IntMap<Resource> rights = new Object2IntOpenHashMap<>();
-                Int2ObjectMap<Resource> linv = new Int2ObjectArrayMap<>();
-                Int2ObjectMap<Resource> rinv = new Int2ObjectArrayMap<>();
+                Object2IntMap<URIRes> lefts = new Object2IntOpenHashMap<>();
+                Object2IntMap<URIRes> rights = new Object2IntOpenHashMap<>();
+                Int2ObjectMap<URIRes> linv = new Int2ObjectArrayMap<>();
+                Int2ObjectMap<URIRes> rinv = new Int2ObjectArrayMap<>();
                 HashMap<IntStringTriple, Alignment> origAligns = new HashMap<>();
 
                 for (Alignment alignment : matches.getAlignments()) {

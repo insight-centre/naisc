@@ -1,10 +1,14 @@
 package org.insightcentre.uld.naisc;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Feature {
     public final String name;
     public final double value;
 
-    public Feature(String name, double value) {
+    @JsonCreator
+    public Feature(@JsonProperty("name") String name, @JsonProperty("value") double value) {
         this.name = name;
         this.value = value;
     }

@@ -11,9 +11,11 @@ import org.insightcentre.uld.naisc.main.DefaultDatasetLoader
 import org.insightcentre.uld.naisc.main.ExecuteListeners
 import org.insightcentre.uld.naisc.util.Lazy
 import org.insightcentre.uld.naisc.util.Pair
+import java.io.FileReader
 
 
 import java.io.IOException
+import java.io.StringReader
 
 object ConfigurationManager {
 
@@ -29,7 +31,7 @@ object ConfigurationManager {
         }
         val mapper = ObjectMapper()
         try {
-            val config = mapper.readValue<Configuration>("configs/$configuration.json", Configuration::class.java)
+            val config = mapper.readValue<Configuration>(FileReader("configs/$configuration.json"), Configuration::class.java)
             configurations[configuration] = config
             return config
         } catch (x: Exception) {
@@ -45,7 +47,7 @@ object ConfigurationManager {
 
     fun loadDataset(dataset : String, content : String) : Dataset {
         val model = ModelFactory.createDefaultModel()
-        model.read(content)
+        model.read(StringReader(content), "file:$dataset/")
         val modelDataset = DefaultDatasetLoader.ModelDataset(model, dataset)
         datasets[dataset] = modelDataset
         return modelDataset

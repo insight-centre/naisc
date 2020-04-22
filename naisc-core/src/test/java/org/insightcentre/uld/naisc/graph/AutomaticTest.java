@@ -72,10 +72,10 @@ public class AutomaticTest {
         model.add(model.createResource("file:bar2"), model.createProperty("file:p1"), model.createResource("file:bar3"));
         model.add(model.createResource("file:bar3"), model.createProperty("file:p1"), model.createResource("file:bar1"));
         AlignmentSet prealign = new AlignmentSet();
-        prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar1"), 1.0));
-        prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar3"), 0.0));
+        prealign.add(new Alignment(new URIRes("file:foo1", "left"), new URIRes("file:bar1", "right"), 1.0));
+        prealign.add(new Alignment(new URIRes("file:foo1", "left"), new URIRes("file:bar3", "right"), 0.0));
         for (int i = 0; i < 10; i++) {
-            prealign.add(new Alignment(model.createResource("file:foo" + i), model.createResource("file:bar" + i), 1.0));
+            prealign.add(new Alignment(new URIRes("file:foo" + i, "left"), new URIRes("file:bar" + i, "right"), 1.0));
 
         }
         Dataset sparqlData = new ModelDataset(model,"model");

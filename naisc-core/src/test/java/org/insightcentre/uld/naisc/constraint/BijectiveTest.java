@@ -7,6 +7,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
+import org.insightcentre.uld.naisc.URIRes;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -39,8 +40,8 @@ public class BijectiveTest {
     }
 
     private Model m = ModelFactory.createDefaultModel();
-    private Resource r(String s) {
-        return m.createResource("file:test#" + s);
+    private URIRes r(String s) {
+        return new URIRes("file:test#" + s, "dataset");
     }
     
     /**

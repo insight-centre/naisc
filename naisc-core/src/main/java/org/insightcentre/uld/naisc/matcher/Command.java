@@ -7,11 +7,7 @@ import java.io.PrintWriter;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Matcher;
-import org.insightcentre.uld.naisc.MatcherFactory;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
@@ -102,8 +98,8 @@ public class Command implements MatcherFactory {
                     if (elems.length != 4) {
                         throw new RuntimeException("Bad result from matcher: " + line);
                     }
-                    result.add(new Alignment(model.createResource(elems[0]),
-                            model.createResource(elems[2]), Double.parseDouble(elems[3]),
+                    result.add(new Alignment(new URIRes(elems[0], "left"),
+                            new URIRes(elems[2], "right"), Double.parseDouble(elems[3]),
                             elems[1], null));
                     line = in.readLine();
                 }

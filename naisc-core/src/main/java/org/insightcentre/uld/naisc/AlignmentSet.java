@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.util.Some;
@@ -29,7 +28,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
     @JsonCreator public AlignmentSet(List<Alignment> alignments) {
         this.alignments = alignments;
     }
-    private Map<String, Map<Pair<Resource,Resource>, Alignment>> index;
+    private Map<String, Map<Pair<URIRes,URIRes>, Alignment>> index;
 
     /**
      * Get an alignment if it is in this set
@@ -38,20 +37,20 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
      * @param property The property to matche
      * @return The alignments between these elements
      */
-    public Option<Alignment> find(Resource id1, Resource id2, String property) {
+    public Option<Alignment> find(URIRes id1, URIRes id2, String property) {
         if(index == null) {
             buildIndex();
         }
-        Map<Pair<Resource, Resource>, Alignment> byPair = index.get(property);
+        Map<Pair<URIRes, URIRes>, Alignment> byPair = index.get(property);
         if(byPair == null)
             return new None<>();
-        final Pair<Resource, Resource> sp = new Pair<>(id1, id2);
+        final Pair<URIRes, URIRes> sp = new Pair<>(id1, id2);
         return byPair.containsKey(sp) ? new Some<>(byPair.get(sp)) : new None<>();
 
     }
 
     private void buildIndex() {
-        Map<String, Map<Pair<Resource,Resource>, Alignment>> map = new HashMap<>();
+        Map<String, Map<Pair<URIRes,URIRes>, Alignment>> map = new HashMap<>();
         for(Alignment alignment : alignments) {
             if(!map.containsKey(alignment.property)) {
                 map.put(alignment.property, new HashMap<>());
@@ -70,12 +69,12 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
      * @param id2 The right id
      * @return True if a link exists between these resources
      */
-    public boolean hasLink(Resource id1, Resource id2) {
+    public boolean hasLink(URIRes id1, URIRes id2) {
         if(index == null) {
             buildIndex();
         }
-        for(Map<Pair<Resource,Resource>, Alignment> byPair : index.values()) {
-            final Pair<Resource, Resource> sp = new Pair<>(id1, id2);
+        for(Map<Pair<URIRes,URIRes>, Alignment> byPair : index.values()) {
+            final Pair<URIRes, URIRes> sp = new Pair<>(id1, id2);
             if(byPair.containsKey(sp)) {
                 return true;
             }

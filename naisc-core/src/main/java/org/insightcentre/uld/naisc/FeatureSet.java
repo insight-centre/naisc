@@ -67,7 +67,7 @@ public class FeatureSet {
             freq.put(f.name, freq.getOrDefault(f.name, 1) + 1);
             values[i++] = f.value;
         }
-        this.names = (StringPair[])fnames.toArray();
+        this.names = fnames.toArray(new StringPair[fnames.size()]);
     }
 
     /**

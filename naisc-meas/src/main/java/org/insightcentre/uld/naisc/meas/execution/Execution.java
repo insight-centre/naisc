@@ -15,11 +15,8 @@ import java.sql.Statement;
 import java.util.*;
 
 import org.apache.jena.rdf.model.Resource;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.Alignment.Valid;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.LensResult;
-import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
 import org.insightcentre.uld.naisc.meas.DataView;
 import org.insightcentre.uld.naisc.meas.DataView.DataViewEntry;
@@ -40,10 +37,10 @@ public class Execution implements ExecuteListener {
     public ListenerResponse response = new ListenerResponse();
     public boolean aborted = false;
     private final String id;
-    private final HashMap<Pair<Resource, Resource>, Map<String, LensResult>> lensResults = new HashMap<>();
-    private final HashMap<Resource, Map<String, LensResult>> leftLensResults = new HashMap<>();
-    private final HashMap<Resource, Map<String, LensResult>> rightLensResults = new HashMap<>();
-    private List<Pair<Resource, Resource>> blocks = new ArrayList<>();
+    private final HashMap<Pair<URIRes, URIRes>, Map<String, LensResult>> lensResults = new HashMap<>();
+    private final HashMap<URIRes, Map<String, LensResult>> leftLensResults = new HashMap<>();
+    private final HashMap<URIRes, Map<String, LensResult>> rightLensResults = new HashMap<>();
+    private List<Pair<URIRes, URIRes>> blocks = new ArrayList<>();
     private final static Object databaseLock = new Object();
     private final List<Message> messages = new ArrayList<>();
 
@@ -68,8 +65,8 @@ public class Execution implements ExecuteListener {
     }
 
     @Override
-    public void addLensResult(Resource id1, Resource id2, String lensId, LensResult res) {
-        Pair<Resource, Resource> p = new Pair(id1, id2);
+    public void addLensResult(URIRes id1, URIRes id2, String lensId, LensResult res) {
+        Pair<URIRes, URIRes> p = new Pair(id1, id2);
         synchronized (lensResults) {
             if (!lensResults.containsKey(p)) {
                 lensResults.put(p, new HashMap<>());
@@ -95,14 +92,14 @@ public class Execution implements ExecuteListener {
     }
 
     @Override
-    public void addBlock(Resource res1, Resource res2) {
+    public void addBlock(URIRes res1, URIRes res2) {
         synchronized (databaseLock) {
             blocks.add(new Pair<>(res1, res2));
         }
         if (blocks.size() > BLOCK_MAX) {
             synchronized (databaseLock) {
                 if (blocks.size() > BLOCK_MAX) {
-                    List<Pair<Resource, Resource>> b2 = blocks;
+                    List<Pair<URIRes, URIRes>> b2 = blocks;
                     blocks = new ArrayList<>();
                     try (Connection connection = connection(id)) {
                         createTables(connection);
@@ -223,18 +220,13 @@ public class Execution implements ExecuteListener {
         }
     }
 
-    public static void saveBlocks(Connection connection, List<Pair<Resource, Resource>> blocks) throws SQLException {
+    public static void saveBlocks(Connection connection, List<Pair<URIRes, URIRes>> blocks) throws SQLException {
         connection.setAutoCommit(false);
         try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO blocks(res1, res2) VALUES (?,?)")) {
             int i = 0;
-            for (Pair<Resource, Resource> block : blocks) {
+            for (Pair<URIRes, URIRes> block : blocks) {
                 if (block == null) {
                     throw new RuntimeException();
-                }
-                if (block._1 == null || !block._1.isURIResource()
-                        || block._2 == null || !block._2.isURIResource()) {
-                    System.err.println("Bad block generated");
-                    continue;
                 }
                 pstat.setString(1, block._1.getURI());
                 pstat.setString(2, block._2.getURI());
@@ -785,7 +777,7 @@ public class Execution implements ExecuteListener {
         return messages;
     }
 
-    private Map<String, LensResult> createLensResult(Resource entity1, Resource entity2) {
+    private Map<String, LensResult> createLensResult(URIRes entity1, URIRes entity2) {
         if (leftLensResults.containsKey(entity1)) {
             Map<String, LensResult> merged = new HashMap<>(leftLensResults.get(entity1));
             Map<String, LensResult> r = rightLensResults.get(entity2);

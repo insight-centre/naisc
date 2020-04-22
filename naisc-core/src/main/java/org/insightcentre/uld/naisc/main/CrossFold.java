@@ -99,7 +99,7 @@ public class CrossFold {
         Dataset rightModel = loader.fromFile(rightFile, name + "/right");
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading gold standard");
-        final AlignmentSet goldAlignments = Train.readAlignments(gold);
+        final AlignmentSet goldAlignments = Train.readAlignments(gold, leftFile.getName(), rightFile.getName());
 
         return execute(name, leftModel, rightModel, goldAlignments, nFolds, negativeSampling, config, monitor, loader);
 
@@ -232,8 +232,8 @@ public class CrossFold {
     /** The maximum number of iterations to use in finding a good split */
     public static final int MAX_ITERS = 10;
 
-    private static List<Pair<Resource, Resource>> getAllPairs(AlignmentSet alignments) {
-        List<Pair<Resource, Resource>> pairs = new ArrayList<>();
+    private static List<Pair<URIRes, URIRes>> getAllPairs(AlignmentSet alignments) {
+        List<Pair<URIRes, URIRes>> pairs = new ArrayList<>();
         for (Alignment a : alignments) {
             pairs.add(new Pair(a.entity1, a.entity2));
         }
@@ -253,15 +253,15 @@ public class CrossFold {
      * right (object) side
      */
     public static Folds splitDataset(AlignmentSet alignments, int folds) {
-        final List<Pair<Resource, Resource>> allPairs = getAllPairs(alignments);
-        final List<Resource> leftEntities = new ArrayList<>(allPairs.stream().map(x -> x._1).collect(Collectors.toSet()));
-        final List<Resource> rightEntities = new ArrayList<>(allPairs.stream().map(x -> x._2).collect(Collectors.toSet()));
+        final List<Pair<URIRes, URIRes>> allPairs = getAllPairs(alignments);
+        final List<URIRes> leftEntities = new ArrayList<>(allPairs.stream().map(x -> x._1).collect(Collectors.toSet()));
+        final List<URIRes> rightEntities = new ArrayList<>(allPairs.stream().map(x -> x._2).collect(Collectors.toSet()));
 
         Collections.shuffle(leftEntities);
         Collections.shuffle(rightEntities);
 
-        final Object2IntMap<Resource> leftIdx = reverseMap(leftEntities);
-        final Object2IntMap<Resource> rightIdx = reverseMap(rightEntities);
+        final Object2IntMap<URIRes> leftIdx = reverseMap(leftEntities);
+        final Object2IntMap<URIRes> rightIdx = reverseMap(rightEntities);
 
         final IntSet[] leftFolds = new IntSet[folds];
         final IntSet[] rightFolds = new IntSet[folds];
@@ -285,7 +285,7 @@ public class CrossFold {
             byRightFold[i] = i % folds;
         }
 
-        for (Pair<Resource, Resource> p : allPairs) {
+        for (Pair<URIRes, URIRes> p : allPairs) {
             forward[leftIdx.getInt(p._1)].add(rightIdx.getInt(p._2));
             backward[rightIdx.getInt(p._2)].add(leftIdx.getInt(p._1));
         }
@@ -340,7 +340,7 @@ public class CrossFold {
 
     }
 
-    private static StepResult step(final List<Resource> entities, final IntSet[] links,
+    private static StepResult step(final List<URIRes> entities, final IntSet[] links,
             final IntSet[] reverseFolds, final int[] byFold,
             int inlinks, final int alllinks,
             final IntSet[] leftFolds) {
@@ -396,7 +396,7 @@ public class CrossFold {
 
     }
 
-    private static List<Set<Resource>> mapSplit(IntSet[] left, List<Resource> entities) {
+    private static List<Set<URIRes>> mapSplit(IntSet[] left, List<URIRes> entities) {
         return Arrays.asList(left).stream().map(x -> x.stream().map(y -> entities.get(y)).collect(Collectors.toSet())).collect(Collectors.toList());
     }
 
@@ -412,8 +412,8 @@ public class CrossFold {
         return i;
     }
 
-    private static Object2IntMap<Resource> reverseMap(List<Resource> leftEntities) {
-        Object2IntMap<Resource> m = new Object2IntOpenHashMap<>();
+    private static Object2IntMap<URIRes> reverseMap(List<URIRes> leftEntities) {
+        Object2IntMap<URIRes> m = new Object2IntOpenHashMap<>();
         for (int i = 0; i < leftEntities.size(); i++) {
             m.put(leftEntities.get(i), i);
         }
@@ -428,9 +428,9 @@ public class CrossFold {
         /**
          * The left and right split
          */
-        public final List<Set<Resource>> leftSplit, rightSplit;
+        public final List<Set<URIRes>> leftSplit, rightSplit;
 
-        public Folds(List<Set<Resource>> leftSplit, List<Set<Resource>> rightSplit) {
+        public Folds(List<Set<URIRes>> leftSplit, List<Set<URIRes>> rightSplit) {
             this.leftSplit = leftSplit;
             this.rightSplit = rightSplit;
         }
@@ -529,7 +529,7 @@ public class CrossFold {
         }
 
         @Override
-        public void addLensResult(Resource id1, Resource id2, String lensId, LensResult res) {
+        public void addLensResult(URIRes id1, URIRes id2, String lensId, LensResult res) {
             mem.addLensResult(id1, id2, lensId, res);
         }
 

@@ -21,6 +21,8 @@ import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
+
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Pair;
 
@@ -75,12 +77,12 @@ public class Evaluate {
         }
     }
 
-    public static void evaluate(File testFile, File goldFile, File outputFile, ExecuteListener monitor, boolean ignoreNotInGold) throws IOException {
+    public static void evaluate(File testFile, File goldFile, File outputFile, ExecuteListener monitor, boolean ignoreNotInGold, String leftDatatset, String rightDataset) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading output alignments");
-        final AlignmentSet output = Train.readAlignments(testFile);
+        final AlignmentSet output = Train.readAlignments(testFile, leftDatatset, rightDataset);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading gold standard");
-        final AlignmentSet goldAlignments = Train.readAlignments(goldFile);
+        final AlignmentSet goldAlignments = Train.readAlignments(goldFile, leftDatatset, rightDataset);
 
         EvaluationResults er = evaluate(output, goldAlignments, monitor, ignoreNotInGold);
 
@@ -100,7 +102,7 @@ public class Evaluate {
         for (int i = 0; i <= 10; i++) {
             er.thresholds.add(new Pair(0.1 * i, new EvaluationResults()));
         }
-        Set<Resource> goldLefts = null, goldRights = null;
+        Set<URIRes> goldLefts = null, goldRights = null;
         if(ignoreNotInGold) {
             goldLefts = gold.stream().map(a -> a.entity1).collect(Collectors.toSet());
             goldRights = gold.stream().map(a -> a.entity2).collect(Collectors.toSet());
@@ -254,7 +256,7 @@ public class Evaluate {
             final File outputFile = (File) os.valueOf("o");
 
             Evaluate.evaluate(test, gold, outputFile,
-                    os.has("q") ? NONE : STDERR, os.has("i"));
+                    os.has("q") ? NONE : STDERR, os.has("i"), "left", "right");
 
         } catch (Exception x) {
             x.printStackTrace();

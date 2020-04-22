@@ -18,6 +18,7 @@ import org.apache.jena.rdf.model.Statement;
 import org.insightcentre.uld.naisc.Alignment;
 import static org.insightcentre.uld.naisc.Alignment.SKOS_EXACT_MATCH;
 import org.insightcentre.uld.naisc.AlignmentSet;
+import org.insightcentre.uld.naisc.URIRes;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -51,7 +52,10 @@ public class CrossFoldTest {
     }
 
     private Model m = ModelFactory.createDefaultModel();
-    private Resource r(String s) {
+    private URIRes r(String s) {
+        return new URIRes(s, "dataset");
+    }
+    private Resource r2(String s) {
         return m.createResource(s);
     }
     /**
@@ -114,14 +118,14 @@ public class CrossFoldTest {
         alignments.add(new Alignment(r("file:left#e2"), r("file:right#e3"), 1.0, SKOS_EXACT_MATCH, null));
         alignments.add(new Alignment(r("file:left#e3"), r("file:right#e3"), 1.0, SKOS_EXACT_MATCH, null));
         alignments.add(new Alignment(r("file:left#e4"), r("file:right#e4"), 1.0, SKOS_EXACT_MATCH, null));
-        List<Set<Resource>> leftSplit = new ArrayList<>();
+        List<Set<URIRes>> leftSplit = new ArrayList<>();
         leftSplit.add(new HashSet<>());
         leftSplit.get(0).add(r("file:left#e1"));
         leftSplit.get(0).add(r("file:left#e2"));
         leftSplit.add(new HashSet<>());
         leftSplit.get(0).add(r("file:left#e3"));
         leftSplit.get(0).add(r("file:left#e4"));
-        List<Set<Resource>> rightSplit = new ArrayList<>();
+        List<Set<URIRes>> rightSplit = new ArrayList<>();
         rightSplit.add(new HashSet<>());
         rightSplit.get(0).add(r("file:right#e1"));
         rightSplit.get(0).add(r("file:right#e2"));

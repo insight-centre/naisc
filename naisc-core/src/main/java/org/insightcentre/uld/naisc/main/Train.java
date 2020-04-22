@@ -45,7 +45,7 @@ public class Train {
     }
     final static ObjectMapper mapper = new ObjectMapper();
 
-    public static AlignmentSet readAlignments(File alignmentFile) throws IOException {
+    public static AlignmentSet readAlignments(File alignmentFile, String leftDataset, String rightDataset) throws IOException {
         AlignmentSet alignments = new AlignmentSet();
         Model model = ModelFactory.createDefaultModel();
         BufferedReader br = new BufferedReader(new FileReader(alignmentFile));
@@ -67,7 +67,10 @@ public class Train {
                     throw new IOException("Bad line in alignments (no statement)", x);
                 }
                 double score = m.group(2) == null ? 1.0 : Double.parseDouble(m.group(3));
-                alignments.add(new Alignment(st, score));
+                alignments.add(new Alignment(
+                    new URIRes(st.getSubject().getURI(), leftDataset),
+                    new URIRes(st.getObject().asResource().getURI(), rightDataset),
+                    score, st.getPredicate().getURI(), null));
             } else {
                 throw new RuntimeException("Line does not seem valid: " + line);
             }
@@ -132,7 +135,7 @@ public class Train {
             double negativeSampling,
             Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading alignments");
-        AlignmentSet goldAlignments = readAlignments(alignment);
+        AlignmentSet goldAlignments = readAlignments(alignment, leftFile.getName(), rightFile.getName());
         execute(name, leftFile, rightFile, goldAlignments, negativeSampling, config, monitor, loader);
     }
 
@@ -255,7 +258,7 @@ public class Train {
             }
             for (String prop : goldProps) {
                 Resource block1 = block.asJena1(leftModel), block2 = block.asJena2(rightModel);
-                Option<Alignment> a = goldAlignments.find(block1, block2, prop);
+                Option<Alignment> a = goldAlignments.find(block.entity1, block.entity2, prop);
 
                 if (a.has()) {
                     FeatureSet featureSet = makeFeatures(block1, block2, lenses, monitor, textFeatures, dataFeatures);
@@ -274,8 +277,8 @@ public class Train {
 
         int unblockedGold = 0;
         for (Alignment a : goldAlignments) {
-            FeatureSet featureSet = makeFeatures(a.entity1,
-                    a.entity2, lenses, monitor, textFeatures, dataFeatures);
+            FeatureSet featureSet = makeFeatures(a.entity1.toJena(leftModel),
+                    a.entity2.toJena(rightModel), lenses, monitor, textFeatures, dataFeatures);
             trainingData.get(a.property).add(featureSet.withScore(a.probability));
             unblockedGold++;
         }

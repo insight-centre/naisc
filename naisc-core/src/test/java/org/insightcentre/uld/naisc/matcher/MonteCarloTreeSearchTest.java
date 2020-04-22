@@ -11,6 +11,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.Matcher;
+import org.insightcentre.uld.naisc.URIRes;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -43,8 +44,8 @@ public class MonteCarloTreeSearchTest {
     public void tearDown() {
     }
     private Model m = ModelFactory.createDefaultModel();
-    private Resource r(String s) {
-        return m.createResource(new AnonId(s));
+    private URIRes r(String s) {
+        return new URIRes(s, "dataset");
     }
 
     /**

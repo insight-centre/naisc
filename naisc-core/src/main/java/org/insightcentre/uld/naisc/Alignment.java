@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -23,13 +24,13 @@ public class Alignment {
     /**
      * The first entity that is aligned
      */
-     @JsonSerialize(using=ResourceSerializer.class)
-    public final Resource entity1;
+     //@JsonSerialize(using=ResourceSerializer.class)
+    public final URIRes entity1;
     /**
      * The second entity that is aligned
      */
-    @JsonSerialize(using=ResourceSerializer.class)
-    public final Resource entity2;
+    //@JsonSerialize(using=ResourceSerializer.class)
+    public final URIRes entity2;
     /**
      * The probability (between 0 and 1) of the alignment
      */
@@ -50,8 +51,8 @@ public class Alignment {
 
     public static final String SKOS_EXACT_MATCH = "http://www.w3.org/2004/02/skos/core#exactMatch";
 
-    public Alignment(Resource entity1,
-            Resource entity2,
+    public Alignment(URIRes entity1,
+            URIRes entity2,
             double probability) {
         this.entity1 = entity1;
         this.entity2 = entity2;
@@ -60,8 +61,8 @@ public class Alignment {
         assert (probability >= 0 && probability <= 1);
     }
 
-    public Alignment(Resource entity1,
-                     Resource entity2,
+    public Alignment(URIRes entity1,
+                     URIRes entity2,
                      double probability, String property, Object2DoubleMap<String> features) {
         this.entity1 = entity1;
         this.entity2 = entity2;
@@ -81,14 +82,14 @@ public class Alignment {
     }
 
 
-    public Alignment(Statement statement, double probability) {
-        assert(statement.getSubject().isURIResource() && statement.getObject().isURIResource());
-        this.entity1 = statement.getSubject();
-        this.entity2 = statement.getObject().asResource();
-        this.probability = probability;
-        this.property = statement.getPredicate().getURI();
-        assert (probability >= 0 && probability <= 1);
-    }
+//    public Alignment(Statement statement, double probability) {
+//        assert(statement.getSubject().isURIResource() && statement.getObject().isURIResource());
+//        this.entity1 = statement.getSubject();
+//        this.entity2 = statement.getObject().asResource();
+//        this.probability = probability;
+//        this.property = statement.getPredicate().getURI();
+//        assert (probability >= 0 && probability <= 1);
+//    }
     
 
     @Override

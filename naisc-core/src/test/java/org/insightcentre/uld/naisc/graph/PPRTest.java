@@ -61,8 +61,8 @@ public class PPRTest {
         model.add(model.createResource("file:bar2"), model.createProperty("file:p1"), model.createResource("file:bar3"));
         model.add(model.createResource("file:bar3"), model.createProperty("file:p1"), model.createResource("file:bar1"));
         AlignmentSet prealign = new AlignmentSet();
-        prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar1"), 1.0));
-        prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar3"), 0.0));
+        prealign.add(new Alignment(new URIRes("file:foo1", "model"), new URIRes("file:bar1", "model"), 1.0));
+        prealign.add(new Alignment(new URIRes("file:foo1", "model"), new URIRes("file:bar3", "model"), 0.0));
         Dataset sparqlData = new ModelDataset(model, "model");
         Map<String, Object> params = new HashMap<>();
         Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model, "model"), new ModelDataset(model, "model")));
@@ -95,8 +95,8 @@ public class PPRTest {
         model.add(model.createResource("file:bar2"), model.createProperty("file:p1"), model.createResource("file:bar3"));
         model.add(model.createResource("file:bar3"), model.createProperty("file:p1"), model.createResource("file:bar1"));
         AlignmentSet prealign = new AlignmentSet();
-        prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar1"), 1.0));
-        prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar3"), 0.0));
+        prealign.add(new Alignment(new URIRes("file:foo1", "model"), new URIRes("file:bar1", "model"), 1.0));
+        prealign.add(new Alignment(new URIRes("file:foo1", "model"), new URIRes("file:bar3", "model"), 0.0));
         Object2IntMap<Resource> identifiers = new Object2IntOpenHashMap<>();
         FastPPR.DirectedGraph result = PPR.buildGraph(new ModelDataset(model, "model"), prealign, identifiers);
     }

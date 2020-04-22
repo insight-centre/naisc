@@ -1,5 +1,8 @@
 package org.insightcentre.uld.naisc;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.jena.rdf.model.Resource;
 
 import java.util.HashMap;
@@ -9,7 +12,7 @@ public class URIRes {
     public final String uri;
     public final String dataset;
 
-    public URIRes(String uri, String dataset) {
+    public @JsonCreator URIRes(@JsonProperty("uri") String uri, @JsonProperty("dataset") String dataset) {
         this.uri = uri;
         this.dataset = dataset;
     }
@@ -22,7 +25,8 @@ public class URIRes {
         return new URIRes(res.getURI(), dataset);
     }
 
-    public String getUri() {
+    @JsonIgnore
+    public String getURI() {
         return uri;
     }
 
