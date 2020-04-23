@@ -1,11 +1,14 @@
 package org.insightcentre.uld.naisc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Objects;
 
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -47,7 +50,7 @@ public class Alignment {
      * The features used to calculate the probability
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Object2DoubleMap<String> features;
+    public Map<String, Double> features;
 
     public static final String SKOS_EXACT_MATCH = "http://www.w3.org/2004/02/skos/core#exactMatch";
 
@@ -61,9 +64,12 @@ public class Alignment {
         assert (probability >= 0 && probability <= 1);
     }
 
-    public Alignment(URIRes entity1,
-                     URIRes entity2,
-                     double probability, String property, Object2DoubleMap<String> features) {
+    @JsonCreator
+    public Alignment(@JsonProperty("entity1") URIRes entity1,
+                     @JsonProperty("entity2") URIRes entity2,
+                     @JsonProperty("probability") double probability,
+                     @JsonProperty("property") String property,
+                     @JsonProperty("features") Map<String, Double> features) {
         this.entity1 = entity1;
         this.entity2 = entity2;
         this.probability = probability;

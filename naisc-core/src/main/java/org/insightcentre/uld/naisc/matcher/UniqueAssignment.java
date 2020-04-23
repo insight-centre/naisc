@@ -12,6 +12,8 @@ import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.ints.IntComparator;
 import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.FileOutputStream;
@@ -147,7 +149,7 @@ public class UniqueAssignment implements MatcherFactory {
                         Alignment orig = origAligns.get(new IntStringTriple(ip._1, ip._2, rel));
                         if(orig != null) {
                             alignmentSet.add(new Alignment(linv.get(ip._1), rinv.get(ip._2),
-                                orig.probability, rel, orig.features));
+                                orig.probability, rel, orig.features == null || orig.features instanceof Object2DoubleMap ? (Object2DoubleMap<String>)orig.features : new Object2DoubleOpenHashMap<>(orig.features)));
                         } else {
                             alignmentSet.add(new Alignment(linv.get(ip._1), rinv.get(ip._2),
                                     baseProbability, rel, null));

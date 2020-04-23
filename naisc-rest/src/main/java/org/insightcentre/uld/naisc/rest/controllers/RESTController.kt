@@ -88,6 +88,7 @@ class RESTController {
             val result = matcher.align(AlignmentSet(body))
             return Response.ok().entity(result).build()
         } catch(x : Exception) {
+            x.printStackTrace()
             return Response.status(500).entity(x.message).build()
         }
     }
