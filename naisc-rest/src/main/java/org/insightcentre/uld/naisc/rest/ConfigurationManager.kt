@@ -11,6 +11,7 @@ import org.insightcentre.uld.naisc.main.DefaultDatasetLoader
 import org.insightcentre.uld.naisc.main.ExecuteListeners
 import org.insightcentre.uld.naisc.util.Lazy
 import org.insightcentre.uld.naisc.util.Pair
+import java.io.File
 import java.io.FileReader
 
 
@@ -31,6 +32,10 @@ object ConfigurationManager {
         }
         val mapper = ObjectMapper()
         try {
+            val f = File("configs/$configuration.json")
+            if(!f.exists()) {
+                throw InvalidConfigurationException("No such configuration \"$configuration\" (looking at ${f.absolutePath})")
+            }
             val config = mapper.readValue<Configuration>(FileReader("configs/$configuration.json"), Configuration::class.java)
             configurations[configuration] = config
             return config

@@ -13,6 +13,12 @@ public class URIRes {
     public final String dataset;
 
     public @JsonCreator URIRes(@JsonProperty("uri") String uri, @JsonProperty("dataset") String dataset) {
+        if(uri == null || uri.equals("")) {
+            throw new IllegalArgumentException("URI cannot be null or empty");
+        }
+        if(dataset == null || dataset.equals("")) {
+            throw new IllegalArgumentException("Dataset cannot be null or empty");
+        }
         this.uri = uri;
         this.dataset = dataset;
     }
