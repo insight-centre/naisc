@@ -18,7 +18,7 @@ repositories {
 }
 dependencies {
     compile project(':naisc-core')
-    providedCompile 'javax.ws.rs:javax.ws.rs-api:2.0.1'
+    compile 'javax.ws.rs:javax.ws.rs-api:2.0.1'
     compile 'org.glassfish.jersey.core:jersey-server:2.22.2'
     // Jersey core Servlet 3.x implementation
     compile 'org.glassfish.jersey.containers:jersey-container-servlet:2.22.2'
