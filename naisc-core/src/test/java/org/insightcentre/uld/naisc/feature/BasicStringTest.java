@@ -70,6 +70,8 @@ public class BasicStringTest {
         BasicStringImpl instance = new BasicStringImpl(false, null, null, null, null, false);
         String[] expResult = new String[] {
             "lcs",
+            "lc_suffix",
+            "lc_prefix",
             "ngram-1",
             "ngram-2",
             "ngram-3",
@@ -98,7 +100,7 @@ public class BasicStringTest {
         String entity1id = "x1";
         String entity2id = "x2";
         BasicStringImpl instance = new BasicStringImpl(false, null, null, null, null, false);
-        double[] expResult = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 };
+        double[] expResult = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 };
         Feature[] _result = instance.extractFeatures(_sp);
         double[] result = new double[_result.length];
         for(int i = 0; i < result.length; i++) {
@@ -132,7 +134,7 @@ public class BasicStringTest {
         BasicStringImpl.NGramWeighting weighting = new BasicStringImpl.ConstantWeighting();
         double expResult = 0.6;
         double result = BasicStringImpl.ngramOverlap(s1, s2, n, weighting);
-        assertEquals(expResult, result, 0.0);
+        assertEquals(expResult, result, 0.00001);
     }
 
     /**
