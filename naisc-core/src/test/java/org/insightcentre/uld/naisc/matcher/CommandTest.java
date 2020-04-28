@@ -7,6 +7,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.Matcher;
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -66,13 +67,13 @@ public class CommandTest {
         Command instance = new Command();
         Matcher matcher = instance.makeMatcher(params);
         AlignmentSet as = new AlignmentSet();
-        as.add(new Alignment(model.createResource("http://www.example.com/id1"),model.createResource("http://www.example.com/id1"),0.5));
-        as.add(new Alignment(model.createResource("http://www.example.com/id1"),model.createResource("http://www.example.com/id2"),0.5));
-        as.add(new Alignment(model.createResource("http://www.example.com/id2"),model.createResource("http://www.example.com/id2"),0.5));
+        as.add(new Alignment(new URIRes("http://www.example.com/id1", "left"),new URIRes("http://www.example.com/id1", "right"),0.5));
+        as.add(new Alignment(new URIRes("http://www.example.com/id1", "left"),new URIRes("http://www.example.com/id2", "right"),0.5));
+        as.add(new Alignment(new URIRes("http://www.example.com/id2", "left"),new URIRes("http://www.example.com/id2", "right"),0.5));
         AlignmentSet result = matcher.align(as);
         AlignmentSet expResult = new AlignmentSet();
-        expResult.add(new Alignment(model.createResource("http://www.example.com/id1"),model.createResource("http://www.example.com/id1"),0.5));
-        expResult.add(new Alignment(model.createResource("http://www.example.com/id2"),model.createResource("http://www.example.com/id2"),0.5));
+        expResult.add(new Alignment(new URIRes("http://www.example.com/id1", "left"),new URIRes("http://www.example.com/id1", "right"),0.5));
+        expResult.add(new Alignment(new URIRes("http://www.example.com/id2", "left"),new URIRes("http://www.example.com/id2", "right"),0.5));
         assertEquals(expResult, result);
         } catch(ExternalCommandException x) {
             x.printStackTrace();

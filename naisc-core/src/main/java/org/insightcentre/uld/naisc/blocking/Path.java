@@ -1,25 +1,14 @@
 package org.insightcentre.uld.naisc.blocking;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
+
+import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.BlockingStrategyFactory;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.lens.Label;
 import org.insightcentre.uld.naisc.util.Lazy;
@@ -78,15 +67,19 @@ public class Path implements BlockingStrategyFactory {
         }
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
+        public Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log) {
             Map<Resource, List<Resource>> prelinking = convertPrelinking(preblocking.prelink(left, right, log));
-            return new Iterable<Pair<Resource, Resource>>() {
+            return new AbstractCollection<Blocking>() {
                 @Override
-                public Iterator<Pair<Resource, Resource>> iterator() {
+                public Iterator<Blocking> iterator() {
                     ResIterator leftIter = left.listSubjects();
                     return new PathIterator(leftIter, left, right, prelinking, maxMatches);
                 }
 
+                @Override
+                public int size() {
+                    throw new UnsupportedOperationException();
+                }
             };
         }
 
@@ -103,7 +96,7 @@ public class Path implements BlockingStrategyFactory {
 
     }
 
-    private static class PathIterator implements Iterator<Pair<Resource, Resource>> {
+    private static class PathIterator implements Iterator<Blocking> {
 
         private final ResIterator leftIter;
         private final Dataset left, right;
@@ -191,7 +184,7 @@ public class Path implements BlockingStrategyFactory {
         }
 
         @Override
-        public Pair<Resource, Resource> next() {
+        public Blocking next() {
             while (nodesIter != null && !nodesIter.hasNext()) {
                 findNext();
             }
@@ -200,7 +193,7 @@ public class Path implements BlockingStrategyFactory {
                 while (nodesIter != null && !nodesIter.hasNext()) {
                     findNext();
                 }
-                return next;
+                return new Blocking(next._1, next._2, left.id(), right.id());
             } else {
                 throw new NoSuchElementException();
             }

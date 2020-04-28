@@ -12,7 +12,7 @@ public interface Scorer extends Closeable {
     /**
      * Predict the similarity of a pair of entities from a set of features
      * @param features The features
-     * @return The similarity score between 0.0 (not at all similar) and 1.0 (exactly the same)
+     * @return The similarity probability between 0.0 (not at all similar) and 1.0 (exactly the same)
      */
     default ScoreResult similarity(FeatureSet features) {
         return similarity(features, NaiscListener.DEFAULT);
@@ -21,13 +21,13 @@ public interface Scorer extends Closeable {
      * Predict the similarity of a pair of entities from a set of features
      * @param features The features
      * @param log The listener
-     * @return The similarity score between 0.0 (not at all similar) and 1.0 (exactly the same)
+     * @return The similarity probability between 0.0 (not at all similar) and 1.0 (exactly the same)
      */
     ScoreResult similarity(FeatureSet features, NaiscListener log);
       
     /**
-     * Get the relation that is predicted by this scorer
-     * @return The URI of the relation to be predicted
+     * Get the property that is predicted by this scorer
+     * @return The URI of the property to be predicted
      */
     String relation();
 

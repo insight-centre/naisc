@@ -7,10 +7,7 @@ import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.GraphFeature;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
@@ -64,17 +61,24 @@ public class PPRTest {
         model.add(model.createResource("file:bar2"), model.createProperty("file:p1"), model.createResource("file:bar3"));
         model.add(model.createResource("file:bar3"), model.createProperty("file:p1"), model.createResource("file:bar1"));
         AlignmentSet prealign = new AlignmentSet();
-        prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar1"), 1.0));
-        prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar3"), 0.0));
-        Dataset sparqlData = new ModelDataset(model);
+        prealign.add(new Alignment(new URIRes("file:foo1", "model"), new URIRes("file:bar1", "model"), 1.0));
+        prealign.add(new Alignment(new URIRes("file:foo1", "model"), new URIRes("file:bar3", "model"), 0.0));
+        Dataset sparqlData = new ModelDataset(model, "model");
         Map<String, Object> params = new HashMap<>();
-        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model), new ModelDataset(model)));
+        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model, "model"), new ModelDataset(model, "model")));
         Lazy<AlignmentSet> prelinking = Lazy.fromClosure(() -> prealign);
         PPR instance = new PPR();
         GraphFeature feat = instance.makeFeature(sparqlData, params, analysis, prelinking, ExecuteListeners.NONE);
-        double[] result = feat.extractFeatures(model.createResource("file:foo2"), model.createResource("file:bar2"));
+        Feature[] result = feat.extractFeatures(model.createResource("file:foo2"), model.createResource("file:bar2"));
         double[] expResult = new double[]{0.113};
-        assertArrayEquals(expResult, result, 0.01);
+        assertArrayEquals(expResult, toDbA(result), 0.01);
+    }
+   private double[] toDbA(Feature[] f) {
+        double[] d = new double[f.length];
+        for(int i = 0; i < f.length; i++) {
+            d[i] = f[i].value;
+        }
+        return d;
     }
 
     /**
@@ -91,10 +95,10 @@ public class PPRTest {
         model.add(model.createResource("file:bar2"), model.createProperty("file:p1"), model.createResource("file:bar3"));
         model.add(model.createResource("file:bar3"), model.createProperty("file:p1"), model.createResource("file:bar1"));
         AlignmentSet prealign = new AlignmentSet();
-        prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar1"), 1.0));
-        prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar3"), 0.0));
+        prealign.add(new Alignment(new URIRes("file:foo1", "model"), new URIRes("file:bar1", "model"), 1.0));
+        prealign.add(new Alignment(new URIRes("file:foo1", "model"), new URIRes("file:bar3", "model"), 0.0));
         Object2IntMap<Resource> identifiers = new Object2IntOpenHashMap<>();
-        FastPPR.DirectedGraph result = PPR.buildGraph(new ModelDataset(model), prealign, identifiers);
+        FastPPR.DirectedGraph result = PPR.buildGraph(new ModelDataset(model, "model"), prealign, identifiers);
     }
 
 

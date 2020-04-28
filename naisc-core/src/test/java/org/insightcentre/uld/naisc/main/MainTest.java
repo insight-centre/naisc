@@ -72,8 +72,8 @@ public class MainTest {
         Model rightModel = ModelFactory.createDefaultModel();
         rightModel.add(rightModel.createStatement(rightModel.createResource("file:foo"),
             rightModel.createProperty(RDFS_LABEL), rightModel.createLiteral("foo", "en")));
-        Dataset leftDataset = new DefaultDatasetLoader.ModelDataset(leftModel);
-        Dataset rightDataset = new DefaultDatasetLoader.ModelDataset(rightModel);
+        Dataset leftDataset = new DefaultDatasetLoader.ModelDataset(leftModel, "left");
+        Dataset rightDataset = new DefaultDatasetLoader.ModelDataset(rightModel, "right");
         Configuration config = new Configuration(
             new Configuration.BlockingStrategyConfiguration("blocking.All", new HashMap<>()),
             Arrays.asList(new Configuration.LensConfiguration("lens.Label", new HashMap<>(), null)),
@@ -102,8 +102,8 @@ public class MainTest {
         leftModel.add(leftModel.createResource("http://www.example.com/foo"),
             leftModel.createProperty(SKOS_EXACT_MATCH),
             leftModel.createResource("file:foo"));
-        Dataset leftDataset = new DefaultDatasetLoader.ModelDataset(leftModel);
-        Dataset rightDataset = new DefaultDatasetLoader.ModelDataset(rightModel);
+        Dataset leftDataset = new DefaultDatasetLoader.ModelDataset(leftModel, "left");
+        Dataset rightDataset = new DefaultDatasetLoader.ModelDataset(rightModel, "right");
         Configuration config = new Configuration(
             new Configuration.BlockingStrategyConfiguration("blocking.All", new HashMap<>()),
             Arrays.asList(new Configuration.LensConfiguration("lens.Label", new HashMap<>(), null)),

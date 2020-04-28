@@ -99,25 +99,27 @@ public class DataView {
         alignment.sortAlignments();
         Tree leftTrees = buildTree(left);
         List<Paths> rightTrees = convertToPaths(buildTree(right));
-        return new DataView(convertToDataView(leftTrees, rightTrees, alignment));
+        return new DataView(convertToDataView(leftTrees, rightTrees, alignment, left, right));
     }
 
-    static List<DataViewEntry> convertToDataView(Tree t, List<Paths> rightPaths, AlignmentSet alignmentSet) {
+    static List<DataViewEntry> convertToDataView(Tree t, List<Paths> rightPaths, AlignmentSet alignmentSet, Dataset left, Dataset right) {
         List<Paths> ps = convertToPaths(t);
         List<DataViewEntry> dves = new ArrayList<>();
         for (Paths p : ps) {
             List<DataViewPath> l = new ArrayList<>();
             for (Alignment a : alignmentSet) {
+                Resource entity1 = a.entity1.toJena(left), entity2 = a.entity2.toJena(right);
 
-                List<String> leftPath = p.paths.get(a.entity1);
+
+                List<String> leftPath = p.paths.get(entity1);
                 if (leftPath == null) {
                     continue;
                 }
                 List<String> rightPath = null;
                 String rightRoot = null;
                 for (Paths rightP : rightPaths) {
-                    if (rightP.paths.containsKey(a.entity2)) {
-                        rightPath = rightP.paths.get(a.entity2);
+                    if (rightP.paths.containsKey(entity2)) {
+                        rightPath = rightP.paths.get(entity2);
                         rightRoot = rightP.root.toString();
                         break;
                     }

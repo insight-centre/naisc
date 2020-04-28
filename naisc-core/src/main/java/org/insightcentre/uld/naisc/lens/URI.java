@@ -9,11 +9,7 @@ import java.net.URLDecoder;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.LensFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
@@ -126,7 +122,7 @@ public class URI implements LensFactory {
         }
 
         @Override
-        public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
+        public Option<LensResult> extract(Resource entity1, Resource entity2, NaiscListener log) {
             if(entity1.isURIResource() && entity2.isURIResource()) {
                 try {
                     java.net.URI uri1 = new java.net.URI(entity1.getURI());
@@ -134,7 +130,7 @@ public class URI implements LensFactory {
                     String raw1 = getRaw(uri1, location);
                     String raw2 = getRaw(uri2, location);
                     if(raw1 != null && raw2 != null) {
-                        return new Some<>(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, getLabel(raw1,form, separator), getLabel(raw2, form, separator)));
+                        return new Some<>(new LensResult(Language.UNDEFINED, Language.UNDEFINED, getLabel(raw1,form, separator), getLabel(raw2, form, separator), tag));
                     } else {
                         return new None<>();
                     }

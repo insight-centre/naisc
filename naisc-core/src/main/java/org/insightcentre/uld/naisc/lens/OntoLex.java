@@ -13,11 +13,8 @@ import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.LensFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
+
 import static org.insightcentre.uld.naisc.lens.OntoLex.Dialect.ONTOLEX;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.util.Labels;
@@ -206,13 +203,13 @@ public class OntoLex implements LensFactory {
         }
 
         @Override
-        public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
+        public Option<LensResult> extract(Resource entity1, Resource entity2, NaiscListener log) {
             List<Literal> lit1 = forms(entity1);
             List<Literal> lit2 = forms(entity2);
             final List<LangStringPair> labels = Labels.closestLabelsByLang(lit1, lit2);
             for(LangStringPair label : labels) {
                 if(language == null || label.lang1.equals(language)) {
-                    return new Some<>(label);
+                    return new Some<>(LensResult.fromLangStringPair(label, tag));
                 }
             }
             return new None<>();

@@ -22,7 +22,7 @@ import org.insightcentre.uld.naisc.util.Option;
 
 /**
  * A scorer that averages the features given as input. Please note that this
- * score is limited to the range [0,1] and so may produce odd results
+ * probability is limited to the range [0,1] and so may produce odd results
  * 
  * @author John McCrae
  */
@@ -55,9 +55,9 @@ public class Average implements ScorerFactory {
         @ConfigurationParameter(description = "The weights to be applied to the features")
         public double[] weights;
         /**
-         * The relation to predict.
+         * The property to predict.
          */
-        @ConfigurationParameter(description = "The relation to predict")
+        @ConfigurationParameter(description = "The property to predict")
         public String property;
         /**
          * Apply a soft clipping of average using the sigmoid function. If false

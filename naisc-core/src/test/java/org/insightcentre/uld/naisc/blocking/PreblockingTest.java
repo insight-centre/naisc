@@ -61,8 +61,8 @@ public class PreblockingTest {
         model2.add(model2.createStatement(model2.createResource("file:bar3"), model2.createProperty("file:p1"), "foo1"));
         model2.add(model2.createStatement(model2.createResource("file:bar4"), model2.createProperty("file:p1"), "foo4"));
         model2.add(model2.createStatement(model2.createResource("file:bar5"), model2.createProperty("file:p1"), "foo3"));
-        Dataset left = new ModelDataset(model1);
-        Dataset right = new ModelDataset(model2);
+        Dataset left = new ModelDataset(model1, "model1");
+        Dataset right = new ModelDataset(model2, "model2");
         NaiscListener log = NaiscListener.DEFAULT;
         Prelinking instance = new Prelinking(new HashSet<>(Arrays.asList(
                 new Pair<>("file:p1", "file:p1"))));

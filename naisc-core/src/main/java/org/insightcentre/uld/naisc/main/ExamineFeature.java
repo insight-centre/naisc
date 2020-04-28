@@ -12,16 +12,12 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.DatasetLoader;
-import org.insightcentre.uld.naisc.FeatureSet;
-import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.TextFeature;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import static org.insightcentre.uld.naisc.main.Main.mapper;
+
+import org.insightcentre.uld.naisc.lens.URI;
 import org.insightcentre.uld.naisc.matcher.Prematcher;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Lazy;
@@ -75,29 +71,29 @@ public class ExamineFeature {
 
             if (res1.getURI() == null || res1.getURI().equals("")
                     || res1.getURI() == null || res1.getURI().equals("")) {
-                throw new RuntimeException("Resource with URI");
+                throw new RuntimeException("URIRes with URI");
             }
-            FeatureSet featureSet = new FeatureSet(res1, res2);
+            FeatureSet featureSet = new FeatureSet();
             for (Lens lens : lenses) {
-                Option<LangStringPair> oFacet = lens.extract(res1, res2);
+                Option<LensResult> oFacet = lens.extract(res1, res2);
                 if (!oFacet.has()) {
                     monitor.updateStatus(ExecuteListener.Stage.SCORING, String.format("Lens produced no label for %s %s", res1, res2));
                 } else {
-                    monitor.addLensResult(res1, res2, lens.id(), oFacet.get());
+                    monitor.addLensResult(new URIRes(res1.getURI(), leftDataset.id()), new URIRes(res2.getURI(), rightDataset.id()), lens.id(), oFacet.get());
                 }
-                LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
+                LensResult facet = oFacet.getOrElse(LensResult.fromLangStringPair(EMPTY_LANG_STRING_PAIR, lens.tag()));
                 for (TextFeature featureExtractor : textFeatures) {
                     if (featureExtractor.tags() == null || lens.tag() == null
                             || featureExtractor.tags().contains(lens.tag())) {
-                        double[] features = featureExtractor.extractFeatures(facet);
-                        featureSet = featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
-                                lens.id(), features, res1, res2));
+                        Feature[] features = featureExtractor.extractFeatures(facet);
+                        featureSet = featureSet.add(new FeatureSet(features,
+                                lens.id()));
                     }
                 }
             }
             for (GraphFeature feature : dataFeatures) {
-                double[] features = feature.extractFeatures(res1, res2);
-                featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, res1, res2));
+                Feature[] features = feature.extractFeatures(res1, res2);
+                featureSet = featureSet.add(new FeatureSet(features, feature.id()));
             }
             return featureSet;
 

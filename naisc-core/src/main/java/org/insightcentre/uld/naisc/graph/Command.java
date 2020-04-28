@@ -8,12 +8,7 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.util.Map;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.GraphFeatureFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
@@ -145,12 +140,12 @@ public class Command implements GraphFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
+        public Feature[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
 
             try {
                 out.get().println(entity1.getURI() + "\t" + entity2.getURI());
                 out.get().flush();
-                return mapper.readValue(in.get().readLine(), double[].class);
+                return mapper.readValue(in.get().readLine(), Feature[].class);
             } catch (IOException x) {
                 throw new RuntimeException();
             }

@@ -36,7 +36,7 @@ def to_skos(r):
     elif r == "related":
         return "relatedMatch"
     else:
-        print("bad relation "+ r)
+        print("bad property "+ r)
         sys.exit(-1)
 
 def to_lang(l):

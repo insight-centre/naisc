@@ -11,12 +11,7 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.GraphFeatureFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.StringPair;
@@ -59,7 +54,7 @@ public class PropertyOverlap implements GraphFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
+        public Feature[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
             Set<StringPair> lvals = new HashSet<>();
             StmtIterator iter = dataset.listStatements(entity1, null, null);
             while(iter.hasNext()) {
@@ -83,7 +78,7 @@ public class PropertyOverlap implements GraphFeatureFactory {
             
             double dice = 2.0 * AB / (A + B);
             double jaccard = AB / (A + B - AB);
-            return new double[]{dice, jaccard};
+            return Feature.mkArray(new double[]{dice, jaccard}, getFeatureNames());
         }
 
         @Override

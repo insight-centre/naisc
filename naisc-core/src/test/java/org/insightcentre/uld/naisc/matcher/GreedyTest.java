@@ -12,6 +12,8 @@ import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.Matcher;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
+
+import org.insightcentre.uld.naisc.URIRes;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -45,8 +47,8 @@ public class GreedyTest {
     }
 
     private Model m = ModelFactory.createDefaultModel();
-    private Resource r(String s) {
-        return m.createResource(new AnonId(s));
+    private URIRes r(String s) {
+        return new URIRes(s, "dataset");
     }
     /**
      * Test of makeMatcher method, of class Greedy.

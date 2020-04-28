@@ -9,6 +9,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.insightcentre.uld.naisc.Feature;
+import org.insightcentre.uld.naisc.LensResult;
 import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.feature.BasicString.BasicStringImpl;
 import org.insightcentre.uld.naisc.main.Configuration;
@@ -91,12 +94,16 @@ public class BasicStringTest {
     @Test
     public void testExtractFeatures() {
         System.out.println("extractFeatures");
-        LangStringPair _sp = new LangStringPair(Language.ENGLISH, Language.ENGLISH, "foo", "bar");
+        LensResult _sp = new LensResult(Language.ENGLISH, Language.ENGLISH, "foo", "bar", null);
         String entity1id = "x1";
         String entity2id = "x2";
         BasicStringImpl instance = new BasicStringImpl(false, null, null, null, null, false);
         double[] expResult = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 };
-        double[] result = instance.extractFeatures(_sp);
+        Feature[] _result = instance.extractFeatures(_sp);
+        double[] result = new double[_result.length];
+        for(int i = 0; i < result.length; i++) {
+            result[i] = _result[i].value;
+        }
         assertArrayEquals(expResult, result, 0.0001);
     }
 
@@ -259,8 +266,8 @@ public class BasicStringTest {
     public void testJaccard() {
         BasicString bs = new BasicString();
         TextFeature f = bs.makeFeatureExtractor(Collections.EMPTY_SET, new HashMap<String,Object>() {{ put("features", Arrays.asList("jaccard"));}});
-        double[] r = f.extractFeatures(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "superficial dermis", "Superficial Vein"));
-        assert(r[0] > 0);
+        Feature[] r = f.extractFeatures(new LensResult(Language.UNDEFINED, Language.UNDEFINED, "superficial dermis", "Superficial Vein", null));
+        assert(r[0].value > 0);
         
     }
     
@@ -268,9 +275,9 @@ public class BasicStringTest {
     public void testApacheStringFunctions() {
         BasicString bs = new BasicString();
         TextFeature f = bs.makeFeatureExtractor(Collections.EMPTY_SET, new HashMap<String,Object>() {{ put("features", Arrays.asList("jaroWinkler","levenshtein")); put("labelChar","true");}});
-        double[] r = f.extractFeatures(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "superficial dermis", "Superficial Vein"));
-        assert(r[0] > 0);
-        assert(r[1] > 0);
+        Feature[] r = f.extractFeatures(new LensResult(Language.UNDEFINED, Language.UNDEFINED, "superficial dermis", "Superficial Vein", null));
+        assert(r[0].value > 0);
+        assert(r[1].value > 0);
         
     }
     
@@ -278,9 +285,9 @@ public class BasicStringTest {
     public void testMongeElkan() {
         BasicString bs = new BasicString();
         TextFeature f = bs.makeFeatureExtractor(Collections.EMPTY_SET, new HashMap<String,Object>() {{ put("features", Arrays.asList("mongeElkanJaroWinkler","mongeElkanLevenshtein")); put("labelChar","false");}});
-        double[] r = f.extractFeatures(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "superficial dermis", "Superficial Vein"));
-        assert(r[0] > 0);
-        assert(r[1] > 0);
+        Feature[] r = f.extractFeatures(new LensResult(Language.UNDEFINED, Language.UNDEFINED, "superficial dermis", "Superficial Vein", null));
+        assert(r[0].value > 0);
+        assert(r[1].value > 0);
         
     }
 }

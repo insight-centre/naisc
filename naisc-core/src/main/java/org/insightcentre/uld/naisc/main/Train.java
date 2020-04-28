@@ -18,30 +18,17 @@ import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.riot.RiotException;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.DatasetLoader;
-import org.insightcentre.uld.naisc.FeatureSet;
-import org.insightcentre.uld.naisc.FeatureSetWithScore;
-import org.insightcentre.uld.naisc.Lens;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Pair;
-import org.insightcentre.uld.naisc.ScorerTrainer;
-import org.insightcentre.uld.naisc.TextFeature;
 import org.insightcentre.uld.naisc.util.Option;
-import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
-import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
-import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
 import org.insightcentre.uld.naisc.matcher.Prematcher;
 import org.insightcentre.uld.naisc.util.Lazy;
 
@@ -58,7 +45,7 @@ public class Train {
     }
     final static ObjectMapper mapper = new ObjectMapper();
 
-    public static AlignmentSet readAlignments(File alignmentFile) throws IOException {
+    public static AlignmentSet readAlignments(File alignmentFile, String leftDataset, String rightDataset) throws IOException {
         AlignmentSet alignments = new AlignmentSet();
         Model model = ModelFactory.createDefaultModel();
         BufferedReader br = new BufferedReader(new FileReader(alignmentFile));
@@ -80,7 +67,10 @@ public class Train {
                     throw new IOException("Bad line in alignments (no statement)", x);
                 }
                 double score = m.group(2) == null ? 1.0 : Double.parseDouble(m.group(3));
-                alignments.add(new Alignment(st, score));
+                alignments.add(new Alignment(
+                    new URIRes(st.getSubject().getURI(), leftDataset),
+                    new URIRes(st.getObject().asResource().getURI(), rightDataset),
+                    score, st.getPredicate().getURI(), null));
             } else {
                 throw new RuntimeException("Line does not seem valid: " + line);
             }
@@ -145,7 +135,7 @@ public class Train {
             double negativeSampling,
             Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading alignments");
-        AlignmentSet goldAlignments = readAlignments(alignment);
+        AlignmentSet goldAlignments = readAlignments(alignment, leftFile.getName(), rightFile.getName());
         execute(name, leftFile, rightFile, goldAlignments, negativeSampling, config, monitor, loader);
     }
 
@@ -227,12 +217,12 @@ public class Train {
         List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
-        Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocking.block(leftModel, rightModel)));
+        Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocking.block(leftModel, rightModel), leftModel, rightModel));
         List<TextFeature> textFeatures = config.makeTextFeatures();
         List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
         monitor.updateStatus(ExecuteListener.Stage.BLOCKING, "Blocking");
-        final Iterable<Pair<Resource, Resource>> blocks = blocking.block(leftModel, rightModel);
+        final Iterable<Blocking> blocks = blocking.block(leftModel, rightModel);
 
         monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Constructing Training Data");
         Map<String, List<FeatureSetWithScore>> negData = negativeSampling > 0 ? new HashMap<>() : null;
@@ -260,23 +250,24 @@ public class Train {
         final Object2IntMap<String> positives = new Object2IntOpenHashMap<>(),
                 negatives = new Object2IntOpenHashMap<>();
         int count = 0;
-        for (Pair<Resource, Resource> block : blocks) {
+        for (Blocking block : blocks) {
             blocksGenerated = true;
             if (++count % 10000 == 0) {
                 monitor.updateStatus(ExecuteListener.Stage.SCORING,
                         String.format("Generating Features (%.2f%%)", (double) count / estimatedSize * 100.0));
             }
             for (String prop : goldProps) {
-                Option<Alignment> a = goldAlignments.find(block._1, block._2, prop);
+                Resource block1 = block.asJena1(leftModel), block2 = block.asJena2(rightModel);
+                Option<Alignment> a = goldAlignments.find(block.entity1, block.entity2, prop);
 
                 if (a.has()) {
-                    FeatureSet featureSet = makeFeatures(block._1, block._2, lenses, monitor, textFeatures, dataFeatures);
-                    trainingData.get(prop).add(featureSet.withScore(a.get().score));
+                    FeatureSet featureSet = makeFeatures(block1, block2, lenses, monitor, textFeatures, dataFeatures);
+                    trainingData.get(prop).add(featureSet.withScore(a.get().probability));
                     goldAlignments.remove(a.get());
                     positives.put(prop, positives.getInt(prop) + 1);
                 } else {
                     if (negData != null && random.nextDouble() < negSampProp) {
-                        FeatureSet featureSet = makeFeatures(block._1, block._2, lenses, monitor, textFeatures, dataFeatures);
+                        FeatureSet featureSet = makeFeatures(block1, block2, lenses, monitor, textFeatures, dataFeatures);
                         trainingData.get(prop).add(featureSet.withScore(0.0));
                         negatives.put(prop, negatives.getInt(prop) + 1);
                     }
@@ -286,9 +277,9 @@ public class Train {
 
         int unblockedGold = 0;
         for (Alignment a : goldAlignments) {
-            FeatureSet featureSet = makeFeatures(a.entity1,
-                    a.entity2, lenses, monitor, textFeatures, dataFeatures);
-            trainingData.get(a.relation).add(featureSet.withScore(a.score));
+            FeatureSet featureSet = makeFeatures(a.entity1.toJena(leftModel),
+                    a.entity2.toJena(rightModel), lenses, monitor, textFeatures, dataFeatures);
+            trainingData.get(a.property).add(featureSet.withScore(a.probability));
             unblockedGold++;
         }
 
@@ -343,18 +334,18 @@ public class Train {
     }
 
     private static FeatureSet makeFeatures(Resource res1, Resource res2, List<Lens> lenses, ExecuteListener monitor, List<TextFeature> textFeatures, List<GraphFeature> dataFeatures) {
-        FeatureSet featureSet = new FeatureSet(res1, res2);
+        FeatureSet featureSet = new FeatureSet();
         boolean labelsProduced = false;
         for (Lens lens : lenses) {
-            Option<LangStringPair> oFacet = lens.extract(res1, res2);
+            Option<LensResult> oFacet = lens.extract(res1, res2);
             labelsProduced = labelsProduced || oFacet.has();
-            LangStringPair facet = oFacet.getOrElse(EMPTY_LANG_STRING_PAIR);
+            LensResult facet = oFacet.getOrElse(LensResult.fromLangStringPair(EMPTY_LANG_STRING_PAIR, lens.tag()));
             for (TextFeature featureExtractor : textFeatures) {
                 if (featureExtractor.tags() == null || lens.tag() == null
                         || featureExtractor.tags().contains(lens.tag())) {
-                    double[] features = featureExtractor.extractFeatures(facet);
-                    featureSet = featureSet.add(new FeatureSet(featureExtractor.getFeatureNames(),
-                            lens.id(), features, res1, res2));
+                    Feature[] features = featureExtractor.extractFeatures(facet);
+                    featureSet = featureSet.add(new FeatureSet(features,
+                            lens.id()));
                 }
             }
         }
@@ -362,8 +353,8 @@ public class Train {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", res1, res2));
         }
         for (GraphFeature feature : dataFeatures) {
-            double[] features = feature.extractFeatures(res1, res2);
-            featureSet = featureSet.add(new FeatureSet(feature.getFeatureNames(), feature.id(), features, res1, res2));
+            Feature[] features = feature.extractFeatures(res1, res2);
+            featureSet = featureSet.add(new FeatureSet(features, feature.id()));
         }
         return featureSet;
     }
@@ -376,7 +367,7 @@ public class Train {
                     accepts("c", "The configuration to use").withRequiredArg().ofType(File.class);
                     accepts("q", "Quiet (suppress output)");
                     accepts("n", "Negative Sampling rate (number of negative examples/positive example)").withRequiredArg().ofType(Double.class);
-                    nonOptions("Two RDF files and One Alignment RDF files (N-Triples, one per line with score after as a comment)");
+                    nonOptions("Two RDF files and One Alignment RDF files (N-Triples, one per line with probability after as a comment)");
                 }
             };
             final OptionSet os;

@@ -4,10 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.GraphFeature;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
@@ -75,22 +72,30 @@ public class AutomaticTest {
         model.add(model.createResource("file:bar2"), model.createProperty("file:p1"), model.createResource("file:bar3"));
         model.add(model.createResource("file:bar3"), model.createProperty("file:p1"), model.createResource("file:bar1"));
         AlignmentSet prealign = new AlignmentSet();
-        prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar1"), 1.0));
-        prealign.add(new Alignment(model.createResource("file:foo1"), model.createResource("file:bar3"), 0.0));
+        prealign.add(new Alignment(new URIRes("file:foo1", "left"), new URIRes("file:bar1", "right"), 1.0));
+        prealign.add(new Alignment(new URIRes("file:foo1", "left"), new URIRes("file:bar3", "right"), 0.0));
         for (int i = 0; i < 10; i++) {
-            prealign.add(new Alignment(model.createResource("file:foo" + i), model.createResource("file:bar" + i), 1.0));
+            prealign.add(new Alignment(new URIRes("file:foo" + i, "left"), new URIRes("file:bar" + i, "right"), 1.0));
 
         }
-        Dataset sparqlData = new ModelDataset(model);
+        Dataset sparqlData = new ModelDataset(model,"model");
         Map<String, Object> params = new HashMap<>();
-        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(lmodel), new ModelDataset(rmodel)));
+        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(lmodel,"lmodel"), new ModelDataset(rmodel,"rmodel")));
         Lazy<AlignmentSet> prelinking = Lazy.fromClosure(() -> prealign);
         GraphFeature feat = new Automatic().makeFeature(sparqlData, params, analysis, prelinking, ExecuteListeners.NONE);
-        double[] result = feat.extractFeatures(lmodel.createResource("file:foo2"), rmodel.createResource("file:bar2"));
+        Feature[] result = feat.extractFeatures(lmodel.createResource("file:foo2"), rmodel.createResource("file:bar2"));
         double[] expResult = new double[]{0.0, 0.242};
-        assertArrayEquals(expResult, result, 0.01);
+        assertArrayEquals(expResult, toDbA(result), 0.01);
         result = feat.extractFeatures(lmodel.createResource("file:foo1"), rmodel.createResource("file:bar1"));
         expResult = new double[]{1.0, 0.242};
-        assertArrayEquals(expResult, result, 0.01);
+        assertArrayEquals(expResult, toDbA(result), 0.01);
+    }
+
+    private double[] toDbA(Feature[] f) {
+        double[] d = new double[f.length];
+        for(int i = 0; i < f.length; i++) {
+            d[i] = f[i].value;
+        }
+        return d;
     }
 }

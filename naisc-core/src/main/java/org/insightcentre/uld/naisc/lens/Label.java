@@ -12,11 +12,7 @@ import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.LensFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.Labels;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.None;
@@ -72,7 +68,7 @@ public class Label implements LensFactory {
         }
 
         @Override
-        public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
+        public Option<LensResult> extract(Resource entity1, Resource entity2, NaiscListener log) {
             List<Literal> lit1 = new ArrayList<>();
 
             NodeIterator iter1 = model.listObjectsOfProperty(entity1, leftProp);
@@ -96,7 +92,7 @@ public class Label implements LensFactory {
 
             for (LangStringPair label : labels) {
                 if (language == null || label.lang1.equals(language)) {
-                    return new Some<>(label);
+                    return new Some<>(LensResult.fromLangStringPair(label,tag));
                 }
             }
             return new None<>();

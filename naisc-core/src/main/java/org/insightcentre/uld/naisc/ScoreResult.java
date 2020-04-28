@@ -7,14 +7,14 @@ package org.insightcentre.uld.naisc;
 public interface ScoreResult {
     /**
      * Get the result of scoring
-     * @return A score value
+     * @return A probability value
      */
     double value();
     
     /**
      * Wrap a single double value into a result
-     * @param d The score
-     * @return Return a boxed score that returns the given value
+     * @param d The probability
+     * @return Return a boxed probability that returns the given value
      */
     public static ScoreResult fromDouble(final double d) {
         return new ScoreResult() {

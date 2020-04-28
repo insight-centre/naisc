@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.xml.parsers.ParserConfigurationException;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.NaiscListener;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.feature.wordnet.GWNWordNetReader;
 import org.insightcentre.uld.naisc.feature.wordnet.SemanticSimilarityMeasures;
 import org.insightcentre.uld.naisc.feature.wordnet.Synset;
@@ -22,8 +22,6 @@ import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.PrettyGoodTokenizer;
 import org.xml.sax.SAXException;
-import org.insightcentre.uld.naisc.TextFeature;
-import org.insightcentre.uld.naisc.TextFeatureFactory;
 
 /**
  * Calculate the similarity of two string using WordNet based similarity
@@ -139,14 +137,14 @@ public class WordNet implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair facet, NaiscListener log) {
+        public Feature[] extractFeatures(LensResult facet, NaiscListener log) {
             double[] vec = new double[methods.size() * 2];
             int i = 0;
             for(Method method : methods) {
-                System.arraycopy(score(facet._1, facet._2, method), 0, vec, i, 2);
+                System.arraycopy(score(facet.string1, facet.string2, method), 0, vec, i, 2);
                 i += 2;
             }
-            return vec;
+            return Feature.mkArray(vec, getFeatureNames());
 
         }
 

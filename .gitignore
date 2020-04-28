@@ -14,7 +14,7 @@ test.*
 test-*
 target/
 
-models/
+/models/
 extraction/data_raw/
 data/*.json.OUTPUT
 data/*.json.OUTPUT-1

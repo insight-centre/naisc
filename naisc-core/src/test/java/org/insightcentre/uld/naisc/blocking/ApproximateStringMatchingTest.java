@@ -10,6 +10,7 @@ import java.util.Random;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
+import org.insightcentre.uld.naisc.Blocking;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching.PatriciaTrie;
@@ -207,8 +208,8 @@ public class ApproximateStringMatchingTest {
             right.add(right.createResource("file:tmp#" + s), right.createProperty(Label.RDFS_LABEL), right.createLiteral(s));
             strings.add(right.createResource("file:tmp#" + s));
         }
-        final List<Pair<Resource, Resource>> results = new ArrayList<>();
-        for (Pair<Resource, Resource> p : strat.block(new ModelDataset(left), new ModelDataset(right))) {
+        final List<Blocking> results = new ArrayList<>();
+        for (Blocking p : strat.block(new ModelDataset(left, "left"), new ModelDataset(right, "right"))) {
             results.add(p);
         }
         strings.sort(new Comparator<Resource>() {
@@ -226,7 +227,7 @@ public class ApproximateStringMatchingTest {
         }
         for (int i = 0; i < N; i++) {
             final Resource r = strings.get(i);
-            assert (results.stream().anyMatch(p -> p._2.equals(r)));
+            assert (results.stream().anyMatch(p -> p.entity2.uri.equals(r.getURI())));
         }
     }
 
@@ -262,9 +263,9 @@ public class ApproximateStringMatchingTest {
         right.add(right.createResource("file:id4"), right.createProperty(Label.RDFS_LABEL), "Scapula");
         right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Dendrite");
         right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Splenic White Part");
-        Iterator<Pair<Resource, Resource>> result = strat.block(new ModelDataset(left), new ModelDataset(right)).iterator();
+        Iterator<Blocking> result = strat.block(new ModelDataset(left, "left"), new ModelDataset(right, "right")).iterator();
         assert(result.hasNext());
-        assertEquals(new Pair<>(left.createResource("file:id1"), right.createResource("file:id6")), result.next());
+        assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id6"), "left", "right"), result.next());
     }
 
     @Test
@@ -283,9 +284,9 @@ public class ApproximateStringMatchingTest {
         right.add(right.createResource("file:id4"), right.createProperty(Label.RDFS_LABEL), "Scapula");
         right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Dendrite");
         right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Splenic White Part");
-        Iterator<Pair<Resource, Resource>> result = strat.block(new ModelDataset(left), new ModelDataset(right)).iterator();
+        Iterator<Blocking> result = strat.block(new ModelDataset(left, "left"), new ModelDataset(right, "right")).iterator();
         assert(result.hasNext());
-        assertEquals(new Pair<>(left.createResource("file:id1"), right.createResource("file:id2")), result.next());
+        assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id2"), "left", "right"), result.next());
     }
     
     
@@ -305,8 +306,8 @@ public class ApproximateStringMatchingTest {
         right.add(right.createResource("file:id4"), right.createProperty(Label.RDFS_LABEL), "Frontal Gyrus");
         right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Frontal Nerve");
         right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Frontal Artery");
-        Iterator<Pair<Resource, Resource>> result = strat.block(new ModelDataset(left), new ModelDataset(right)).iterator();
+        Iterator<Blocking> result = strat.block(new ModelDataset(left,"left"), new ModelDataset(right,"right")).iterator();
         assert(result.hasNext());
-        assertEquals(new Pair<>(left.createResource("file:id1"), right.createResource("file:id6")), result.next());
+        assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id6"), "left", "right"), result.next());
     }
 }

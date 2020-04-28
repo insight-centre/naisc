@@ -23,6 +23,8 @@ class CILISQLiteDataset(dbFile : File) : Dataset, Closeable {
         connection.close()
     }
 
+    override fun id() = dbFile.toString()
+
     companion object {
         const val ILI = "http://ili.globalwordnet.org/ili/"
         const val RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label"

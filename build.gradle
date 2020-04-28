@@ -16,6 +16,10 @@ subprojects {
     
     maven { url "https://repo.maven.apache.org/maven2" }
   }
+
+  tasks.withType(JavaCompile) {
+    options.deprecation = true
+  }
 }
 
 

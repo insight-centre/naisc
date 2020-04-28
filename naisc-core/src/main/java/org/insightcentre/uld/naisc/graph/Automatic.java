@@ -9,11 +9,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.GraphFeatureFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.MatchResult;
 import org.insightcentre.uld.naisc.util.Lazy;
@@ -88,8 +84,8 @@ public class Automatic implements GraphFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
-            double[] features = new double[featureNames.length];
+        public Feature[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
+            Feature[] features = new Feature[featureNames.length];
             int i = 0;
             PROP_MATCH:
             for(Pair<String,String> propMatch : propMatches) {
@@ -103,12 +99,12 @@ public class Automatic implements GraphFeatureFactory {
                 final StmtIterator iter2 = entity2.listProperties(right.createProperty(propMatch._2));
                 while(iter2.hasNext()) {
                     if(vals1.contains(iter2.next().getObject())) {
-                        features[i++] = 1.0;
+                        features[i] = new Feature(featureNames[i++], 1.0);
                         continue PROP_MATCH;
                     }
                             
                 }
-                i++;
+                features[i] = new Feature(featureNames[i++], 0.0);
             }
             if(pprAnalysis != null)
                 features[i] = pprAnalysis.extractFeatures(entity1, entity2, log)[0];

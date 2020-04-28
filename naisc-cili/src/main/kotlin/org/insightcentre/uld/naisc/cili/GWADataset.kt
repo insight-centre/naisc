@@ -39,6 +39,9 @@ class GWADataset(xmlFile : File) : Dataset {
         )
     }
 
+    val id = xmlFile.toString()
+    override fun id() = id
+
     init {
         val dbFactory = DocumentBuilderFactory.newInstance()
         val dBuilder = dbFactory.newDocumentBuilder()
