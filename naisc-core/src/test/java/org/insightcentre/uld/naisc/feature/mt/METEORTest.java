@@ -8,7 +8,7 @@ public class METEORTest {
 
     @Test
 
-    public void testBLEUscore()  {
+    public void testMeteorScore()  {
         String hyp = "the quick brown fox jumped over the lazy dog";
         String ref = "the fast brown fox jumped over the sleepy dog";
         double score = METEOR.meteorScore(hyp, ref);

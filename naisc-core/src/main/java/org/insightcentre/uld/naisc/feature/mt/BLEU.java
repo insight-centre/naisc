@@ -5,7 +5,7 @@ import static java.lang.Math.exp;
 import static java.lang.Math.pow;
 
 public class BLEU {
-    public static double bleuScore(String[] hyp, String[] ref, int N) {
+    public static double[] ngramPrecision (String[] hyp, String[] ref, int N) {
         int[] ngramPrecision = new int[N];
         for(int i = 0; i < hyp.length; i++) {
             boolean[] match = new boolean[N];
@@ -22,10 +22,21 @@ public class BLEU {
                 if(match[n]) ngramPrecision[n]++;
             }
         }
+        double[] ng = new double[N];
+        for(int n = 0; n < N; n++) {
+            if(hyp.length <= n) {
+                ng[n] = 1.0;
+            } else {
+                ng[n] = (double)ngramPrecision[n] / (hyp.length - n);
+            }
+        }
+        return ng;
+    }
+    public static double bleuScore(String[] hyp, String[] ref, int N) {
+        double[] ngramPrecision = ngramPrecision(hyp, ref, N);
         double score = 1.0;
         for(int i = 0; i < N && i < hyp.length; i++) {
             score *= ngramPrecision[i];
-            score /= hyp.length - i;
         }
         score = pow(score, 1.0 / N);
         if(hyp.length < ref.length) {
