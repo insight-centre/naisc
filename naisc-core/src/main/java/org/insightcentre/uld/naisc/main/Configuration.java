@@ -35,6 +35,7 @@ import org.insightcentre.uld.naisc.Matcher;
 import org.insightcentre.uld.naisc.MatcherFactory;
 import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerFactory;
+import org.insightcentre.uld.naisc.feature.*;
 import org.insightcentre.uld.naisc.rescaling.MinMax;
 import org.insightcentre.uld.naisc.rescaling.NoRescaling;
 import org.insightcentre.uld.naisc.util.Services;
@@ -57,12 +58,6 @@ import org.insightcentre.uld.naisc.constraint.Bijective;
 import org.insightcentre.uld.naisc.constraint.Constraint;
 import org.insightcentre.uld.naisc.constraint.ConstraintFactory;
 import org.insightcentre.uld.naisc.constraint.ThresholdConstraint;
-import org.insightcentre.uld.naisc.feature.BagOfWordsSim;
-import org.insightcentre.uld.naisc.feature.BasicString;
-import org.insightcentre.uld.naisc.feature.Dictionary;
-import org.insightcentre.uld.naisc.feature.KeyWords;
-import org.insightcentre.uld.naisc.feature.WordEmbeddings;
-import org.insightcentre.uld.naisc.feature.WordNet;
 import org.insightcentre.uld.naisc.graph.PPR;
 import org.insightcentre.uld.naisc.graph.PropertyOverlap;
 import org.insightcentre.uld.naisc.lens.Label;
@@ -246,7 +241,8 @@ public class Configuration {
         KeyWords.class,
         WordEmbeddings.class,
         WordNet.class,
-        org.insightcentre.uld.naisc.feature.Command.class
+        org.insightcentre.uld.naisc.feature.Command.class,
+            MachineTranslation.class
     };
 
     public Rescaler makeRescaler() {
