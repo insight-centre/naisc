@@ -23,6 +23,8 @@ def process_file(f):
             if rterm not in term2id:
                 term2id[rterm] = len(term2id)
                 rterms.append(rterm)
+            if e[4].strip() == "":
+                print("%s %s %s" % (lterm, rterm, e[4]))
             links.append((term2id[lterm], term2id[rterm], e[4]))
     return lterms, rterms, links
 

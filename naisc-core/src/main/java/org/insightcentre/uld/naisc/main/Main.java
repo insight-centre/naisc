@@ -163,10 +163,10 @@ public class Main {
                                         Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
-            Dataset leftModel = loader.fromFile(leftFile, name + "/left");
+            Dataset leftModel = loader.fromFile(leftFile, "left");
 
             monitor.updateStatus(Stage.INITIALIZING, "Reading right dataset");
-            Dataset rightModel = loader.fromFile(rightFile, name + "/right");
+            Dataset rightModel = loader.fromFile(rightFile, "right");
 
             return execute(name, leftModel, rightModel, config, partialSoln, monitor, null, null, loader);
 
@@ -195,10 +195,10 @@ public class Main {
                                                     Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
-            Dataset leftModel = loader.fromFile(leftFile, name + "/left");
+            Dataset leftModel = loader.fromFile(leftFile, "left");
 
             monitor.updateStatus(Stage.INITIALIZING, "Reading right dataset");
-            Dataset rightModel = loader.fromFile(rightFile, name + "/right");
+            Dataset rightModel = loader.fromFile(rightFile, "right");
 
             monitor.updateStatus(Stage.INITIALIZING, "Reading gold dataset");
             AlignmentSet gold = Train.readAlignments(goldFile, leftModel.id(), rightModel.id());
