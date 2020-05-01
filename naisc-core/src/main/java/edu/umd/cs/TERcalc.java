@@ -200,8 +200,7 @@ public class TERcalc {
 		rerr[rpos] = true;
 		ralign[rpos] = hpos;
 	    } else {
-		System.err.print("Error!  Invalid mini align sequence " + sym + " at pos " + i + "\n");
-		System.exit(-1);
+		throw new RuntimeException("Error!  Invalid mini align sequence " + sym + " at pos " + i + "\n");
 	    }
 	}
     }
@@ -418,7 +417,10 @@ public class TERcalc {
 
     private static TERalignment MinEditDist(Comparable[] hyp, Comparable[] ref, 
 					    TERcost costfunc) {
-	double current_best = INF;
+
+		double[][] S = new double[350][350];
+		char[][] P = new char[350][350];
+		double current_best = INF;
 	double last_best = INF;
 	int first_good = 0;
 	int current_first_good = 0;
@@ -540,8 +542,7 @@ public class TERcalc {
 	    } else if (P[i][j] == 'I') {
 		j--;
 	    } else {
-		System.out.println("Invalid path: " + P[i][j]);
-		System.exit(-1);
+		throw new RuntimeException("Invalid path: " + P[i][j] + " calculating " + Arrays.toString(hyp) + " <> " + Arrays.toString(ref));
 	    }
 	}
 	char[] path = new char[tracelength];
@@ -574,7 +575,7 @@ public class TERcalc {
     public static int numShiftsTried () { return NUM_SHIFTS_CONSIDERED; }
 
     /* We may want to add some function to change the beam width */
-    public static int BEAM_WIDTH = 20;
+    public static final int BEAM_WIDTH = 20;
     
     private static final double INF = 999999.0;
     //    private static final int SUB_COST = 1;
@@ -592,7 +593,7 @@ public class TERcalc {
     private static int NUM_BEAM_SEARCH_CALLS = 0;
 
     /* These are resized by the MIN_EDIT_DIST code if they aren't big enough */
-    private static double[][] S = new double[350][350];
-    private static char[][] P = new char[350][350];
+    //private static double[][] S = new double[350][350];
+    //private static char[][] P = new char[350][350];
 
 }
