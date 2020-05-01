@@ -256,13 +256,13 @@
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <td>Run Identifier</td>
-                            <td>Configuration</td>
-                            <td>Dataset</td>
-                            <td>Precision</td>
-                            <td>Recall</td>
-                            <td>F-Measure</td>
-                            <td>Time</td>
+                            <td>Run Identifier <i class="fas" v-bind:class="{ 'fa-sort-up': sortingProperty === 'identifier' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'identifier' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'identifier' }" v-on:click="sortColumn('identifier')"/></i></td>
+                            <td>Configuration <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'configName' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'configName' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'configName' }" v-on:click="sortColumn('configName')"/></i></td>
+                            <td>Dataset <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'datasetName' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'datasetName' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'datasetName' }" v-on:click="sortColumn('datasetName')"/></i></td>
+                            <td>Precision <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'precision' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'precision' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'precision' }" v-on:click="sortColumn('precision')"/></i></td>
+                            <td>Recall <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'recall' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'recall' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'recall' }" v-on:click="sortColumn('recall')"/></i></td>
+                            <td>F-Measure <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'fmeasure' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'fmeasure' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'fmeasure' }" v-on:click="sortColumn('fmeasure')"/></i></td>
+                            <td>Time <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'time' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'time' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'time' }" v-on:click="sortColumn('time')"/></i></td>
                             <td class="icon-table-col"></td>
                             <td class="icon-table-col"></td>
                             <td class="icon-table-col"></td>
@@ -366,8 +366,10 @@ function unflatten_config(config) {
     }
     return root;
 }
-data.polling = null;                
-         
+data.polling = null;
+data.sortingProperty = "none";
+data.sortingDir = "none";
+
 var app = new Vue({
   el: '#app',
   data: data,
@@ -554,6 +556,7 @@ var app = new Vue({
                                             }
                                         }
                                         app.runs.splice(0,0,data2);
+                                        app.sortData();
                                     }
                                 });
                             }
@@ -623,7 +626,41 @@ var app = new Vue({
                 console.log("failed to get messages");
             }
         });
-    }       
+    },
+    sortColumn(column) {
+        if(this.sortingProperty === column) {
+            if(this.sortingDir === "up") {
+                this.sortingDir = "down";
+            } else {
+                this.sortingDir = "up";
+            }
+        } else {
+            this.sortingProperty = column;
+            this.sortingDir = "down";
+        }
+        this.sortData();
+    },
+    sortData() {
+        var sortDir = 1;
+        if(this.sortingDir === "up") {
+            sortDir = -1;
+        }
+        var sortProp = this.sortingProperty;
+        if(this.sortingProperty !== "none") {
+            this.runs.sort(function(a,b) {
+                var avalue = a[sortProp];
+                var bvalue = b[sortProp];
+                if(avalue < bvalue) {
+                    return sortDir;
+                } else if(avalue > bvalue) {
+                    return -sortDir;
+                } else {
+                    return 0;
+                }
+            });
+         }
+    }
+
   },
   beforeDestroy() {
     clearInterval(this.polling);
