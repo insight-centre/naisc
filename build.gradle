@@ -21,5 +21,3 @@ subprojects {
     options.deprecation = true
   }
 }
-
-
