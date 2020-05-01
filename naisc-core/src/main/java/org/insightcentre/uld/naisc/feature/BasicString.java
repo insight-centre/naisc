@@ -11,6 +11,8 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import java.io.File;
 import java.io.IOException;
+
+import static java.lang.Integer.min;
 import static java.lang.Math.abs;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +44,8 @@ public class BasicString implements TextFeatureFactory {
      */
     public enum Feature {
         lcs,
+        lc_prefix,
+        lc_suffix,
         ngram_1,
         ngram_2,
         ngram_3,
@@ -206,6 +210,12 @@ public class BasicString implements TextFeatureFactory {
             if (selectedFeatures == null || selectedFeatures.contains(Feature.lcs)) {
                 featureNames.add(prefix + "lcs");
             }
+            if (selectedFeatures == null || selectedFeatures.contains(Feature.lc_suffix)) {
+                featureNames.add(prefix + "lc_suffix");
+            }
+            if (selectedFeatures == null || selectedFeatures.contains(Feature.lc_prefix)) {
+                featureNames.add(prefix + "lc_prefix");
+            }
             if (!charLevel) {
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.ngram_1)) {
                     featureNames.add(prefix + "ngram-1");
@@ -277,6 +287,12 @@ public class BasicString implements TextFeatureFactory {
             final String label2 = _label2 == null ? "" : _label2;
             if (selectedFeatures == null || selectedFeatures.contains(Feature.lcs)) {
                 featureValues.add(longestCommonSubsequence(l1, l2));
+            }
+            if (selectedFeatures == null || selectedFeatures.contains(Feature.lc_suffix)) {
+                featureValues.add(longestCommonSuffix(l1, l2));
+            }
+            if (selectedFeatures == null || selectedFeatures.contains(Feature.lc_prefix)) {
+                featureValues.add(longestCommonPrefix(l1, l2));
             }
             if (!charLevel) {
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.ngram_1)) {
@@ -395,6 +411,24 @@ public class BasicString implements TextFeatureFactory {
             return (double) lcs / (double) Math.max(s1.length, s2.length);
         }
 
+        public static double longestCommonSuffix(String[] s1, String[] s2) {
+            for(int i = 1; i <= min(s1.length, s2.length); i++) {
+                if(!s1[s1.length - i].equals(s2[s2.length - i])) {
+                    return 2.0 * (i-1) / (s1.length + s2.length);
+                }
+            }
+            return 2.0 * min(s1.length, s2.length) /  (s1.length + s2.length);
+        }
+
+        public static double longestCommonPrefix(String[] s1, String[] s2) {
+            for(int i = 0; i < min(s1.length, s2.length); i++) {
+                if(!s1[i].equals(s2[i])) {
+                    return 2.0 * i / (s1.length + s2.length);
+                }
+            }
+            return 2.0 * min(s1.length, s2.length) /  (s1.length + s2.length);
+        }
+
         private double mongeElkan(String[] l1, String[] l2, BiFunction<String, String, Double> function) {
             double sum = 0.0;
             for (String s : l1) {
@@ -507,7 +541,8 @@ public class BasicString implements TextFeatureFactory {
                     }
                 }
             }
-            return ((double) ngramOverlap) / (s1.length - n + 1);
+            //return ((double) ngramOverlap) / (s1.length - n + 1);
+            return 2.0 / ( (double)s1.length /  ngramOverlap + (double)s2.length / ngramOverlap);
         }
 
         public static final class JaccardDice {
