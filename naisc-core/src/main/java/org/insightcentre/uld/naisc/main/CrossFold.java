@@ -93,13 +93,14 @@ public class CrossFold {
             DatasetLoader loader) throws IOException {
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
-        Dataset leftModel = loader.fromFile(leftFile, name + "/left");
+        Dataset leftModel = loader.fromFile(leftFile, "left");
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
-        Dataset rightModel = loader.fromFile(rightFile, name + "/right");
+        Dataset rightModel = loader.fromFile(rightFile, "right");
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading gold standard");
-        final AlignmentSet goldAlignments = Train.readAlignments(gold, leftFile.getName(), rightFile.getName());
+        final AlignmentSet goldAlignments = Train.readAlignments(gold, "left", "right");
+
 
         return execute(name, leftModel, rightModel, goldAlignments, nFolds, negativeSampling, config, monitor, loader);
 
