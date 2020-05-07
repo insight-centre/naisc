@@ -359,7 +359,15 @@ public class BasicString implements TextFeatureFactory {
                     featureValues.add(mongeElkan(l1, l2, (s, t) -> JARO_WINKLER.apply(s, t)));
                 }
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.mongeElkanLevenshtein)) {
-                    featureValues.add(mongeElkan(l1, l2, (s, t) -> 1.0 - (double) LEVENSHTEIN.apply(s, t) * 2.0 / (s.length() + t.length())));
+                    featureValues.add(mongeElkan(l1, l2, (s, t) -> {
+                        if(s.length() > 0 && t.length() > 0) {
+                            return 1.0 - (double) LEVENSHTEIN.apply(s, t) * 2.0 / (s.length() + t.length());
+                        } else if(s.length() > 0 || t.length() > 0) {
+                            return 0.0;
+                        } else {
+                            return 1.0;
+                        }
+                    }));
                 }
 
             }
@@ -438,7 +446,11 @@ public class BasicString implements TextFeatureFactory {
                 }
                 sum += max;
             }
-            return sum / l1.length;
+            if(l1.length > 0) {
+                return sum / l1.length;
+            } else {
+                return 0.0;
+            }
         }
 
         public static interface NGramWeighting {
@@ -542,7 +554,10 @@ public class BasicString implements TextFeatureFactory {
                 }
             }
             //return ((double) ngramOverlap) / (s1.length - n + 1);
-            return 2.0 / ( (double)s1.length /  ngramOverlap + (double)s2.length / ngramOverlap);
+            if(ngramOverlap != 0.0)
+                return 2.0 / ( (double)s1.length /  ngramOverlap + (double)s2.length / ngramOverlap);
+            else
+                return 0.0;
         }
 
         public static final class JaccardDice {
@@ -614,8 +629,12 @@ public class BasicString implements TextFeatureFactory {
         public static double symmetrizedRatio(double x, double y) {
             if (x > y) {
                 return 1.0 - (y / x);
-            } else {
+            } else if(y != 0.0) {
                 return 1.0 - (x / y);
+            } else if(x != 0.0) {
+                return 1.0;
+            } else {
+                return 0.0;
             }
         }
 

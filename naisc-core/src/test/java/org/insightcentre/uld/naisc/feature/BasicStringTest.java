@@ -292,4 +292,16 @@ public class BasicStringTest {
         assert(r[1].value > 0);
         
     }
+
+    @Test
+    public void testNonFinite() {
+        BasicString bs = new BasicString();
+        TextFeature f=  bs.makeFeatureExtractor(Collections.EMPTY_SET, Collections.EMPTY_MAP);
+        Feature[] r = f.extractFeatures(new LensResult(Language.UNDEFINED, Language.UNDEFINED, "", "", null));
+        for(int i = 0; i < r.length; i++) {
+            if(!Double.isFinite(r[i].value)) {
+                throw new AssertionError(r[i].name + " is not finite for empty string");
+            }
+        }
+    }
 }
