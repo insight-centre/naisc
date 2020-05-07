@@ -351,7 +351,13 @@ public class BasicString implements TextFeatureFactory {
                     featureValues.add(JARO_WINKLER.apply(label1, label2));
                 }
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.levenshtein)) {
-                    featureValues.add(((double) LEVENSHTEIN.apply(label1, label2) * 2.0) / (label1.length() + label2.length()));
+                    if(label1.length() > 0 && label2.length() > 0) {
+                        featureValues.add(((double) LEVENSHTEIN.apply(label1, label2) * 2.0) / (label1.length() + label2.length()));
+                    } else if(label1.length() > 0 || label2.length() > 0) {
+                        featureValues.add(0.0);
+                    } else {
+                        featureValues.add(1.0);
+                    }
                 }
             }
             if (!charLevel) {
