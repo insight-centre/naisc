@@ -19,6 +19,6 @@
         "name": "matcher.Threshold",
         "threshold": 1.0
     },
-    "description": "Simple string matching without machine learning"
+    "description": "Simple string matching without machine learning, a minimal dumb setting"
 }
 

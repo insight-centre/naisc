@@ -4,10 +4,7 @@
     },
     "lenses": [],
     "textFeatures": [{
-        "name": "feature.BasicString",
-        "wordWeights": "models/idf",
-        "ngramWeights": "models/ngidf",
-        "labelChar": true
+        "name": "feature.MachineTranslation"
     }],
     "graphFeatures": [],
     "scorers": [{
@@ -20,5 +17,5 @@
             "name": "constraint.Bijective"
         }
     },
-    "description": "Automatic blocking and simple string similarity"
+    "description": "Machine translation inspired metrics, such as BLEU"
 }
