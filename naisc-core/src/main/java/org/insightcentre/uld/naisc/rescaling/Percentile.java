@@ -2,6 +2,9 @@ package org.insightcentre.uld.naisc.rescaling;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import org.insightcentre.uld.naisc.Rescaler;
 
@@ -25,10 +28,21 @@ public class Percentile implements Rescaler {
         int numerator = output.length - freqs[value.length - 1] + freqs[value.length - 2];
         for(int i = 0; i < output.length; i++) {
             int idx = Arrays.binarySearch(value, output[i]);
-            if(idx < 0) {
-                System.err.println(Arrays.toString(input));
+            if(idx < 0) { // Value is very close to another, but which one?
+                if(idx == -1) {
+                    idx = 0;
+                } else if(idx < -value.length) {
+                    idx = value.length -1;
+                } else if(Math.abs(value[-idx - 1] - output[i]) > Math.abs(value[-idx - 2] - output[i])) {
+                    idx = -idx - 2;
+                } else {
+                    idx = -idx - 1;
+                }
             }
-            output[i] = (double)freqs[idx] / numerator;
+            if(idx == freqs.length - 1)
+                output[i] = 1.0;
+            else
+                output[i] = (double)freqs[idx] / numerator;
         }
         return output;
     }
