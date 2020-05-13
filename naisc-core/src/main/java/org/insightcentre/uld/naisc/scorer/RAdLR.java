@@ -226,8 +226,8 @@ public class RAdLR implements ScorerFactory {
             //sb.replace(sb.length()-2, sb.length(), " ");
             //sb.append(String.format("] = %.4f", x));//1.0 / (1.0 + exp(-model.alpha * x - model.beta))));
             //System.err.println(sb.toString());
-           // return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
-           return x;
+           return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
+           //return x;
         }
 
     }
