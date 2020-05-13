@@ -13,7 +13,10 @@
         "modelFile": "models/untrained.radlr"
     }],
     "matcher": {
-        "name": "matcher.UniqueAssignment"
+        "name": "matcher.Greedy",
+        "constraint": {
+            "name": "constraint.Bijective"
+        }
     },
     "description": "Smoothed Jaccard (alpha=1.0) as the only feature"
 }

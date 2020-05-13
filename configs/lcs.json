@@ -15,7 +15,10 @@
         "modelFile": "models/untrained.radlr"
     }],
     "matcher": {
-        "name": "matcher.UniqueAssignment"
+        "name": "matcher.Greedy",
+        "constraint": {
+            "name": "constraint.Bijective"
+        }
     },
     "description": "Longest common subsequence as the only feature"
 }
