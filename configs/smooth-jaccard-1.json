@@ -1,0 +1,19 @@
+{
+    "blocking": {
+        "name": "blocking.Automatic"
+    },
+    "lenses": [],
+    "textFeatures": [{
+        "name": "feature.BagOfWordsSim",
+        "features": ["jaccardExponential"],
+        "weighting": 1.0
+    }],
+    "scorers": [{
+        "name": "scorer.RAdLR",
+        "modelFile": "models/untrained.radlr"
+    }],
+    "matcher": {
+        "name": "matcher.UniqueAssignment"
+    },
+    "description": "Smoothed Jaccard (alpha=1.0) as the only feature"
+}

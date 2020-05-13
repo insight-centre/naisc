@@ -1,0 +1,33 @@
+{
+    "blocking": {
+        "name": "blocking.Automatic"
+    },
+    "lenses": [],
+    "textFeatures": [{
+        "name": "feature.BasicString",
+        "wordWeights": "models/idf",
+        "ngramWeights": "models/ngidf",
+        "labelChar": true
+    },{
+        "name": "feature.WordEmbeddings",
+        "embeddingPath": "models/glove.6B.100d.txt"
+    },{
+        "name": "feature.WordNet",
+        "wordnetXmlFile": "models/english-wordnet-2020.xml.gz"
+    }],
+    "graphFeatures": [{
+        "name": "graph.Automatic"
+    }],
+    "scorers": [{
+        "name": "scorer.RAdLR",
+        "modelFile": "models/auto.radlr"
+    }],
+    "matcher": {
+        "name": "matcher.Greedy",
+        "constraint": {
+            "name": "constraint.Bijective"
+        }
+    },
+    "description": "WordNet all features with basic and word embedding features",
+    "rescaler": "Percentile"
+}
