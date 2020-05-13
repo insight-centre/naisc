@@ -31,6 +31,7 @@ import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.DatasetAnalyzer;
 import org.insightcentre.uld.naisc.matcher.Prematcher;
 import org.insightcentre.uld.naisc.util.Lazy;
+import org.jetbrains.annotations.Nullable;
 
 /**
  *
@@ -104,18 +105,19 @@ public class Train {
      * @param configuration The configuration file
      * @param monitor The listener for events
      * @param loader The dataset loader
+     * @param tag The tag (for cross-fold validation)
      * @throws IOException If an IO error occurs
      */
     public static void execute(String name, File leftFile, File rightFile, File alignment,
             double negativeSampling,
             File configuration, ExecuteListener monitor,
-            DatasetLoader loader) throws IOException {
+            DatasetLoader loader, @Nullable String tag) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
         final Configuration config = mapper.readValue(configuration, Configuration.class);
         if (config.scorers.size() >= 1) {
             System.err.println("modelFile=" + config.scorers.get(0).modelFile);
         }
-        execute(name, leftFile, rightFile, alignment, negativeSampling, config, monitor, loader);
+        execute(name, leftFile, rightFile, alignment, negativeSampling, config, monitor, loader, tag);
     }
 
     /**
@@ -129,14 +131,16 @@ public class Train {
      * @param config The configuration object
      * @param monitor The listener for eventsDataset
      * @param loader The dataset loader
+     * @param tag The tag (for cross-fold validation)
      * @throws IOException If an IO error occurs
      */
     public static void execute(String name, File leftFile, File rightFile, File alignment,
             double negativeSampling,
-            Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
+            Configuration config, ExecuteListener monitor, DatasetLoader loader,
+            @Nullable String tag) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading alignments");
         AlignmentSet goldAlignments = readAlignments(alignment, leftFile.getName(), rightFile.getName());
-        execute(name, leftFile, rightFile, goldAlignments, negativeSampling, config, monitor, loader);
+        execute(name, leftFile, rightFile, goldAlignments, negativeSampling, config, monitor, loader, tag);
     }
 
     /**
@@ -150,17 +154,19 @@ public class Train {
      * @param config The configuration object
      * @param monitor The listener for eventsDataset
      * @param loader The dataset loader
+     * @param tag The tag (for cross-fold validation)
      * @throws IOException If an IO error occurs
      */
     public static void execute(String name, File leftFile, File rightFile, AlignmentSet goldAlignments,
             double negativeSampling,
-            Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
+            Configuration config, ExecuteListener monitor, DatasetLoader loader,
+            @Nullable String tag) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
         Dataset leftModel = loader.fromFile(leftFile, name + "/left");
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
         Dataset rightModel = loader.fromFile(rightFile, name + "/right");
-        execute(name, leftModel, rightModel, goldAlignments, negativeSampling, config, monitor, loader);
+        execute(name, leftModel, rightModel, goldAlignments, negativeSampling, config, monitor, loader, tag);
     }
 
     /**
@@ -175,15 +181,16 @@ public class Train {
      * (zero for no negative sampling)
      * @param monitor The listener for events
      * @param loader The dataset loader
+     * @param tag The tag (for cross-fold validation)
      * @throws IOException If an IO error occurs
      */
     public static void execute(String name, Dataset leftModel, Dataset rightModel,
             AlignmentSet goldAlignments, double negativeSampling,
-            Configuration config, ExecuteListener monitor, DatasetLoader loader) throws IOException {
+            Configuration config, ExecuteListener monitor, DatasetLoader loader, @Nullable String tag) throws IOException {
         Map<String, List<FeatureSetWithScore>> trainingData
                 = extractData(name, leftModel, rightModel, goldAlignments, negativeSampling, config, monitor, loader);
 
-        trainModels(monitor, config, trainingData);
+        trainModels(monitor, config, trainingData, tag);
     }
 
     /**
@@ -311,13 +318,14 @@ public class Train {
      * @param monitor A logger
      * @param config The configuration
      * @param trainingData The training data
+     * @param tag The tag (for a cross-fold validation) or null
      * @throws IOException If a disk error occurs
      */
-    public static void trainModels(ExecuteListener monitor, Configuration config, Map<String, List<FeatureSetWithScore>> trainingData) throws IOException {
+    public static void trainModels(ExecuteListener monitor, Configuration config, Map<String, List<FeatureSetWithScore>> trainingData, @Nullable String tag) throws IOException {
         for (String prop : trainingData.keySet()) {
 
             monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Loading Scorers");
-            List<ScorerTrainer> scorers = config.makeTrainableScorers(prop, "");
+            List<ScorerTrainer> scorers = config.makeTrainableScorers(prop, tag);
 
             //ArrayList<Scorer> trainedScorers = new ArrayList<>();
             for (ScorerTrainer tsf : scorers) {

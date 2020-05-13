@@ -217,7 +217,13 @@ public class Configuration {
         List<ScorerTrainer> tsfs = new ArrayList<>();
         for (ScorerConfiguration config : this.scorers) {
             ScorerFactory sf = Services.get(ScorerFactory.class, config.name);
-            File path = config.modelFile == null ? null : new File(config.modelFile + tag);
+            final File path;
+            if(tag != null) {
+                path = config.modelFile == null ? null : new File(config.modelFile + tag);
+                path.deleteOnExit();
+            } else {
+                path = config.modelFile == null ? null : new File(config.modelFile);
+            }
             tsfs.addAll(sf.makeTrainer(config.params, property, path).toList());
         }
         if (tsfs.isEmpty()) {

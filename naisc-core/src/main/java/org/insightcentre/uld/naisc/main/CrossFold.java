@@ -133,7 +133,7 @@ public class CrossFold {
         AlignmentSet as = new AlignmentSet();
         for (int i = 0; i < nFolds; i++) {
             monitor.foldNo++;
-            Train.execute(name, leftModel, rightModel, folds.train(goldAlignments, i), negativeSampling, config, monitor,loader);
+            Train.execute(name, leftModel, rightModel, folds.train(goldAlignments, i), negativeSampling, config, monitor,loader, "fold" + i);
             as.addAll(Main.execute(name, leftModel, rightModel, config, new None<>(), monitor, folds.leftSplit.get(i), folds.rightSplit.get(i),loader));
         }
         monitor.foldNo = 0;

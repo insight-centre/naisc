@@ -50,7 +50,7 @@ public class MultiTrain {
             dumpFeatures(featureFile, trainData);
         }
 
-        Train.trainModels(monitor, config, trainData);
+        Train.trainModels(monitor, config, trainData, null);
     }
 
     private static void badOptions(OptionParser p, String message) throws IOException {
