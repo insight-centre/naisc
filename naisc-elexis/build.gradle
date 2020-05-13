@@ -1,32 +1,40 @@
 plugins {
-    id 'war'
+    id 'org.springframework.boot' version '2.2.4.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+    id 'java'
 }
 
-group 'org.insightcentre'
-version '1.0-SNAPSHOT'
-
-sourceCompatibility = 1.8
-
-apply plugin: 'java'
-apply plugin: 'war'
-apply plugin: 'maven'
-apply plugin: 'idea'
+group = 'naisc'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
 
 repositories {
     mavenCentral()
 }
+configurations {
+    compile.exclude group:'ch.qos.logback'
+}
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.1'
+    implementation 'org.springframework.boot:spring-boot-starter-jersey'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+
     compile group: 'org.json', name: 'json', version: '20190722'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.10.0'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.10.0'
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.10.0'
     compile group: 'org.apache.jena', name: 'jena-core', version: '3.14.0'
+    compile 'com.googlecode.json-simple:json-simple:1.1.1'
+    compile(project(":naisc-core"))
 
     compile group: 'xalan', name: 'xalan', version: '2.7.1'
     implementation 'org.jetbrains:annotations:15.0'
 
+}
 
+test {
+    useJUnitPlatform()
 }
