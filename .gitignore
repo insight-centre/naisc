@@ -14,7 +14,7 @@ test.*
 test-*
 target/
 
-models/
+/models/
 extraction/data_raw/
 data/*.json.OUTPUT
 data/*.json.OUTPUT-1
@@ -163,3 +163,4 @@ local.properties
 
 runs_dev/
 mwsa
+runs_mwsa/

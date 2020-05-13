@@ -74,14 +74,14 @@ public class ExecutionTask implements Runnable {
                 Option<File> alignFile = ds.align();
                 if (alignFile.has()) {
                     listener.updateStatus(ExecuteListener.Stage.EVALUATION, "Evaluating");
-                    AlignmentSet gold = Train.readAlignments(alignFile.get());
+                    AlignmentSet gold = Train.readAlignments(alignFile.get(), "left", "right");
                     er = Evaluate.evaluate(alignment, gold, listener, ds.trainAlign().has());
                 } else {
                     er = null;
                 }
             } else if (mode == ExecutionMode.TRAIN) {
                 if (userAligns.has()) {
-                    Train.execute(id, ds.left(), ds.right(), userAligns.get(), 5.0, config, listener, loader);
+                    Train.execute(id, ds.left(), ds.right(), userAligns.get(), 5.0, config, listener, loader, null);
                     time = System.currentTimeMillis() - time;
                     er = null;
                     alignment = null;
@@ -90,7 +90,7 @@ public class ExecutionTask implements Runnable {
                     if (!alignFile.has()) {
                         throw new IllegalArgumentException("Training was requested on run with no gold standard alignments");
                     }
-                    Train.execute(id, ds.left(), ds.right(), alignFile.get(), 5.0, config, listener, loader);
+                    Train.execute(id, ds.left(), ds.right(), alignFile.get(), 5.0, config, listener, loader, null);
                     time = System.currentTimeMillis() - time;
                     er = null;
                     alignment = null;

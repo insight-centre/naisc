@@ -8,11 +8,7 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.util.Map;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.LensFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
@@ -121,7 +117,7 @@ public class Command implements LensFactory {
         }
 
         @Override
-        public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
+        public Option<LensResult> extract(Resource entity1, Resource entity2, NaiscListener log) {
             out.get().println(entity1.getURI() + "\t" + entity2.getURI());
             out.get().flush();
             try {
@@ -139,7 +135,7 @@ public class Command implements LensFactory {
                 if(line.equals("")) {
                     return new None<>();
                 } else {
-                    return new Some<>(mapper.readValue(line, LangStringPair.class));
+                    return new Some<>(LensResult.fromLangStringPair(mapper.readValue(line, LangStringPair.class),tag));
                 }
             } catch(IOException x) {
                 throw new RuntimeException(x);

@@ -12,8 +12,8 @@ import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.ints.IntComparator;
 import it.unimi.dsi.fastutil.ints.IntRBTreeSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.objects.Object2DoubleLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.FileOutputStream;
@@ -25,11 +25,7 @@ import static java.lang.Math.max;
 import java.util.*;
 
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Matcher;
-import org.insightcentre.uld.naisc.MatcherFactory;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
 import org.insightcentre.uld.naisc.util.None;
@@ -98,27 +94,27 @@ public class UniqueAssignment implements MatcherFactory {
             final List<Alignment> alignmentSet = new ArrayList<>();
 
             for (Alignment alignment : matches.getAlignments()) {
-                relations.add(alignment.relation);
+                relations.add(alignment.property);
             }
             for (String rel : relations) {
-                Set<Resource> leftExclusion = new HashSet<>();
-                Set<Resource> rightExclusion = new HashSet<>();
+                Set<URIRes> leftExclusion = new HashSet<>();
+                Set<URIRes> rightExclusion = new HashSet<>();
                 
                 for(Alignment init : initial) {
-                    if(init.relation.equals(rel)) {
+                    if(init.property.equals(rel)) {
                         leftExclusion.add(init.entity1);
                         rightExclusion.add(init.entity2);
                     }
                 }
                 
-                Object2IntMap<Resource> lefts = new Object2IntOpenHashMap<>();
-                Object2IntMap<Resource> rights = new Object2IntOpenHashMap<>();
-                Int2ObjectMap<Resource> linv = new Int2ObjectArrayMap<>();
-                Int2ObjectMap<Resource> rinv = new Int2ObjectArrayMap<>();
+                Object2IntMap<URIRes> lefts = new Object2IntOpenHashMap<>();
+                Object2IntMap<URIRes> rights = new Object2IntOpenHashMap<>();
+                Int2ObjectMap<URIRes> linv = new Int2ObjectArrayMap<>();
+                Int2ObjectMap<URIRes> rinv = new Int2ObjectArrayMap<>();
                 HashMap<IntStringTriple, Alignment> origAligns = new HashMap<>();
 
                 for (Alignment alignment : matches.getAlignments()) {
-                    if (rel.equals(alignment.relation) && alignment.score >= threshold &&
+                    if (rel.equals(alignment.property) && alignment.probability >= threshold &&
                             !leftExclusion.contains(alignment.entity1) &&
                             !rightExclusion.contains(alignment.entity2)) {
                         if (!lefts.containsKey(alignment.entity1)) {
@@ -129,21 +125,21 @@ public class UniqueAssignment implements MatcherFactory {
                             rinv.put(rights.size(), alignment.entity2);
                             rights.put(alignment.entity2, rights.size());
                         }
-                        relations.add(alignment.relation);
+                        relations.add(alignment.property);
                         origAligns.put(new IntStringTriple(lefts.getInt(alignment.entity1),
-                                rights.getInt(alignment.entity2), alignment.relation),
+                                rights.getInt(alignment.entity2), alignment.property),
                                 alignment);
                     }
                 }
                 SparseMat m = new SparseMat(lefts.size(), rights.size());
                 for (Alignment alignment : matches.getAlignments()) {
-                    if (rel.equals(alignment.relation) && alignment.score >= threshold) {
-                        if (alignment.score < 0) {
-                            throw new RuntimeException("Invalid (negative) alignment score generated");
+                    if (rel.equals(alignment.property) && alignment.probability >= threshold) {
+                        if (alignment.probability < 0) {
+                            throw new RuntimeException("Invalid (negative) alignment probability generated");
                         }
                         m.add(lefts.getInt(alignment.entity1), rights.getInt(alignment.entity2),
-                                alignment.score);
-                                //Math.log(alignment.score == 0 ? 1e-6 : alignment.score / baseProbability));
+                                alignment.probability);
+                                //Math.log(alignment.probability == 0 ? 1e-6 : alignment.probability / baseProbability));
                     }
                 }
                 MunkRes munkRes = new MunkRes(m);
@@ -153,7 +149,7 @@ public class UniqueAssignment implements MatcherFactory {
                         Alignment orig = origAligns.get(new IntStringTriple(ip._1, ip._2, rel));
                         if(orig != null) {
                             alignmentSet.add(new Alignment(linv.get(ip._1), rinv.get(ip._2),
-                                orig.score, rel, orig.features));
+                                orig.probability, rel, orig.features == null || orig.features instanceof Object2DoubleMap ? (Object2DoubleMap<String>)orig.features : new Object2DoubleOpenHashMap<>(orig.features)));
                         } else {
                             alignmentSet.add(new Alignment(linv.get(ip._1), rinv.get(ip._2),
                                     baseProbability, rel, null));

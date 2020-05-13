@@ -11,6 +11,8 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import java.io.File;
 import java.io.IOException;
+
+import static java.lang.Integer.min;
 import static java.lang.Math.abs;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,12 +25,9 @@ import java.util.function.BiFunction;
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.apache.commons.text.similarity.SimilarityScore;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.PrettyGoodTokenizer;
-import org.insightcentre.uld.naisc.TextFeature;
-import org.insightcentre.uld.naisc.TextFeatureFactory;
 
 /**
  * The basic features of string similarity
@@ -45,6 +44,8 @@ public class BasicString implements TextFeatureFactory {
      */
     public enum Feature {
         lcs,
+        lc_prefix,
+        lc_suffix,
         ngram_1,
         ngram_2,
         ngram_3,
@@ -209,6 +210,12 @@ public class BasicString implements TextFeatureFactory {
             if (selectedFeatures == null || selectedFeatures.contains(Feature.lcs)) {
                 featureNames.add(prefix + "lcs");
             }
+            if (selectedFeatures == null || selectedFeatures.contains(Feature.lc_suffix)) {
+                featureNames.add(prefix + "lc_suffix");
+            }
+            if (selectedFeatures == null || selectedFeatures.contains(Feature.lc_prefix)) {
+                featureNames.add(prefix + "lc_prefix");
+            }
             if (!charLevel) {
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.ngram_1)) {
                     featureNames.add(prefix + "ngram-1");
@@ -281,6 +288,12 @@ public class BasicString implements TextFeatureFactory {
             if (selectedFeatures == null || selectedFeatures.contains(Feature.lcs)) {
                 featureValues.add(longestCommonSubsequence(l1, l2));
             }
+            if (selectedFeatures == null || selectedFeatures.contains(Feature.lc_suffix)) {
+                featureValues.add(longestCommonSuffix(l1, l2));
+            }
+            if (selectedFeatures == null || selectedFeatures.contains(Feature.lc_prefix)) {
+                featureValues.add(longestCommonPrefix(l1, l2));
+            }
             if (!charLevel) {
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.ngram_1)) {
                     featureValues.add(ngramOverlap(l1, l2, 1, charLevel ? ngramWeighting : wordWeighting));
@@ -338,7 +351,13 @@ public class BasicString implements TextFeatureFactory {
                     featureValues.add(JARO_WINKLER.apply(label1, label2));
                 }
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.levenshtein)) {
-                    featureValues.add(((double) LEVENSHTEIN.apply(label1, label2) * 2.0) / (label1.length() + label2.length()));
+                    if(label1.length() > 0 && label2.length() > 0) {
+                        featureValues.add(((double) LEVENSHTEIN.apply(label1, label2) * 2.0) / (label1.length() + label2.length()));
+                    } else if(label1.length() > 0 || label2.length() > 0) {
+                        featureValues.add(0.0);
+                    } else {
+                        featureValues.add(1.0);
+                    }
                 }
             }
             if (!charLevel) {
@@ -346,7 +365,15 @@ public class BasicString implements TextFeatureFactory {
                     featureValues.add(mongeElkan(l1, l2, (s, t) -> JARO_WINKLER.apply(s, t)));
                 }
                 if (selectedFeatures == null || selectedFeatures.contains(Feature.mongeElkanLevenshtein)) {
-                    featureValues.add(mongeElkan(l1, l2, (s, t) -> 1.0 - (double) LEVENSHTEIN.apply(s, t) * 2.0 / (s.length() + t.length())));
+                    featureValues.add(mongeElkan(l1, l2, (s, t) -> {
+                        if(s.length() > 0 && t.length() > 0) {
+                            return 1.0 - (double) LEVENSHTEIN.apply(s, t) * 2.0 / (s.length() + t.length());
+                        } else if(s.length() > 0 || t.length() > 0) {
+                            return 0.0;
+                        } else {
+                            return 1.0;
+                        }
+                    }));
                 }
 
             }
@@ -361,10 +388,10 @@ public class BasicString implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair sp, NaiscListener log) {
+        public org.insightcentre.uld.naisc.Feature[] extractFeatures(LensResult sp, NaiscListener log) {
             DoubleArrayList featureValues = new DoubleArrayList();
-            final String label1 = lowerCase ? sp._1.toLowerCase() : sp._1;
-            final String label2 = lowerCase ? sp._2.toLowerCase() : sp._2;
+            final String label1 = lowerCase ? sp.string1.toLowerCase() : sp.string1;
+            final String label2 = lowerCase ? sp.string2.toLowerCase() : sp.string2;
             final String[] l1tok = PrettyGoodTokenizer.tokenize(label1),
                     l2tok = PrettyGoodTokenizer.tokenize(label2);
 
@@ -373,7 +400,7 @@ public class BasicString implements TextFeatureFactory {
                 buildFeatures(sp.lang2, "char-", featureValues, label1, label2, label1.split(""), label2.split(""), true);
             }
 
-            return featureValues.toDoubleArray();
+            return org.insightcentre.uld.naisc.Feature.mkArray(featureValues.toDoubleArray(), getFeatureNames());
         }
 
         public static double longestCommonSubsequence(String[] s1, String[] s2) {
@@ -398,6 +425,24 @@ public class BasicString implements TextFeatureFactory {
             return (double) lcs / (double) Math.max(s1.length, s2.length);
         }
 
+        public static double longestCommonSuffix(String[] s1, String[] s2) {
+            for(int i = 1; i <= min(s1.length, s2.length); i++) {
+                if(!s1[s1.length - i].equals(s2[s2.length - i])) {
+                    return 2.0 * (i-1) / (s1.length + s2.length);
+                }
+            }
+            return 2.0 * min(s1.length, s2.length) /  (s1.length + s2.length);
+        }
+
+        public static double longestCommonPrefix(String[] s1, String[] s2) {
+            for(int i = 0; i < min(s1.length, s2.length); i++) {
+                if(!s1[i].equals(s2[i])) {
+                    return 2.0 * i / (s1.length + s2.length);
+                }
+            }
+            return 2.0 * min(s1.length, s2.length) /  (s1.length + s2.length);
+        }
+
         private double mongeElkan(String[] l1, String[] l2, BiFunction<String, String, Double> function) {
             double sum = 0.0;
             for (String s : l1) {
@@ -407,7 +452,11 @@ public class BasicString implements TextFeatureFactory {
                 }
                 sum += max;
             }
-            return sum / l1.length;
+            if(l1.length > 0) {
+                return sum / l1.length;
+            } else {
+                return 0.0;
+            }
         }
 
         public static interface NGramWeighting {
@@ -510,7 +559,11 @@ public class BasicString implements TextFeatureFactory {
                     }
                 }
             }
-            return ((double) ngramOverlap) / (s1.length - n + 1);
+            //return ((double) ngramOverlap) / (s1.length - n + 1);
+            if(ngramOverlap != 0.0)
+                return 2.0 / ( (double)s1.length /  ngramOverlap + (double)s2.length / ngramOverlap);
+            else
+                return 0.0;
         }
 
         public static final class JaccardDice {
@@ -582,8 +635,12 @@ public class BasicString implements TextFeatureFactory {
         public static double symmetrizedRatio(double x, double y) {
             if (x > y) {
                 return 1.0 - (y / x);
-            } else {
+            } else if(y != 0.0) {
                 return 1.0 - (x / y);
+            } else if(x != 0.0) {
+                return 1.0;
+            } else {
+                return 0.0;
             }
         }
 

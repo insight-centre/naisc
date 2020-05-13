@@ -18,11 +18,7 @@ import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.LensFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.None;
@@ -93,7 +89,7 @@ public class SPARQL implements LensFactory {
         }
 
         @Override
-        public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
+        public Option<LensResult> extract(Resource entity1, Resource entity2, NaiscListener log) {
             String queryString = this.query.replaceAll("\\$entity1", "<" + entity1.getURI() + ">")
                     .replaceAll("\\$entity2", "<" + entity2.getURI() + ">");
             Query sparqlQuery = baseURI == null ? QueryFactory.create(queryString)
@@ -115,10 +111,10 @@ public class SPARQL implements LensFactory {
                         Literal l1 = (Literal)node1;
                         Literal l2 = (Literal)node2;
                         return new Some<>(
-                                new LangStringPair(
+                                new LensResult(
                                         toLang(l1.getLanguage()),
                                         toLang(l2.getLanguage()),
-                                        l1.getLexicalForm(), l2.getLexicalForm()));
+                                        l1.getLexicalForm(), l2.getLexicalForm(),tag));
                     }
                 }
             }

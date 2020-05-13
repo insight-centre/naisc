@@ -256,6 +256,11 @@ public class RAdLR implements ScorerFactory {
                         featureIDs.put(fid, featureIDs.size());
                     }
                 }
+                for(int k = 0; k < fss.values.length; k++) {
+                    if(!Double.isFinite(fss.values[k])) {
+                        throw new IllegalArgumentException("Non-finite score for " + fss.names[k]);
+                    }
+                }
                 scores[i++] = fss.score;
             }
             i = 0;

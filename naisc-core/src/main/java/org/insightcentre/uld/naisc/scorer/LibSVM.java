@@ -38,7 +38,7 @@ import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
 
 /**
- * The LibSVM scorer returns the probability that a particular relation holds
+ * The LibSVM scorer returns the probability that a particular property holds
  * given its input
  *
  * @author John McCrae
@@ -288,7 +288,7 @@ public class LibSVM implements ScorerFactory {
 //            }
 //            attributes.add(new Attribute(featName));
 //        }
-//        attributes.add(new Attribute("score"));
+//        attributes.add(new Attribute("probability"));
 //        return attributes;
 //    }
     /**
@@ -297,7 +297,7 @@ public class LibSVM implements ScorerFactory {
     public static class LibSVMModel {
 
         /**
-         * The relation trained on
+         * The property trained on
          */
         public String relation;
         /**
@@ -338,7 +338,7 @@ public class LibSVM implements ScorerFactory {
 //        for(int i = 0; i < fss.values.length; i++) {
 //            instance.setValue(i, fss.values[i]);
 //        }
-//        instance.setValue(instance.numAttributes() - 1, score);
+//        instance.setValue(instance.numAttributes() - 1, probability);
         final double[] d = new double[fss.values.length + 1];
         System.arraycopy(fss.values, 0, d, 0, fss.values.length);
         d[fss.values.length] = score;
@@ -374,7 +374,7 @@ public class LibSVM implements ScorerFactory {
          *
          * @param classifier The trained classifier
          * @param featNames The names of the features used
-         * @param relation The relation to output
+         * @param relation The property to output
          */
         public LibSVMClassifier(svm_model classifier, String[] featNames,
                 String relation) {

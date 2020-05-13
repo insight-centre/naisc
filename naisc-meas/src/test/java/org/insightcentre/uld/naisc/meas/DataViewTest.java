@@ -16,6 +16,7 @@ import org.apache.jena.rdf.model.Statement;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.Dataset;
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader;
 import org.insightcentre.uld.naisc.meas.DataView.DataViewPath;
 import org.insightcentre.uld.naisc.util.EdmondsChuLiu;
@@ -68,29 +69,29 @@ public class DataViewTest {
         mright.add(mright.createResource("file:bar/id1"), mright.createProperty("file:p2"), mright.createResource("file:bar/id3"));
         mright.add(mright.createResource("file:bar/id5"), mright.createProperty("file:p1"), mright.createResource("file:bar/id4"));
         mright.add(mright.createResource("file:bar/id5"), mright.createProperty("file:p1"), mright.createResource("file:bar/id6"));
-        Dataset left = new DefaultDatasetLoader.ModelDataset(mleft);
-        Dataset right = new DefaultDatasetLoader.ModelDataset(mright);
+        Dataset left = new DefaultDatasetLoader.ModelDataset(mleft, "mleft");
+        Dataset right = new DefaultDatasetLoader.ModelDataset(mright, "mright");
         AlignmentSet alignment = new AlignmentSet();
-        alignment.add(new Alignment(mleft.createResource("file:foo/id1"), mright.createResource("file:bar/id1"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
-        alignment.add(new Alignment(mleft.createResource("file:foo/id2"), mright.createResource("file:bar/id2"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
-        alignment.add(new Alignment(mleft.createResource("file:foo/id3"), mright.createResource("file:bar/id3"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
-        alignment.add(new Alignment(mleft.createResource("file:foo/id4"), mright.createResource("file:bar/id4"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
-        alignment.add(new Alignment(mleft.createResource("file:foo/id5"), mright.createResource("file:bar/id5"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
-        alignment.add(new Alignment(mleft.createResource("file:foo/id6"), mright.createResource("file:bar/id6"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        alignment.add(new Alignment(new URIRes("file:foo/id1", "mleft"), new URIRes("file:bar/id1", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        alignment.add(new Alignment(new URIRes("file:foo/id2", "mleft"), new URIRes("file:bar/id2", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        alignment.add(new Alignment(new URIRes("file:foo/id3", "mleft"), new URIRes("file:bar/id3", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        alignment.add(new Alignment(new URIRes("file:foo/id4", "mleft"), new URIRes("file:bar/id4", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        alignment.add(new Alignment(new URIRes("file:foo/id5", "mleft"), new URIRes("file:bar/id5", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        alignment.add(new Alignment(new URIRes("file:foo/id6", "mleft"), new URIRes("file:bar/id6", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
         DataView expResult = new DataView(new ArrayList<DataView.DataViewEntry>() {
             {
                 add(new DataView.DataViewEntry("file:foo/id1", new ArrayList<DataViewPath>() {
                     {
-                        add(new DataViewPath("file:bar/id1", Collections.EMPTY_LIST, Collections.EMPTY_LIST, new Alignment(mleft.createResource("file:foo/id1"), mright.createResource("file:bar/id1"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
-                        add(new DataViewPath("file:bar/id1", Arrays.asList("file:p1"), Arrays.asList("file:p1"), new Alignment(mleft.createResource("file:foo/id2"), mright.createResource("file:bar/id2"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
-                        add(new DataViewPath("file:bar/id1", Arrays.asList("file:p2"), Arrays.asList("file:p2"), new Alignment(mleft.createResource("file:foo/id3"), mright.createResource("file:bar/id3"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
-                        add(new DataViewPath("file:bar/id5", Arrays.asList("file:p1"), Arrays.asList("file:p1"), new Alignment(mleft.createResource("file:foo/id4"), mright.createResource("file:bar/id4"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
+                        add(new DataViewPath("file:bar/id1", Collections.EMPTY_LIST, Collections.EMPTY_LIST, new Alignment(new URIRes("file:foo/id1", "mleft"), new URIRes("file:bar/id1", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
+                        add(new DataViewPath("file:bar/id1", Arrays.asList("file:p1"), Arrays.asList("file:p1"), new Alignment(new URIRes("file:foo/id2", "mleft"), new URIRes("file:bar/id2", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
+                        add(new DataViewPath("file:bar/id1", Arrays.asList("file:p2"), Arrays.asList("file:p2"), new Alignment(new URIRes("file:foo/id3", "mleft"), new URIRes("file:bar/id3", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
+                        add(new DataViewPath("file:bar/id5", Arrays.asList("file:p1"), Arrays.asList("file:p1"), new Alignment(new URIRes("file:foo/id4", "mleft"), new URIRes("file:bar/id4", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
                     }
                 }));
                 add(new DataView.DataViewEntry("file:foo/id5", new ArrayList<DataViewPath>() {
                     {
-                        add(new DataViewPath("file:bar/id5", Arrays.asList(), Arrays.asList(), new Alignment(mleft.createResource("file:foo/id5"), mright.createResource("file:bar/id5"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
-                        add(new DataViewPath("file:bar/id5", Arrays.asList("file:p1"), Arrays.asList("file:p1"), new Alignment(mleft.createResource("file:foo/id6"), mright.createResource("file:bar/id6"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
+                        add(new DataViewPath("file:bar/id5", Arrays.asList(), Arrays.asList(), new Alignment(new URIRes("file:foo/id5", "mleft"), new URIRes("file:bar/id5", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
+                        add(new DataViewPath("file:bar/id5", Arrays.asList("file:p1"), Arrays.asList("file:p1"), new Alignment(new URIRes("file:foo/id6", "mleft"), new URIRes("file:bar/id6", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
                     }
                 }));
             }
@@ -138,21 +139,21 @@ public class DataViewTest {
         paths.put(model.createResource("file:bar/id6"), Arrays.asList());
         List<DataView.Paths> rightPaths = Collections.singletonList(new DataView.Paths(root, paths));
         AlignmentSet alignmentSet = new AlignmentSet();
-        alignmentSet.add(new Alignment(model.createResource("file:foo/id1"), model.createResource("file:bar/id1"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
-        alignmentSet.add(new Alignment(model.createResource("file:foo/id2"), model.createResource("file:bar/id2"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
-        alignmentSet.add(new Alignment(model.createResource("file:foo/id3"), model.createResource("file:bar/id3"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
-        alignmentSet.add(new Alignment(model.createResource("file:foo/id4"), model.createResource("file:bar/id4"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
-        alignmentSet.add(new Alignment(model.createResource("file:foo/id5"), model.createResource("file:bar/id5"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
-        alignmentSet.add(new Alignment(model.createResource("file:foo/id6"), model.createResource("file:bar/id6"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        alignmentSet.add(new Alignment(new URIRes("file:foo/id1", "model"), new URIRes("file:bar/id1", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        alignmentSet.add(new Alignment(new URIRes("file:foo/id2", "model"), new URIRes("file:bar/id2", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        alignmentSet.add(new Alignment(new URIRes("file:foo/id3", "model"), new URIRes("file:bar/id3", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        alignmentSet.add(new Alignment(new URIRes("file:foo/id4", "model"), new URIRes("file:bar/id4", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        alignmentSet.add(new Alignment(new URIRes("file:foo/id5", "model"), new URIRes("file:bar/id5", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        alignmentSet.add(new Alignment(new URIRes("file:foo/id6", "model"), new URIRes("file:bar/id6", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
         DataView.DataViewEntry expResult = new DataView.DataViewEntry("file:foo/id3", Arrays.asList(
-                new DataViewPath("file:bar/id1", Arrays.asList("file:p1"), Arrays.asList("file:p1"), new Alignment(model.createResource("file:foo/id1"), model.createResource("file:bar/id1"), 1.0, Alignment.SKOS_EXACT_MATCH, null)),
-                new DataViewPath("file:bar/id1", Arrays.asList("file:p1","file:p1"), Arrays.asList("file:p1","file:p2"), new Alignment(model.createResource("file:foo/id2"), model.createResource("file:bar/id2"), 1.0, Alignment.SKOS_EXACT_MATCH, null)),
-                new DataViewPath("file:bar/id1", Arrays.asList(), Arrays.asList("file:p3"), new Alignment(model.createResource("file:foo/id3"), model.createResource("file:bar/id3"), 1.0, Alignment.SKOS_EXACT_MATCH, null)),
-                new DataViewPath("file:bar/id1", Arrays.asList("file:p1","file:p1","file:p1"), Arrays.asList("file:p4"), new Alignment(model.createResource("file:foo/id4"), model.createResource("file:bar/id4"), 1.0, Alignment.SKOS_EXACT_MATCH, null)),
-                new DataViewPath("file:bar/id1", Arrays.asList("file:p1","file:p1","file:p1","file:p1","file:p1"), Arrays.asList("file:p1"), new Alignment(model.createResource("file:foo/id5"), model.createResource("file:bar/id5"), 1.0, Alignment.SKOS_EXACT_MATCH, null)),
-                new DataViewPath("file:bar/id1", Arrays.asList("file:p1","file:p1","file:p1","file:p1"), Arrays.asList(), new Alignment(model.createResource("file:foo/id6"), model.createResource("file:bar/id6"), 1.0, Alignment.SKOS_EXACT_MATCH, null))
+                new DataViewPath("file:bar/id1", Arrays.asList("file:p1"), Arrays.asList("file:p1"), new Alignment(new URIRes("file:foo/id1", "model"), new URIRes("file:bar/id1", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null)),
+                new DataViewPath("file:bar/id1", Arrays.asList("file:p1","file:p1"), Arrays.asList("file:p1","file:p2"), new Alignment(new URIRes("file:foo/id2", "model"), new URIRes("file:bar/id2", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null)),
+                new DataViewPath("file:bar/id1", Arrays.asList(), Arrays.asList("file:p3"), new Alignment(new URIRes("file:foo/id3", "model"), new URIRes("file:bar/id3", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null)),
+                new DataViewPath("file:bar/id1", Arrays.asList("file:p1","file:p1","file:p1"), Arrays.asList("file:p4"), new Alignment(new URIRes("file:foo/id4", "model"), new URIRes("file:bar/id4", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null)),
+                new DataViewPath("file:bar/id1", Arrays.asList("file:p1","file:p1","file:p1","file:p1","file:p1"), Arrays.asList("file:p1"), new Alignment(new URIRes("file:foo/id5", "model"), new URIRes("file:bar/id5", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null)),
+                new DataViewPath("file:bar/id1", Arrays.asList("file:p1","file:p1","file:p1","file:p1"), Arrays.asList(), new Alignment(new URIRes("file:foo/id6", "model"), new URIRes("file:bar/id6", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null))
         ));
-        List<DataView.DataViewEntry> result = DataView.convertToDataView(t, rightPaths, alignmentSet);
+        List<DataView.DataViewEntry> result = DataView.convertToDataView(t, rightPaths, alignmentSet, new DefaultDatasetLoader.ModelDataset(model, "model"), new DefaultDatasetLoader.ModelDataset(model, "model"));
         assertEquals(1, result.size());
         assertEquals(expResult.root, result.get(0).root);
         for(int i = 0; i < expResult.paths.size(); i++) {
@@ -175,7 +176,7 @@ public class DataViewTest {
         model.add(model.createResource("file:foo/id4"), model.createProperty("file:p1"), model.createResource("file:foo/id6"));
         model.add(model.createResource("file:foo/id6"), model.createProperty("file:p1"), model.createResource("file:foo/id5"));
         model.add(model.createResource("file:foo/id4"), model.createProperty("file:p1"), model.createResource("file:foo/id4"));
-        Dataset d = new DefaultDatasetLoader.ModelDataset(model);
+        Dataset d = new DefaultDatasetLoader.ModelDataset(model, "d");
         
                 Map<Resource, List<Statement>> adjacencies = new HashMap<>();
         adjacencies.put(model.createResource("file:foo/id1"), Arrays.asList(model.createStatement(model.createResource("file:foo/id1"), model.createProperty("file:p1"), model.createResource("file:foo/id2"))));
@@ -272,7 +273,7 @@ public class DataViewTest {
         model.add(model.createResource("file:foo/id4"), model.createProperty("file:p1"), model.createResource("file:foo/id6"));
         model.add(model.createResource("file:foo/id6"), model.createProperty("file:p1"), model.createResource("file:foo/id5"));
         model.add(model.createResource("file:foo/id4"), model.createProperty("file:p1"), model.createResource("file:foo/id4"));
-        Dataset d = new DefaultDatasetLoader.ModelDataset(model);
+        Dataset d = new DefaultDatasetLoader.ModelDataset(model, "d");
         Set<Resource> expResult = new HashSet<>();
         expResult.add(model.createResource("file:foo/id1"));
         Set<Resource> result = DataView.findRoots(d);
@@ -295,7 +296,7 @@ public class DataViewTest {
         model.add(model.createResource("file:foo/id4"), model.createProperty("file:p1"), model.createResource("file:foo/id4"));
         Resource current = model.createResource("file:foo/id1");
         Map<Resource, List<Statement>> adjacencies = new HashMap<>();
-        Dataset d = new DefaultDatasetLoader.ModelDataset(model);
+        Dataset d = new DefaultDatasetLoader.ModelDataset(model, "d");
         Set<Resource> visited = new HashSet<>();
         visited.add(model.createResource("file:foo/id1"));
         DataView.breadthSearch(current, adjacencies, d, visited);

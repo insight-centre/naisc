@@ -15,10 +15,8 @@ import java.sql.Statement;
 import java.util.*;
 
 import org.apache.jena.rdf.model.Resource;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.Alignment.Valid;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
 import org.insightcentre.uld.naisc.meas.DataView;
 import org.insightcentre.uld.naisc.meas.DataView.DataViewEntry;
@@ -27,7 +25,6 @@ import org.insightcentre.uld.naisc.meas.ExecuteServlet;
 import org.insightcentre.uld.naisc.meas.Meas;
 import org.insightcentre.uld.naisc.meas.Meas.Run;
 import org.insightcentre.uld.naisc.meas.Meas.RunResultRow;
-import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Pair;
 
 /**
@@ -40,10 +37,10 @@ public class Execution implements ExecuteListener {
     public ListenerResponse response = new ListenerResponse();
     public boolean aborted = false;
     private final String id;
-    private final HashMap<Pair<Resource, Resource>, Map<String, LangStringPair>> lensResults = new HashMap<>();
-    private final HashMap<Resource, Map<String, LangStringPair>> leftLensResults = new HashMap<>();
-    private final HashMap<Resource, Map<String, LangStringPair>> rightLensResults = new HashMap<>();
-    private List<Pair<Resource, Resource>> blocks = new ArrayList<>();
+    private final HashMap<Pair<URIRes, URIRes>, Map<String, LensResult>> lensResults = new HashMap<>();
+    private final HashMap<URIRes, Map<String, LensResult>> leftLensResults = new HashMap<>();
+    private final HashMap<URIRes, Map<String, LensResult>> rightLensResults = new HashMap<>();
+    private List<Pair<URIRes, URIRes>> blocks = new ArrayList<>();
     private final static Object databaseLock = new Object();
     private final List<Message> messages = new ArrayList<>();
 
@@ -68,8 +65,8 @@ public class Execution implements ExecuteListener {
     }
 
     @Override
-    public void addLensResult(Resource id1, Resource id2, String lensId, LangStringPair res) {
-        Pair<Resource, Resource> p = new Pair(id1, id2);
+    public void addLensResult(URIRes id1, URIRes id2, String lensId, LensResult res) {
+        Pair<URIRes, URIRes> p = new Pair(id1, id2);
         synchronized (lensResults) {
             if (!lensResults.containsKey(p)) {
                 lensResults.put(p, new HashMap<>());
@@ -95,14 +92,14 @@ public class Execution implements ExecuteListener {
     }
 
     @Override
-    public void addBlock(Resource res1, Resource res2) {
+    public void addBlock(URIRes res1, URIRes res2) {
         synchronized (databaseLock) {
             blocks.add(new Pair<>(res1, res2));
         }
         if (blocks.size() > BLOCK_MAX) {
             synchronized (databaseLock) {
                 if (blocks.size() > BLOCK_MAX) {
-                    List<Pair<Resource, Resource>> b2 = blocks;
+                    List<Pair<URIRes, URIRes>> b2 = blocks;
                     blocks = new ArrayList<>();
                     try (Connection connection = connection(id)) {
                         createTables(connection);
@@ -144,7 +141,7 @@ public class Execution implements ExecuteListener {
                         + "prop TEXT, "
                         + "res2 TEXT, "
                         + "lens TEXT, "
-                        + "score REAL, "
+                        + "probability REAL, "
                         + "valid TEXT,"
                         + "list_order INTEGER,"
                         + "leftRoot TEXT,"
@@ -196,20 +193,20 @@ public class Execution implements ExecuteListener {
         try (Statement stat = connection.createStatement()) {
             stat.execute("UPDATE results SET list_order = id WHERE list_order = 0");
         }
-        try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,score,valid,leftRoot,rightRoot,leftPath,rightPath) VALUES (?,?,?,?,?,?,?,?,?,?)")) {
+        try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,probability,valid,leftRoot,rightRoot,leftPath,rightPath) VALUES (?,?,?,?,?,?,?,?,?,?)")) {
             for (DataViewEntry dve : dataView.entries) {
                 for (DataViewPath dvp : dve.paths) {
 
-                    Map<String, LangStringPair> m = lensResults.get(new Pair(dvp.alignment.entity1, dvp.alignment.entity2));
+                    Map<String, LensResult> m = lensResults.get(new Pair(dvp.alignment.entity1, dvp.alignment.entity2));
                     if (m == null) {
                         m = createLensResult(dvp.alignment.entity1, dvp.alignment.entity2);
                     }
                     String lens = m == null ? "{}" : mapper.writeValueAsString(m);
                     pstat.setString(1, dvp.alignment.entity1.getURI());
-                    pstat.setString(2, dvp.alignment.relation);
+                    pstat.setString(2, dvp.alignment.property);
                     pstat.setString(3, dvp.alignment.entity2.getURI());
                     pstat.setString(4, lens);
-                    pstat.setDouble(5, dvp.alignment.score);
+                    pstat.setDouble(5, dvp.alignment.probability);
                     pstat.setString(6, dvp.alignment.valid.toString());
                     pstat.setString(7, dve.root);
                     pstat.setString(8, dvp.rightRoot);
@@ -223,18 +220,13 @@ public class Execution implements ExecuteListener {
         }
     }
 
-    public static void saveBlocks(Connection connection, List<Pair<Resource, Resource>> blocks) throws SQLException {
+    public static void saveBlocks(Connection connection, List<Pair<URIRes, URIRes>> blocks) throws SQLException {
         connection.setAutoCommit(false);
         try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO blocks(res1, res2) VALUES (?,?)")) {
             int i = 0;
-            for (Pair<Resource, Resource> block : blocks) {
+            for (Pair<URIRes, URIRes> block : blocks) {
                 if (block == null) {
                     throw new RuntimeException();
-                }
-                if (block._1 == null || !block._1.isURIResource()
-                        || block._2 == null || !block._2.isURIResource()) {
-                    System.err.println("Bad block generated");
-                    continue;
                 }
                 pstat.setString(1, block._1.getURI());
                 pstat.setString(2, block._2.getURI());
@@ -281,7 +273,7 @@ public class Execution implements ExecuteListener {
                         pstat.close();
                         stat.execute("DELETE FROM results");
                     }
-                    try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,score,valid) VALUES (?,?,?,?,?,?)")) {
+                    try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,probability,valid) VALUES (?,?,?,?,?,?)")) {
 
                         for (RunResultRow rrr : rrrs) {
                             String lens = rrr.lens == null ? "{}" : mapper.writeValueAsString(rrr.lens);
@@ -345,9 +337,9 @@ public class Execution implements ExecuteListener {
                 try (Statement stat = connection.createStatement()) {
                     final String query;
                     if (offset >= 0 && limit > 0) {
-                        query = "SELECT res1, prop, res2, lens, score, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order LIMIT " + limit + " OFFSET " + offset;
+                        query = "SELECT res1, prop, res2, lens, probability, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order LIMIT " + limit + " OFFSET " + offset;
                     } else {
-                        query = "SELECT res1, prop, res2, lens, score, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order";
+                        query = "SELECT res1, prop, res2, lens, probability, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order";
                     }
                     try (ResultSet rs = stat.executeQuery(query)) {
                         while (rs.next()) {
@@ -355,7 +347,7 @@ public class Execution implements ExecuteListener {
                             rrr.subject = rs.getString(1);
                             rrr.property = rs.getString(2);
                             rrr.object = rs.getString(3);
-                            rrr.lens = mapper.readValue(rs.getString(4), mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class));
+                            rrr.lens = mapper.readValue(rs.getString(4), mapper.getTypeFactory().constructMapType(Map.class, String.class, LensResult.class));
                             rrr.score = rs.getDouble(5);
                             rrr.valid = Valid.valueOf(rs.getString(6));
                             rrr.idx = rs.getInt(7);
@@ -378,7 +370,7 @@ public class Execution implements ExecuteListener {
 //    private static void populateCompareResults(String id, ObjectMapper mapper, List<Meas.CompareResultRow> crss) {
 //        try (Connection connection = connection(id)) {
 //            try (Statement stat = connection.createStatement()) {
-//                final String query = "SELECT res1, prop, res2, lens, score, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order";
+//                final String query = "SELECT res1, prop, res2, lens, probability, valid, id, leftRoot, rightRoot, leftPath, rightPath FROM results ORDER BY list_order";
 //                try (ResultSet rs = stat.executeQuery(query)) {
 //                    while (rs.next()) {
 //                        Meas.CompareResultRow rrr = new Meas.CompareResultRow();
@@ -478,7 +470,7 @@ public class Execution implements ExecuteListener {
                     stat.execute();
                 }
                 try(PreparedStatement stat = connection.prepareStatement("SELECT results.res1, results.prop, " +
-                    "results.res2, results.score, results.lens, db2results.score, results.valid, db2results.valid " +
+                    "results.res2, results.probability, results.lens, db2results.probability, results.valid, db2results.valid " +
                     "FROM results LEFT JOIN db2.results AS db2results ON " +
                     "results.res1 = db2results.res1 AND " +
                     "results.prop = db2results.prop AND " +
@@ -489,7 +481,7 @@ public class Execution implements ExecuteListener {
                         Valid v = Valid.valueOf(rs.getString(7)); // Left validity
                         crrs.add(new Meas.CompareResultRow(
                             rs.getString(1), rs.getString(2), rs.getString(3),
-                            mapper.readValue(rs.getString(5), mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class)),
+                            mapper.readValue(rs.getString(5), mapper.getTypeFactory().constructMapType(Map.class, String.class, LensResult.class)),
                             rs.getFloat(4), rs.getFloat(6),
                             v,
                             rs.getString(8) != null ? Valid.valueOf(rs.getString(8))
@@ -640,7 +632,7 @@ public class Execution implements ExecuteListener {
                 }
                 connection.commit();
 
-                try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,score,valid,list_order) VALUES (?,?,?,?,?,?,?)")) {
+                try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO results(res1,prop,res2,lens,probability,valid,list_order) VALUES (?,?,?,?,?,?,?)")) {
 
                     String lens = "{}";
                     pstat.setString(1, subject);
@@ -716,7 +708,7 @@ public class Execution implements ExecuteListener {
     public List<Pair<String, Map<String, String>>> getAlternatives(String entityid, boolean left) {
 
         ObjectMapper mapper = new ObjectMapper();
-        final MapType mapType = mapper.getTypeFactory().constructMapType(Map.class, String.class, LangStringPair.class);
+        final MapType mapType = mapper.getTypeFactory().constructMapType(Map.class, String.class, LensResult.class);
 
         synchronized (databaseLock) {
             try (Connection connection = connection(id)) {
@@ -736,10 +728,10 @@ public class Execution implements ExecuteListener {
                                     continue RESULTS;
                                 }
                             }
-                            Map<String, LangStringPair> lens = mapper.readValue(rs.getString(2), mapType);
+                            Map<String, LensResult> lens = mapper.readValue(rs.getString(2), mapType);
                             Map<String, String> lensMap = new HashMap<>();
-                            for (Map.Entry<String, LangStringPair> e : lens.entrySet()) {
-                                lensMap.put(e.getKey(), left ? e.getValue()._2 : e.getValue()._1);
+                            for (Map.Entry<String, LensResult> e : lens.entrySet()) {
+                                lensMap.put(e.getKey(), left ? e.getValue().string2 : e.getValue().string1);
                             }
                             result.add(new Pair<>(altId, lensMap));
                         }
@@ -785,29 +777,29 @@ public class Execution implements ExecuteListener {
         return messages;
     }
 
-    private Map<String, LangStringPair> createLensResult(Resource entity1, Resource entity2) {
+    private Map<String, LensResult> createLensResult(URIRes entity1, URIRes entity2) {
         if (leftLensResults.containsKey(entity1)) {
-            Map<String, LangStringPair> merged = new HashMap<>(leftLensResults.get(entity1));
-            Map<String, LangStringPair> r = rightLensResults.get(entity2);
-            for (Map.Entry<String, LangStringPair> e : merged.entrySet()) {
+            Map<String, LensResult> merged = new HashMap<>(leftLensResults.get(entity1));
+            Map<String, LensResult> r = rightLensResults.get(entity2);
+            for (Map.Entry<String, LensResult> e : merged.entrySet()) {
                 if (r != null && r.containsKey(e.getKey())) {
-                    e.setValue(new LangStringPair(e.getValue().lang1, r.get(e.getKey()).lang2, e.getValue()._1, r.get(e.getKey())._2));
+                    e.setValue(new LensResult(e.getValue().lang1, r.get(e.getKey()).lang2, e.getValue().string1, r.get(e.getKey()).string2, e.getValue().tag));
                 } else {
-                    e.setValue(new LangStringPair(e.getValue().lang1, Language.UNDEFINED, e.getValue()._1, ""));
+                    e.setValue(new LensResult(e.getValue().lang1, Language.UNDEFINED, e.getValue().string1, "", e.getValue().tag));
                 }
             }
             if (r != null) {
-                for (Map.Entry<String, LangStringPair> e : r.entrySet()) {
+                for (Map.Entry<String, LensResult> e : r.entrySet()) {
                     if (!merged.containsKey(e.getKey())) {
-                        merged.put(e.getKey(), new LangStringPair(Language.UNDEFINED, e.getValue().lang2, "", e.getValue()._2));
+                        merged.put(e.getKey(), new LensResult(Language.UNDEFINED, e.getValue().lang2, "", e.getValue().string2, e.getValue().tag));
                     }
                 }
             }
             return merged;
         } else if (rightLensResults.containsKey(entity2)) {
-            Map<String, LangStringPair> merged = new HashMap<>(rightLensResults.get(entity2));
-            for (Map.Entry<String, LangStringPair> e : merged.entrySet()) {
-                e.setValue(new LangStringPair(Language.UNDEFINED, e.getValue().lang2, "", e.getValue()._2));
+            Map<String, LensResult> merged = new HashMap<>(rightLensResults.get(entity2));
+            for (Map.Entry<String, LensResult> e : merged.entrySet()) {
+                e.setValue(new LensResult(Language.UNDEFINED, e.getValue().lang2, "", e.getValue().string2, e.getValue().tag));
             }
             return merged;
         } else {

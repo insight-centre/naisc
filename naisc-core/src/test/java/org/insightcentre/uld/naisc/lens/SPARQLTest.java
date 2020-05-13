@@ -77,7 +77,7 @@ public class SPARQLTest {
                 model.createProperty(Label.SKOS_PREFLABEL), 
                 model.createLiteral("???"));
         
-        Lens lens = instance.makeLens(tag, new ModelDataset(model), params);
+        Lens lens = instance.makeLens(tag, new ModelDataset(model, "model"), params);
         assert(lens.extract(res, res2).has());
         assert(lens.extract(res, res3).has());
         assert(lens.extract(res, res4).has());

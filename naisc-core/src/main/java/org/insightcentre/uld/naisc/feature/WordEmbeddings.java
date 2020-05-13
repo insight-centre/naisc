@@ -12,8 +12,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.NaiscListener;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.feature.embeddings.CosineSimAligner;
 import org.insightcentre.uld.naisc.feature.embeddings.SaliencyFeatures;
 import org.insightcentre.uld.naisc.feature.embeddings.StandardWordAlignmentFeatureExtractor;
@@ -21,8 +21,6 @@ import org.insightcentre.uld.naisc.feature.embeddings.WordAligner;
 import org.insightcentre.uld.naisc.feature.embeddings.WordVectorExtractor;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
-import org.insightcentre.uld.naisc.TextFeature;
-import org.insightcentre.uld.naisc.TextFeatureFactory;
 
 /**
  * Word embedding based features. The idea of this feature extractor is that 
@@ -35,13 +33,13 @@ import org.insightcentre.uld.naisc.TextFeatureFactory;
  * 
  * <ul>
  * <li>fp: Forward Proportion, the number of words in the left sentence who 
- * have a single value consuming more than 50% of the score</li>
+ * have a single value consuming more than 50% of the probability</li>
  * <li>bp: Backward Proportion, as forward but over the right sentence</li>
  * <li>ham: Harmonic Alignment Mean</li>
- * <li>max: Average max of alignment score to left sentence</li>
- * <li>max2: Average square of max of alignment score to right sentence</li>
- * <li>max.5: Average square root of max of alignment score to right sentence</li>
- * <li>max.1: Average tenth root of max of alignment score to right sentence</li>
+ * <li>max: Average max of alignment probability to left sentence</li>
+ * <li>max2: Average square of max of alignment probability to right sentence</li>
+ * <li>max.5: Average square root of max of alignment probability to right sentence</li>
+ * <li>max.1: Average tenth root of max of alignment probability to right sentence</li>
  * <li>collp2: Column mean squared</li>
  * <li>collp10: Columns mean to the tenth power</li>
  * <li>Hg: Gaussian Entropy Diversity</li>
@@ -157,11 +155,11 @@ public class WordEmbeddings implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair facet, NaiscListener log) {
+        public Feature[] extractFeatures(LensResult facet, NaiscListener log) {
             double[] d = new double[featureNames.length];
             if (facet.lang1.equals(facet.lang2)) {
-                d = _extractFeatures(facet._1, facet._2, wordAligner);
-                return d;
+                d = _extractFeatures(facet.string1, facet.string2, wordAligner);
+                return Feature.mkArray(d,featureNames);
             } else {
                 throw new IllegalArgumentException();
             }

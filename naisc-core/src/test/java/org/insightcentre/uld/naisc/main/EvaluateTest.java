@@ -6,6 +6,8 @@ import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
+
+import org.insightcentre.uld.naisc.URIRes;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -39,8 +41,8 @@ public class EvaluateTest {
     }
 
     private Model m = ModelFactory.createDefaultModel();
-    private Resource r(String s) {
-        return m.createResource(s);
+    private URIRes r(String s) {
+        return new URIRes(s, "dataset");
     }
     /**
      * Test of evaluate method, of class Evaluate.

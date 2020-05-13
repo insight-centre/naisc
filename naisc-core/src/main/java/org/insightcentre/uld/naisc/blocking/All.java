@@ -1,13 +1,12 @@
 package org.insightcentre.uld.naisc.blocking;
 
+import java.util.AbstractCollection;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.BlockingStrategyFactory;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -28,11 +27,16 @@ public class All implements BlockingStrategyFactory {
     private static class AllImpl implements BlockingStrategy {
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
-            return new Iterable<Pair<Resource, Resource>>() {
+        public Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log) {
+            return new AbstractCollection<Blocking>() {
                 @Override
-                public Iterator<Pair<Resource, Resource>> iterator() {
+                public Iterator<Blocking> iterator() {
                     return new AllIterator(left, right);
+                }
+
+                @Override
+                public int size() {
+                    throw new UnsupportedOperationException("Size not known");
                 }
             };
         }
@@ -58,11 +62,11 @@ public class All implements BlockingStrategyFactory {
 
     }
 
-    private static class AllIterator implements Iterator<Pair<Resource, Resource>> {
+    private static class AllIterator implements Iterator<Blocking> {
 
         private Iterator<Resource> left, right;
         private final Dataset leftModel, rightModel;
-        private  Pair<Resource, Resource> next;
+        private  Pair<org.apache.jena.rdf.model.Resource, org.apache.jena.rdf.model.Resource> next;
 
         public AllIterator(Dataset left, Dataset right) {
             this.leftModel = left;
@@ -70,7 +74,7 @@ public class All implements BlockingStrategyFactory {
             this.left = left.listSubjects();
             this.right = right.listSubjects();
             if(this.left.hasNext() && this.right.hasNext()) {
-                this.next = new Pair(this.left.next(), this.right.next());
+                this.next = new Pair<>(this.left.next(), this.right.next());
                 if(!this.next._1.isURIResource() || !this.next._2.isURIResource()) {
                     advance();
                 }
@@ -129,8 +133,8 @@ public class All implements BlockingStrategyFactory {
         }
 
         @Override
-        public Pair<Resource, Resource> next() {
-            Pair<Resource, Resource> n = next;
+        public Blocking next() {
+            Blocking n = new Blocking(next._1, next._2, leftModel.id(), rightModel.id());
             advance();
             return n;
         }

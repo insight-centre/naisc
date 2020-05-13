@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 
 /**
@@ -51,7 +50,7 @@ public class ThresholdConstraint implements ConstraintFactory {
 
         @Override
         public boolean canAdd(Alignment alignment) {
-            return alignment.score >= threshold;
+            return alignment.probability >= threshold;
         }
 
         @Override

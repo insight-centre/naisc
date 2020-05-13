@@ -53,6 +53,36 @@ public class AlignmentFeatures {
             return 0.0;
         }
     }
+
+    public static double alignProportion(WordAlignment alignment) {
+        int n1 = 0, n2 = 0;
+        for(int i = 0; i < alignment.getSourceSize(); i++) {
+            double sum = 0.0;
+            for(int j = 0; j < alignment.getTargetSize(); j++) {
+                sum += abs(alignment.alignment(i, j));
+            }
+            for(int j = 0; j < alignment.getTargetSize(); j++) {
+                if(abs(alignment.alignment(i, j)) / sum > ALIGN_THRESH) {
+                    n1++;
+                    break;
+                }
+            }
+        }
+        for(int j = 0; j < alignment.getTargetSize(); j++) {
+            double sum = 0.0;
+            for(int i = 0; i < alignment.getSourceSize(); i++) {
+                sum += abs(alignment.alignment(i, j));
+            }
+            for(int i = 0; i < alignment.getSourceSize(); i++) {
+                if(abs(alignment.alignment(i, j)) / sum > ALIGN_THRESH) {
+                    n2++;
+                    break;
+                }
+            }
+        }
+        return (double)(n1 + n2) / (alignment.getSourceSize() + alignment.getTargetSize());
+    }
+
     
     public static double harmonicAlignmentMean(WordAlignment alignment) {
        double p1 = forwardProp(alignment);

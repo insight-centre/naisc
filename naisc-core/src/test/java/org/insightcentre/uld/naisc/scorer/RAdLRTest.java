@@ -76,7 +76,7 @@ public class RAdLRTest {
             new StringPair("fizz", "buzz")
         }, new double[]{
             0.1, 0.8, 0.7
-        }, "e1", "e2");
+        });
         double result = scorer.similarity(fs).value();
         //assertEquals(result, 0.630, 0.001);
     }
@@ -124,7 +124,7 @@ public class RAdLRTest {
             new StringPair("fizz", "buzz")
         }, new double[]{
             0.1, 0.8, 0.7
-        }, "e1", "e2");
+        });
         System.err.println(trained.similarity(data.get(0)));
         System.err.println(trained.similarity(data.get(1)));
         System.err.println(trained.similarity(data.get(2)));

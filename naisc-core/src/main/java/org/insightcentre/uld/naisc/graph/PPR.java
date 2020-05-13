@@ -4,16 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.Map;
-import org.apache.jena.rdf.model.Model;
+
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.GraphFeatureFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.util.FastPPR;
 import org.insightcentre.uld.naisc.util.FastPPR.DirectedGraph;
@@ -72,19 +67,21 @@ public class PPR implements GraphFeatureFactory {
             }
         }
         for (Alignment a : prealign) {
-            if (a.score > 0) {
+            if (a.probability > 0) {
+                Resource entity1 = a.entity1.toJena(model);
+                Resource entity2 = a.entity2.toJena(model);
                 final int i, j;
-                if (identifiers.containsKey(a.entity1)) {
-                    i = identifiers.getInt(a.entity1);
+                if (identifiers.containsKey(entity1)) {
+                    i = identifiers.getInt(entity1);
                 } else {
                     i = g.addNode();
-                    identifiers.put(a.entity1, i);
+                    identifiers.put(entity1, i);
                 }
-                if (identifiers.containsKey(a.entity2)) {
-                    j = identifiers.getInt(a.entity2);
+                if (identifiers.containsKey(entity2)) {
+                    j = identifiers.getInt(entity2);
                 } else {
                     j = g.addNode();
-                    identifiers.put(a.entity2, j);
+                    identifiers.put(entity2, j);
                 }
                 g.addEdge(i, j);
             }
@@ -93,7 +90,7 @@ public class PPR implements GraphFeatureFactory {
         return g;
     }
 
-    private final class PPRImpl implements GraphFeature {
+    private final static class PPRImpl implements GraphFeature {
 
         private final DirectedGraph graph;
         private final Object2IntMap<Resource> identifiers;
@@ -111,10 +108,10 @@ public class PPR implements GraphFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
+        public Feature[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
             int i = identifiers.getInt(entity1);
             int j = identifiers.getInt(entity2);
-            return new double[]{FastPPR.estimatePPR(graph, i, j, pprConfig)};
+            return Feature.mkArray(new double[]{FastPPR.estimatePPR(graph, i, j, pprConfig)}, FEAT_NAMES);
         }
 
         @Override
