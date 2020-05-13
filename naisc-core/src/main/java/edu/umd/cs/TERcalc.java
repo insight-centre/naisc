@@ -163,10 +163,12 @@ public class TERcalc {
 		    List topush = reflist.subList(start, end+1);
 		    if (to_return.containsKey(topush)) {
 			Set vals = (Set) to_return.get(topush);
-			vals.add(new Integer(start));
+			//vals.add(new Integer(start));
+			vals.add(start);
 		    } else {
 			Set vals = new TreeSet();
-			vals.add(new Integer(start));
+			//vals.add(new Integer(start));
+			vals.add(start);
 			to_return.put(topush, vals);			
 		    }
 		}

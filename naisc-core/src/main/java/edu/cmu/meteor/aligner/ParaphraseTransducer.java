@@ -86,7 +86,7 @@ public class ParaphraseTransducer {
 	private int map(String str) {
 		Integer i = vocab.get(str);
 		if (i == null) {
-			i = new Integer(nextWord++);
+			i = nextWord++;
 			vocab.put(str, i);
 		}
 		return i;
