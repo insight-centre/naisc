@@ -8,8 +8,17 @@
         "wordWeights": "models/idf",
         "ngramWeights": "models/ngidf",
         "labelChar": true
+    },{
+        "name": "feature.WordEmbeddings",
+        "embeddingPath": "models/glove.6B.100d.txt"
+    },{
+        "name": "feature.WordNet",
+        "wordnetXmlFile": "models/english-wordnet-2020.xml.gz",
+        "methods": ["LEACOCK_CHODOROW"]
     }],
-    "graphFeatures": [],
+    "graphFeatures": [{
+        "name": "graph.Automatic"
+    }],
     "scorers": [{
         "name": "scorer.RAdLR",
         "modelFile": "models/auto.radlr"
@@ -20,5 +29,6 @@
             "name": "constraint.Bijective"
         }
     },
-    "description": "A very simple light matcher"
+    "description": "WordNet Leacock-Chodorow feature with basic and word embedding features",
+    "rescaler": "Percentile"
 }

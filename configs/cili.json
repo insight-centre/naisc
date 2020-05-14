@@ -34,5 +34,5 @@
   },
   "includeFeatures": true,
   "ignorePreexisting": true,
-  "description": "The default setting using automatic blocking and lenses"
+  "description": "Default CILI matching task"
 }
