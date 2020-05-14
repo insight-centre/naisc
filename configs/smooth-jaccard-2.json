@@ -4,15 +4,13 @@
     },
     "lenses": [],
     "textFeatures": [{
-        "name": "feature.BasicString",
-        "wordWeights": "models/idf",
-        "ngramWeights": "models/ngidf",
-        "labelChar": true
+        "name": "feature.BagOfWordsSim",
+        "features": ["jaccardExponential"],
+        "weighting": 2.0
     }],
-    "graphFeatures": [],
     "scorers": [{
         "name": "scorer.RAdLR",
-        "modelFile": "models/auto.radlr"
+        "modelFile": "models/untrained.radlr"
     }],
     "matcher": {
         "name": "matcher.Greedy",
@@ -20,5 +18,5 @@
             "name": "constraint.Bijective"
         }
     },
-    "description": "A very simple light matcher"
+    "description": "Smoothed Jaccard (alpha=2.0) as the only feature"
 }

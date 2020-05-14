@@ -8,14 +8,17 @@
         "wordWeights": "models/idf",
         "ngramWeights": "models/ngidf",
         "labelChar": true,
-        "features": ["jaccard","lcs"]
+        "features": ["jaccard"]
     }],
     "scorers": [{
         "name": "scorer.RAdLR",
         "modelFile": "models/untrained.radlr"
     }],
     "matcher": {
-        "name": "matcher.UniqueAssignment"
+        "name": "matcher.Greedy",
+        "constraint": {
+            "name": "constraint.Bijective"
+        }
     },
-    "description": "Simple baseline method using string metrics and RAdLR"
+    "description": "Jaccard as the only feature"
 }

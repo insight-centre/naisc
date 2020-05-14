@@ -8,8 +8,14 @@
         "wordWeights": "models/idf",
         "ngramWeights": "models/ngidf",
         "labelChar": true
+    },{
+        "name": "feature.WordEmbeddings",
+        "embeddingPath": "models/glove.6B.100d.txt",
+        "features": ["max.5"]
     }],
-    "graphFeatures": [],
+    "graphFeatures": [{
+        "name": "graph.Automatic"
+    }],
     "scorers": [{
         "name": "scorer.RAdLR",
         "modelFile": "models/auto.radlr"
@@ -20,5 +26,6 @@
             "name": "constraint.Bijective"
         }
     },
-    "description": "A very simple light matcher"
+    "description": "Uses column max (.5) for word embedding with basic features",
+    "rescaler": "Percentile"
 }
