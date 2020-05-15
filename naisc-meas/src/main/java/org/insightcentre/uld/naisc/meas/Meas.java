@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,11 +32,16 @@ public class Meas {
 
     static ObjectMapper mapper = new ObjectMapper();
     public static Data data = new Data();
+    public static Thread configMonitor, datasetMonitor;
 
     static {
         data.runs = runs();
         data.configs = configNames();
         data.datasetNames = datasetNames();
+        configMonitor = new Thread(new MonitorConfigs());
+        configMonitor.start();
+        datasetMonitor = new Thread(new MonitorDatasets());
+        datasetMonitor.start();
     }
 
     public static String json() {
@@ -289,4 +295,46 @@ public class Meas {
         }
     }
 
+    private static class MonitorConfigs implements Runnable {
+        @Override
+        public void run() {
+            try {
+                WatchService service = FileSystems.getDefault().newWatchService();
+                Path p = Paths.get("configs/");
+                p.register(service, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+
+                WatchKey key;
+                while((key = service.take()) != null) {
+                    data.configs = configNames();
+                    for (WatchEvent<?> event : key.pollEvents()) {
+                    }
+                    key.reset();
+                }
+            } catch(Exception x) {
+                x.printStackTrace();
+            }
+        }
+    }
+
+
+    private static class MonitorDatasets implements Runnable {
+        @Override
+        public void run() {
+            try {
+                WatchService service = FileSystems.getDefault().newWatchService();
+                Path p = Paths.get("datasets/");
+                p.register(service, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
+
+                WatchKey key;
+                while((key = service.take()) != null) {
+                    data.datasetNames = datasetNames();
+                    for (WatchEvent<?> event : key.pollEvents()) {
+                    }
+                    key.reset();
+                }
+            } catch(Exception x) {
+                x.printStackTrace();
+            }
+        }
+    }
 }
