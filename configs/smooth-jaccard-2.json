@@ -5,7 +5,7 @@
     "lenses": [],
     "textFeatures": [{
         "name": "feature.BagOfWordsSim",
-        "features": ["jaccardExponential"],
+        "method": "jaccardExponential",
         "weighting": 2.0
     }],
     "scorers": [{
