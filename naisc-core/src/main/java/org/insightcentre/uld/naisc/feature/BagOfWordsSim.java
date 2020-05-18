@@ -37,13 +37,16 @@ public class BagOfWordsSim implements TextFeatureFactory {
          */
         @ConfigurationParameter(description = "The weighting value. Near-zero values will penalize low agreement morewhile high values will be nearly binary")
         public double weighting = 1.0;
+
+        @ConfigurationParameter(description = "Whether to lowercase the text before processing")
+        public boolean lowerCase = true;
     }
 
 
     @Override
     public TextFeature makeFeatureExtractor(Set<String> tags, Map<String, Object> params) {
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
-        return new BagOfWordsFeatureExtractor(config.method, config.weighting, tags);
+        return new BagOfWordsFeatureExtractor(config.method, config.weighting, tags, config.lowerCase);
     }
 
     private static class BagOfWordsFeatureExtractor implements TextFeature {
@@ -51,12 +54,14 @@ public class BagOfWordsSim implements TextFeatureFactory {
         private final SimMethod method;
         private final double weighting;
         private final Set<String> tags;
+        private final boolean lowercase;
 
-        public BagOfWordsFeatureExtractor(SimMethod method, double weighting, Set<String> tags) {
+        public BagOfWordsFeatureExtractor(SimMethod method, double weighting, Set<String> tags, boolean lowercase) {
             assert(method != null);
             this.method = method;
             this.weighting = weighting;
             this.tags = tags;
+            this.lowercase = lowercase;
         }
 
         @Override
@@ -70,9 +75,9 @@ public class BagOfWordsSim implements TextFeatureFactory {
 
         @Override
         public Feature[] extractFeatures(LensResult lsp, NaiscListener log) {
-            Set<String> w1 = new HashSet<>(Arrays.asList(PrettyGoodTokenizer.tokenize(lsp.string1)));
+            Set<String> w1 = new HashSet<>(Arrays.asList(PrettyGoodTokenizer.tokenize(lowercase ? lsp.string1.toLowerCase() : lsp.string1)));
             int a = w1.size();
-            Set<String> w2 = new HashSet<>(Arrays.asList(PrettyGoodTokenizer.tokenize(lsp.string2)));
+            Set<String> w2 = new HashSet<>(Arrays.asList(PrettyGoodTokenizer.tokenize(lowercase ? lsp.string2.toLowerCase() : lsp.string2)));
             int b = w2.size();
             w1.retainAll(w2);
             int ab = w1.size();
