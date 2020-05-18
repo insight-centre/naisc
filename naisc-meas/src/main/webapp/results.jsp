@@ -82,7 +82,7 @@
                             <button type="button" class="btn btn-info" title="Change this entity" v-if="result.valid==='no' || result.valid === 'bad_link'" v-on:click.prevent="changeLeft(idx,result.subject)">
                                 <i class="fas fa-wrench"></i></button>
                             <div v-for="(l, lensid) in result.lens" v-bind:style="{ marginLeft: (result.leftPath.length*10 + 20) + 'px' }">
-                                <span class="lens-id">{{lensid}}:</span> <span class="lens-content">{{l._1}}</span> <span class="lens-language">{{l.lang1}}</span>
+                                <span class="lens-id">{{lensid}}:</span> <span class="lens-content">{{l.string1}}</span> <span class="lens-language">{{l.lang1}}</span>
                             </div>
                         </td>
                         <td><a v-bind:href="result.property">{{displayUrl(result.property)}}</a></td>
@@ -95,7 +95,7 @@
                             <button type="button" class="btn btn-info" title="Change this entity" v-if="result.valid==='no' || result.valid === 'bad_link'" v-on:click.prevent="changeRight(idx,result.object)">
                                 <i class="fas fa-wrench"></i></button>
                             <div v-for="(l, lensid) in result.lens" v-bind:style="{ marginLeft: (result.rightPath.length*10 + 20) + 'px' }">
-                                <span class="lens-id">{{lensid}}:</span> <span class="lens-content">{{l._2}}</span> <span class="lens-language">{{l.lang2}}</span>
+                                <span class="lens-id">{{lensid}}:</span> <span class="lens-content">{{l.string2}}</span> <span class="lens-language">{{l.lang2}}</span>
                             </div>
                         </td>
                         <td>
