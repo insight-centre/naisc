@@ -17,7 +17,7 @@ import org.insightcentre.uld.naisc.util.StringPair;
  */
 public class WordNetData {
     private final HashMap<String, LexicalEntry> entriesById = new HashMap<>();
-    private final HashMap<String, Map<String, List<LexicalEntry>>> entriesByLemma = new HashMap<>();
+    private final WordNetEntryTrie entriesByLemma = new WordNetEntryTrie();
     private final HashMap<String, Synset> synsets = new HashMap<>();
     private final HashMap<String, Sense> senses = new HashMap<>();
 
@@ -26,16 +26,10 @@ public class WordNetData {
             throw new IllegalArgumentException("Duplicate entry: " + id);
         }
         StringPair sp = new StringPair(entry.writtenFrom, entry.partOfSpeech);
-        if(!entriesByLemma.containsKey(entry.writtenFrom)) {
-            entriesByLemma.put(entry.writtenFrom, new HashMap<String, List<LexicalEntry>>());
-        }
-        if(!entriesByLemma.get(entry.writtenFrom).containsKey(entry.partOfSpeech)) {
-            entriesByLemma.get(entry.writtenFrom).put(entry.partOfSpeech, new ArrayList<LexicalEntry>());
-        }
+        entriesByLemma.add(entry);
         for(Sense s : entry.senses) {
             senses.put(s.id, s);
         }
-        entriesByLemma.get(entry.writtenFrom).get(entry.partOfSpeech).add(entry);
     }
 
     public void addSynset(String id, Synset synset) {
@@ -46,25 +40,30 @@ public class WordNetData {
         }
     }
 
-    public List<LexicalEntry> lookupEntry(String word, String partOfSpeech) {
-        if(!entriesByLemma.containsKey(word) ||
-            !entriesByLemma.get(word).containsKey(partOfSpeech)) {
-            return Collections.EMPTY_LIST;
-        } else {
-            return Collections.unmodifiableList(entriesByLemma.get(word).get(partOfSpeech));
-        }
+    public List<LexicalEntry> lookupEntry(String[] words, int i, int j, String partOfSpeech) {
+        Map<String, List<LexicalEntry>> entries = entriesByLemma.find(words, i, j);
+        return Collections.unmodifiableList(entries.getOrDefault(partOfSpeech, Collections.EMPTY_LIST));
     }
 
-    public List<LexicalEntry> lookupEntry(String word) {
-        if(!entriesByLemma.containsKey(word)) {
-            return Collections.EMPTY_LIST;
-        } else {
-            ArrayList<LexicalEntry> entries = new ArrayList<>();
-            for(List<LexicalEntry> les : entriesByLemma.get(word).values()) {
-                entries.addAll(les);
-            }
-            return Collections.unmodifiableList(entries);
+    public List<LexicalEntry> lookupEntry(String[] words, int i, int j) {
+        Map<String, List<LexicalEntry>> entries = entriesByLemma.find(words, i, j);
+        List<LexicalEntry> all = new ArrayList<>();
+        for(List<LexicalEntry> l : entries.values()) {
+            all.addAll(l);
         }
+        return Collections.unmodifiableList(all);
+    }
+
+    public List<LexicalEntry> lookupEntry(String[] words) {
+        return lookupEntry(words, 0, words.length);
+    }
+
+    public Map<String[], List<LexicalEntry>> allEntries(String[] words) {
+        Map<String[], List<LexicalEntry>> le = new HashMap<>();
+        for(int i = 0; i < words.length; i++) {
+            le.putAll(entriesByLemma.findAll(words, i));
+        }
+        return le;
     }
 
     public Synset lookupSynset(String id) {
@@ -174,7 +173,7 @@ public class WordNetData {
     }
         
     
-    public SynsetTokenization identifySynsets(String[] tokens, Set<String> stopWords) {
+    /*public SynsetTokenization identifySynsets(String[] tokens, Set<String> stopWords) {
         SynsetTokenization st = new SynsetTokenization();
         for(int i = 0; i < tokens.length; ) {
             int j = tokens.length;
@@ -200,5 +199,5 @@ public class WordNetData {
             i = Math.max(j,i+1);
         }
         return st;
-    }
+    }*/
 }
