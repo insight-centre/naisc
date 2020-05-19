@@ -292,18 +292,16 @@ public class Main {
                             FeatureSet featureSet = new FeatureSet();
                             boolean labelsProduced = false;
                             for (Lens lens : lenses) {
-                                Option<LensResult> oFacet = lens.extract(block1, block2, monitor);
-                                if (oFacet.has()) {
+                                for(LensResult facet : lens.extract(block.entity1, block.entity2, monitor)) {
                                     labelsProduced = true;
-                                    monitor.addLensResult(block.entity1, block.entity2, lens.id(), oFacet.get());
-                                }
-                                LensResult facet = oFacet.getOrElse(LensResult.fromLangStringPair(EMPTY_LANG_STRING_PAIR, lens.tag()));
-                                for (TextFeature featureExtractor : textFeatures) {
-                                    if (featureExtractor.tags() == null || lens.tag() == null
-                                            || featureExtractor.tags().contains(lens.tag())) {
-                                        Feature[] features = featureExtractor.extractFeatures(facet, monitor);
-                                        featureSet = featureSet.add(new FeatureSet(features,
-                                                lens.id()));
+                                    monitor.addLensResult(block.entity1, block.entity2, facet.tag, facet);
+                                    for (TextFeature featureExtractor : textFeatures) {
+                                        if (featureExtractor.tags() == null || facet.tag == null
+                                                || featureExtractor.tags().contains(facet.tag)) {
+                                            Feature[] features = featureExtractor.extractFeatures(facet, monitor);
+                                            featureSet = featureSet.add(new FeatureSet(features,
+                                                    facet.tag));
+                                        }
                                     }
                                 }
                             }

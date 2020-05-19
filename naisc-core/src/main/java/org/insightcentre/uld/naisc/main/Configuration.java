@@ -193,7 +193,7 @@ public class Configuration {
         }
         for (LensConfiguration config : lenses) {
             LensFactory lens = Services.get(LensFactory.class, config.name);
-            ls.add(lens.makeLens(config.tag, model, config.params));
+            ls.add(lens.makeLens(model, config.params));
         }
         if (ls.isEmpty()) {
             System.err.println("No lenses loaded!");
@@ -836,20 +836,14 @@ public class Configuration {
          * The parameters to configure the lens.
          */
         public final Map<String, Object> params;
-        /**
-         * The tag associated with this lens (null for no tag)
-         */
-        public final String tag;
 
         @JsonCreator
         public LensConfiguration(
                 @JsonProperty("name") String name,
-                @JsonProperty("params") Map<String, Object> params,
-                @JsonProperty("tag") String tag) {
+                @JsonProperty("params") Map<String, Object> params) {
             this.name = name;
             assert (name != null);
             this.params = params == null ? Collections.EMPTY_MAP : params;
-            this.tag = tag;
         }
 
         @Override
@@ -857,7 +851,6 @@ public class Configuration {
             int hash = 3;
             hash = 53 * hash + Objects.hashCode(this.name);
             hash = 53 * hash + Objects.hashCode(this.params);
-            hash = 53 * hash + Objects.hashCode(this.tag);
             return hash;
         }
 
@@ -874,9 +867,6 @@ public class Configuration {
             }
             final LensConfiguration other = (LensConfiguration) obj;
             if (!Objects.equals(this.name, other.name)) {
-                return false;
-            }
-            if (!Objects.equals(this.tag, other.tag)) {
                 return false;
             }
             if (!Objects.equals(this.params, other.params)) {
@@ -904,13 +894,11 @@ public class Configuration {
                 Map.Entry<String, JsonNode> f = fields.next();
                 if (f.getKey().equals("name")) {
                     name = f.getValue().textValue();
-                } else if (f.getKey().equals("tag")) {
-                    tag = f.getValue().textValue();
                 } else {
                     params.put(f.getKey(), p.getCodec().readValue(f.getValue().traverse(), Object.class));
                 }
             }
-            return new LensConfiguration(name, params, tag);
+            return new LensConfiguration(name, params);
         }
     }
 
@@ -924,7 +912,6 @@ public class Configuration {
         public void serialize(LensConfiguration value, JsonGenerator gen, SerializerProvider provider) throws IOException {
             gen.writeStartObject();
             gen.writeStringField("name", value.name);
-            gen.writeStringField("tag", value.tag);
             for (Map.Entry<String, Object> e : value.params.entrySet()) {
                 gen.writeObjectField(e.getKey(), e.getValue());
             }
