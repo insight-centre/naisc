@@ -1,27 +1,20 @@
 package org.insightcentre.uld.naisc.meas;
 
-import org.insightcentre.uld.naisc.meas.execution.Execution;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.insightcentre.uld.naisc.Alignment.Valid;
+import org.insightcentre.uld.naisc.EvaluationSet;
+import org.insightcentre.uld.naisc.NaiscListener.Stage;
+import org.insightcentre.uld.naisc.main.Configuration;
+import org.insightcentre.uld.naisc.meas.execution.Execution;
+import org.insightcentre.uld.naisc.util.LangStringPair;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.TreeMap;
-
-import org.insightcentre.uld.naisc.Alignment.Valid;
-import org.insightcentre.uld.naisc.NaiscListener.Stage;
-import org.insightcentre.uld.naisc.main.Configuration;
-import org.insightcentre.uld.naisc.EvaluationSet;
-import org.insightcentre.uld.naisc.util.LangStringPair;
+import java.util.*;
 
 /**
  * The main work of the Meas applet
@@ -32,20 +25,17 @@ public class Meas {
 
     static ObjectMapper mapper = new ObjectMapper();
     public static Data data = new Data();
-    public static Thread configMonitor, datasetMonitor;
 
     static {
         data.runs = runs();
         data.configs = configNames();
         data.datasetNames = datasetNames();
-        configMonitor = new Thread(new MonitorConfigs());
-        configMonitor.start();
-        datasetMonitor = new Thread(new MonitorDatasets());
-        datasetMonitor.start();
     }
 
     public static String json() {
         try {
+            data.configs = configNames();
+            data.datasetNames = datasetNames();
             data.activeRuns = ExecuteServlet.activeRuns();
             data.availableDatasets = getAvailableDataset();
             return mapper.writeValueAsString(data);
@@ -292,49 +282,6 @@ public class Meas {
             this.secondScore = secondScore;
             this.firstValid = firstValid;
             this.secondValid = secondValid;
-        }
-    }
-
-    private static class MonitorConfigs implements Runnable {
-        @Override
-        public void run() {
-            try {
-                WatchService service = FileSystems.getDefault().newWatchService();
-                Path p = Paths.get("configs/");
-                p.register(service, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
-
-                WatchKey key;
-                while((key = service.take()) != null) {
-                    data.configs = configNames();
-                    for (WatchEvent<?> event : key.pollEvents()) {
-                    }
-                    key.reset();
-                }
-            } catch(Exception x) {
-                x.printStackTrace();
-            }
-        }
-    }
-
-
-    private static class MonitorDatasets implements Runnable {
-        @Override
-        public void run() {
-            try {
-                WatchService service = FileSystems.getDefault().newWatchService();
-                Path p = Paths.get("datasets/");
-                p.register(service, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
-
-                WatchKey key;
-                while((key = service.take()) != null) {
-                    data.datasetNames = datasetNames();
-                    for (WatchEvent<?> event : key.pollEvents()) {
-                    }
-                    key.reset();
-                }
-            } catch(Exception x) {
-                x.printStackTrace();
-            }
         }
     }
 }

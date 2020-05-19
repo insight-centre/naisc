@@ -405,9 +405,30 @@ var app = new Vue({
     },
     newConfig() {
         var configName = document.getElementById("newConfigName").value;
-        this.configs[configName] = {};
+        this.configs[configName] = {
+            "blocking": {
+                "name": "blocking.Automatic"
+            },
+            "lenses": [],
+            "textFeatures": [{
+                "name": "features.BasicString"
+            }],
+            "graphFeatures": [],
+            "scorers": [{
+                "name": "scorer.Average"
+            }],
+            "matcher": {
+                "name": "matcher.Threshold"
+            },
+            "description": "New configuration"
+        };
         this.configName = configName;
         this.config = flatten_config(this.configs[configName]);
+        jQuery.ajax({
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/save_config/" + this.configName,
+            method: "POST",
+            data: JSON.stringify(unflatten_config(this.config))
+        });
     },
     toggleConfig() {
         this.showConfig = !this.showConfig;
