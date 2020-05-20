@@ -4,10 +4,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import eu.monnetproject.lang.LanguageCodeFormatException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -43,12 +42,12 @@ import org.insightcentre.uld.naisc.util.Some;
 public class SPARQL implements LensFactory {
 
     @Override
-    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
+    public Lens makeLens(Dataset dataset, Map<String, Object> params) {
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if(config.query == null) {
             throw new ConfigurationException("Query must be given for SPARQL lens");
         }
-        return new SPARQLImpl(config.query, dataset, config.baseURI, tag);
+        return new SPARQLImpl(config.query, dataset, config.baseURI);
     }
 
     /**
@@ -73,23 +72,15 @@ public class SPARQL implements LensFactory {
         private final String query;
         private final Dataset model;
         private final String baseURI;
-        private final String tag;
 
-        public SPARQLImpl(String query, Dataset model, String baseURI, String tag) {
+        public SPARQLImpl(String query, Dataset model, String baseURI) {
             this.query = query;
             this.model = model;
             this.baseURI = baseURI;
-            this.tag = tag;
-        }
-
-
-        @Override
-        public String id() {
-            return String.format("sparql-%04x", query.hashCode());
         }
 
         @Override
-        public Option<LensResult> extract(Resource entity1, Resource entity2, NaiscListener log) {
+        public Collection<LensResult> extract(URIRes entity1, URIRes entity2, NaiscListener log) {
             String queryString = this.query.replaceAll("\\$entity1", "<" + entity1.getURI() + ">")
                     .replaceAll("\\$entity2", "<" + entity2.getURI() + ">");
             Query sparqlQuery = baseURI == null ? QueryFactory.create(queryString)
@@ -114,18 +105,12 @@ public class SPARQL implements LensFactory {
                                 new LensResult(
                                         toLang(l1.getLanguage()),
                                         toLang(l2.getLanguage()),
-                                        l1.getLexicalForm(), l2.getLexicalForm(),tag));
+                                        l1.getLexicalForm(), l2.getLexicalForm(),"sparql"));
                     }
                 }
             }
             return new None<>();
         }
-
-        @Override
-        public String tag() {
-            return tag;
-        }
-
     }
     
     private static Language toLang(String s) {

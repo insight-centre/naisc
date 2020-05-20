@@ -1,11 +1,9 @@
 package org.insightcentre.uld.naisc.lens;
 
 import eu.monnetproject.lang.Language;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
+
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.NodeIterator;
@@ -31,12 +29,12 @@ import org.insightcentre.uld.naisc.util.Some;
 public class OntoLex implements LensFactory {
 
     @Override
-    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
+    public Lens makeLens(Dataset dataset, Map<String, Object> params) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if(config.dialect == null) {
             config.dialect = ONTOLEX;
         }
-        return new OntoLexImpl(config.dialect, tag, dataset, 
+        return new OntoLexImpl(config.dialect, dataset,
                 config.language == null ? null : Language.get(config.language), config.onlyCanonical);
     }
 
@@ -83,24 +81,17 @@ public class OntoLex implements LensFactory {
     private static class OntoLexImpl implements Lens {
 
         private final Dialect dialect;
-        private final String tag;
         private final Dataset model;
         private final boolean onlyCanonical;
         private final Property RDFS_LABEL;
         private final Language language;
 
-        public OntoLexImpl(Dialect dialect, String tag, Dataset model, Language language, boolean onlyCanonical) {
+        public OntoLexImpl(Dialect dialect, Dataset model, Language language, boolean onlyCanonical) {
             this.dialect = dialect;
-            this.tag = tag;
             this.model = model;
             this.onlyCanonical = onlyCanonical;
             this.language = language;
             RDFS_LABEL = model.createProperty("http://www.w3.org/2000/01/rdf-schema#label");
-        }
-
-        @Override
-        public String id() {
-            return "ontolex";
         }
 
         private Property prop(String name) {
@@ -203,23 +194,19 @@ public class OntoLex implements LensFactory {
         }
 
         @Override
-        public Option<LensResult> extract(Resource entity1, Resource entity2, NaiscListener log) {
+        public Collection<LensResult> extract(URIRes res1, URIRes res2, NaiscListener log) {
+            Resource entity1 = res1.toJena(model);
+            Resource entity2 = res2.toJena(model);
             List<Literal> lit1 = forms(entity1);
             List<Literal> lit2 = forms(entity2);
             final List<LangStringPair> labels = Labels.closestLabelsByLang(lit1, lit2);
             for(LangStringPair label : labels) {
                 if(language == null || label.lang1.equals(language)) {
-                    return new Some<>(LensResult.fromLangStringPair(label, tag));
+                    return new Some<>(LensResult.fromLangStringPair(label, "ontolex"));
                 }
             }
             return new None<>();
         }
-
-        @Override
-        public String tag() {
-            return tag;
-        }
-
     }
 
 }

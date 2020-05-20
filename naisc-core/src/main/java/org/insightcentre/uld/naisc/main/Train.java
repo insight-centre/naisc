@@ -268,13 +268,13 @@ public class Train {
                 Option<Alignment> a = goldAlignments.find(block.entity1, block.entity2, prop);
 
                 if (a.has()) {
-                    FeatureSet featureSet = makeFeatures(block1, block2, lenses, monitor, textFeatures, dataFeatures);
+                    FeatureSet featureSet = makeFeatures(block.entity1, block.entity2, lenses, monitor, textFeatures, dataFeatures, leftModel, rightModel);
                     trainingData.get(prop).add(featureSet.withScore(a.get().probability));
                     goldAlignments.remove(a.get());
                     positives.put(prop, positives.getInt(prop) + 1);
                 } else {
                     if (negData != null && random.nextDouble() < negSampProp) {
-                        FeatureSet featureSet = makeFeatures(block1, block2, lenses, monitor, textFeatures, dataFeatures);
+                        FeatureSet featureSet = makeFeatures(block.entity1, block.entity2, lenses, monitor, textFeatures, dataFeatures, leftModel, rightModel);
                         trainingData.get(prop).add(featureSet.withScore(0.0));
                         negatives.put(prop, negatives.getInt(prop) + 1);
                     }
@@ -284,8 +284,8 @@ public class Train {
 
         int unblockedGold = 0;
         for (Alignment a : goldAlignments) {
-            FeatureSet featureSet = makeFeatures(a.entity1.toJena(leftModel),
-                    a.entity2.toJena(rightModel), lenses, monitor, textFeatures, dataFeatures);
+            FeatureSet featureSet = makeFeatures(a.entity1,
+                    a.entity2, lenses, monitor, textFeatures, dataFeatures, leftModel, rightModel);
             trainingData.get(a.property).add(featureSet.withScore(a.probability));
             unblockedGold++;
         }
@@ -341,19 +341,19 @@ public class Train {
         }
     }
 
-    private static FeatureSet makeFeatures(Resource res1, Resource res2, List<Lens> lenses, ExecuteListener monitor, List<TextFeature> textFeatures, List<GraphFeature> dataFeatures) {
+    private static FeatureSet makeFeatures(URIRes res1, URIRes res2, List<Lens> lenses, ExecuteListener monitor, List<TextFeature> textFeatures, List<GraphFeature> dataFeatures, Dataset left, Dataset right) {
         FeatureSet featureSet = new FeatureSet();
         boolean labelsProduced = false;
         for (Lens lens : lenses) {
-            Option<LensResult> oFacet = lens.extract(res1, res2);
-            labelsProduced = labelsProduced || oFacet.has();
-            LensResult facet = oFacet.getOrElse(LensResult.fromLangStringPair(EMPTY_LANG_STRING_PAIR, lens.tag()));
-            for (TextFeature featureExtractor : textFeatures) {
-                if (featureExtractor.tags() == null || lens.tag() == null
-                        || featureExtractor.tags().contains(lens.tag())) {
-                    Feature[] features = featureExtractor.extractFeatures(facet);
-                    featureSet = featureSet.add(new FeatureSet(features,
-                            lens.id()));
+            for(LensResult facet : lens.extract(res1, res2)) {
+                labelsProduced = true;
+                for (TextFeature featureExtractor : textFeatures) {
+                    if (featureExtractor.tags() == null || facet.tag == null
+                            || featureExtractor.tags().contains(facet.tag)) {
+                        Feature[] features = featureExtractor.extractFeatures(facet);
+                        featureSet = featureSet.add(new FeatureSet(features,
+                                facet.tag));
+                    }
                 }
             }
         }
@@ -361,7 +361,7 @@ public class Train {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", res1, res2));
         }
         for (GraphFeature feature : dataFeatures) {
-            Feature[] features = feature.extractFeatures(res1, res2);
+            Feature[] features = feature.extractFeatures(res1.toJena(left), res2.toJena(right));
             featureSet = featureSet.add(new FeatureSet(features, feature.id()));
         }
         return featureSet;

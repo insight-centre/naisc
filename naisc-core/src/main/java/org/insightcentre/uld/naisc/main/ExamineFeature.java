@@ -5,6 +5,7 @@ import eu.monnetproject.lang.Language;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -38,7 +39,7 @@ public class ExamineFeature {
             final Configuration config = mapper.readValue(configuration, Configuration.class);
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
-            Dataset leftDataset = loader.fromFile(leftFile, name + "/left");
+            Dataset leftDataset = loader.fromFile(leftFile, "left");
             Resource res1 = leftDataset.createResource(left);
             if (!leftDataset.listStatements(res1, null, (RDFNode) null).hasNext()) {
                 System.err.printf("%s is not in model\n", res1);
@@ -50,7 +51,7 @@ public class ExamineFeature {
             }
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
-            Dataset rightDataset = loader.fromFile(rightFile, name + "/right");
+            Dataset rightDataset = loader.fromFile(rightFile, "right");
             //rightDataset.read(new FileReader(rightFile), rightFile.toURI().toString(), "riot");
             Resource res2 = rightDataset.createResource(right);
             if (!rightDataset.listStatements(res2, null, (RDFNode) null).hasNext()) {
@@ -75,19 +76,20 @@ public class ExamineFeature {
             }
             FeatureSet featureSet = new FeatureSet();
             for (Lens lens : lenses) {
-                Option<LensResult> oFacet = lens.extract(res1, res2);
-                if (!oFacet.has()) {
+                Collection<LensResult> facets = lens.extract(URIRes.fromJena(res1, leftDataset.id()),
+                    URIRes.fromJena(res2, rightDataset.id()));
+                if (facets.isEmpty()) {
                     monitor.updateStatus(ExecuteListener.Stage.SCORING, String.format("Lens produced no label for %s %s", res1, res2));
-                } else {
-                    monitor.addLensResult(new URIRes(res1.getURI(), leftDataset.id()), new URIRes(res2.getURI(), rightDataset.id()), lens.id(), oFacet.get());
                 }
-                LensResult facet = oFacet.getOrElse(LensResult.fromLangStringPair(EMPTY_LANG_STRING_PAIR, lens.tag()));
-                for (TextFeature featureExtractor : textFeatures) {
-                    if (featureExtractor.tags() == null || lens.tag() == null
-                            || featureExtractor.tags().contains(lens.tag())) {
-                        Feature[] features = featureExtractor.extractFeatures(facet);
-                        featureSet = featureSet.add(new FeatureSet(features,
-                                lens.id()));
+                for(LensResult facet : facets) {
+                    monitor.addLensResult(new URIRes(res1.getURI(), leftDataset.id()), new URIRes(res2.getURI(), rightDataset.id()), facet.tag, facet);
+                    for (TextFeature featureExtractor : textFeatures) {
+                        if (featureExtractor.tags() == null || facet.tag == null
+                                || featureExtractor.tags().contains(facet.tag)) {
+                            Feature[] features = featureExtractor.extractFeatures(facet);
+                            featureSet = featureSet.add(new FeatureSet(features,
+                                    facet.tag));
+                        }
                     }
                 }
             }
