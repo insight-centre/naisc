@@ -112,7 +112,6 @@ public class KeyWords implements TextFeatureFactory {
             return Feature.mkArray(new double[]{dice, jaccard}, getFeatureNames());
         }
 
-        @Override
         public String[] getFeatureNames() {
             return new String[]{"keyword-dice", "keyword-jaccard"};
         }

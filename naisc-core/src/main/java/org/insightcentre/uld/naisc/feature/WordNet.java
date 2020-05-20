@@ -136,7 +136,6 @@ public class WordNet implements TextFeatureFactory {
 
         }
 
-        @Override
         public String[] getFeatureNames() {
             String[] vec = new String[methods.size() * 2];
             int i = 0;

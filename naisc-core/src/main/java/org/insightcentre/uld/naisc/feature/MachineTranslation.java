@@ -86,18 +86,6 @@ public class MachineTranslation implements TextFeatureFactory  {
             return features;
         }
 
-        private String[] featureNames;
-        @Override
-        public String[] getFeatureNames() {
-            if(featureNames != null)
-                return featureNames;
-            featureNames = new String[config.methods.size()];
-            for(int i = 0; i < config.methods.size(); i++) {
-                featureNames[i] = config.methods.get(i).name();
-            }
-            return featureNames;
-        }
-
         @Override
         public Set<String> tags() {
             return tags;

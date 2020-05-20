@@ -136,7 +136,6 @@ public class Command implements TextFeatureFactory {
             }
         }
 
-        @Override
         public String[] getFeatureNames() {
             in.get();
             return features;
