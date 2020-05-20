@@ -140,7 +140,7 @@ public class Command implements GraphFeatureFactory {
         }
 
         @Override
-        public Feature[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
+        public Feature[] extractFeatures(URIRes entity1, URIRes entity2, NaiscListener log) {
 
             try {
                 out.get().println(entity1.getURI() + "\t" + entity2.getURI());
@@ -151,7 +151,6 @@ public class Command implements GraphFeatureFactory {
             }
         }
 
-        @Override
         public String[] getFeatureNames() {
             return features;
         }

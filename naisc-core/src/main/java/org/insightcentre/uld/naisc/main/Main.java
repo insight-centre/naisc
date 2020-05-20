@@ -310,7 +310,7 @@ public class Main {
                                 monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block1, block2));
                             }
                             for (GraphFeature feature : dataFeatures) {
-                                Feature[] features = feature.extractFeatures(block1, block2, monitor);
+                                Feature[] features = feature.extractFeatures(block.entity1, block.entity2, monitor);
                                 featureSet = featureSet.add(new FeatureSet(features, feature.id()));
                             }
                             if (featureSet.isEmpty()) {

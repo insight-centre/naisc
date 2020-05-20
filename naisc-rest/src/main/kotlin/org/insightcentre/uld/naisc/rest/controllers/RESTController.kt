@@ -65,8 +65,8 @@ class RESTController {
             val feats = ConfigurationManager.getGraphFeatures(config, body.entity1.dataset, body.entity2.dataset)
             var result = mutableListOf<Feature>()
             for(feat in feats) {
-                result.addAll(feat.extractFeatures(body.entity1.toJena(ConfigurationManager.getDataset(body.entity1.dataset)),
-                    body.entity2.toJena(ConfigurationManager.getDataset(body.entity2.dataset))))
+                result.addAll(feat.extractFeatures(body.entity1,
+                    body.entity2))
             }
             return Response.ok().entity(result).build()
         } catch(x : Exception) {

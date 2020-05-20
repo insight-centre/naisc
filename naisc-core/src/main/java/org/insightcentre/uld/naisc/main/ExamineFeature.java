@@ -94,7 +94,7 @@ public class ExamineFeature {
                 }
             }
             for (GraphFeature feature : dataFeatures) {
-                Feature[] features = feature.extractFeatures(res1, res2);
+                Feature[] features = feature.extractFeatures(URIRes.fromJena(res1, leftDataset.id()), URIRes.fromJena(res2, rightDataset.id()));
                 featureSet = featureSet.add(new FeatureSet(features, feature.id()));
             }
             return featureSet;
