@@ -361,7 +361,7 @@ public class Train {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", res1, res2));
         }
         for (GraphFeature feature : dataFeatures) {
-            Feature[] features = feature.extractFeatures(res1.toJena(left), res2.toJena(right));
+            Feature[] features = feature.extractFeatures(res1, res2);
             featureSet = featureSet.add(new FeatureSet(features, feature.id()));
         }
         return featureSet;

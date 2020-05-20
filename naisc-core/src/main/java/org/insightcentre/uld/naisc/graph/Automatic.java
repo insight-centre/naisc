@@ -54,7 +54,7 @@ public class Automatic implements GraphFeatureFactory {
             ppr = new PPR().makeFeature(sparqlData, params, analysis, prelinking, listener);
             listener.message(NaiscListener.Stage.INITIALIZING, NaiscListener.Level.INFO, "Using PPR on graph");
         }
-        return new AutomaticImpl(propMatches, ppr);
+        return new AutomaticImpl(propMatches, ppr, sparqlData);
     }
 
     public static class Configuration {
@@ -65,8 +65,9 @@ public class Automatic implements GraphFeatureFactory {
         final List<Pair<String,String>> propMatches;
         final GraphFeature pprAnalysis;
         final String[] featureNames;
+        final Dataset dataset;
 
-        public AutomaticImpl(List<Pair<String, String>> propMatches, GraphFeature pprAnalysis) {
+        public AutomaticImpl(List<Pair<String, String>> propMatches, GraphFeature pprAnalysis, Dataset dataset) {
             this.propMatches = propMatches;
             this.pprAnalysis = pprAnalysis;
             List<String> fn = new ArrayList<>();
@@ -76,6 +77,7 @@ public class Automatic implements GraphFeatureFactory {
             if(pprAnalysis != null)
                 fn.add("ppr");
             this.featureNames = fn.toArray(new String[fn.size()]);
+            this.dataset = dataset;
         }
 
         @Override
@@ -84,19 +86,18 @@ public class Automatic implements GraphFeatureFactory {
         }
 
         @Override
-        public Feature[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
+        public Feature[] extractFeatures(URIRes res1, URIRes res2, NaiscListener log) {
             Feature[] features = new Feature[featureNames.length];
             int i = 0;
             PROP_MATCH:
             for(Pair<String,String> propMatch : propMatches) {
-                Model left = entity1.getModel();
-                Model right = entity2.getModel();
-                final StmtIterator iter1 = entity1.listProperties(left.createProperty(propMatch._1));
+                Resource entity1 = res1.toJena(dataset), entity2 = res2.toJena(dataset);
+                final StmtIterator iter1 = entity1.listProperties(dataset.createProperty(propMatch._1));
                 Set<RDFNode> vals1 = new HashSet<>();
                 while(iter1.hasNext()) {
                     vals1.add(iter1.next().getObject());
                 }
-                final StmtIterator iter2 = entity2.listProperties(right.createProperty(propMatch._2));
+                final StmtIterator iter2 = entity2.listProperties(dataset.createProperty(propMatch._2));
                 while(iter2.hasNext()) {
                     if(vals1.contains(iter2.next().getObject())) {
                         features[i] = new Feature(featureNames[i++], 1.0);
@@ -107,17 +108,13 @@ public class Automatic implements GraphFeatureFactory {
                 features[i] = new Feature(featureNames[i++], 0.0);
             }
             if(pprAnalysis != null)
-                features[i] = pprAnalysis.extractFeatures(entity1, entity2, log)[0];
+                features[i] = pprAnalysis.extractFeatures(res1, res2, log)[0];
             return features;
         }
 
-        
-        
-        @Override
         public String[] getFeatureNames() {
             return featureNames;
         }
-        
     }
 
     
