@@ -70,7 +70,7 @@ public class OntoLexTest {
         OntoLex instance = new OntoLex();
         Lens lens = instance.makeLens(new ModelDataset(sparqlData,"sparql"), params);
         Collection<LensResult> result = lens.extract(new URIRes("http://www.example.com/#foo", "sparql"), new URIRes("http://www.example.com/#bar", "sparql"));
-        Option<LensResult> expResult = new Some<>(new LensResult(Language.ENGLISH, Language.ENGLISH, "foo", "bar", tag));
+        Option<LensResult> expResult = new Some<>(new LensResult(Language.ENGLISH, Language.ENGLISH, "foo", "bar", "ontolex"));
         assertEquals(expResult, result);
     }
 

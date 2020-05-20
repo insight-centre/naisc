@@ -79,10 +79,10 @@ public class SPARQLTest {
                 model.createLiteral("???"));
         
         Lens lens = instance.makeLens(new ModelDataset(model, "model"), params);
-        assert(!lens.extract(URIRes.fromJena(res, ""), URIRes.fromJena(res2, "")).isEmpty());
-        assert(!lens.extract(URIRes.fromJena(res, ""), URIRes.fromJena(res3, "")).isEmpty());
-        assert(!lens.extract(URIRes.fromJena(res, ""), URIRes.fromJena(res4, "")).isEmpty());
-        assert(lens.extract(URIRes.fromJena(res, ""), URIRes.fromJena(res5, "")).isEmpty());
+        assert(!lens.extract(URIRes.fromJena(res, "model"), URIRes.fromJena(res2, "model")).isEmpty());
+        assert(!lens.extract(URIRes.fromJena(res, "model"), URIRes.fromJena(res3, "model")).isEmpty());
+        assert(!lens.extract(URIRes.fromJena(res, "model"), URIRes.fromJena(res4, "model")).isEmpty());
+        assert(lens.extract(URIRes.fromJena(res, "model"), URIRes.fromJena(res5, "model")).isEmpty());
         
     }
 

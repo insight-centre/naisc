@@ -60,16 +60,16 @@ public class URITest {
         URIRes r4 = new URIRes("http://www.example.com/foo/a+path+without+a+%23", "data");
 
         assertEquals(new LensResult(Language.UNDEFINED, Language.UNDEFINED,
-                "fragment ID", "fragment id", null), lens.extract(r1, r2).iterator().next());
+                "fragment ID", "fragment id", "uri"), lens.extract(r1, r2).iterator().next());
         assertEquals(new LensResult(Language.UNDEFINED, Language.UNDEFINED,
-                "fragment id", "a path without a #", null), lens.extract(r3, r4).iterator().next());
+                "fragment id", "a path without a #", "uri"), lens.extract(r3, r4).iterator().next());
 
         params.put("location", "fragment");
         params.put("form", "camelCased");
         lens = instance.makeLens(new ModelDataset(model, "model2"), params);
 
         assertEquals(new LensResult(Language.UNDEFINED, Language.UNDEFINED,
-                "fragment ID", "fragment_id", null), lens.extract(r1, r2).iterator().next());
+                "fragment ID", "fragment_id", "uri"), lens.extract(r1, r2).iterator().next());
         assert (!lens.extract(r3, r4).iterator().hasNext());
 
         params.put("location", "endOfPath");
@@ -77,9 +77,9 @@ public class URITest {
         lens = instance.makeLens(new ModelDataset(model, "model3"), params);
 
         assertEquals(new LensResult(Language.UNDEFINED, Language.UNDEFINED,
-                "thisIsAPath", "this_is_also_a_path", null), lens.extract(r1, r2).iterator().next());
+                "thisIsAPath", "this_is_also_a_path", "uri"), lens.extract(r1, r2).iterator().next());
         assertEquals(new LensResult(Language.UNDEFINED, Language.UNDEFINED,
-                "yet another path", "a path without a #", null), lens.extract(r3, r4).iterator().next());
+                "yet another path", "a path without a #", "uri"), lens.extract(r3, r4).iterator().next());
 
     }
 

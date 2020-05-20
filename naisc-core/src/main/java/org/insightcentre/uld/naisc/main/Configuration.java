@@ -307,7 +307,7 @@ public class Configuration {
                 @JsonProperty("tags") Set<String> tags) {
             this.name = name;
             this.params = params == null ? Collections.EMPTY_MAP : params;
-            this.tags = tags;
+            this.tags = tags == null || tags.isEmpty() ? null : tags;
         }
 
         @Override
