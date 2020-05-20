@@ -76,7 +76,7 @@ public class MainTest {
         Dataset rightDataset = new DefaultDatasetLoader.ModelDataset(rightModel, "right");
         Configuration config = new Configuration(
             new Configuration.BlockingStrategyConfiguration("blocking.All", new HashMap<>()),
-            Arrays.asList(new Configuration.LensConfiguration("lens.Label", new HashMap<>(), null)),
+            Arrays.asList(new Configuration.LensConfiguration("lens.Label", new HashMap<>())),
             new ArrayList<>(),
             Arrays.asList(new Configuration.TextFeatureConfiguration("feature.BasicString", new HashMap<>(), Collections.EMPTY_SET)),
             Arrays.asList(new Configuration.ScorerConfiguration("scorer.Average", new HashMap<>(), null)),
@@ -106,7 +106,7 @@ public class MainTest {
         Dataset rightDataset = new DefaultDatasetLoader.ModelDataset(rightModel, "right");
         Configuration config = new Configuration(
             new Configuration.BlockingStrategyConfiguration("blocking.All", new HashMap<>()),
-            Arrays.asList(new Configuration.LensConfiguration("lens.Label", new HashMap<>(), null)),
+            Arrays.asList(new Configuration.LensConfiguration("lens.Label", new HashMap<>())),
             new ArrayList<>(),
             Arrays.asList(new Configuration.TextFeatureConfiguration("feature.BasicString", new HashMap<>(), Collections.EMPTY_SET)),
             Arrays.asList(new Configuration.ScorerConfiguration("scorer.Average", new HashMap<>(), null)),

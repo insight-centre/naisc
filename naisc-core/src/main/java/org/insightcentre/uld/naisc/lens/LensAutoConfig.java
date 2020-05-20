@@ -40,11 +40,11 @@ public class LensAutoConfig {
         for (LabelResult prop : analysis.rightLabels) {
             if (prop.isLabelLens()) {
                 if (prop.uri.equals("") && leftCandidates.contains("")) {
-                    lenses.add(new URI.URIImpl("uri", URI.LabelLocation.infer, URI.LabelForm.smart, "_"));
+                    lenses.add(new URI.URIImpl(URI.LabelLocation.infer, URI.LabelForm.smart, "_"));
                     leftCandidates.remove("");
                     log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, String.format("Using URIs as a lens (%.4f)", prop.naturalLangLike));
                 } else if (leftCandidates.contains(prop.uri)) {
-                    lenses.add(new Label.LabelImpl(prop.uri, prop.uri, null, prop.uri, leftModel, null));
+                    lenses.add(new Label.LabelImpl(prop.uri, prop.uri, null, leftModel, null));
                     leftCandidates.remove(prop.uri);
                     log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, String.format("Using %s as a lens (%.4f)", prop.uri, prop.naturalLangLike));
                 } else {
@@ -73,7 +73,7 @@ public class LensAutoConfig {
                 if(scores.getDouble(elem) < 0.1) 
                     break;
                 if(leftCandidates.contains(elem._1) && rightCandidates.contains(elem._2)) {
-                    lenses.add(new Label.LabelImpl(elem._1, elem._2, null, elem._1, leftModel, null));
+                    lenses.add(new Label.LabelImpl(elem._1, elem._2, null, leftModel, null));
                     log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, "Using " +  elem._1 +" with " + elem._2 + " as a lens");
                     leftCandidates.remove(elem._1);
                     rightCandidates.remove(elem._2);

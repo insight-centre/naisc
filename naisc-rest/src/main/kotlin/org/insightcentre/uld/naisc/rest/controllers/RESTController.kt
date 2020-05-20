@@ -45,11 +45,9 @@ class RESTController {
             val lenses = ConfigurationManager.getLens(config, body.entity1.dataset, body.entity2.dataset)
             var result = mutableListOf<LensResult>()
             for(lens in lenses) {
-                val r = lens.extract(body.entity1.toJena(ConfigurationManager.getDataset(body.entity1.dataset)),
-                    body.entity2.toJena(ConfigurationManager.getDataset(body.entity2.dataset)))
-                if(r.has()) {
-                    result.add(r.get())
-                }
+                val r = lens.extract(body.entity1,
+                    body.entity2)
+                result.addAll(r)
             }
             return Response.ok().entity(result).build()
         } catch(x : Exception) {
