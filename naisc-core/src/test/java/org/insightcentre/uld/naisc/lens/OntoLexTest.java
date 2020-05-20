@@ -2,12 +2,14 @@ package org.insightcentre.uld.naisc.lens;
 
 import eu.monnetproject.lang.Language;
 import java.io.StringReader;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.Lens;
 import org.insightcentre.uld.naisc.LensResult;
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Option;
@@ -66,8 +68,8 @@ public class OntoLexTest {
         sparqlData.read(new StringReader(testDoc), "file:test#", "TURTLE");
         Map<String, Object> params = new HashMap<>();
         OntoLex instance = new OntoLex();
-        Lens lens = instance.makeLens(tag, new ModelDataset(sparqlData,"sparql"), params);
-        Option<LensResult> result = lens.extract(sparqlData.createResource("http://www.example.com/#foo"), sparqlData.createResource("http://www.example.com/#bar"));
+        Lens lens = instance.makeLens(new ModelDataset(sparqlData,"sparql"), params);
+        Collection<LensResult> result = lens.extract(new URIRes("http://www.example.com/#foo", "sparql"), new URIRes("http://www.example.com/#bar", "sparql"));
         Option<LensResult> expResult = new Some<>(new LensResult(Language.ENGLISH, Language.ENGLISH, "foo", "bar", tag));
         assertEquals(expResult, result);
     }
