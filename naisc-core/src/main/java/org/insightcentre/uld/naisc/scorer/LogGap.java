@@ -63,6 +63,7 @@ public class LogGap {
     }
 
     public void makeModel(double[] _values) {
+        _values = removeNaNs(_values);
         Arrays.sort(_values);
         this.values = dedupe(_values);
         this.diffs = new double[values.length];
@@ -81,6 +82,25 @@ public class LogGap {
             diffs[i] = diffs[i - 1] + diffs[i] / sumdiff;
         }
         valuesBuilder.clear();
+    }
+
+    /**
+     * Strip all NaN values from a vector and return only the non-NaN values
+     */
+    public static double[] removeNaNs(double[] values) {
+        int nanCount = 0;
+        for(int i = 0; i < values.length - nanCount; i++) {
+            if(Double.isNaN(values[i])) {
+                values[i] = values[values.length - 1 - nanCount];
+                nanCount++;
+                i--;
+            }
+        }
+        if(nanCount > 0) {
+            return Arrays.copyOf(values, values.length - nanCount);
+        } else {
+            return values;
+        }
     }
 
     public double normalize(double d) {

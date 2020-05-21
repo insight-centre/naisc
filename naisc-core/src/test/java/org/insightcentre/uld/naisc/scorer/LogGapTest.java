@@ -121,4 +121,22 @@ public class LogGapTest {
         instance.makeModel(values);
     }
 
+    @Test
+    public void testWithNaN() {
+        // NB: NaN is used to indicate a missing value
+        double[] values = new double[] { 1,2,3,Double.NaN,4,5,Double.NaN };
+        LogGap instance = new LogGap();
+        instance.makeModel(values);
+        assertTrue(Double.isNaN(instance.normalize(Double.NaN)));
+        assertFalse(Double.isNaN(instance.normalize(3.0)));
+    }
+
+    @Test
+    public void testNaNRemover() {
+        assertArrayEquals(new double[] { 1.0, 2.0, 5.0, 4.0 }, LogGap.removeNaNs(new double[] { 1.0, 2.0, Double.NaN, 4.0, Double.NaN, 5.0 }), 0.0);
+        assertArrayEquals(new double[] { 1.0, 2.0, 5.0, 4.0 }, LogGap.removeNaNs(new double[] { 1.0, 2.0, Double.NaN, 4.0, 5.0, Double.NaN }), 0.0);
+        assertArrayEquals(new double[] { }, LogGap.removeNaNs(new double[] { Double.NaN, Double.NaN }), 0.0);
+        assertArrayEquals(new double[] { }, LogGap.removeNaNs(new double[] { }), 0.0);
+    }
+
 }
