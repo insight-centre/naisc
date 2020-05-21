@@ -16,11 +16,10 @@ import java.io.File;
 import java.io.IOException;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static org.insightcentre.uld.naisc.scorer.LogGap.removeNaNs;
+
+import java.util.*;
+
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
@@ -362,39 +361,11 @@ public class RAdLR implements ScorerFactory {
         public double[] initial() {
             if (data.length > 0) {
                 double[] init = new double[data[0].length + 2];
-                /*Arrays.fill(init, 1.0);
-                init[1] = 0.0;
-                return init;*/
-                int pos = 0;
-                int neg = 0;
-                for (double score : scores) {
-                    if (score > 0.5) {
-                        pos++;
-                    } else {
-                        neg++;
-                    }
-                }
-                init[0] = 3.0;
-                init[1] = -6.0 * neg / (neg + pos);
-                PearsonsCorrelation correl = new PearsonsCorrelation();
-                double sumsq = 0.0;
-                for (int i = 0; i < data[0].length; i++) {
-                    double[] z = new double[data.length];
-                    for (int j = 0; j < data.length; j++) {
-                        z[j] = data[j][i];
-                    }
-                    init[i + 2] = correl.correlation(z, scores);
-                    if (!Double.isFinite(init[i + 2])) {
-                        init[i + 2] = 0.0;
-                    }
-                    sumsq += init[i + 2] * init[i + 2];
-                }
-                sumsq /= data[0].length;
-                for (int i = 0; i < data[0].length; i++) {
-                    init[i + 2] /= sumsq;
+                Random r = new Random();
+                for(int i = 0; i < init.length; i++) {
+                    init[i] = r.nextDouble() * 2.0 - 1;
                 }
                 return init;
-
             } else {
                 throw new RuntimeException("Cannot learn from empty data");
             }
@@ -408,6 +379,9 @@ public class RAdLR implements ScorerFactory {
         public RAdLRFunction(double[][] data, double[] scores, double smooth) {
             super(data, scores);
             this.smooth = smooth;
+            if(data.length == 0) {
+                throw new IllegalArgumentException("Data is empty");
+            }
         }
 
         @Override
@@ -432,9 +406,6 @@ public class RAdLR implements ScorerFactory {
                 double q = 1.0 / (1.0 + exp(-alpha * z - beta));
                 assert (q != 0.0);
                 assert (q != 1.0);
-                if (x[0] == 3.0) {
-                    System.err.printf("%.4f (%.4f) <-> %.4f = %.4f\n", q, z, scores[i], (scores[i] - 1) * log(1 - q + smooth) - scores[i] * log(q + smooth));
-                }
                 value += (scores[i] - 1) * log(1 - q + smooth) - scores[i] * log(q + smooth);
                 double d = (1 - scores[i]) / (1 - q + smooth) - scores[i] / (q + smooth);
                 g[0] += d * q * (1 - q) * z / data.length;
@@ -453,6 +424,9 @@ public class RAdLR implements ScorerFactory {
 
         public FMRAdLRFunction(double[][] data, double[] scores) {
             super(data, scores);
+            if(data.length == 0) {
+                throw new IllegalArgumentException("Data is empty");
+            }
         }
 
         @Override
@@ -496,9 +470,15 @@ public class RAdLR implements ScorerFactory {
                 }
             }
             for (int i = 0; i < g.length; i++) {
-                g[i] = -1.0 / (P + Q) / (P + Q) * ((P + Q) * qd[i] - PQ * d[i]);
+                if(P + Q != 0.0) {
+                    g[i] = -1.0 / (P + Q) / (P + Q) * ((P + Q) * qd[i] - PQ * d[i]);
+                }
             }
-            return -PQ / (P + Q);
+            if(P + Q != 0.0) {
+                return -PQ / (P + Q);
+            } else {
+                return 0.0;
+            }
         }
     }
 
@@ -519,9 +499,11 @@ public class RAdLR implements ScorerFactory {
             double gradSum = 0.0;
             // Update gsum
             for (int j = 0; j < n; j++) {
-                double gjj = grad[j] * grad[j];
-                gradSum += gjj;
-                gsum[j] += gjj;
+                if(Double.isFinite(grad[j])) {
+                    double gjj = grad[j] * grad[j];
+                    gradSum += gjj;
+                    gsum[j] += gjj;
+                }
             }
             if (i % 1000 == 0) {
                 log.message(Stage.TRAINING, Level.INFO, String.format("Iteration %d: Value=%.8f, Gradient=%.8f", i, fx, Math.sqrt(gradSum)));
@@ -531,20 +513,10 @@ public class RAdLR implements ScorerFactory {
             }
             // Learn
             for (int j = 0; j < n; j++) {
-                x[j] -= initialLearningRate / Math.sqrt(gsum[j] + smoothing) * grad[j];
+                if(Double.isFinite(grad[j])) {
+                    x[j] -= initialLearningRate / Math.sqrt(gsum[j] + smoothing) * grad[j];
+                }
             }
-
-            /*// This bit is specific, we want to keep the mean of the weights as zero
-            double sum = 0.0;
-            for (int j = 2; j < n; j++) {
-                //sum += Math.abs(x[j]);
-                sum += x[j]*x[j];
-            }
-            sum /= n - 2;
-            sum = Math.sqrt(sum);
-            for (int j = 2; j < n; j++) {
-                x[j] /= sum;
-            }*/
         }
         return x;
     }
