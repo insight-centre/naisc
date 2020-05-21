@@ -134,7 +134,10 @@ public class CrossFold {
         for (int i = 0; i < nFolds; i++) {
             monitor.foldNo++;
             Train.execute(name, leftModel, rightModel, folds.train(goldAlignments, i), negativeSampling, config, monitor,loader, "fold" + i);
-            as.addAll(Main.execute(name, leftModel, rightModel, config, new None<>(), monitor, folds.leftSplit.get(i), folds.rightSplit.get(i),loader));
+            AlignmentSet predicted = Main.execute(name, leftModel, rightModel, config, new None<>(), monitor, folds.leftSplit.get(i), folds.rightSplit.get(i),loader);
+            as.addAll(predicted);
+            Evaluate.EvaluationResults er = Evaluate.evaluate(predicted, goldAlignments, monitor, true);
+            monitor.message(NaiscListener.Stage.TRAINING, NaiscListener.Level.INFO, String.format("Fold results (%d aligns):  precision = %.04f, recall = %.04f, fmeasure = %.04f", predicted.size(), er.precision(), er.recall(), er.fmeasure()));
         }
         monitor.foldNo = 0;
 
