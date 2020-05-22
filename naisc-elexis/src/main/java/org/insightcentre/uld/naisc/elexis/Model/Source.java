@@ -3,52 +3,51 @@ package org.insightcentre.uld.naisc.elexis.Model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.constraints.NotEmpty;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class Source {
 
     @JsonProperty("endpoint")
-    static String endpoint;
+    String endpoint;
 
     @JsonProperty("id")
     @NotEmpty
-    static String id;
+    String id;
 
     @JsonProperty("entries")
-    static ArrayList< String > entries;
+    String[] entries;
 
     @JsonProperty("apiKey")
-    static String apiKey;
+    String apiKey;
 
-    public static String getEndpoint() {
+    public String getEndpoint() {
         return endpoint;
     }
 
-    public static void setEndpoint(String endpoint) {
-        Source.endpoint = endpoint;
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
     }
 
-    public static String getId() {
+    public String getId() {
         return id;
     }
 
-    public static void setId(String id) {
-        Source.id = id;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public static ArrayList<String> getEntries() {
+    public String[] getEntries() {
         return entries;
     }
 
-    public static void setEntries(ArrayList<String> entries) {
-        Source.entries = entries;
-    }
+    public void setEntries(String[] entries) { this.entries = entries; }
 
-    public static String getApiKey() {
+    public String getApiKey() {
         return apiKey;
     }
 
-    public static void setApiKey(String apiKey) {
-        Source.apiKey = apiKey;
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
     }
 }
