@@ -321,7 +321,7 @@ public class Main {
                                 alignments.add(new TmpAlignment(block.entity1, block.entity2, score, scorer.relation(), config.includeFeatures ? featureSet : null));
                             }
                         } catch (Exception x) {
-                            monitor.updateStatus(Stage.FAILED, String.format("Failed to probability %s <-> %s due to %s (%s)\n", block1, block2, x.getMessage(), x.getClass().getName()));
+                            monitor.updateStatus(Stage.FAILED, String.format("Failed to get probability %s <-> %s due to %s (%s)\n", block1, block2, x.getMessage(), x.getClass().getName()));
                             x.printStackTrace();
 
                         }

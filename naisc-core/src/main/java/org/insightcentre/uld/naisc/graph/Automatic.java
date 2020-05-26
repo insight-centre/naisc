@@ -12,6 +12,7 @@ import org.apache.jena.rdf.model.StmtIterator;
 import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.MatchResult;
+import org.insightcentre.uld.naisc.lens.Label;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
 
@@ -29,7 +30,7 @@ public class Automatic implements GraphFeatureFactory {
         Analysis _analysis = analysis.get();
         List<Pair<String,String>> propMatches = new ArrayList<>();
         for(MatchResult mr : _analysis.matching) {
-            if(mr.coversData() && !mr.leftUri.equals("") && !mr.rightUri.equals("")) 
+            if(mr.coversData() && !mr.leftUri.equals("") && !mr.rightUri.equals("") && !mr.leftUri.equals(Label.RDFS_LABEL) && !mr.rightUri.equals(Label.RDFS_LABEL))
                 propMatches.add(new Pair<>(mr.leftUri, mr.rightUri));
         }
         if(!propMatches.isEmpty()) {
