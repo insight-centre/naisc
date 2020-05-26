@@ -138,6 +138,9 @@ public class CrossFold {
             as.addAll(predicted);
             Evaluate.EvaluationResults er = Evaluate.evaluate(predicted, goldAlignments, monitor, true);
             monitor.message(NaiscListener.Stage.TRAINING, NaiscListener.Level.INFO, String.format("Fold results (%d aligns):  precision = %.04f, recall = %.04f, fmeasure = %.04f", predicted.size(), er.precision(), er.recall(), er.fmeasure()));
+            for(Alignment a : predicted) {
+                a.valid = Alignment.Valid.unknown;
+            }
         }
         monitor.foldNo = 0;
 
