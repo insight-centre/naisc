@@ -83,7 +83,7 @@ public class AutomaticTest {
 
         Map<String, Object> params = new HashMap<>();
         Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(lmodel,"lmodel"), new ModelDataset(rmodel,"rmodel")));
-        Lazy<AlignmentSet> prelinking = Lazy.fromClosure(() -> prealign);
+        AlignmentSet prelinking = prealign;
         GraphFeature feat = new Automatic().makeFeature(sparqlData, params, analysis, prelinking, ExecuteListeners.NONE);
         Feature[] result = feat.extractFeatures(new URIRes("file:foo2", "lmodel"), new URIRes("file:bar2", "rmodel"));
         double[] expResult = new double[]{0.0, 0.242};

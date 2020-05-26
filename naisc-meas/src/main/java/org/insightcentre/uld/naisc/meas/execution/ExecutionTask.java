@@ -9,7 +9,6 @@ import org.insightcentre.uld.naisc.main.ExecuteListener;
 import org.insightcentre.uld.naisc.main.Main;
 import org.insightcentre.uld.naisc.main.Train;
 import org.insightcentre.uld.naisc.EvaluationSet;
-import org.insightcentre.uld.naisc.meas.ExecuteServlet;
 import org.insightcentre.uld.naisc.meas.ManageServlet;
 import org.insightcentre.uld.naisc.meas.Meas;
 import org.insightcentre.uld.naisc.meas.MeasDatasetLoader;
@@ -111,7 +110,7 @@ public class ExecutionTask implements Runnable {
             Meas.Run run = new Meas.Run(id, configName, dataset, er == null ? -1.0 : er.precision(), er == null ? -1.0 : er.recall(), er == null ? -1.0 : er.fmeasure(), er == null ? -2.0 : er.correlation, time, mode == ExecutionMode.TRAIN);
             ManageServlet.completed.put(id, run);
             if (alignment != null) {
-                listener.saveAligment(run, alignment, loader.fromFile(ds.left(), "left"), loader.fromFile(ds.right(), "right"));
+                listener.saveAlignment(run, alignment, loader.fromFile(ds.left(), "left"), loader.fromFile(ds.right(), "right"));
             }
             Meas.data.runs.add(run);
         } catch (Exception x) {

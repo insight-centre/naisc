@@ -66,7 +66,7 @@ public class ExamineFeature {
             List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
-            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new AlignmentSet());
+            AlignmentSet prematch = new AlignmentSet();
             List<TextFeature> textFeatures = config.makeTextFeatures();
             List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 

@@ -73,10 +73,10 @@ object ConfigurationManager {
             })
     }
 
-    fun getPrelinking(dataset1: Dataset, dataset2 : Dataset) : Lazy<AlignmentSet>  {
+    fun getPrelinking(dataset1: Dataset, dataset2 : Dataset) : AlignmentSet  {
         // TODO: Figure out how pre-linking should really work
         System.err.println(dataset1.id() + dataset2.id());
-        return Lazy.fromClosure { AlignmentSet() }
+        return AlignmentSet()
     }
 
     @Throws(InvalidConfigurationException::class, DatasetNotFoundException::class, IOException::class)

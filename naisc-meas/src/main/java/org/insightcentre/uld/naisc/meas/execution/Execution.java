@@ -240,7 +240,7 @@ public class Execution implements ExecuteListener {
         blocks.clear();
     }
 
-    public void saveAligment(Run run, AlignmentSet alignmentSet, Dataset left, Dataset right) {
+    public void saveAlignment(Run run, AlignmentSet alignmentSet, Dataset left, Dataset right) {
         synchronized (databaseLock) {
             try (Connection connection = connection(id)) {
                 createTables(connection);

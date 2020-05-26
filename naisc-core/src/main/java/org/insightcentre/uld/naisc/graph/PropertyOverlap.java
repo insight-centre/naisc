@@ -26,7 +26,7 @@ public class PropertyOverlap implements GraphFeatureFactory {
 
     @Override
     public GraphFeature makeFeature(Dataset dataset, Map<String, Object> params,
-            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking, NaiscListener listener) {
+            Lazy<Analysis> analysis, AlignmentSet prelinking, NaiscListener listener) {
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         return new PropertyOverlapImpl(config.properties, dataset);
     }
