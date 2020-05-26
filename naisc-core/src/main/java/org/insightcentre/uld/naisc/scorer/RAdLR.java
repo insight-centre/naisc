@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.scorer;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -141,12 +142,22 @@ public class RAdLR implements ScorerFactory {
         public double alpha = 1.0, beta = 0.0;
         public Object2DoubleOpenHashMap<StringPair> weights = new Object2DoubleOpenHashMap<>();
         public String property = Alignment.SKOS_EXACT_MATCH;
+        public final Map<StringPair, LogGap.LogGapModel> feats = new HashMap<>();
+
+        @JsonIgnore
+        public LogGap getFeatModel(StringPair sp) {
+            LogGap.LogGapModel lgm = feats.get(sp);
+            if(sp != null) {
+                return LogGap.fromModel(lgm);
+            } else {
+                return null;
+            }
+        }
     }
 
     private static class RAdLRImpl implements Scorer {
 
         private final RAdLRModel model;
-        private final Map<StringPair, LogGap> feats = new HashMap<>();
 
         public RAdLRImpl(RAdLRModel model) {
             this.model = model;
@@ -161,12 +172,12 @@ public class RAdLR implements ScorerFactory {
             //List<ScoreResult> result = new ArrayList<>(features.names.length);
             for (int i = 0; i < features.names.length; i++) {
                 weights.add(model.weights.getOrDefault(features.names[i], 1.0));
-                synchronized (feats) {
+                synchronized (model) {
                     final LogGap lg;
-                    if (!feats.containsKey(features.names[i])) {
-                        feats.put(features.names[i], lg = new LogGap());
+                    if (!model.feats.containsKey(features.names[i])) {
+                        lg = new LogGap();
                     } else {
-                        lg = feats.get(features.names[i]);
+                        lg = LogGap.fromModel(model.feats.get(features.names[i]));
                     }
                     //result.add(feats.get(features.names[i]).result(features.values[i]));
                     lg.addResult(features.values[i]);
@@ -271,6 +282,7 @@ public class RAdLR implements ScorerFactory {
                 }
                 i++;
             }
+            LogGap[] logGaps = new LogGap[data[0].length];
             // Apply Log Gap normalization
             if (data.length > 0) {
                 for (int j = 0; j < data[0].length; j++) {
@@ -283,6 +295,7 @@ public class RAdLR implements ScorerFactory {
                     for (i = 0; i < data.length; i++) {
                         data[i][j] = lg.normalize(data[i][j]);
                     }
+                    logGaps[j] = lg;
                 }
             }
             final Function f;
@@ -305,6 +318,7 @@ public class RAdLR implements ScorerFactory {
             model.beta = soln[1];
             for (Object2IntMap.Entry<StringPair> e : featureIDs.object2IntEntrySet()) {
                 model.weights.put(e.getKey(), soln[e.getIntValue() + 2]);
+                model.feats.put(e.getKey(), logGaps[e.getIntValue()].toModel(100));
             }
 
             return new RAdLRImpl(model);

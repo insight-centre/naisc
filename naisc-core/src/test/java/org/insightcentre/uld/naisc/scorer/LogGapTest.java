@@ -1,6 +1,8 @@
 package org.insightcentre.uld.naisc.scorer;
 
 import java.util.Arrays;
+import java.util.Random;
+
 import org.insightcentre.uld.naisc.ScoreResult;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -138,5 +140,16 @@ public class LogGapTest {
         assertArrayEquals(new double[] { }, LogGap.removeNaNs(new double[] { Double.NaN, Double.NaN }), 0.0);
         assertArrayEquals(new double[] { }, LogGap.removeNaNs(new double[] { }), 0.0);
     }
+
+    @Test
+    public void testToModel() {
+        LogGap instance = new LogGap();
+        Random random = new Random();
+        for(int i = 0; i < 120; i++) {
+            instance.addResult(random.nextDouble());
+        }
+        instance.toModel(100);
+    }
+
 
 }
