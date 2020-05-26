@@ -9,42 +9,48 @@ import javax.validation.constraints.NotEmpty;
 public class MessageBody {
     @JsonProperty("source")
     @NotEmpty
-    Source SourceObject;
+    Source source;
 
     @JsonProperty("target")
     @NotEmpty
-    Target TargetObject;
+    Target target;
 
     @JsonProperty("configuration")
     @Optional
-    Configuration ConfigurationObject;
+    Configuration configuration;
 
+    public MessageBody()
+    {
+        setSource(source);
+        setTarget(target);
+        setConfiguration(configuration);
+    }
 
     // Getter Methods
 
     public Source getSource() {
-        return SourceObject;
+        return source;
     }
 
     public Target getTarget() {
-        return TargetObject;
+        return target;
     }
 
     public Configuration getConfiguration() {
-        return ConfigurationObject;
+        return configuration;
     }
 
     // Setter Methods
 
-    public void setSource(Source sourceObject) {
-        this.SourceObject = sourceObject;
+    public void setSource(Source source) {
+        this.source = source;
     }
 
-    public void setTarget(Target targetObject) {
-        this.TargetObject = targetObject;
+    public void setTarget(Target target) {
+        this.target = target;
     }
 
-    public void setConfiguration(Configuration configurationObject) {
-        this.ConfigurationObject = configurationObject;
+    public void setConfiguration(Configuration configuration) {
+        this.configuration = configuration;
     }
 }

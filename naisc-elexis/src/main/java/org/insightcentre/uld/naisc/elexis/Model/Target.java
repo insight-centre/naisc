@@ -18,7 +18,7 @@ public class Target {
 
     @JsonProperty("entries")
     @Optional
-    static List<String> entries = new ArrayList<String>();
+    static String[] entries;
 
     public static String getEndpoint() {
         return endpoint;
@@ -36,11 +36,11 @@ public class Target {
         Target.id = id;
     }
 
-    public static List<String> getEntries() {
+    public static String[] getEntries() {
         return entries;
     }
 
-    public static void setEntries(String entries) {
-        Target.entries.add(entries);
+    public static void setEntries(String[] entries) {
+        Target.entries = entries;
     }
 }
