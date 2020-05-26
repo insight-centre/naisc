@@ -25,7 +25,7 @@ public class Automatic implements GraphFeatureFactory {
 
     @Override
     public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params,
-            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking, NaiscListener listener) {
+            Lazy<Analysis> analysis, AlignmentSet prelinking, NaiscListener listener) {
         listener.message(NaiscListener.Stage.INITIALIZING, NaiscListener.Level.INFO, "Automatically configuring graph features");
         Analysis _analysis = analysis.get();
         List<Pair<String,String>> propMatches = new ArrayList<>();
@@ -44,7 +44,7 @@ public class Automatic implements GraphFeatureFactory {
         }
         boolean pprAnalysis = false;
         if(_analysis.isWellConnected()) {
-            AlignmentSet as = prelinking.get();
+            AlignmentSet as = prelinking;
             if(as.size() > 10) {
                 pprAnalysis = true;
             }

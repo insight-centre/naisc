@@ -83,6 +83,7 @@ public class MainTest {
             new Configuration.MatcherConfiguration("matcher.Threshold", new HashMap<>()),
             "test case", null);
         config.includeFeatures = true;
+        config.noPrematching = true;
         AlignmentSet align = Main.execute("test", leftDataset, rightDataset, config, new None<>(), ExecuteListeners.NONE,
             null, null, new DefaultDatasetLoader());
         String text = new ObjectMapper().writeValueAsString(align);

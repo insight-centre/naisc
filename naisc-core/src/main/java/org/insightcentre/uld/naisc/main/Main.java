@@ -260,7 +260,7 @@ public class Main {
                 blocks = _blocks;
             }
             monitor.updateStatus(Stage.INITIALIZING, "Loading Graph Extractors");
-            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocks, leftModel, rightModel));
+            AlignmentSet prematch = new Prematcher().prematch(blocks, leftModel, rightModel);
             List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
             monitor.updateStatus(Stage.SCORING, "Scoring");
@@ -273,61 +273,66 @@ public class Main {
             boolean blocksEmpty = true;
             for (Blocking block : blocks) {
                 blocksEmpty = false;
-                executor.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        Resource block1 = block.asJena1(leftModel), block2 = block.asJena2(rightModel);
-                        try {
-                            if (block1.getURI() == null || block1.getURI().equals("")
-                                    || block2.getURI() == null || block2.getURI().equals("")) {
-                                System.err.println(block1);
-                                System.err.println(block2);
-                                throw new RuntimeException("URIRes without URI");
-                            }
-                            monitor.addBlock(block.entity1, block.entity2);
-                            int c = count.incrementAndGet();
-                            if (c % 1000 == 0) {
-                                monitor.updateStatus(Stage.SCORING, "Scoring (" + c + " done)");
-                            }
-                            FeatureSet featureSet = new FeatureSet();
-                            boolean labelsProduced = false;
-                            for (Lens lens : lenses) {
-                                for(LensResult facet : lens.extract(block.entity1, block.entity2, monitor)) {
-                                    labelsProduced = true;
-                                    monitor.addLensResult(block.entity1, block.entity2, facet.tag, facet);
-                                    for (TextFeature featureExtractor : textFeatures) {
-                                        if (featureExtractor.tags() == null || facet.tag == null
-                                                || featureExtractor.tags().contains(facet.tag)) {
-                                            Feature[] features = featureExtractor.extractFeatures(facet, monitor);
-                                            featureSet = featureSet.add(new FeatureSet(features,
-                                                    facet.tag));
+                String property = config.noPrematching ? null : prematch.findLink(block.entity1, block.entity2);
+                if(property != null) {
+                    alignments.add(new TmpAlignment(block.entity1, block.entity2, ScoreResult.fromDouble(1.0), property, null));
+                } else {
+                    executor.submit(new Runnable() {
+                        @Override
+                        public void run() {
+                            Resource block1 = block.asJena1(leftModel), block2 = block.asJena2(rightModel);
+                            try {
+                                if (block1.getURI() == null || block1.getURI().equals("")
+                                        || block2.getURI() == null || block2.getURI().equals("")) {
+                                    System.err.println(block1);
+                                    System.err.println(block2);
+                                    throw new RuntimeException("URIRes without URI");
+                                }
+                                monitor.addBlock(block.entity1, block.entity2);
+                                int c = count.incrementAndGet();
+                                if (c % 1000 == 0) {
+                                    monitor.updateStatus(Stage.SCORING, "Scoring (" + c + " done)");
+                                }
+                                FeatureSet featureSet = new FeatureSet();
+                                boolean labelsProduced = false;
+                                for (Lens lens : lenses) {
+                                    for(LensResult facet : lens.extract(block.entity1, block.entity2, monitor)) {
+                                        labelsProduced = true;
+                                        monitor.addLensResult(block.entity1, block.entity2, facet.tag, facet);
+                                        for (TextFeature featureExtractor : textFeatures) {
+                                            if (featureExtractor.tags() == null || facet.tag == null
+                                                    || featureExtractor.tags().contains(facet.tag)) {
+                                                Feature[] features = featureExtractor.extractFeatures(facet, monitor);
+                                                featureSet = featureSet.add(new FeatureSet(features,
+                                                        facet.tag));
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            if (!labelsProduced) {
-                                monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block1, block2));
+                                if (!labelsProduced) {
+                                    monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block1, block2));
+                                }
+                                for (GraphFeature feature : dataFeatures) {
+                                    Feature[] features = feature.extractFeatures(block.entity1, block.entity2, monitor);
+                                    featureSet = featureSet.add(new FeatureSet(features, feature.id()));
+                                }
+                                if (featureSet.isEmpty()) {
+                                    monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "An empty feature set was created");
+                                }
+                                for (Scorer scorer : scorers) {
+                                    ScoreResult score = scorer.similarity(featureSet, monitor);
+                                    alignments.add(new TmpAlignment(block.entity1, block.entity2, score, scorer.relation(), config.includeFeatures ? featureSet : null));
+                                }
+                            } catch (Exception x) {
+                                monitor.updateStatus(Stage.FAILED, String.format("Failed to get probability %s <-> %s due to %s (%s)\n", block1, block2, x.getMessage(), x.getClass().getName()));
+                                x.printStackTrace();
+
                             }
-                            for (GraphFeature feature : dataFeatures) {
-                                Feature[] features = feature.extractFeatures(block.entity1, block.entity2, monitor);
-                                featureSet = featureSet.add(new FeatureSet(features, feature.id()));
-                            }
-                            if (featureSet.isEmpty()) {
-                                monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "An empty feature set was created");
-                            }
-                            for (Scorer scorer : scorers) {
-                                ScoreResult score = scorer.similarity(featureSet, monitor);
-                                alignments.add(new TmpAlignment(block.entity1, block.entity2, score, scorer.relation(), config.includeFeatures ? featureSet : null));
-                            }
-                        } catch (Exception x) {
-                            monitor.updateStatus(Stage.FAILED, String.format("Failed to get probability %s <-> %s due to %s (%s)\n", block1, block2, x.getMessage(), x.getClass().getName()));
-                            x.printStackTrace();
 
                         }
-
-                    }
-                });
+                    });
+                }
             }
             executor.shutdown();
             executor.awaitTermination(30, TimeUnit.DAYS);
@@ -343,6 +348,7 @@ public class Main {
             }
 
             AlignmentSet alignmentSet = convertAligns(alignments, rescaler);
+            System.err.println(alignmentSet);
 
             monitor.updateStatus(Stage.MATCHING, "Matching");
             if (partialSoln.has()) {

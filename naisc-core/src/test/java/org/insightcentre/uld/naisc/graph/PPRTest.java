@@ -66,9 +66,8 @@ public class PPRTest {
         Dataset sparqlData = new ModelDataset(model, "model");
         Map<String, Object> params = new HashMap<>();
         Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model, "model"), new ModelDataset(model, "model")));
-        Lazy<AlignmentSet> prelinking = Lazy.fromClosure(() -> prealign);
         PPR instance = new PPR();
-        GraphFeature feat = instance.makeFeature(sparqlData, params, analysis, prelinking, ExecuteListeners.NONE);
+        GraphFeature feat = instance.makeFeature(sparqlData, params, analysis, prealign, ExecuteListeners.NONE);
         Feature[] result = feat.extractFeatures(new URIRes("file:foo2", "model"), new URIRes("file:bar2", "model"));
         double[] expResult = new double[]{0.113};
         assertArrayEquals(expResult, toDbA(result), 0.01);

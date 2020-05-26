@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.util.Some;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A set of alignments
@@ -34,7 +35,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
      * Get an alignment if it is in this set
      * @param id1 The left element that is aligned
      * @param id2 The right element that is aligned
-     * @param property The property to matche
+     * @param property The property to match
      * @return The alignments between these elements
      */
     public Option<Alignment> find(URIRes id1, URIRes id2, String property) {
@@ -80,6 +81,26 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
             }
         }
         return false;
+    }
+
+    /**
+     * Find the link between two elements
+     *
+     * @param id1 The left id
+     * @param id2 The right id
+     * @return A property linking two resources or null if none is found
+     */
+    public @Nullable String findLink(URIRes id1, URIRes id2) {
+        if(index == null) {
+            buildIndex();
+        }
+        for(Map<Pair<URIRes,URIRes>, Alignment> byPair : index.values()) {
+            final Pair<URIRes, URIRes> sp = new Pair<>(id1, id2);
+            if(byPair.containsKey(sp)) {
+                return byPair.get(sp).property;
+            }
+        }
+        return null;
     }
 
         /**

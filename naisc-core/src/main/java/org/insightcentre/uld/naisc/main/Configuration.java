@@ -131,6 +131,11 @@ public class Configuration {
      */
     public boolean ignorePreexisting = false;
 
+    /**
+     * Do not force the matching of unique pairs; Match all elements.
+     */
+    public boolean noPrematching = false;
+
     @JsonCreator
     public Configuration(
             @JsonProperty("blocking") BlockingStrategyConfiguration blocking,
@@ -164,7 +169,7 @@ public class Configuration {
     }
 
     public List<GraphFeature> makeGraphFeatures(Dataset model, Lazy<Analysis> analysis,
-            Lazy<AlignmentSet> prelinking, NaiscListener listener) {
+            AlignmentSet prelinking, NaiscListener listener) {
         List<GraphFeature> extractors = new ArrayList<>();
         for (GraphFeatureConfiguration config : graphFeatures) {
             GraphFeatureFactory extractor = Services.get(GraphFeatureFactory.class, config.name);
