@@ -72,7 +72,7 @@ public class CrossFoldTest {
         alignments.add(new Alignment(r("file:left#e3"), r("file:right#e3"), 1.0, SKOS_EXACT_MATCH, null));
         alignments.add(new Alignment(r("file:left#e4"), r("file:right#e4"), 1.0, SKOS_EXACT_MATCH, null));
         int folds = 4;
-        CrossFold.Folds result = CrossFold.splitDataset(alignments, folds);
+        CrossFold.Folds result = CrossFold.splitDataset(alignments, folds, CrossFold.FoldDirection.both);
         assertEquals(folds,result.leftSplit.size());
         assertEquals(folds,result.rightSplit.size());
         for(int i = 0 ; i < folds; i++) {
@@ -94,7 +94,7 @@ public class CrossFoldTest {
             
         }
         int folds = 10;
-        CrossFold.Folds result = CrossFold.splitDataset(alignments, folds);
+        CrossFold.Folds result = CrossFold.splitDataset(alignments, folds, CrossFold.FoldDirection.both);
         assertEquals(folds,result.leftSplit.size());
         assertEquals(folds,result.rightSplit.size());
         for(int i = 0 ; i < folds; i++) {

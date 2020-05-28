@@ -30,8 +30,11 @@ public class ExecutionTask implements Runnable {
     private final ExecutionMode mode;
     private final String requestURL;
     private final Option<AlignmentSet> userAligns;
+    private final int nFolds;
+    private final CrossFold.FoldDirection direction;
 
-    public ExecutionTask(Configuration config, String configName, String dataset, String id, ExecutionMode mode, String requestURL, Option<AlignmentSet> userAligns) {
+    public ExecutionTask(Configuration config, String configName, String dataset, String id, ExecutionMode mode,
+                         String requestURL, Option<AlignmentSet> userAligns, int nFolds, CrossFold.FoldDirection direction) {
         this.config = config;
         this.dataset = dataset;
         this.id = id;
@@ -41,6 +44,8 @@ public class ExecutionTask implements Runnable {
         this.mode = mode;
         this.requestURL = requestURL;
         this.userAligns = userAligns;
+        this.nFolds = nFolds;
+        this.direction = direction;
     }
 
     @Override
@@ -99,7 +104,7 @@ public class ExecutionTask implements Runnable {
                 if (!alignFile.has()) {
                     throw new IllegalArgumentException("Cross-fold was requesetd on run with no gold standard alignments");
                 }
-                CrossFold.CrossFoldResult result = CrossFold.execute(id, ds.left(), ds.right(), alignFile.get(), 10, 5.0, config, listener, loader);
+                CrossFold.CrossFoldResult result = CrossFold.execute(id, ds.left(), ds.right(), alignFile.get(), nFolds, direction, 5.0, config, listener, loader);
                 time = System.currentTimeMillis() - time;
                 er = result.results;
                 alignment = result.alignments;
