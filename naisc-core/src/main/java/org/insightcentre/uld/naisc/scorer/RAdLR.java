@@ -52,7 +52,7 @@ public class RAdLR implements ScorerFactory {
     }
 
     @Override
-    public List<Scorer> makeScorer(Map<String, Object> params, File modelFile) {
+    public Scorer makeScorer(Map<String, Object> params, File modelFile) {
         SimpleModule simpleModule = new SimpleModule();
         simpleModule.addKeyDeserializer(StringPair.class, new StdKeyDeserializer(0, StringPair.class) {
             @Override
@@ -68,20 +68,18 @@ public class RAdLR implements ScorerFactory {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(simpleModule);
         //Configuration config = mapper.convertValue(params, Configuration.class);
-        final List<Scorer> scorers = new ArrayList<>();
+        final Scorer scorer;
         if (modelFile == null || !modelFile.exists()) {
-            scorers.add(new RAdLRImpl(new RAdLRModel()));
+            scorer = new RAdLRImpl(Collections.singletonList(new RAdLRModel()));
         } else {
             try {
                 List<RAdLRModel> models = mapper.readValue(modelFile, mapper.getTypeFactory().constructCollectionLikeType(List.class, RAdLRModel.class));
-                for (RAdLRModel model : models) {
-                    scorers.add(new RAdLRImpl(model));
-                }
+                scorer = new RAdLRImpl(models);
             } catch (IOException x) {
                 throw new RuntimeException(x);
             }
         }
-        return scorers;
+        return scorer;
     }
 
     @Override
@@ -117,10 +115,8 @@ public class RAdLR implements ScorerFactory {
 
         }
 
-        public void save(String property, RAdLRModel model) throws IOException {
-            models.put(property, model);
-            List<RAdLRModel> modelList = new ArrayList<>(models.values());
-            mapper.writeValue(modelFile, modelList);
+        public void save(String property, List<RAdLRModel> models) throws IOException {
+            mapper.writeValue(modelFile, models);
         }
     }
 
@@ -157,14 +153,16 @@ public class RAdLR implements ScorerFactory {
 
     private static class RAdLRImpl implements Scorer {
 
-        private final RAdLRModel model;
+        private final List<RAdLRModel> models;
 
-        public RAdLRImpl(RAdLRModel model) {
-            this.model = model;
+        public RAdLRImpl(List<RAdLRModel> models) {
+            this.models = models;
         }
 
         @Override
-        public ScoreResult similarity(FeatureSet features, NaiscListener log) {
+        public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) {
+            List<ScoreResult> results = new ArrayList<>();
+            for(RAdLRModel model : models) {
             DoubleList weights = new DoubleArrayList(features.names.length);
             double[] result = new double[features.names.length];
             LogGap[] loggaps = new LogGap[features.names.length];
@@ -187,15 +185,12 @@ public class RAdLR implements ScorerFactory {
                 }
             }
             if (allComplete) {
-                return ScoreResult.fromDouble(new LogGapScorer(result, weights, model, loggaps).value());
+                results.add(ScoreResult.fromDouble(new LogGapScorer(result, weights, model, loggaps, model.property).value(), model.property));
             } else {
-                return new LogGapScorer(result, weights, model, loggaps);
+                results.add(new LogGapScorer(result, weights, model, loggaps, model.property));
             }
-        }
-
-        @Override
-        public String relation() {
-            return model.property;
+            }
+            return results;
         }
 
         @Override
@@ -210,12 +205,14 @@ public class RAdLR implements ScorerFactory {
         private final DoubleList weights;
         private final RAdLRModel model;
         private final LogGap[] feats;
+        private final String relation;
 
-        public LogGapScorer(double[] features, DoubleList weights, RAdLRModel model, LogGap[] feats) {
+        public LogGapScorer(double[] features, DoubleList weights, RAdLRModel model, LogGap[] feats, String relation) {
             this.features = features;
             this.weights = weights;
             this.model = model;
             this.feats = feats;
+            this.relation = relation;
         }
 
         @Override
@@ -234,6 +231,10 @@ public class RAdLR implements ScorerFactory {
            return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
         }
 
+        @Override
+        public String relation() {
+            return relation;
+        }
     }
 
     private static class RAdLRTrainer implements ScorerTrainer {
@@ -315,7 +316,7 @@ public class RAdLR implements ScorerFactory {
                 model.feats.put(e.getKey(), logGaps[e.getIntValue()].toModel(100));
             }
 
-            return new RAdLRImpl(model);
+            return new RAdLRImpl(Collections.singletonList(model));
         }
 
         @Override
@@ -330,7 +331,7 @@ public class RAdLR implements ScorerFactory {
         @Override
         public void save(Scorer scorer) throws IOException {
             if (scorer instanceof RAdLRImpl) {
-                serializer.save(model.property, ((RAdLRImpl) scorer).model);
+                serializer.save(model.property, ((RAdLRImpl) scorer).models);
             } else {
                 throw new IllegalArgumentException("RAdLR cannot serialize models not created by RAdLR");
             }
