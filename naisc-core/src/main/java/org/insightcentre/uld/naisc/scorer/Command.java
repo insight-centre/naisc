@@ -58,12 +58,12 @@ public class Command implements ScorerFactory {
     }
 
     @Override
-    public List<Scorer> makeScorer(Map<String, Object> params, File modelPath) {
+    public Scorer makeScorer(Map<String, Object> params, File modelPath) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if (config.command == null) {
             throw new ConfigurationException("Command cannot be null");
         }
-        return Collections.singletonList(new CommandImpl(modelPath == null ? config.command : config.command.replace("$MODEL_PATH", modelPath.getAbsolutePath()), config.property));
+        return new CommandImpl(modelPath == null ? config.command : config.command.replace("$MODEL_PATH", modelPath.getAbsolutePath()), config.property);
     }
 
     @Override
@@ -142,20 +142,15 @@ public class Command implements ScorerFactory {
         }
 
         @Override
-        public ScoreResult similarity(FeatureSet features, NaiscListener log) {
+        public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) {
             try {
                 out.get().println(mapper.writeValueAsString(features.values));
                 out.get().flush();
                 String line = in.get().readLine();
-                return ScoreResult.fromDouble(Double.parseDouble(line.trim()));
+                return Collections.singletonList(ScoreResult.fromDouble(Double.parseDouble(line.trim()), relation));
             } catch (IOException x) {
                 throw new RuntimeException(x);
             }
-        }
-
-        @Override
-        public String relation() {
-            return relation;
         }
 
         @Override

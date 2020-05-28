@@ -69,13 +69,13 @@ public class LibSVM implements ScorerFactory {
     private static ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
-    public List<Scorer> makeScorer(Map<String, Object> params, File objectFile) {
+    public Scorer makeScorer(Map<String, Object> params, File objectFile) {
         Configuration config = mapper.convertValue(params, Configuration.class);
         if (!objectFile.exists()) {
             throw new ConfigurationException("Model file does not exist. (Perhaps you need to train this model?)");
         }
         try {
-            return Collections.singletonList(load(objectFile, config));
+            return load(objectFile, config);
         } catch (IOException x) {
             throw new ConfigurationException(x);
         }
@@ -370,12 +370,7 @@ public class LibSVM implements ScorerFactory {
         boolean checkedFeatures = false;
 
         @Override
-        public String relation() {
-            return relation;
-        }
-
-        @Override
-        public ScoreResult similarity(FeatureSet features, NaiscListener log) {
+        public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) {
             final svm_problem instances = makeInstances(features);
             final Instance instance = buildInstance(features, 0.0, instances);
             if (features.names.length != featNames.length) {
@@ -400,7 +395,7 @@ public class LibSVM implements ScorerFactory {
                 double[] prob_estimates = new double[totalClasses];
                 svm.svm_predict_probability(classifier, instance.x, prob_estimates);
                 double sim = prob_estimates[0];
-                return ScoreResult.fromDouble(sim);
+                return Collections.singletonList(ScoreResult.fromDouble(sim, relation));
             } catch (IndexOutOfBoundsException x) {
                 throw new RuntimeException("Length of test-time vector is not the same as train. Please retrain the model for this configuration", x);
             } catch (Exception x) {

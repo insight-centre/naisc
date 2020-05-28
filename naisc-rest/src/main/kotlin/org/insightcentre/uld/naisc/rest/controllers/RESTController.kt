@@ -101,8 +101,9 @@ class RESTController {
             val scorers = ConfigurationManager.getScorer(config)
             val features = FeatureSet(body)
             val scores = mutableListOf<Score>()
-            for(s in scorers) {
-                scores.add(Score(s.relation(),s.similarity(features).value()))
+            val sims = scorers.similarity(features)
+            for(sim in sims) {
+                scores.add(Score(sim.relation(), sim.value()))
             }
             return Response.ok().entity(scores).build()
         } catch(x : Exception) {

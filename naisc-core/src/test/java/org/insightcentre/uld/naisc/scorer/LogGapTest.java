@@ -3,6 +3,7 @@ package org.insightcentre.uld.naisc.scorer;
 import java.util.Arrays;
 import java.util.Random;
 
+import org.apache.jena.vocabulary.SKOS;
 import org.insightcentre.uld.naisc.ScoreResult;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -66,7 +67,7 @@ public class LogGapTest {
         System.out.println("result");
         double d = 0.0;
         LogGap instance = new LogGap();
-        ScoreResult result = instance.result(d);
+        ScoreResult result = instance.result(d, SKOS.exactMatch.getURI());
     }
 
     /**

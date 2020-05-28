@@ -241,7 +241,7 @@ public class Main {
             List<TextFeature> textFeatures = config.makeTextFeatures();
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Scorers");
-            List<Scorer> scorers = config.makeScorer();
+            Scorer scorer = config.makeScorer();
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Matcher");
             Matcher matcher = config.makeMatcher();
@@ -252,7 +252,7 @@ public class Main {
             Collection<Blocking> _blocks = blocking.block(leftModel, rightModel, monitor);
             final Collection<Blocking> blocks;
             if (config.ignorePreexisting) {
-                _blocks = ExistingLinks.filterBlocking(_blocks, ExistingLinks.findPreexisting(scorers, leftModel, rightModel));
+                _blocks = ExistingLinks.filterBlocking(_blocks, ExistingLinks.findPreexisting(leftModel, rightModel));
             }
             if (left != null && right != null) {
                 blocks = new FilterBlocks(_blocks, left, right);
@@ -275,7 +275,7 @@ public class Main {
                 blocksEmpty = false;
                 String property = config.noPrematching ? null : prematch.findLink(block.entity1, block.entity2);
                 if(property != null) {
-                    alignments.add(new TmpAlignment(block.entity1, block.entity2, ScoreResult.fromDouble(1.0), property, null));
+                    alignments.add(new TmpAlignment(block.entity1, block.entity2, ScoreResult.fromDouble(1.0, property), property, null));
                 } else {
                     executor.submit(new Runnable() {
                         @Override
@@ -320,9 +320,9 @@ public class Main {
                                 if (featureSet.isEmpty()) {
                                     monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "An empty feature set was created");
                                 }
-                                for (Scorer scorer : scorers) {
-                                    ScoreResult score = scorer.similarity(featureSet, monitor);
-                                    alignments.add(new TmpAlignment(block.entity1, block.entity2, score, scorer.relation(), config.includeFeatures ? featureSet : null));
+                                List<ScoreResult> scores = scorer.similarity(featureSet, monitor);
+                                for(ScoreResult score : scores) {
+                                    alignments.add(new TmpAlignment(block.entity1, block.entity2, score, score.relation(), config.includeFeatures ? featureSet : null));
                                 }
                             } catch (Exception x) {
                                 monitor.updateStatus(Stage.FAILED, String.format("Failed to get probability %s <-> %s due to %s (%s)\n", block1, block2, x.getMessage(), x.getClass().getName()));
@@ -343,9 +343,7 @@ public class Main {
                 monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "Failed to extract any pairs!");
             }
 
-            for (Scorer scorer : scorers) {
-                scorer.close();
-            }
+            scorer.close();
 
             AlignmentSet alignmentSet = convertAligns(alignments, rescaler);
 

@@ -28,7 +28,7 @@ object ConfigurationManager {
     private val lenses = mutableMapOf<ConfigDataset, List<Lens>>()
     private val graphFeatures = mutableMapOf<ConfigDataset, List<GraphFeature>>()
     private val textFeatures = mutableMapOf<String, List<TextFeature>>()
-    private val scorers = mutableMapOf<String, List<Scorer>>()
+    private val scorers = mutableMapOf<String, Scorer>()
     private val matchers = mutableMapOf<String, Matcher>()
 
     @Throws(InvalidConfigurationException::class)
@@ -131,7 +131,7 @@ object ConfigurationManager {
     }
 
     @Throws(InvalidConfigurationException::class)
-    fun getScorer(configuration: String) : List<Scorer> {
+    fun getScorer(configuration: String) : Scorer {
         val cacheScorer = scorers.get(configuration)
         if (cacheScorer != null) {
             return cacheScorer
