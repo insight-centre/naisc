@@ -26,7 +26,6 @@ public class LabelResult {
     }
     
     public boolean isLabelLike() {
-        //System.err.printf("%s cov:%.4f uniq:%.4f nll:%.4f dp:%s\n", uri, coverage, uniqueness, naturalLangLike, isDataProperty);
         return this.coverage > 0.5 && this.uniqueness > 0.5 && this.isDataProperty && this.naturalLangLike > 0.5;
     }
     

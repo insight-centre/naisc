@@ -348,7 +348,6 @@ public class Main {
             }
 
             AlignmentSet alignmentSet = convertAligns(alignments, rescaler);
-            System.err.println(alignmentSet);
 
             monitor.updateStatus(Stage.MATCHING, "Matching");
             if (partialSoln.has()) {

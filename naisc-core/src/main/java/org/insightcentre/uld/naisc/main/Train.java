@@ -114,9 +114,6 @@ public class Train {
             DatasetLoader loader, @Nullable String tag) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
         final Configuration config = mapper.readValue(configuration, Configuration.class);
-        if (config.scorers.size() >= 1) {
-            System.err.println("modelFile=" + config.scorers.get(0).modelFile);
-        }
         execute(name, leftFile, rightFile, alignment, negativeSampling, config, monitor, loader, tag);
     }
 

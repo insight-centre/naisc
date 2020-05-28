@@ -134,9 +134,6 @@ public class LibSVM implements ScorerFactory {
             double[] v = new double[instances.x.length];
             for (int j = 0; j < instances.x.length; j++) {
                 v[j] = instances.x[j][i].value;
-//                if(!Double.isNaN(v[j]) || v[j] < -1e9 || v[j] > 1e9) {
-//                    System.err.println(String.format("%d %d %f", i, j, v[j]));
-//                }
             }
             double c = corr.correlation(sim, v);
             if (Double.isNaN(c)) {
@@ -213,19 +210,6 @@ public class LibSVM implements ScorerFactory {
             }
 
             svm_parameter param = makeParameters();
-            //final Classifier classifier = loadClassifier(config);
-            /*if (config.arffFile != null) {
-            final File arffFile = new File(config.arffFile);
-            final ArffSaver saver = new ArffSaver();
-            saver.setInstances(instances);
-            try {
-                System.err.println(String.format("Saving features to %s", arffFile.getPath()));
-                saver.setFile(arffFile);
-                saver.writeBatch();
-            } catch (IOException x) {
-                x.printStackTrace();
-            }
-        }*/
 
             libsvm.svm_model model;
             try {

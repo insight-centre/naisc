@@ -107,7 +107,6 @@ public class Command implements TextFeatureFactory {
                         if (line == null) {
                             String eline = err.readLine();
                             while (eline != null) {
-                                System.err.println(eline);
                                 eline = err.readLine();
                             }
                             throw new RuntimeException("Command failed to start");

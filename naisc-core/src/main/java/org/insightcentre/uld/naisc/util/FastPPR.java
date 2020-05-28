@@ -514,7 +514,6 @@ public class FastPPR {
                 reverseSteps += 1;
             }
         }
-        //System.err.printf("Total reverse steps: %d\n", reverseSteps);
         final float pprErrorTolerance;
 
         if (inversePPRResiduals.isEmpty()) {
