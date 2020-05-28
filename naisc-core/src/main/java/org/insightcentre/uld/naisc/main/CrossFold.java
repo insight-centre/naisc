@@ -387,7 +387,6 @@ public class CrossFold {
                 if (fold1 == fold2) {
                     throw new RuntimeException();
                 }
-                //System.err.println(String.format("Swapping %d with %d", l, best));
                 inlinks += dinlinks[best];
                 precision = (double) inlinks / alllinks;
                 leftFolds[fold1].remove(l);

@@ -116,7 +116,6 @@ public class BeamSearch implements MatcherFactory {
                             ts.add(alignment);
                             beam.insert(ts, ts.score);
                             if (ts.complete() && (bestValid == null || bestValid.score < ts.score)) {
-                                //System.err.println("Score: " + ts.probability);
                                 bestValid = ts.copy();
                             }
                         }

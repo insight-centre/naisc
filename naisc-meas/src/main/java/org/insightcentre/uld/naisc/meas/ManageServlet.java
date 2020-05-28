@@ -174,7 +174,6 @@ public class ManageServlet extends HttpServlet {
             String id = path.substring(8);
             if (id.matches(VALID_ID)) {
                 AddRemoveData data = mapper.readValue(req.getReader(), AddRemoveData.class);
-                System.err.println(data);
                 Run oldRun = getOldRun(data.data, id);
                 if (oldRun != null) {
                     Run run = new Meas.Run(data.data.identifier, oldRun.configName, oldRun.datasetName, data.data.precision, data.data.recall, data.data.fmeasure, -2, oldRun.time, oldRun.isTrain);

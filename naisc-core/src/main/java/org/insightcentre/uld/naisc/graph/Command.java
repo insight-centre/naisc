@@ -120,7 +120,6 @@ public class Command implements GraphFeatureFactory {
                         if (line == null) {
                             String eline = err.get().readLine();
                             while (eline != null) {
-                                System.err.println(eline);
                                 eline = err.get().readLine();
                             }
                             throw new RuntimeException("Command failed to start");

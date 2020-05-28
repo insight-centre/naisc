@@ -254,17 +254,14 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             for (String r : labels) {
                 for (int i = 0; i < Math.min(100,r.length()) - n + 1; i++) {
                     String ng = r.substring(i, i + n);
-                    //System.err.print(ng);
                     Map<Resource, FreqLen> ngs = ngrams.get(ng);
                     if (ngs != null) {
-                        //System.err.printf(" %d", ngs.size());
                         for (Map.Entry<Resource, FreqLen> e : ngs.entrySet()) {
                             if(reps.getInt(ng) < e.getValue().freq)
                                 freqsFinal.put(e.getKey(), freqsFinal.getDouble(e.getKey()) + 1.0 / (e.getValue().len + r.length()));
                         }
                             reps.put(ng, reps.getInt(ng) + 1);
                     }
-                    //System.err.println();
                 }
             }
             List<Resource> resList = new ArrayList<>(freqsFinal.keySet());

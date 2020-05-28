@@ -156,7 +156,6 @@ public class UniqueAssignment implements MatcherFactory {
                         }
                     }
                 }
-                //System.err.printf("Produced %d matches from %d x %d (%s)\n", alignmentSet.size(), lefts.size(), rights.size(), rel);
             }
             alignmentSet.addAll(initial);
             return new AlignmentSet(alignmentSet);
@@ -228,7 +227,6 @@ public class UniqueAssignment implements MatcherFactory {
 //    private final List<IntPair> shadow_zeros;
 
         public MunkRes(Mat matrix) {
-            //System.err.printf("Starting MunkRes with %d x %d matrix\n", matrix.M(), matrix.N());
             final int N;
             if (matrix.M() == matrix.N()) {
                 this.matrix = matrix;
@@ -323,7 +321,6 @@ public class UniqueAssignment implements MatcherFactory {
                 }
             }
 
-            //System.err.printf("MunkRes returned %d alignments\n", starred.size());
             return starred;
         }
 //    def munkres(self):
