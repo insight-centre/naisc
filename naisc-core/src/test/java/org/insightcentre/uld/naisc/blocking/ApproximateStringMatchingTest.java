@@ -10,6 +10,7 @@ import java.util.Random;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.vocabulary.RDF;
 import org.insightcentre.uld.naisc.Blocking;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.NaiscListener;
@@ -309,5 +310,31 @@ public class ApproximateStringMatchingTest {
         Iterator<Blocking> result = strat.block(new ModelDataset(left,"left"), new ModelDataset(right,"right")).iterator();
         assert(result.hasNext());
         assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id6"), "left", "right"), result.next());
+    }
+
+    @Test
+    public void testTypedMatching() {
+        ApproximateStringMatching asm = new ApproximateStringMatching();
+        Map<String, Object> config = new HashMap<>();
+        config.put("maxMatches", 100);
+        config.put("lowercase", true);
+        config.put("type", "file:Test");
+        BlockingStrategy strat = asm.makeBlockingStrategy(config, Lazy.fromClosure(() -> null), NaiscListener.DEFAULT);
+        Model left = ModelFactory.createDefaultModel();
+        left.add(left.createResource("file:id1"), left.createProperty(Label.RDFS_LABEL), left.createLiteral("frontal artery"));
+        left.add(left.createResource("file:id1"), RDF.type, left.createResource("file:Test"));
+        Model right = ModelFactory.createDefaultModel();
+        right.add(right.createResource("file:id1"), right.createProperty(Label.RDFS_LABEL), "Frontal Lobe");
+        right.add(right.createResource("file:id2"), right.createProperty(Label.RDFS_LABEL), "Frontal Bone");
+        right.add(right.createResource("file:id3"), right.createProperty(Label.RDFS_LABEL), "Frontal Sinus");
+        right.add(right.createResource("file:id4"), right.createProperty(Label.RDFS_LABEL), "Frontal Gyrus");
+        right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Frontal Nerve");
+        right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Frontal Artery");
+        right.add(right.createResource("file:id6"), RDF.type, right.createResource("file:Test"));
+        Iterator<Blocking> result = strat.block(new ModelDataset(left,"left"), new ModelDataset(right,"right")).iterator();
+        assert(result.hasNext());
+        assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id6"), "left", "right"), result.next());
+        assert(!result.hasNext());
+
     }
 }

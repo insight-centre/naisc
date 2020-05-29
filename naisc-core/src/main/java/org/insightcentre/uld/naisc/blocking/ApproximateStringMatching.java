@@ -1,5 +1,7 @@
 package org.insightcentre.uld.naisc.blocking;
 
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.vocabulary.RDF;
 import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.TreeNode;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
@@ -11,11 +13,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.util.*;
 
-import org.apache.jena.rdf.model.NodeIterator;
-import org.apache.jena.rdf.model.Property;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.ResIterator;
-import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
@@ -56,7 +53,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             case levenshtein:
                 return new LevenshteinApproximateStringMatch(config.maxMatches, config.property, config.rightProperty, config.queueMax, config.lowercase);
             case ngrams:
-                return new NgramApproximateStringMatch(config.maxMatches, config.property, config.rightProperty, config.ngrams, config.lowercase);
+                return new NgramApproximateStringMatch(config.maxMatches, config.property, config.rightProperty, config.ngrams, config.lowercase, config.type);
             default:
                 throw new RuntimeException("Unreachable");
         }
@@ -96,9 +93,13 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
          * Lowercase all strings
          */
         public boolean lowercase = true;
+        /**
+         * Type of the element. If set all matched elements are of rdf:type with this URI
+         */
+        public String type = null;
     }
 
-    public static enum StringMetric {
+    public enum StringMetric {
         levenshtein,
         ngrams
     }
@@ -111,8 +112,9 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         private final int n;
         private final Set<Resource> leftPreBlocks, rightPreBlocks;
         private final boolean lowercase;
+        private final String type;
 
-        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n, boolean lowercase) {
+        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n, boolean lowercase, String type) {
             this.maxMatches = maxMatches;
             this.property = property;
             this.rightProperty = rightProperty;
@@ -120,9 +122,10 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             this.leftPreBlocks = Collections.EMPTY_SET;
             this.rightPreBlocks = Collections.EMPTY_SET;
             this.lowercase = lowercase;
+            this.type = type;
         }
 
-        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n, Set<Resource> leftPreBlocks, Set<Resource> rightPreBlocks, boolean lowercase) {
+        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n, Set<Resource> leftPreBlocks, Set<Resource> rightPreBlocks, boolean lowercase, String type) {
             this.maxMatches = maxMatches;
             this.property = property;
             this.rightProperty = rightProperty;
@@ -130,10 +133,17 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             this.leftPreBlocks = leftPreBlocks;
             this.rightPreBlocks = rightPreBlocks;
             this.lowercase = lowercase;
+            this.type = type;
+        }
+
+        private boolean hasType(Dataset ds, Resource r, Resource type) {
+            return ds.listStatements(r, RDF.type, type).hasNext();
         }
 
         @Override
         public Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log) {
+            final Resource leftType = type == null ? null : left.createResource(type);
+            final Resource rightType = type == null ? null : right.createResource(type);
             final List<Resource> lefts = new ArrayList<>();
             final ResIterator leftIter;
             if (property.equals("")) {
@@ -143,7 +153,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             }
             while (leftIter.hasNext()) {
                 Resource r = leftIter.next();
-                if (r.isURIResource()) {
+                if (r.isURIResource() && (type == null || hasType(left, r, leftType))) {
                     lefts.add(r);
                 }
             }
@@ -161,7 +171,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             }
             while (rightIter.hasNext()) {
                 Resource r = rightIter.next();
-                if (r.isURIResource()) {
+                if (r.isURIResource() && (type == null || hasType(right, r, rightType))) {
                     rights.add(r);
                 }
             }

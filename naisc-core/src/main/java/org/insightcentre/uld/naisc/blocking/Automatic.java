@@ -125,7 +125,7 @@ public class Automatic implements BlockingStrategyFactory {
             final ApproximateStringMatching.NgramApproximateStringMatch matcher = 
                     new ApproximateStringMatching.NgramApproximateStringMatch(
                             maxMatches, property, rightProperty, n, 
-                            Prelinking.leftPrelinked(p), Prelinking.rightPrelinked(p), true);
+                            Prelinking.leftPrelinked(p), Prelinking.rightPrelinked(p), true, null);
             final Iterable<Blocking> base = matcher.block(left, right, log);
             return new AbstractCollection<Blocking>() {
                 @Override
