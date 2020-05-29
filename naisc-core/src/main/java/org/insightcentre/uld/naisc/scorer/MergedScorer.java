@@ -22,7 +22,7 @@ public class MergedScorer implements Scorer {
     }
 
     @Override
-    public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) {
+    public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) throws ModelNotTrainedException{
         List<ScoreResult> results = new ArrayList<>();
         results.addAll(scorer1.similarity(features, log));
         results.addAll(scorer2.similarity(features, log));

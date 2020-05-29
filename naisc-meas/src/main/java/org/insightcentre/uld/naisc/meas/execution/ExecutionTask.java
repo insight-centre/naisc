@@ -2,6 +2,7 @@ package org.insightcentre.uld.naisc.meas.execution;
 
 import java.io.File;
 import org.insightcentre.uld.naisc.AlignmentSet;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.main.Configuration;
 import org.insightcentre.uld.naisc.main.CrossFold;
 import org.insightcentre.uld.naisc.main.Evaluate;
@@ -12,6 +13,7 @@ import org.insightcentre.uld.naisc.EvaluationSet;
 import org.insightcentre.uld.naisc.meas.ManageServlet;
 import org.insightcentre.uld.naisc.meas.Meas;
 import org.insightcentre.uld.naisc.meas.MeasDatasetLoader;
+import org.insightcentre.uld.naisc.scorer.ModelNotTrainedException;
 import org.insightcentre.uld.naisc.util.Option;
 
 /**
@@ -118,6 +120,10 @@ public class ExecutionTask implements Runnable {
                 listener.saveAlignment(run, alignment, loader.fromFile(ds.left(), "left"), loader.fromFile(ds.right(), "right"));
             }
             Meas.data.runs.add(run);
+        } catch (ModelNotTrainedException x) {
+            x.printStackTrace();
+            listener.response.stage = NaiscListener.Stage.FAILED;
+            listener.response.lastMessage = "Model has not been trained or the trained model is incompatible with this dataset!";
         } catch (Exception x) {
             x.printStackTrace();
             listener.response.stage = ExecuteListener.Stage.FAILED;

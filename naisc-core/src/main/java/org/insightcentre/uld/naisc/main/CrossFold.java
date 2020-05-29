@@ -17,6 +17,8 @@ import org.insightcentre.uld.naisc.*;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
 import static org.insightcentre.uld.naisc.main.Main.mapper;
+
+import org.insightcentre.uld.naisc.scorer.ModelNotTrainedException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -104,7 +106,7 @@ public class CrossFold {
             File gold,
             int nFolds, FoldDirection direction, double negativeSampling,
             Configuration config, ExecuteListener monitor,
-            DatasetLoader loader) throws IOException {
+            DatasetLoader loader) throws IOException, ModelNotTrainedException {
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading left dataset");
         Dataset leftModel = loader.fromFile(leftFile, "left");
@@ -137,7 +139,7 @@ public class CrossFold {
     public static CrossFoldResult execute(String name, Dataset leftModel, Dataset rightModel,
             AlignmentSet goldAlignments,
             int nFolds, FoldDirection direction, double negativeSampling,
-            Configuration config, ExecuteListener _monitor, DatasetLoader loader) throws IOException {
+            Configuration config, ExecuteListener _monitor, DatasetLoader loader) throws IOException, ModelNotTrainedException {
 
         _monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Creating data folds");
         Folds folds = splitDataset(goldAlignments, nFolds, direction);

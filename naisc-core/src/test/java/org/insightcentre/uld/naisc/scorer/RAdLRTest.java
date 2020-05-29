@@ -65,7 +65,7 @@ public class RAdLRTest {
      * Test of makeScorer method, of class RAdLR.
      */
     @Test
-    public void testMakeScorer() {
+    public void testMakeScorer() throws ModelNotTrainedException {
         System.out.println("makeScorer");
         Map<String, Object> params = new HashMap<>();
         RAdLR instance = new RAdLR();
