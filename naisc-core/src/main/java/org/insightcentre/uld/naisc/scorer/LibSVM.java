@@ -4,38 +4,23 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import libsvm.svm;
-import libsvm.svm_model;
-import libsvm.svm_node;
-import libsvm.svm_parameter;
-import libsvm.svm_problem;
+import libsvm.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.jena.ext.xerces.impl.dv.util.Base64;
-import org.insightcentre.uld.naisc.Alignment;
-import static org.insightcentre.uld.naisc.Alignment.SKOS_EXACT_MATCH;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.FeatureSet;
-import org.insightcentre.uld.naisc.FeatureSetWithScore;
-import org.insightcentre.uld.naisc.NaiscListener;
-import org.insightcentre.uld.naisc.ScoreResult;
-import org.insightcentre.uld.naisc.Scorer;
-import org.insightcentre.uld.naisc.ScorerFactory;
-import org.insightcentre.uld.naisc.ScorerTrainer;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static org.insightcentre.uld.naisc.Alignment.SKOS_EXACT_MATCH;
 
 /**
  * The LibSVM scorer returns the probability that a particular property holds
@@ -370,16 +355,16 @@ public class LibSVM implements ScorerFactory {
         boolean checkedFeatures = false;
 
         @Override
-        public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) {
+        public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) throws ModelNotTrainedException{
             final svm_problem instances = makeInstances(features);
             final Instance instance = buildInstance(features, 0.0, instances);
             if (features.names.length != featNames.length) {
-                throw new RuntimeException("Classifier has wrong number of attributes. Model does not match trained");
+                throw new ModelNotTrainedException("Classifier has wrong number of attributes. Model does not match trained");
             }
             if (!checkedFeatures) {
                 for (int i = 0; i < featNames.length; i++) {
                     if (!featNames[i].equals(features.names[i]._1 + "-" + features.names[i]._2)) {
-                        throw new RuntimeException("Feature names are not equal: " + featNames[i] + " vs " + features.names[i]);
+                        throw new ModelNotTrainedException("Feature names are not equal: " + featNames[i] + " vs " + features.names[i]);
                     }
                 }
                 checkedFeatures = true;

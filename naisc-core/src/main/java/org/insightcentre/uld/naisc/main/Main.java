@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
@@ -23,6 +24,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.vocabulary.RDFS;
 import org.apache.jena.vocabulary.SKOS;
 import org.insightcentre.uld.naisc.*;
+import org.insightcentre.uld.naisc.scorer.ModelNotTrainedException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.util.Option;
@@ -160,7 +162,7 @@ public class Main {
      */
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute2(String name, File leftFile, File rightFile, Configuration config,
-                                        Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
+                                        Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) throws ModelNotTrainedException {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
             Dataset leftModel = loader.fromFile(leftFile, "left");
@@ -170,6 +172,8 @@ public class Main {
 
             return execute(name, leftModel, rightModel, config, partialSoln, monitor, null, null, loader);
 
+        } catch (ModelNotTrainedException x) {
+            throw x;
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
@@ -192,7 +196,7 @@ public class Main {
      */
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet executeLimitedToGold(String name, File leftFile, File rightFile, File goldFile, Configuration config,
-                                                    Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
+                                                    Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) throws ModelNotTrainedException {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
             Dataset leftModel = loader.fromFile(leftFile, "left");
@@ -207,7 +211,8 @@ public class Main {
             Set<URIRes> right = gold.stream().map(a -> a.entity2).collect(Collectors.toSet());
 
             return execute(name, leftModel, rightModel, config, partialSoln, monitor, left, right, loader);
-
+        } catch (ModelNotTrainedException x) {
+            throw x;
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
@@ -217,7 +222,8 @@ public class Main {
 
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute(String name, Dataset leftModel, Dataset rightModel, Configuration config,
-                                       Option<AlignmentSet> partialSoln, ExecuteListener monitor, Set<URIRes> left, Set<URIRes> right, DatasetLoader loader) {
+                                       Option<AlignmentSet> partialSoln, ExecuteListener monitor, Set<URIRes> left,
+                                       Set<URIRes> right, DatasetLoader loader) throws ModelNotTrainedException {
         try {
             Lazy<Analysis> analysis = Lazy.fromClosure(() -> {
                 DatasetAnalyzer analyzer = new DatasetAnalyzer();
@@ -270,8 +276,11 @@ public class Main {
             ExecutorService executor = new ThreadPoolExecutor(config.nThreads, config.nThreads, 0,
                     TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(1000),
                     new ThreadPoolExecutor.CallerRunsPolicy());
+            final AtomicReference<ModelNotTrainedException> modelNotTrainedException = new AtomicReference<>();
             boolean blocksEmpty = true;
             for (Blocking block : blocks) {
+                if(modelNotTrainedException.get() != null)
+                    throw modelNotTrainedException.get();
                 blocksEmpty = false;
                 String property = config.noPrematching ? null : prematch.findLink(block.entity1, block.entity2);
                 if(property != null) {
@@ -324,6 +333,8 @@ public class Main {
                                 for(ScoreResult score : scores) {
                                     alignments.add(new TmpAlignment(block.entity1, block.entity2, score, score.relation(), config.includeFeatures ? featureSet : null));
                                 }
+                            } catch (ModelNotTrainedException x) {
+                                modelNotTrainedException.set(x);
                             } catch (Exception x) {
                                 monitor.updateStatus(Stage.FAILED, String.format("Failed to get probability %s <-> %s due to %s (%s)\n", block1, block2, x.getMessage(), x.getClass().getName()));
                                 x.printStackTrace();
@@ -336,6 +347,8 @@ public class Main {
             }
             executor.shutdown();
             executor.awaitTermination(30, TimeUnit.DAYS);
+            if(modelNotTrainedException.get() != null)
+                throw modelNotTrainedException.get();
             monitor.updateStatus(Stage.SCORING, String.format("Scored %d pairs", count.get()));
             if (blocksEmpty) {
                 monitor.message(Stage.BLOCKING, NaiscListener.Level.CRITICAL, "Blocking failed to extract any pairs");
@@ -353,6 +366,8 @@ public class Main {
             } else {
                 return matcher.align(alignmentSet, monitor);
             }
+        } catch (ModelNotTrainedException x) {
+            throw x;
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());

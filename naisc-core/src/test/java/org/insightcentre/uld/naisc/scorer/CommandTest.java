@@ -61,7 +61,7 @@ public class CommandTest {
      * Test of makeScorer method, of class Command.
      */
     @Test
-    public void testMakeScorer() {
+    public void testMakeScorer() throws Exception {
         if(System.getProperty("command.test") != null) {
         try {
             System.out.println("Command.makeScorer");
