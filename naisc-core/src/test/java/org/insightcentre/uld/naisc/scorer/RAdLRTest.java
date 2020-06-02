@@ -77,7 +77,7 @@ public class RAdLRTest {
         }, new double[]{
             0.1, 0.8, 0.7
         });
-        double result = scorer.similarity(fs).get(0).value();
+        double result = scorer.similarity(fs).get(0).getProbability();
         //assertEquals(result, 0.630, 0.001);
     }
 
@@ -128,7 +128,7 @@ public class RAdLRTest {
         System.err.println(trained.similarity(data.get(0)));
         System.err.println(trained.similarity(data.get(1)));
         System.err.println(trained.similarity(data.get(2)));
-        double score = trained.similarity(fs).get(0).value();
+        double score = trained.similarity(fs).get(0).getProbability();
         assert (Double.isFinite(score));
         assert (score < 0.630);
     }

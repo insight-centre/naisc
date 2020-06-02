@@ -103,7 +103,7 @@ class RESTController {
             val scores = mutableListOf<Score>()
             val sims = scorers.similarity(features)
             for(sim in sims) {
-                scores.add(Score(sim.relation(), sim.value()))
+                scores.add(Score(sim.property, sim.probability))
             }
             return Response.ok().entity(scores).build()
         } catch(x : Exception) {

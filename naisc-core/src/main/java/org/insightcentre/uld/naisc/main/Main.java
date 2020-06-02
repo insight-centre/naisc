@@ -284,7 +284,7 @@ public class Main {
                 blocksEmpty = false;
                 String property = config.noPrematching ? null : prematch.findLink(block.entity1, block.entity2);
                 if(property != null) {
-                    alignments.add(new TmpAlignment(block.entity1, block.entity2, ScoreResult.fromDouble(1.0, property), property, null));
+                    alignments.add(new TmpAlignment(block.entity1, block.entity2, new ScoreResult(1.0, property), property, null));
                 } else {
                     executor.submit(new Runnable() {
                         @Override
@@ -331,7 +331,7 @@ public class Main {
                                 }
                                 List<ScoreResult> scores = scorer.similarity(featureSet, monitor);
                                 for(ScoreResult score : scores) {
-                                    alignments.add(new TmpAlignment(block.entity1, block.entity2, score, score.relation(), config.includeFeatures ? featureSet : null));
+                                    alignments.add(new TmpAlignment(block.entity1, block.entity2, score, score.getProperty(), config.includeFeatures ? featureSet : null));
                                 }
                             } catch (ModelNotTrainedException x) {
                                 modelNotTrainedException.set(x);
@@ -606,7 +606,7 @@ public class Main {
         double[] scores = new double[tmpAligns.size()];
         int i = 0;
         for (TmpAlignment t : tmpAligns) {
-            scores[i++] = t.result.value();
+            scores[i++] = t.result.getProbability();
         }
         i = 0;
         scores = rescaler.rescale(scores);

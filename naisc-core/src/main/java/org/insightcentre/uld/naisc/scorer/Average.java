@@ -94,9 +94,9 @@ public class Average implements ScorerFactory {
                 }
             }
             if(softmax) {
-                return Collections.singletonList(ScoreResult.fromDouble(sigmoid(score), relation));
+                return Collections.singletonList(new ScoreResult(sigmoid(score), relation));
             } else {
-                return Collections.singletonList(ScoreResult.fromDouble(max(0.0, min(1.0, score)), relation));
+                return Collections.singletonList(new ScoreResult(max(0.0, min(1.0, score)), relation));
             }
         }
 
