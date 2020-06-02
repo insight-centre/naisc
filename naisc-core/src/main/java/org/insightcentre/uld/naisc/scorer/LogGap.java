@@ -76,14 +76,7 @@ public class LogGap {
     }
 
     public ScoreResult result(double d, String relation) {
-        if (valuesBuilder.size() < MAX_VALUES && Double.isFinite(d)) {
-            valuesBuilder.add(d);
-        }
-        if (values != null) {
-            values = null;
-            diffs = null;
-        }
-        return new LogGapResult(d, relation);
+        return new ScoreResult(normalize(d), relation);
     }
 
     public static double[] dedupe(double[] sorted) {
@@ -184,7 +177,7 @@ public class LogGap {
         }
     }
 
-    private class LogGapResult implements ScoreResult {
+    /*private class LogGapResult implements ScoreResult {
 
         private final double d;
         private final String relation;
@@ -206,7 +199,7 @@ public class LogGap {
         public String relation() {
             return relation;
         }
-    }
+    }*/
 
     public static class LogGapModel {
         public final double[] values;
