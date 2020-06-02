@@ -156,7 +156,7 @@ public class LibSVMTest {
         System.err.println(sim1);
         ScoreResult sim6 = result.similarity(new FeatureSetWithScore(0.0, new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.0}, "id1", "id2")).get(0);
         System.err.println(sim6);
-        assert(sim1.value() > sim6.value());
+        assert(sim1.getProbability() > sim6.getProbability());
     }
 
 }

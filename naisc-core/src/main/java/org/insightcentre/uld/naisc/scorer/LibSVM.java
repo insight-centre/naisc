@@ -380,7 +380,7 @@ public class LibSVM implements ScorerFactory {
                 double[] prob_estimates = new double[totalClasses];
                 svm.svm_predict_probability(classifier, instance.x, prob_estimates);
                 double sim = prob_estimates[0];
-                return Collections.singletonList(ScoreResult.fromDouble(sim, relation));
+                return Collections.singletonList(new ScoreResult(sim, relation));
             } catch (IndexOutOfBoundsException x) {
                 throw new RuntimeException("Length of test-time vector is not the same as train. Please retrain the model for this configuration", x);
             } catch (Exception x) {

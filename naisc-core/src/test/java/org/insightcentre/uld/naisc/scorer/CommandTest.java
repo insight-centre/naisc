@@ -73,7 +73,7 @@ public class CommandTest {
             Scorer scorer = instance.makeScorer(params,null);
             ScoreResult result = scorer.similarity(new FeatureSet(new String[]{"foo"}, "foo", new double[]{0.2})).get(0);
             double expResult = 0.2;
-            assertEquals(expResult, result.value(), 0.0);
+            assertEquals(expResult, result.getProbability(), 0.0);
         } catch (ExternalCommandException x) {
             x.printStackTrace();
         }

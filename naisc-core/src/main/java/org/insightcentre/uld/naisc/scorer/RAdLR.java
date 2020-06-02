@@ -163,32 +163,26 @@ public class RAdLR implements ScorerFactory {
         public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) {
             List<ScoreResult> results = new ArrayList<>();
             for(RAdLRModel model : models) {
-            DoubleList weights = new DoubleArrayList(features.names.length);
-            double[] result = new double[features.names.length];
-            LogGap[] loggaps = new LogGap[features.names.length];
-            boolean allComplete = true;
-            //List<ScoreResult> result = new ArrayList<>(features.names.length);
-            for (int i = 0; i < features.names.length; i++) {
-                weights.add(model.weights.getOrDefault(features.names[i], 1.0));
-                synchronized (model) {
-                    final LogGap lg;
-                    if (!model.feats.containsKey(features.names[i])) {
-                        lg = new LogGap();
-                    } else {
-                        lg = LogGap.fromModel(model.feats.get(features.names[i]));
+                DoubleList weights = new DoubleArrayList(features.names.length);
+                double[] result = new double[features.names.length];
+                LogGap[] loggaps = new LogGap[features.names.length];
+                //List<ScoreResult> result = new ArrayList<>(features.names.length);
+                for (int i = 0; i < features.names.length; i++) {
+                    weights.add(model.weights.getOrDefault(features.names[i], 1.0));
+                    synchronized (model) {
+                        final LogGap lg;
+                        if (!model.feats.containsKey(features.names[i])) {
+                            lg = new LogGap();
+                        } else {
+                            lg = LogGap.fromModel(model.feats.get(features.names[i]));
+                        }
+                        //result.add(feats.get(features.names[i]).result(features.values[i]));
+                        lg.addResult(features.values[i]);
+                        result[i] = features.values[i];
+                        loggaps[i] = lg;
                     }
-                    //result.add(feats.get(features.names[i]).result(features.values[i]));
-                    lg.addResult(features.values[i]);
-                    result[i] = features.values[i];
-                    loggaps[i] = lg;
-                    allComplete = allComplete && lg.isComplete();
                 }
-            }
-            if (allComplete) {
-                results.add(ScoreResult.fromDouble(new LogGapScorer(result, weights, model, loggaps, model.property).value(), model.property));
-            } else {
-                results.add(new LogGapScorer(result, weights, model, loggaps, model.property));
-            }
+                results.add(new ScoreResult(logGapScore(result, weights, model, loggaps, model.property), model.property));
             }
             return results;
         }
@@ -199,42 +193,20 @@ public class RAdLR implements ScorerFactory {
 
     }
 
-    private static class LogGapScorer implements ScoreResult {
 
-        private final double[] features;
-        private final DoubleList weights;
-        private final RAdLRModel model;
-        private final LogGap[] feats;
-        private final String relation;
-
-        public LogGapScorer(double[] features, DoubleList weights, RAdLRModel model, LogGap[] feats, String relation) {
-            this.features = features;
-            this.weights = weights;
-            this.model = model;
-            this.feats = feats;
-            this.relation = relation;
-        }
-
-        @Override
-        public double value() {
-            double x = 0.0;
-            int n = 0;
-            for (int i = 0; i < features.length; i++) {
-                if (Double.isFinite(features[i])) {
-                    x += weights.get(i) * feats[i].normalize(features[i]);
-                    n++;
-                }
+    private static double logGapScore(double[] features, DoubleList weights, RAdLRModel model, LogGap[] feats, String relation) {
+        double x = 0.0;
+        int n = 0;
+        for (int i = 0; i < features.length; i++) {
+            if (Double.isFinite(features[i])) {
+                x += weights.get(i) * feats[i].normalize(features[i]);
+                n++;
             }
-            if (n > 0) {
-                x /= n;
-            }
-           return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
         }
-
-        @Override
-        public String relation() {
-            return relation;
+        if (n > 0) {
+            x /= n;
         }
+       return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
     }
 
     private static class RAdLRTrainer implements ScorerTrainer {

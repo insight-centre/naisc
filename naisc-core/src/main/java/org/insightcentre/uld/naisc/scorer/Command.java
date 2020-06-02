@@ -147,7 +147,7 @@ public class Command implements ScorerFactory {
                 out.get().println(mapper.writeValueAsString(features.values));
                 out.get().flush();
                 String line = in.get().readLine();
-                return Collections.singletonList(ScoreResult.fromDouble(Double.parseDouble(line.trim()), relation));
+                return Collections.singletonList(new ScoreResult(Double.parseDouble(line.trim()), relation));
             } catch (IOException x) {
                 throw new RuntimeException(x);
             }
