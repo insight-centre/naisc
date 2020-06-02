@@ -142,6 +142,9 @@ public class Automatic implements BlockingStrategyFactory {
                         public Blocking next() {
                             if(iter1.hasNext()) {
                                 Pair<Resource,Resource> p = iter1.next();
+                                if(p._1 == null || p._2 == null || p._1.getURI() == null || p._2.getURI() == null) {
+                                    throw new RuntimeException("Nulls generated in prelinking");
+                                }
                                 return new Blocking(p._1, p._2, left.id(), right.id());
                             } else
                                 return iter2.next();
