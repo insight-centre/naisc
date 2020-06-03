@@ -1,5 +1,7 @@
 package org.insightcentre.uld.naisc.analysis;
 
+import org.apache.jena.vocabulary.RDFS;
+
 /**
  * The result of analysing a single label property
  * 
@@ -30,8 +32,20 @@ public class LabelResult {
     }
     
     public boolean isLabelLens() {
-        return this.coverage > 0.5 && this.uniqueness > 0.1 && (this.uri.equals("") || this.isDataProperty) && this.naturalLangLike > 0.5;
+        return (this.coverage > 0.5 && this.uniqueness > 0.1 && (this.uri.equals("") || this.isDataProperty) && this.naturalLangLike > 0.5)
+            || this.uri.equals(RDFS.label.getURI());
     }
 
-
+    @Override
+    public String toString() {
+        return "LabelResult{" +
+                "uri='" + uri + '\'' +
+                ", total=" + total +
+                ", coverage=" + coverage +
+                ", naturalLangLike=" + naturalLangLike +
+                ", uniqueness=" + uniqueness +
+                ", diversity=" + diversity +
+                ", isDataProperty=" + isDataProperty +
+                '}';
+    }
 }

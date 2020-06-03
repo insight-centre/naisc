@@ -62,16 +62,12 @@ public class Prelinking {
                         String leftLabel = labelCache.get(l.getURI(), e -> URI2Label.fromURI(e));
                         if (l.isURIResource()) {
                             final ResIterator iter2;
-                            if (rightUri.equals("")) {
-                                iter2 = right.listSubjects();
-                            } else {
-                                iter2 = right.listSubjectsWithProperty(right.createProperty(rightUri));
-                            }
+                            iter2 = right.listSubjectsWithProperty(right.createProperty(rightUri));
                             while (iter2.hasNext()) {
                                 Resource r = iter2.next();
                                 String rightLabel = labelCache.get(r.getURI(), e -> URI2Label.fromURI(e));
                                 if (r.isURIResource()
-                                        && !l.isURIResource() || leftLabel.equals(rightLabel)) {
+                                        && l.isURIResource() && leftLabel.equals(rightLabel)) {
                                     prelinks.add(new Pair<>(l, r));
                                 }
                             }
@@ -132,7 +128,9 @@ public class Prelinking {
             String label = URI2Label.fromURI(r.getURI());
             if(leftByLabel.containsKey(label)) {
                 for(Resource l : leftByLabel.get(label)) {
-                    prelinks.add(new Pair<>(l,r));
+                    if(l.isURIResource() && r.isURIResource()) {
+                        prelinks.add(new Pair<>(l,r));
+                    }
                 }
             }
         }
