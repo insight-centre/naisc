@@ -353,7 +353,7 @@ public class CrossFold {
             }
 
             return new Folds(mapSplit(leftFolds, leftEntities),
-                    mapSplit(rightFolds, rightEntities));
+                    mapSplit(rightFolds, rightEntities), direction);
         } else if(direction == FoldDirection.left) {
             List<Set<URIRes>> leftFolds = new ArrayList<>(), rightFolds = new ArrayList<>();
             Set<URIRes> rightElems = new HashSet<>(rightEntities);
@@ -367,7 +367,7 @@ public class CrossFold {
             for(URIRes res : leftEntities) {
                 leftFolds.get(n++ % folds).add(res);
             }
-            return new Folds(leftFolds, rightFolds);
+            return new Folds(leftFolds, rightFolds, direction);
         } else { /* direction == right */
             List<Set<URIRes>> rightFolds = new ArrayList<>(), leftFolds = new ArrayList<>();
             Set<URIRes> leftElems = new HashSet<>(leftEntities);
@@ -380,7 +380,7 @@ public class CrossFold {
             for(URIRes res : rightEntities) {
                 rightFolds.get(n++ % folds).add(res);
             }
-            return new Folds(leftFolds, rightFolds);
+            return new Folds(leftFolds, rightFolds, direction);
         }
     }
 
@@ -484,10 +484,12 @@ public class CrossFold {
          * The left and right split
          */
         public final List<Set<URIRes>> leftSplit, rightSplit;
+        private final FoldDirection direction;
 
-        public Folds(List<Set<URIRes>> leftSplit, List<Set<URIRes>> rightSplit) {
+        public Folds(List<Set<URIRes>> leftSplit, List<Set<URIRes>> rightSplit, FoldDirection direction) {
             this.leftSplit = leftSplit;
             this.rightSplit = rightSplit;
+            this.direction = direction;
         }
 
         /**
@@ -501,8 +503,8 @@ public class CrossFold {
         public AlignmentSet train(AlignmentSet alignments, int foldNo) {
             AlignmentSet m = new AlignmentSet();
             for (Alignment a : alignments) {
-                if (!leftSplit.get(foldNo).contains(a.entity1)
-                        && !rightSplit.get(foldNo).contains(a.entity2)) {
+                if ((!leftSplit.get(foldNo).contains(a.entity1) || direction == FoldDirection.right)
+                        && (!rightSplit.get(foldNo).contains(a.entity2) || direction == FoldDirection.left)) {
                     m.add(a);
                 }
             }

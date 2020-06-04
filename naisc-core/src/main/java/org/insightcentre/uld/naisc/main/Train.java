@@ -229,7 +229,6 @@ public class Train {
         final Iterable<Blocking> blocks = blocking.block(leftModel, rightModel);
 
         monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Constructing Training Data");
-        Map<String, List<FeatureSetWithScore>> negData = negativeSampling > 0 ? new HashMap<>() : null;
         Set<String> goldProps = goldAlignments.properties();
         if (goldProps.isEmpty()) {
             monitor.updateStatus(ExecuteListener.Stage.FAILED, "No properties in the gold set. Is the training data empty?");
@@ -237,9 +236,6 @@ public class Train {
         }
         for (String prop : goldProps) {
             trainingData.put(prop, new ArrayList<>());
-            if (negData != null) {
-                negData.put(prop, new ArrayList<>());
-            }
         }
 
         boolean blocksGenerated = false;
@@ -270,7 +266,7 @@ public class Train {
                     goldAlignments.remove(a.get());
                     positives.put(prop, positives.getInt(prop) + 1);
                 } else {
-                    if (negData != null && random.nextDouble() < negSampProp) {
+                    if (negativeSampling > 0 && random.nextDouble() < negSampProp) {
                         FeatureSet featureSet = makeFeatures(block.entity1, block.entity2, lenses, monitor, textFeatures, dataFeatures, leftModel, rightModel);
                         trainingData.get(prop).add(featureSet.withScore(0.0));
                         negatives.put(prop, negatives.getInt(prop) + 1);
@@ -288,7 +284,7 @@ public class Train {
         }
 
         for (String prop : goldProps) {
-            if (negData != null) {
+            if (negativeSampling > 0) {
                 monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Adding " + negatives.getInt(prop)
                         + " negative examples to " + positives.getInt(prop)
                         + " positive examples for property " + prop);
