@@ -114,6 +114,7 @@ public class Execution implements ExecuteListener {
 
     @Override
     public void message(Stage stage, Level level, String message) {
+        if(stage == null || level == null || message == null) throw new IllegalArgumentException();
         this.updateStatus(stage, message);
         messages.add(new Message(stage, level, message));
     }
