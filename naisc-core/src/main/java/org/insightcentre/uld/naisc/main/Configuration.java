@@ -461,18 +461,13 @@ public class Configuration {
          * The parameters to configure the feature extractor.
          */
         public final Map<String, Object> params;
-        /**
-         * The tags (of lenses) to apply this feature extractor to
-         */
-        public final Set<String> tags;
+
 
         @JsonCreator
         public GraphFeatureConfiguration(@JsonProperty("name") String name,
-                @JsonProperty("params") Map<String, Object> params,
-                @JsonProperty("tags") Set<String> tags) {
+                @JsonProperty("params") Map<String, Object> params) {
             this.name = name;
             this.params = params == null ? Collections.EMPTY_MAP : params;
-            this.tags = tags;
         }
 
         @Override
@@ -480,7 +475,6 @@ public class Configuration {
             int hash = 3;
             hash = 53 * hash + Objects.hashCode(this.name);
             hash = 53 * hash + Objects.hashCode(this.params);
-            hash = 53 * hash + Objects.hashCode(this.tags);
             return hash;
         }
 
@@ -502,9 +496,6 @@ public class Configuration {
             if (!Objects.equals(this.params, other.params)) {
                 return false;
             }
-            if (!Objects.equals(this.tags, other.tags)) {
-                return false;
-            }
             return true;
         }
 
@@ -522,22 +513,15 @@ public class Configuration {
             final Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
             String name = null;
             Map<String, Object> params = new HashMap<>();
-            Set<String> tags = null;
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> f = fields.next();
                 if (f.getKey().equals("name")) {
                     name = f.getValue().textValue();
-                } else if (f.getKey().equals("tags")) {
-                    tags = new HashSet<>();
-                    final Iterator<JsonNode> elements = f.getValue().elements();
-                    while (elements.hasNext()) {
-                        tags.add(elements.next().asText());
-                    }
                 } else {
                     params.put(f.getKey(), p.getCodec().readValue(f.getValue().traverse(), Object.class));
                 }
             }
-            return new GraphFeatureConfiguration(name, params, tags);
+            return new GraphFeatureConfiguration(name, params);
         }
     }
 
@@ -551,13 +535,6 @@ public class Configuration {
         public void serialize(GraphFeatureConfiguration value, JsonGenerator gen, SerializerProvider provider) throws IOException {
             gen.writeStartObject();
             gen.writeStringField("name", value.name);
-            if (value.tags != null) {
-                gen.writeArrayFieldStart("tags");
-                for (String t : value.tags) {
-                    gen.writeString(t);
-                }
-                gen.writeEndArray();
-            }
             for (Map.Entry<String, Object> e : value.params.entrySet()) {
                 gen.writeObjectField(e.getKey(), e.getValue());
             }
