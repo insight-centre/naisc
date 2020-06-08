@@ -1,24 +1,21 @@
 package org.insightcentre.uld.naisc.elexis.RestService;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.jena.datatypes.RDFDatatype;
-import org.apache.jena.graph.Graph;
-import org.apache.jena.graph.Node;
-import org.apache.jena.graph.Triple;
-import org.apache.jena.rdf.model.*;
-import org.apache.jena.shared.Command;
-import org.apache.jena.shared.Lock;
-import org.apache.jena.shared.PrefixMapping;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
-import java.util.function.Supplier;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import javax.xml.transform.*;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
 /**
  * Class to access the data from ELEXIS REST APIs
@@ -28,7 +25,12 @@ import java.util.function.Supplier;
  */
 public class ELEXISRest {
     private static URL endpoint;
+    private static String xslFilePath = "src/main/java/elexis/rest/service/TEI2Ontolex.xsl";
     APIConnection apiConnection;
+    private static final String xmlStart = "<TEI version=\"3.3.0\" xmlns=\"http://www.tei-c.org/ns/1.0\"> " +
+            "<teiHeader> </teiHeader> <text> <body>";
+
+    private static final String xmlEnd = "</body> </text> </TEI>";
 
     /**
      * Creating a new object
@@ -64,6 +66,8 @@ public class ELEXISRest {
      *
      * @param dictionary
      * @return elexis.rest.service.MetaData
+     * @throws MalformedURLException
+     * @throws JsonProcessingException
      */
     public MetaData aboutDictionary(String dictionary) throws MalformedURLException, JsonProcessingException {
         URL aboutDictEndPoint = new URL(endpoint.toString()+"/about/"+dictionary);
@@ -119,7 +123,7 @@ public class ELEXISRest {
      * @return dictionary entry As JSON
      * @throws MalformedURLException
      */
-    public JSONObject getEntryAsJSON(String dictionary, String id) throws MalformedURLException, JSONException {
+    public JSONObject getEntryAsJSON(String dictionary, String id) throws MalformedURLException {
         URL entryAsJSONEndPoint = new URL(endpoint.toString()+"/json/"+dictionary+"/"+id);
         String response = apiConnection.executeAPICall(entryAsJSONEndPoint);
 
@@ -136,12 +140,46 @@ public class ELEXISRest {
      * @throws MalformedURLException
      */
     public Model getEntryAsTurtle(String dictionary, String id) throws MalformedURLException {
-        URL entryAsJSONEndPoint = new URL(endpoint.toString()+"/ontolex/"+dictionary+"/"+id);
-        String response = apiConnection.executeAPICall(entryAsJSONEndPoint);
+        URL entryAsTurtleEndPoint = new URL(endpoint.toString()+"/ontolex/"+dictionary+"/"+id);
+        String response = apiConnection.executeAPICall(entryAsTurtleEndPoint);
 
         Model entryAsTurtle = ModelFactory.createDefaultModel();
         entryAsTurtle.read(new ByteArrayInputStream(response.getBytes()), null, "TTL");
 
         return entryAsTurtle;
+    }
+
+    /**
+     * Returns the entry in the dictionary in form of TEI document
+     *
+     * @param dictionary
+     * @param id
+     * @return dictionary entry as TEI
+     * @throws MalformedURLException
+     * @throws TransformerException
+     */
+    public Model getEntryAsTEI(String dictionary, String id) throws MalformedURLException, TransformerException {
+        URL entryAsTEIEndPoint = new URL(endpoint.toString()+"/tei/"+dictionary+"/"+id);
+        String response = apiConnection.executeAPICall(entryAsTEIEndPoint);
+
+        // Appending the start and end XML tags for proper transformation
+        response = xmlStart+response+xmlEnd;
+
+        // Using the xsl file to process the API response
+        TransformerFactory factory = TransformerFactory.newInstance();
+        Source xsl = new StreamSource(new File(xslFilePath));
+        Source text = new StreamSource(new StringReader(response));
+        Transformer transformer = factory.newTransformer(xsl);
+
+        // Reading the transformed XML
+        StringWriter outWriter = new StringWriter();
+        transformer.transform(text, new StreamResult(outWriter));
+        String finalResponse = outWriter.getBuffer().toString();
+
+        // Converting the transformed XML into RDF Model
+        Model entryAsTEI = ModelFactory.createDefaultModel();
+        entryAsTEI.read(new ByteArrayInputStream(finalResponse.getBytes()), null, "RDF/XML");
+
+        return entryAsTEI;
     }
 }
