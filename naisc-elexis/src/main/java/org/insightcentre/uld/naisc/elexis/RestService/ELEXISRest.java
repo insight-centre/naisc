@@ -132,6 +132,18 @@ public class ELEXISRest {
     }
 
     /**
+     * Returns OntoLex model for the input string
+     *
+     * @param inputString
+     * @return OntoLex Model
+     */
+    public Model parseTurtleEntry(String inputString) {
+        Model turtleModel = ModelFactory.createDefaultModel();
+        turtleModel.read(new ByteArrayInputStream(inputString.getBytes()), null, "TTL");
+        return turtleModel;
+    }
+
+    /**
      * Returns the entry in the dictionary in form of RDF
      *
      * @param dictionary
@@ -143,9 +155,7 @@ public class ELEXISRest {
         URL entryAsTurtleEndPoint = new URL(endpoint.toString()+"/ontolex/"+dictionary+"/"+id);
         String response = apiConnection.executeAPICall(entryAsTurtleEndPoint);
 
-        Model entryAsTurtle = ModelFactory.createDefaultModel();
-        entryAsTurtle.read(new ByteArrayInputStream(response.getBytes()), null, "TTL");
-
+        Model entryAsTurtle = parseTurtleEntry(response);
         return entryAsTurtle;
     }
 
