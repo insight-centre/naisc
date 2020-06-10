@@ -205,19 +205,24 @@ public class ELEXISRest {
      * @return converted RDF model
      */
     public Model jsonToRDF(JSONObject jsonObject) {
-        Model rdfModel = ModelFactory.createDefaultModel();
 
+        // Creating default model and adding prefixes
+        Model rdfModel = ModelFactory.createDefaultModel();
         rdfModel.setNsPrefix("lexinfo", LEXINFO_HEADER);
         rdfModel.setNsPrefix("skos", SKOS_HEADER);
         rdfModel.setNsPrefix("ontolex", ONTOLEX_HEADER);
+
+        // Getting the id and creating basic RDF model
         String id = "#" + jsonObject.getString("@id");
         rdfModel.createResource(id).addProperty(RDF.type, rdfModel.createResource(ONTOLEX_HEADER + "LexicalEntry"));
 
+        // Appending partOfSpeech details
         String partOfSpeech = jsonObject.get("partOfSpeech").toString();
         Resource posResource = rdfModel.createResource(LEXINFO_HEADER+partOfSpeech);
         Property posProperty = rdfModel.createProperty(LEXINFO_HEADER, "partOfSpeech");
         rdfModel.getResource(id).addProperty(posProperty, posResource);
 
+        // Adding canonicalForm(writtenRep + phoneticRep) details
         Resource canonicalFormNode = rdfModel.createResource();
         JSONObject canonicalForm = jsonObject.getJSONObject("canonicalForm");
         String writtenRep = canonicalForm.get("writtenRep").toString();
@@ -237,6 +242,7 @@ public class ELEXISRest {
         }
         rdfModel.getResource(id).addProperty(rdfModel.createProperty(ONTOLEX_HEADER, "canonicalForm"), canonicalFormNode);
 
+        // Adding senses(definition + reference) details
         Resource sensesNode = rdfModel.createResource();
         JSONArray senses = jsonObject.getJSONArray("senses");
         for (Object s: senses) {
