@@ -8,8 +8,9 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.vocabulary.RDF;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -25,12 +26,16 @@ import javax.xml.transform.stream.StreamSource;
  */
 public class ELEXISRest {
     private static URL endpoint;
-    private static String xslFilePath = "src/main/java/elexis/rest/service/TEI2Ontolex.xsl";
-    APIConnection apiConnection;
-    private static final String xmlStart = "<TEI version=\"3.3.0\" xmlns=\"http://www.tei-c.org/ns/1.0\"> " +
-            "<teiHeader> </teiHeader> <text> <body>";
+    private static APIConnection apiConnection;
 
-    private static final String xmlEnd = "</body> </text> </TEI>";
+    private static String XSL_FILEPATH = "src/main/java/elexis/rest/service/TEI2Ontolex.xsl";
+    private static final String XML_START = "<TEI version=\"3.3.0\" xmlns=\"http://www.tei-c.org/ns/1.0\"> " +
+            "<teiHeader> </teiHeader> <text> <body>";
+    private static final String XML_END = "</body> </text> </TEI>";
+
+    private static final String ONTOLEX_HEADER = "http://www.w3.org/ns/lemon/ontolex#";
+    private static final String SKOS_HEADER = "http://www.w3.org/2004/02/skos/core#";
+    private static final String LEXINFO_HEADER = "http://www.lexinfo.net/ontology/2.0/lexinfo#";
 
     /**
      * Creating a new object
@@ -173,11 +178,11 @@ public class ELEXISRest {
         String response = apiConnection.executeAPICall(entryAsTEIEndPoint);
 
         // Appending the start and end XML tags for proper transformation
-        response = xmlStart+response+xmlEnd;
+        response = XML_START+response+XML_END;
 
         // Using the xsl file to process the API response
         TransformerFactory factory = TransformerFactory.newInstance();
-        Source xsl = new StreamSource(new File(xslFilePath));
+        Source xsl = new StreamSource(new File(XSL_FILEPATH));
         Source text = new StreamSource(new StringReader(response));
         Transformer transformer = factory.newTransformer(xsl);
 
@@ -191,5 +196,66 @@ public class ELEXISRest {
         entryAsTEI.read(new ByteArrayInputStream(finalResponse.getBytes()), null, "RDF/XML");
 
         return entryAsTEI;
+    }
+
+    /**
+     * Parses the input JSON object and creates an equivalent RDF model
+     *
+     * @param jsonObject
+     * @return converted RDF model
+     */
+    public Model jsonToRDF(JSONObject jsonObject) {
+        Model rdfModel = ModelFactory.createDefaultModel();
+
+        rdfModel.setNsPrefix("lexinfo", LEXINFO_HEADER);
+        rdfModel.setNsPrefix("skos", SKOS_HEADER);
+        rdfModel.setNsPrefix("ontolex", ONTOLEX_HEADER);
+        String id = "#" + jsonObject.getString("@id");
+        rdfModel.createResource(id).addProperty(RDF.type, rdfModel.createResource(ONTOLEX_HEADER + "LexicalEntry"));
+
+        String partOfSpeech = jsonObject.get("partOfSpeech").toString();
+        Resource posResource = rdfModel.createResource(LEXINFO_HEADER+partOfSpeech);
+        Property posProperty = rdfModel.createProperty(LEXINFO_HEADER, "partOfSpeech");
+        rdfModel.getResource(id).addProperty(posProperty, posResource);
+
+        Resource canonicalFormNode = rdfModel.createResource();
+        JSONObject canonicalForm = jsonObject.getJSONObject("canonicalForm");
+        String writtenRep = canonicalForm.get("writtenRep").toString();
+        String language = "";
+        if(jsonObject.has("language"))
+           language = jsonObject.getString("language");
+
+        Property writtenRepProperty = rdfModel.createProperty(ONTOLEX_HEADER, "writtenRep");
+        Literal writtenRepLiteral = rdfModel.createLiteral(writtenRep, language);
+        canonicalFormNode.addProperty(writtenRepProperty, writtenRepLiteral);
+
+        if(canonicalForm.has("phoneticRep")) {
+            String phoneticRep = canonicalForm.get("phoneticRep").toString();
+            Property phoneticRepProperty = rdfModel.createProperty(ONTOLEX_HEADER, "phoneticRep");
+            Literal phoneticRepLiteral = rdfModel.createLiteral(phoneticRep);
+            canonicalFormNode.addProperty(phoneticRepProperty, phoneticRepLiteral);
+        }
+        rdfModel.getResource(id).addProperty(rdfModel.createProperty(ONTOLEX_HEADER, "canonicalForm"), canonicalFormNode);
+
+        Resource sensesNode = rdfModel.createResource();
+        JSONArray senses = jsonObject.getJSONArray("senses");
+        for (Object s: senses) {
+            JSONObject sense = (JSONObject) s;
+            for (Object k : sense.keySet()) {
+                String key = (String) k;
+                if(key.equals("definition")) {
+                    Property definitionProperty = rdfModel.createProperty(SKOS_HEADER, "definition");
+                    Literal definitionLiteral = rdfModel.createLiteral(sense.get(key).toString(), language);
+                    sensesNode.addProperty(definitionProperty, definitionLiteral);
+                } else if(key.equals("reference")) {
+                    Property referenceProperty = rdfModel.createProperty(ONTOLEX_HEADER, "reference");
+                    Literal referenceLiteral = rdfModel.createLiteral(sense.get(key).toString());
+                    sensesNode.addProperty(referenceProperty, referenceLiteral);
+                }
+            }
+        }
+        rdfModel.getResource(id).addProperty(rdfModel.createProperty(ONTOLEX_HEADER, "sense"), sensesNode);
+
+        return rdfModel;
     }
 }
