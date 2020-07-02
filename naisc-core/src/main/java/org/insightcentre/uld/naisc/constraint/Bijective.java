@@ -12,6 +12,8 @@ import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import static org.insightcentre.uld.naisc.constraint.Bijective.Surjection.bijective;
 
+import org.insightcentre.uld.naisc.ConfigurationClass;
+import org.insightcentre.uld.naisc.ConfigurationParameter;
 import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.util.SimpleCache;
 
@@ -28,8 +30,10 @@ public class Bijective implements ConstraintFactory {
     /**
      * Configuration of bijective constraint. There are currently no parameters
      */
+     @ConfigurationClass("The bijective constraint requires that no more than one link exists for each element on the source and/or target dataset")
     public static class Configuration {
         /** The type of constraint */
+        @ConfigurationParameter(description = "The type of constraint: *bijective* means at most one link on the source and target side, *surjective* means at most one link on the source side, and *inverseSurjective* means at most one link on the target side", defaultValue = "bijective")
         public Surjection surjection = bijective;
     }
     

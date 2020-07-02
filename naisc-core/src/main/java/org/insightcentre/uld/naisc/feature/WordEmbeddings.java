@@ -57,6 +57,7 @@ public class WordEmbeddings implements TextFeatureFactory {
     /**
      * Configuration for word embeddings.
      */
+     @ConfigurationClass("Similarity based on word embeddings. This method creates a grid of word similarity ")
     public static class Configuration {
 
         /**

@@ -53,6 +53,7 @@ public class KeyWords implements TextFeatureFactory {
     /**
      * Configuration for keywords extraction.
      */
+     @ConfigurationClass("Keywords feature measures the Jaccard/Dice overlap of a set of key terms.")
     public static class Configuration {
 
         /**

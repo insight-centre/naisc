@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.insightcentre.uld.naisc.Alignment;
+import org.insightcentre.uld.naisc.ConfigurationClass;
 import org.insightcentre.uld.naisc.ConfigurationParameter;
 
 /**
@@ -19,6 +20,7 @@ public class ThresholdConstraint implements ConstraintFactory {
     /**
      * The configuration for the threshold constraint.
      */
+     @ConfigurationClass("A simple constraint that says that the score must be over a threshold")
     public static class Configuration {
         /** The minimum threshold to accept. */
         @ConfigurationParameter(description="The minimum threshold to accept")

@@ -53,6 +53,14 @@ public class SPARQL implements LensFactory {
     /**
      * Configuration of the SPARQL lens.
      */
+     @ConfigurationClass("A lens that is implemented by a SPARQL query. The query should return exactly two string literals and should contain the special variables $entity1 and $entity2. For example\n" +
+             "```sparql\n"+
+             "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"+
+             "SELECT ?label1 ?label2 WHERE { \n"+
+             "   $entity1 rdfs:label ?label1 .\n"+
+             "   $entity2 rdfs:label ?label2 .\n"+
+             "}\n"+
+             "```")
     public static class Configuration {
         /**
          * The SPARQL query.

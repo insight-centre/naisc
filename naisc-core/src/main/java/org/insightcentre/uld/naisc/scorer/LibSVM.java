@@ -33,6 +33,7 @@ public class LibSVM implements ScorerFactory {
     /**
      * The configuration for LibSVM models
      */
+     @ConfigurationClass("This scorer learns and applies an optimal scoring given the features. This is a supervised method and must be trained in advance. It is not robust to changes in the features generated so cannot easily be applied to other datasets")
     public static class Configuration {
         /**
          * The property to output.

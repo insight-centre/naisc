@@ -43,6 +43,7 @@ public class UniqueAssignment implements MatcherFactory {
     /**
      * The configuration for unique assignment
      */
+     @ConfigurationClass("A special matcher that implements the Hungarian algorithm (a.k.a. MunkRes) to find a matching that gives the highest score given that no element is linked to more than one element in the other dataset")
     public static class Configuration {
 
         /**

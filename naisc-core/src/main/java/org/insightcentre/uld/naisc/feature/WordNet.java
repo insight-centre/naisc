@@ -55,6 +55,7 @@ public class WordNet implements TextFeatureFactory {
     /**
      * Configuration for WordNet similarity.
      */
+     @ConfigurationClass("Similarity based on the overlap of synonymous and closely related words according to WordNet")
     public static class Configuration {
         /**
          * The path to the WordNet file in GWA XML format.

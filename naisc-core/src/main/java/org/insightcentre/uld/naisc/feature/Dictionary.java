@@ -23,9 +23,10 @@ import org.insightcentre.uld.naisc.util.StringPair;
  */
 public class Dictionary implements TextFeatureFactory {
     /** Configuration for basic.dict.Dictionary */
+    @ConfigurationClass("Check for synonyms in a dictionary")
     public static class Configuration {
         /** The dictionary to use */
-        @ConfigurationParameter(description = "The dictionary to use")
+        @ConfigurationParameter(description = "The dictionary to use (tab-separated synonyms, one per line)")
         public String dict;
     }
 

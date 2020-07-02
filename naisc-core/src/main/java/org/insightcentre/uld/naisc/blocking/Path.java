@@ -35,6 +35,7 @@ public class Path implements BlockingStrategyFactory {
                 config.preblockRightProperty == null || config.preblockRightProperty.equals("") ? config.preblockLeftProperty : config.preblockRightProperty))), config.maxMatches);
     }
 
+    @ConfigurationClass("This blocking strategy uses the graph distance based on a number of pre-linked elements. This means that this blocker first looks for a set of elements where there is a value shared by exactly two elements in the left and right dataset, and then returns as candidates all elements that are within n hops in the graph from one of these pre-links")
     public static class Configuration {
 
         /**
