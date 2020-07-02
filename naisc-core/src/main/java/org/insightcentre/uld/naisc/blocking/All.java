@@ -144,6 +144,7 @@ public class All implements BlockingStrategyFactory {
     /**
      * The configuration of the all class. There is no configuration needed.
      */
+     @ConfigurationClass("This blocking strategy matches all possible URIs between the two datasets. It has no configuration parameters.")
     public static class Configuration {
         // No configuration yet
     }

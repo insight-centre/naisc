@@ -4,11 +4,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Iterator;
 import java.util.Map;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Matcher;
-import org.insightcentre.uld.naisc.MatcherFactory;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
 
 /**
@@ -33,6 +30,7 @@ public class Threshold implements MatcherFactory {
     /**
      * The configuration for a threshold matcher.
      */
+     @ConfigurationClass("Simple matcher that outputs all links over a certain score threshold")
     public static class Configuration {
         /**
          * The threshold to accept.

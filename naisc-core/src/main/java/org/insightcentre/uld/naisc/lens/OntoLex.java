@@ -41,6 +41,7 @@ public class OntoLex implements LensFactory {
     /**
      * The configuration class for the OntoLex lens
      */
+     @ConfigurationClass("Analyse a dataset according to the OntoLex model and extract labels accordingly")
     public static class Configuration {
 
         /**

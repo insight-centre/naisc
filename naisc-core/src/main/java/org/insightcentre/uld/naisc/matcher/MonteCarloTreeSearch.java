@@ -4,11 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.BitSet;
 import java.util.Map;
 import java.util.Random;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Matcher;
-import org.insightcentre.uld.naisc.MatcherFactory;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.constraint.Constraint;
 import org.insightcentre.uld.naisc.constraint.UnsolvableConstraint;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
@@ -30,18 +27,22 @@ public class MonteCarloTreeSearch implements MatcherFactory {
         return new MonteCarloTreeSearchImpl(config.constraint.make(), config.maxIterations, config.ce);
     }
 
+    /**
+     * Configuration for the Monte-Carlo Tree Search algorithm
+     */
+    @ConfigurationClass("Find a matching that satisifies an arbitrary constraint by means of the Monte-Carlo Tree Search algorithm")
     public static class Configuration {
 
         /**
          * The exploration parameter (expert)
          */
-        @ConfigurationParameter(description = "The exploration paramter (expert)")
+        @ConfigurationParameter(description = "The exploration parameter (expert)")
         public double ce = 2.0;
 
         /**
          * The maximum number of iterations to perform
          */
-        @ConfigurationParameter(description = "The maxiumum number of iterations to perform")
+        @ConfigurationParameter(description = "The maximum number of iterations to perform")
         public int maxIterations = 100000;
 
         /**

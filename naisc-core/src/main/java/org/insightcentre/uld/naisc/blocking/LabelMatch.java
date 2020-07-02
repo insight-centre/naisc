@@ -45,6 +45,7 @@ public class LabelMatch implements BlockingStrategyFactory {
     /**
      * Configuration for the label match blocking strategy.
      */
+     @ConfigurationClass("This setting assumes that there is a matching label that indicates candidates. This can be used for example for dictionary sense linking where the goal is to match senses with the same entry, although note the same behaviour is implemented by the `OntoLex` linker")
     public static class Configuration {
 
         /**

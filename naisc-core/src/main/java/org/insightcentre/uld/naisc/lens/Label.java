@@ -105,6 +105,7 @@ public class Label implements LensFactory {
     /**
      * Configuration of the label lens.
      */
+     @ConfigurationClass("Extract a string from a pair of entities by a single property")
     public static class Configuration {
 
         /**

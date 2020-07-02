@@ -9,14 +9,8 @@ import static java.lang.Double.min;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.FeatureSet;
-import org.insightcentre.uld.naisc.NaiscListener;
-import org.insightcentre.uld.naisc.ScoreResult;
-import org.insightcentre.uld.naisc.Scorer;
-import org.insightcentre.uld.naisc.ScorerFactory;
-import org.insightcentre.uld.naisc.ScorerTrainer;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
 
@@ -48,6 +42,7 @@ public class Average implements ScorerFactory {
     /**
      * The configuration of the averaging scorer
      */
+     @ConfigurationClass("The scorer simply averages the weight of the scores generated")
     public static class Configuration {
         /**
          * The weights to be applied to the features. Or null for all features as 1.0

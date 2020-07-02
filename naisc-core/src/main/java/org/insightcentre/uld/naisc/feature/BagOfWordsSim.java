@@ -28,6 +28,7 @@ public class BagOfWordsSim implements TextFeatureFactory {
     }
 
     /** Configuration for bag of words similarity */
+    @ConfigurationClass("Similarity based on bag of words")
     public static class Configuration {
         /** The similarity method to use */
         @ConfigurationParameter(description="The similarity method to use")

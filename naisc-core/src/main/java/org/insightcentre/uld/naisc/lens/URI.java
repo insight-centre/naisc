@@ -37,6 +37,7 @@ public class URI implements LensFactory {
     /**
      * Configuration of the URI label extractor.
      */
+     @ConfigurationClass("Extract a label from the URI itself by de-camel-casing the final part of the URI string")
     public static class Configuration {
         /**
          * The location of the label in the URL.

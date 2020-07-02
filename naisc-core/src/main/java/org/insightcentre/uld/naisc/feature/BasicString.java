@@ -67,6 +67,7 @@ public class BasicString implements TextFeatureFactory {
     /**
      * Configuration for basic.BasicString
      */
+     @ConfigurationClass("Basic language-independent string-based similarity")
     public static class Configuration {
 
         /**

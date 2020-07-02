@@ -32,6 +32,7 @@ public class PropertyOverlap implements GraphFeatureFactory {
     }
 
     /** Configuration for the property overlap feature */
+    @ConfigurationClass("Measures the overlap of two entities by properties that they both have. This is useful if there are properties such as part-of-speech or type that can guide the linking")
     public static class Configuration {
         /** The set of properties to use for overlap or empty for no properties */
         @ConfigurationParameter(description = "The set of properties to use for overlap or empty for no properties")

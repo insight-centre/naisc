@@ -58,6 +58,7 @@ public class Automatic implements GraphFeatureFactory {
         return new AutomaticImpl(propMatches, ppr, sparqlData);
     }
 
+    @ConfigurationClass("This feature automatically decides what graph analysis to apply based on the analysis of the dataset")
     public static class Configuration {
         
     }

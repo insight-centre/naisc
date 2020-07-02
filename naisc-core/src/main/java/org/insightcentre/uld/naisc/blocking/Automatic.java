@@ -90,15 +90,18 @@ public class Automatic implements BlockingStrategyFactory {
     /**
      * Configuration for automatic blocking
      */
+     @ConfigurationClass("The smart, automatic matching strategy that builds on the analysis of the datasets to find potential matches. This setting should be used most of the time")
     public static class Configuration {
 
         /**
          * The maximum number of matches
          */
+         @ConfigurationParameter(description = "The maximum number of candidates to generate per entity")
         public int maxMatches = 100;
         /**
          * The size of ngrams to use
          */
+         @ConfigurationParameter(description = "The character n-gram to use in matching", defaultValue = "3")
         public int ngrams = 3;
     
     }
