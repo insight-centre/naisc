@@ -1,4 +1,4 @@
-package org.insightcentre.uld.naisc.scorer;
+package org.insightcentre.uld.naisc.matcher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
@@ -9,70 +9,80 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.insightcentre.uld.naisc.*;
-import org.insightcentre.uld.naisc.graph.ExternalGraphFeature;
-import org.insightcentre.uld.naisc.util.None;
-import org.insightcentre.uld.naisc.util.Option;
+import org.insightcentre.uld.naisc.main.ExecuteListener;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
-public class ExternalScorer implements ScorerFactory {
+/**
+ * Implements matching through an external REST service
+ */
+public class ExternalMatcher implements MatcherFactory {
     @Override
     public String id() {
         return "external";
     }
 
     @Override
-    public Scorer makeScorer(Map<String, Object> params, File modelPath) throws IOException {
+    public Matcher makeMatcher(Map<String, Object> params) {
         Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
         if(config.path == null) {
-            return new ExternalScorerImpl(String.format("%s/naisc/%s/score"));
+            return new ExternalMatcherImpl(String.format("%s/naisc/%s/match"));
         } else {
-            return new ExternalScorerImpl(config.path);
+            return new ExternalMatcherImpl(config.path);
         }
     }
 
-    @Override
-    public Option<ScorerTrainer> makeTrainer(Map<String, Object> params, String property, File modelPath) {
-        return new None<>();
-    }
-
-    @ConfigurationClass("An external scorer called through a REST endpoint")
+    @ConfigurationClass("Use an external matcher by calling a REST service")
+    /**
+     * Configuration for the external matcher
+     */
     public static class Configuration {
         @ConfigurationParameter(description = "Endpoint for scorer service, for example http://localhost:8080")
+        /**
+         * The endpoint
+         */
         public String endpoint = "http://localhost:8080";
 
         @ConfigurationParameter(description = "The configuration parameter for the external parameter")
+        /**
+         * The configuration name (for the external service)
+         */
         public String configName = "default";
 
-        @ConfigurationParameter(description = "The path or null if the path is $endpoint/naisc/$configName/score")
+        @ConfigurationParameter(description = "The path or null if the path is $endpoint/naisc/$configName/match")
+        /**
+         * The path or null if the path is $endpoint/naisc/$configName/match
+         */
         public String path;
+
     }
 
-    private static class ExternalScorerImpl implements Scorer {
+    private static class ExternalMatcherImpl implements Matcher {
         private final String endpoint;
 
-        public ExternalScorerImpl(String endpoint) {
+        public ExternalMatcherImpl(String endpoint) {
             this.endpoint = endpoint;
         }
 
         @Override
-        public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) {
+        public AlignmentSet alignWith(AlignmentSet matches, AlignmentSet partialAlign, ExecuteListener listener) {
+            if(partialAlign.size() > 0) {
+                throw new RuntimeException("External matcher does not support the use of a partial alignment (e.g., in semi-supervised mode)");
+            }
+
             try(CloseableHttpClient client = HttpClients.createDefault()) {
                 ObjectMapper mapper = new ObjectMapper();
                 HttpPost post = new HttpPost(endpoint);
-                StringEntity entity = new StringEntity(mapper.writeValueAsString(features));
+                StringEntity entity = new StringEntity(mapper.writeValueAsString(matches));
                 entity.setContentType("application/json");
                 post.setEntity(entity);
-                ResponseHandler<List<ScoreResult>> handler = new ResponseHandler<List<ScoreResult>>() {
+                ResponseHandler<AlignmentSet> handler = new ResponseHandler<AlignmentSet>() {
                     @Override
-                    public List<ScoreResult> handleResponse(HttpResponse httpResponse) throws ClientProtocolException, IOException {
+                    public AlignmentSet handleResponse(HttpResponse httpResponse) throws ClientProtocolException, IOException {
                         int status = httpResponse.getStatusLine().getStatusCode();
                         if(status == 200) {
-                            return mapper.readValue(httpResponse.getEntity().getContent(), mapper.getTypeFactory().constructCollectionType(List.class, ScoreResult.class));
+                            return mapper.readValue(httpResponse.getEntity().getContent(), AlignmentSet.class);
                         } else {
                             throw new RuntimeException(String.format("%s returned status code %d", endpoint, status));
                         }
@@ -82,11 +92,6 @@ public class ExternalScorer implements ScorerFactory {
             } catch(IOException x) {
                 throw new RuntimeException(String.format("Could not access external service %s", endpoint), x);
             }
-        }
-
-        @Override
-        public void close() throws IOException {
-
         }
     }
 }

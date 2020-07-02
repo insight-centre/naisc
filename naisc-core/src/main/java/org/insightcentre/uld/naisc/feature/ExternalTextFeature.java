@@ -26,6 +26,7 @@ public class ExternalTextFeature implements TextFeatureFactory {
         }
     }
 
+    @ConfigurationClass("An external text feature called through a REST endpoint")
     public static class Configuration {
         @ConfigurationParameter(description = "Endpoint for text feature service, for example http://localhost:8080")
         public String endpoint = "http://localhost:8080";

@@ -33,6 +33,7 @@ public class ExternalLens implements LensFactory {
         }
     }
 
+    @ConfigurationClass("An external lens called through a REST endpoint")
     public static class Configuration {
         @ConfigurationParameter(description = "Endpoint for lens service, for example http://localhost:8080")
         public String endpoint = "http://localhost:8080";

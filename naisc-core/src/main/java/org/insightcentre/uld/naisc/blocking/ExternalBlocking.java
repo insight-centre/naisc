@@ -37,6 +37,7 @@ public class ExternalBlocking implements BlockingStrategyFactory {
         }
     }
 
+    @ConfigurationClass("An external blocking service called through a REST endpoint")
     public static class Configuration {
         @ConfigurationParameter(description = "Endpoint for blocking service, for example http://localhost:8080")
         public String endpoint = "http://localhost:8080";
