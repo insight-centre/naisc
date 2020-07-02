@@ -53,4 +53,12 @@ public class Blocking {
         result = 31 * result + (entity2 != null ? entity2.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "Blocking{" +
+                "entity1=" + entity1 +
+                ", entity2=" + entity2 +
+                '}';
+    }
 }

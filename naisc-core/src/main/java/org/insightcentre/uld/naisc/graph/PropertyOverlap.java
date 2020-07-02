@@ -26,7 +26,7 @@ public class PropertyOverlap implements GraphFeatureFactory {
 
     @Override
     public GraphFeature makeFeature(Dataset dataset, Map<String, Object> params,
-            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking, NaiscListener listener) {
+            Lazy<Analysis> analysis, AlignmentSet prelinking, NaiscListener listener) {
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         return new PropertyOverlapImpl(config.properties, dataset);
     }
@@ -54,7 +54,8 @@ public class PropertyOverlap implements GraphFeatureFactory {
         }
 
         @Override
-        public Feature[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
+        public Feature[] extractFeatures(URIRes res1, URIRes res2, NaiscListener log) {
+            Resource entity1 = res1.toJena(dataset), entity2 = res2.toJena(dataset);
             Set<StringPair> lvals = new HashSet<>();
             StmtIterator iter = dataset.listStatements(entity1, null, null);
             while(iter.hasNext()) {
@@ -81,7 +82,6 @@ public class PropertyOverlap implements GraphFeatureFactory {
             return Feature.mkArray(new double[]{dice, jaccard}, getFeatureNames());
         }
 
-        @Override
         public String[] getFeatureNames() {
             return new String[] { "property-overlap-jaccard", "property-overlap-dice" };
         }

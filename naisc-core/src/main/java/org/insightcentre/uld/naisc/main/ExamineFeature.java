@@ -66,7 +66,7 @@ public class ExamineFeature {
             List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
-            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new AlignmentSet());
+            AlignmentSet prematch = new AlignmentSet();
             List<TextFeature> textFeatures = config.makeTextFeatures();
             List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
@@ -94,7 +94,7 @@ public class ExamineFeature {
                 }
             }
             for (GraphFeature feature : dataFeatures) {
-                Feature[] features = feature.extractFeatures(res1, res2);
+                Feature[] features = feature.extractFeatures(URIRes.fromJena(res1, leftDataset.id()), URIRes.fromJena(res2, rightDataset.id()));
                 featureSet = featureSet.add(new FeatureSet(features, feature.id()));
             }
             return featureSet;

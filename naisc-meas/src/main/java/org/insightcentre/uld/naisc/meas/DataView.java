@@ -164,6 +164,14 @@ public class DataView {
                 put(r, r2);
             }
         }
+
+        @Override
+        public String toString() {
+            return "Roots{" +
+                    "roots=" + roots +
+                    ", invRoots=" + invRoots +
+                    '}';
+        }
     }
     
     static Set<Resource> findRoots(Dataset d) {
@@ -171,6 +179,12 @@ public class DataView {
         StmtIterator iter = d.listStatements();
         while (iter.hasNext()) {
             Statement s = iter.next();
+            if(!s.getObject().isResource()) {
+                if(!roots.containsKey(s.getSubject())) {
+                    roots.put(s.getSubject(), s.getSubject());
+                }
+                continue;
+            }
             if (!s.getObject().isResource() || s.getObject().asResource().equals(s.getSubject())
                     || blackProperties().contains(s.getPredicate().getURI())) {
                 continue;

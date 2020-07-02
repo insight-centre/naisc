@@ -16,29 +16,25 @@ import java.util.stream.Stream;
  */
 public class ExistingLinks {
 
-    public static Pair<Set<URIRes>, Set<URIRes>> findPreexisting(List<Scorer> scorers, Dataset left, Dataset right) {
+    public static Pair<Set<URIRes>, Set<URIRes>> findPreexisting(Dataset left, Dataset right) {
         Set<URIRes> leftPreexisting = new HashSet<>(), rightPreexisting = new HashSet<>();
-        Set<Property> relations = new HashSet<>();
-        for(Scorer scorer : scorers) {
-            relations.add(left.createProperty(scorer.relation()));
-        }
         Set<URIRes> rSubjs = new HashSet<>();
         ResIterator iter = right.listSubjects();
         while(iter.hasNext()) {
             rSubjs.add(URIRes.fromJena(iter.nextResource(), right.id()));
         }
-        for(Property p : relations) {
-            ResIterator liter = left.listSubjectsWithProperty(p);
-            while(liter.hasNext()) {
-                Resource l = liter.nextResource();
-                URIRes l2 = URIRes.fromJena(l, left.id());
-                NodeIterator siter = left.listObjectsOfProperty(l, p);
-                while(siter.hasNext()) {
-                    RDFNode n = siter.next();
-                    if(n.isResource() && rSubjs.contains(URIRes.fromJena(n.asResource(), right.id()))) {
-                        leftPreexisting.add(l2);
-                        rightPreexisting.add(URIRes.fromJena(n.asResource(), right.id()));
-                    }
+        StmtIterator stiter = left.listStatements();
+        while(stiter.hasNext()) {
+            Statement s = stiter.nextStatement();
+            Resource l = s.getSubject();
+            Property p = s.getPredicate();
+            URIRes l2 = URIRes.fromJena(l, left.id());
+            NodeIterator siter = left.listObjectsOfProperty(l, p);
+            while(siter.hasNext()) {
+                RDFNode n = siter.next();
+                if(n.isResource() && rSubjs.contains(URIRes.fromJena(n.asResource(), right.id()))) {
+                    leftPreexisting.add(l2);
+                    rightPreexisting.add(URIRes.fromJena(n.asResource(), right.id()));
                 }
             }
         }

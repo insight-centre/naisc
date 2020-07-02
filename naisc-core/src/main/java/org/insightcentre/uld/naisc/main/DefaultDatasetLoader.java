@@ -33,7 +33,15 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
     public ModelDataset fromFile(File file, String name) throws IOException {
 
         final Model model = ModelFactory.createDefaultModel();
-        model.read(new FileReader(file), file.toURI().toString(), "riot");
+        if(file.getName().endsWith(".rdf")) {
+            model.read(new FileReader(file), file.toURI().toString(), "RDF/XML");
+        } else if(file.getName().endsWith(".ttl")) {
+            model.read(new FileReader(file), file.toURI().toString(), "Turtle");
+        } else if(file.getName().endsWith(".nt")) {
+            model.read(new FileReader(file), file.toURI().toString(), "N-TRIPLES");
+        } else {
+            model.read(new FileReader(file), file.toURI().toString(), "RDF/XML");
+        }
         return new ModelDataset(model, name);
     }
 

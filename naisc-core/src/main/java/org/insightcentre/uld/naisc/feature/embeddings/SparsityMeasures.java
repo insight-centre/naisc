@@ -171,9 +171,6 @@ public class SparsityMeasures {
             }
         }
         
-        if(!Double.isFinite(score)) {
-            System.err.println(alignment);
-        }
         assert(Double.isFinite(score));
         return score / alignment.getSourceSize() / alignment.getTargetSize();
     }

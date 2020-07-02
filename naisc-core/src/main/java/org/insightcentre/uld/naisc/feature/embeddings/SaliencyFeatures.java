@@ -55,9 +55,6 @@ public class SaliencyFeatures {
             //sumStep += max * (saliency.containsKey(w) ? Math.log10(1.0 / saliency.getDouble(w)) : 5.0);
             sumStep += max * (saliency.containsKey(w) ? 1.0 - saliency.getDouble(w) : 1.0);
         }
-        if(Double.isInfinite(sumStep) || Double.isNaN(sumStep)) {
-            System.err.println(alignment);
-        }
         return sumStep / alignment.getSourceSize();
     }
 

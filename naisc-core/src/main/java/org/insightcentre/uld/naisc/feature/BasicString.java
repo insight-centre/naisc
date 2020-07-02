@@ -623,7 +623,6 @@ public class BasicString implements TextFeatureFactory {
             int b = ss2.size();
             ss1.retainAll(ss2);
             int ab = ss1.size();
-            //System.err.println(Arrays.toString(s1) + " <=> " + Arrays.toString(s2) + " = " + ((double)ab) / (a + b - ab));
 
             return new JaccardDice(
                     ((double) ab) / (a + b - ab),

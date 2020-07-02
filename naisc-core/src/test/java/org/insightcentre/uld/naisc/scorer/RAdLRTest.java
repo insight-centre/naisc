@@ -65,11 +65,11 @@ public class RAdLRTest {
      * Test of makeScorer method, of class RAdLR.
      */
     @Test
-    public void testMakeScorer() {
+    public void testMakeScorer() throws ModelNotTrainedException {
         System.out.println("makeScorer");
         Map<String, Object> params = new HashMap<>();
         RAdLR instance = new RAdLR();
-        Scorer scorer = instance.makeScorer(params, null).get(0);
+        Scorer scorer = instance.makeScorer(params, null);
         FeatureSet fs = new FeatureSet(new StringPair[]{
             new StringPair("foo", "bar"),
             new StringPair("this", "that"),
@@ -77,7 +77,7 @@ public class RAdLRTest {
         }, new double[]{
             0.1, 0.8, 0.7
         });
-        double result = scorer.similarity(fs).value();
+        double result = scorer.similarity(fs).get(0).getProbability();
         //assertEquals(result, 0.630, 0.001);
     }
 
@@ -128,7 +128,7 @@ public class RAdLRTest {
         System.err.println(trained.similarity(data.get(0)));
         System.err.println(trained.similarity(data.get(1)));
         System.err.println(trained.similarity(data.get(2)));
-        double score = trained.similarity(fs).value();
+        double score = trained.similarity(fs).get(0).getProbability();
         assert (Double.isFinite(score));
         assert (score < 0.630);
     }

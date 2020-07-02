@@ -90,7 +90,6 @@ public class Command implements BlockingStrategyFactory {
             try {
                 String co = command.replace("$SPARQL_LEFT", leftSparql.toString()).
                         replace("$SPARQL_RIGHT", rightSparql.toString());
-                System.err.println(co);
                 pr = rt.exec(co);
                 out = new PrintWriter(pr.getOutputStream());
                 in = new BufferedReader(new InputStreamReader(pr.getInputStream()));
@@ -99,7 +98,6 @@ public class Command implements BlockingStrategyFactory {
                 if (line == null) {
                     String eline = err.readLine();
                     while (eline != null) {
-                        System.err.println(eline);
                         eline = err.readLine();
                     }
                     throw new RuntimeException("Failed to start command");

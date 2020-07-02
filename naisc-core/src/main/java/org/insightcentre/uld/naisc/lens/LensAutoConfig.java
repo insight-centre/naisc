@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
@@ -57,26 +60,38 @@ public class LensAutoConfig {
         // The best matching in a greedy fashion
         if (!leftCandidates.isEmpty() && !rightCandidates.isEmpty()) {
             Object2DoubleMap<Pair<String, String>> scores = new Object2DoubleOpenHashMap<>();
+            Object2IntMap<String> leftTotal = new Object2IntOpenHashMap<>(), rightTotal = new Object2IntOpenHashMap<>();
             for (MatchResult mr : analysis.matching) {
                 scores.put(new Pair<>(mr.leftUri, mr.rightUri), 2.0 * (double) mr.coverage / (mr.leftTotal + mr.rightTotal));
+                leftTotal.put(mr.leftUri, mr.leftTotal);
+                rightTotal.put(mr.rightUri, mr.rightTotal);
             }
             List<Pair<String, String>> keys = new ArrayList<>(scores.keySet());
             keys.sort((x, y) -> {
                 int d = -Double.compare(scores.getDouble(x), scores.getDouble(y));
                 if (d == 0) {
+                    int i1 = leftTotal.getInt(x._1);
+                    int i2 = leftTotal.getInt(y._1);
+                    d = -Integer.compare(i1, i2);
+                    if(d != 0) return d;
+                    i1 = rightTotal.getInt(x._2);
+                    i2 = rightTotal.getInt(y._2);
+                    d = -Integer.compare(i1, i2);
+                    if(d != 0) return d;
                     return Integer.compare(x.hashCode(), y.hashCode());
                 } else {
                     return d;
                 }
             });
             for(Pair<String,String> elem : keys) {
-                if(scores.getDouble(elem) < 0.1) 
-                    break;
                 if(leftCandidates.contains(elem._1) && rightCandidates.contains(elem._2)) {
                     lenses.add(new Label.LabelImpl(elem._1, elem._2, null, leftModel, null));
                     log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, "Using " +  elem._1 +" with " + elem._2 + " as a lens");
                     leftCandidates.remove(elem._1);
                     rightCandidates.remove(elem._2);
+                    if(scores.getDouble(elem) <= 0.1) {
+                        break;
+                    }
                 }
             }
         }

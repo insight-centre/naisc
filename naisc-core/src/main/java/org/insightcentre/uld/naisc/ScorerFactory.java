@@ -24,7 +24,7 @@ public interface ScorerFactory {
      * @return The similarity classifiers (by property)
      * @throws IOException If the model could not be read
      */
-    List<Scorer> makeScorer(Map<String, Object> params, File modelPath) throws IOException;
+    Scorer makeScorer(Map<String, Object> params, File modelPath) throws IOException;
     
     /**
      * Get the trainer for this scorer.

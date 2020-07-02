@@ -23,14 +23,14 @@ import org.insightcentre.uld.naisc.util.Lazy;
 public class PPR implements GraphFeatureFactory {
 
     @Override
-    public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params, Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking, NaiscListener listener) {
+    public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params, Lazy<Analysis> analysis, AlignmentSet prelinking, NaiscListener listener) {
         Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
         Object2IntMap<Resource> identifiers = new Object2IntOpenHashMap<>();
-        DirectedGraph graph = buildGraph(sparqlData, prelinking.get(), identifiers);
+        DirectedGraph graph = buildGraph(sparqlData, prelinking, identifiers);
 
         FastPPRConfiguration pprConfig = new FastPPRConfiguration(config.pprSignificanceThreshold, config.reversePPRApproximationFactor, config.teleportProbability, config.forwardStepsPerReverseStep, config.nWalksConstant);
 
-        return new PPRImpl(graph, identifiers, pprConfig);
+        return new PPRImpl(graph, identifiers, pprConfig, sparqlData);
     }
 
     public static class Configuration {
@@ -95,11 +95,13 @@ public class PPR implements GraphFeatureFactory {
         private final DirectedGraph graph;
         private final Object2IntMap<Resource> identifiers;
         private final FastPPRConfiguration pprConfig;
+        private final Dataset dataset;
 
-        public PPRImpl(DirectedGraph graph, Object2IntMap<Resource> identifiers, FastPPRConfiguration pprConfig) {
+        public PPRImpl(DirectedGraph graph, Object2IntMap<Resource> identifiers, FastPPRConfiguration pprConfig, Dataset dataset) {
             this.graph = graph;
             this.identifiers = identifiers;
             this.pprConfig = pprConfig;
+            this.dataset = dataset;
         }
 
         @Override
@@ -108,16 +110,10 @@ public class PPR implements GraphFeatureFactory {
         }
 
         @Override
-        public Feature[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
-            int i = identifiers.getInt(entity1);
-            int j = identifiers.getInt(entity2);
+        public Feature[] extractFeatures(URIRes entity1, URIRes entity2, NaiscListener log) {
+            int i = identifiers.getInt(entity1.toJena(dataset));
+            int j = identifiers.getInt(entity2.toJena(dataset));
             return Feature.mkArray(new double[]{FastPPR.estimatePPR(graph, i, j, pprConfig)}, FEAT_NAMES);
         }
-
-        @Override
-        public String[] getFeatureNames() {
-            return FEAT_NAMES;
-        }
-
     }
 }

@@ -1,24 +1,22 @@
 package org.insightcentre.uld.naisc.elexis.RestService;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.jena.datatypes.RDFDatatype;
-import org.apache.jena.graph.Graph;
-import org.apache.jena.graph.Node;
-import org.apache.jena.graph.Triple;
-import org.apache.jena.rdf.model.*;
-import org.apache.jena.shared.Command;
-import org.apache.jena.shared.Lock;
-import org.apache.jena.shared.PrefixMapping;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
-import java.util.function.Supplier;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.vocabulary.RDF;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import javax.xml.transform.*;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
 /**
  * Class to access the data from ELEXIS REST APIs
@@ -28,7 +26,16 @@ import java.util.function.Supplier;
  */
 public class ELEXISRest {
     private static URL endpoint;
-    APIConnection apiConnection;
+    private static APIConnection apiConnection;
+
+    private static String XSL_FILEPATH = "src/main/java/elexis/rest/service/TEI2Ontolex.xsl";
+    private static final String XML_START = "<TEI version=\"3.3.0\" xmlns=\"http://www.tei-c.org/ns/1.0\"> " +
+            "<teiHeader> </teiHeader> <text> <body>";
+    private static final String XML_END = "</body> </text> </TEI>";
+
+    private static final String ONTOLEX_HEADER = "http://www.w3.org/ns/lemon/ontolex#";
+    private static final String SKOS_HEADER = "http://www.w3.org/2004/02/skos/core#";
+    private static final String LEXINFO_HEADER = "http://www.lexinfo.net/ontology/2.0/lexinfo#";
 
     /**
      * Creating a new object
@@ -45,18 +52,16 @@ public class ELEXISRest {
      *
      * @return List of all dictionaries available
      */
-    public List<String> getDictionaries() throws MalformedURLException, JSONException {
+    public List<String> getDictionaries() throws MalformedURLException {
         URL dictEndpoint = new URL(endpoint.toString()+"/dictionaries");
         String response = apiConnection.executeAPICall(dictEndpoint);
 
         JSONObject jsonResponse = new JSONObject(response);
 
         ArrayList<String> dictionaries = new ArrayList<String>();
-        JSONArray dictArray = new JSONArray();
         if(jsonResponse.has("dictionaries")) {
-            dictArray = (JSONArray) jsonResponse.get("dictionaries");
-            //dictArray.forEach(dict -> dictionaries.add((String) dict));
-            dictionaries.add(dictArray.toString());
+            JSONArray dictArray = (JSONArray) jsonResponse.get("dictionaries");
+            dictArray.forEach(dict -> dictionaries.add((String) dict));
         }
         return dictionaries;
     }
@@ -66,6 +71,8 @@ public class ELEXISRest {
      *
      * @param dictionary
      * @return elexis.rest.service.MetaData
+     * @throws MalformedURLException
+     * @throws JsonProcessingException
      */
     public MetaData aboutDictionary(String dictionary) throws MalformedURLException, JsonProcessingException {
         URL aboutDictEndPoint = new URL(endpoint.toString()+"/about/"+dictionary);
@@ -121,12 +128,24 @@ public class ELEXISRest {
      * @return dictionary entry As JSON
      * @throws MalformedURLException
      */
-    public JSONObject getEntryAsJSON(String dictionary, String id) throws MalformedURLException, JSONException {
+    public JSONObject getEntryAsJSON(String dictionary, String id) throws MalformedURLException {
         URL entryAsJSONEndPoint = new URL(endpoint.toString()+"/json/"+dictionary+"/"+id);
         String response = apiConnection.executeAPICall(entryAsJSONEndPoint);
 
         JSONObject entryAsJSON = new JSONObject(response);
         return entryAsJSON;
+    }
+
+    /**
+     * Returns OntoLex model for the input string
+     *
+     * @param inputString
+     * @return OntoLex Model
+     */
+    public Model parseTurtleEntry(String inputString) {
+        Model turtleModel = ModelFactory.createDefaultModel();
+        turtleModel.read(new ByteArrayInputStream(inputString.getBytes()), null, "TTL");
+        return turtleModel;
     }
 
     /**
@@ -138,1052 +157,111 @@ public class ELEXISRest {
      * @throws MalformedURLException
      */
     public Model getEntryAsTurtle(String dictionary, String id) throws MalformedURLException {
-        URL entryAsJSONEndPoint = new URL(endpoint.toString()+"/ontolex/"+dictionary+"/"+id);
-        String response = apiConnection.executeAPICall(entryAsJSONEndPoint);
+        URL entryAsTurtleEndPoint = new URL(endpoint.toString()+"/ontolex/"+dictionary+"/"+id);
+        String response = apiConnection.executeAPICall(entryAsTurtleEndPoint);
 
-        Model entryAsTurtle = new Model() {
-            @Override
-            public long size() {
-                return 0;
-            }
-
-            @Override
-            public boolean isEmpty() {
-                return false;
-            }
-
-            @Override
-            public ResIterator listSubjects() {
-                return null;
-            }
-
-            @Override
-            public NsIterator listNameSpaces() {
-                return null;
-            }
-
-            @Override
-            public Resource getResource(String uri) {
-                return null;
-            }
-
-            @Override
-            public Property getProperty(String nameSpace, String localName) {
-                return null;
-            }
-
-            @Override
-            public Resource createResource() {
-                return null;
-            }
-
-            @Override
-            public Resource createResource(AnonId id) {
-                return null;
-            }
-
-            @Override
-            public Resource createResource(String uri) {
-                return null;
-            }
-
-            @Override
-            public Property createProperty(String nameSpace, String localName) {
-                return null;
-            }
-
-            @Override
-            public Literal createLiteral(String v, String language) {
-                return null;
-            }
-
-            @Override
-            public Literal createLiteral(String v, boolean wellFormed) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(String lex, RDFDatatype dtype) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(Object value, RDFDatatype dtype) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(Object value) {
-                return null;
-            }
-
-            @Override
-            public Statement createStatement(Resource s, Property p, RDFNode o) {
-                return null;
-            }
-
-            @Override
-            public RDFList createList() {
-                return null;
-            }
-
-            @Override
-            public RDFList createList(Iterator<? extends RDFNode> members) {
-                return null;
-            }
-
-            @Override
-            public RDFList createList(RDFNode... members) {
-                return null;
-            }
-
-            @Override
-            public Model add(Statement s) {
-                return null;
-            }
-
-            @Override
-            public Model add(Statement[] statements) {
-                return null;
-            }
-
-            @Override
-            public Model remove(Statement[] statements) {
-                return null;
-            }
-
-            @Override
-            public Model add(List<Statement> statements) {
-                return null;
-            }
-
-            @Override
-            public Model remove(List<Statement> statements) {
-                return null;
-            }
-
-            @Override
-            public Model add(StmtIterator iter) {
-                return null;
-            }
-
-            @Override
-            public Model add(Model m) {
-                return null;
-            }
-
-            @Override
-            public Model read(String url) {
-                return null;
-            }
-
-            @Override
-            public Model read(InputStream in, String base) {
-                return null;
-            }
-
-            @Override
-            public Model read(InputStream in, String base, String lang) {
-                return null;
-            }
-
-            @Override
-            public Model read(Reader reader, String base) {
-                return null;
-            }
-
-            @Override
-            public Model read(String url, String lang) {
-                return null;
-            }
-
-            @Override
-            public Model read(Reader reader, String base, String lang) {
-                return null;
-            }
-
-            @Override
-            public Model read(String url, String base, String lang) {
-                return null;
-            }
-
-            @Override
-            public Model write(Writer writer) {
-                return null;
-            }
-
-            @Override
-            public Model write(Writer writer, String lang) {
-                return null;
-            }
-
-            @Override
-            public Model write(Writer writer, String lang, String base) {
-                return null;
-            }
-
-            @Override
-            public Model write(OutputStream out) {
-                return null;
-            }
-
-            @Override
-            public Model write(OutputStream out, String lang) {
-                return null;
-            }
-
-            @Override
-            public Model write(OutputStream out, String lang, String base) {
-                return null;
-            }
-
-            @Override
-            public Model remove(Statement s) {
-                return null;
-            }
-
-            @Override
-            public Statement getRequiredProperty(Resource s, Property p) {
-                return null;
-            }
-
-            @Override
-            public Statement getRequiredProperty(Resource s, Property p, String lang) {
-                return null;
-            }
-
-            @Override
-            public Statement getProperty(Resource s, Property p) {
-                return null;
-            }
-
-            @Override
-            public Statement getProperty(Resource s, Property p, String lang) {
-                return null;
-            }
-
-            @Override
-            public ResIterator listSubjectsWithProperty(Property p) {
-                return null;
-            }
-
-            @Override
-            public ResIterator listResourcesWithProperty(Property p) {
-                return null;
-            }
-
-            @Override
-            public ResIterator listSubjectsWithProperty(Property p, RDFNode o) {
-                return null;
-            }
-
-            @Override
-            public ResIterator listResourcesWithProperty(Property p, RDFNode o) {
-                return null;
-            }
-
-            @Override
-            public NodeIterator listObjects() {
-                return null;
-            }
-
-            @Override
-            public NodeIterator listObjectsOfProperty(Property p) {
-                return null;
-            }
-
-            @Override
-            public NodeIterator listObjectsOfProperty(Resource s, Property p) {
-                return null;
-            }
-
-            @Override
-            public boolean contains(Resource s, Property p) {
-                return false;
-            }
-
-            @Override
-            public boolean containsResource(RDFNode r) {
-                return false;
-            }
-
-            @Override
-            public boolean contains(Resource s, Property p, RDFNode o) {
-                return false;
-            }
-
-            @Override
-            public boolean contains(Statement s) {
-                return false;
-            }
-
-            @Override
-            public boolean containsAny(StmtIterator iter) {
-                return false;
-            }
-
-            @Override
-            public boolean containsAll(StmtIterator iter) {
-                return false;
-            }
-
-            @Override
-            public boolean containsAny(Model model) {
-                return false;
-            }
-
-            @Override
-            public boolean containsAll(Model model) {
-                return false;
-            }
-
-            @Override
-            public boolean isReified(Statement s) {
-                return false;
-            }
-
-            @Override
-            public Resource getAnyReifiedStatement(Statement s) {
-                return null;
-            }
-
-            @Override
-            public void removeAllReifications(Statement s) {
-
-            }
-
-            @Override
-            public void removeReification(ReifiedStatement rs) {
-
-            }
-
-            @Override
-            public StmtIterator listStatements() {
-                return null;
-            }
-
-            @Override
-            public StmtIterator listStatements(Selector s) {
-                return null;
-            }
-
-            @Override
-            public StmtIterator listStatements(Resource s, Property p, RDFNode o) {
-                return null;
-            }
-
-            @Override
-            public ReifiedStatement createReifiedStatement(Statement s) {
-                return null;
-            }
-
-            @Override
-            public ReifiedStatement createReifiedStatement(String uri, Statement s) {
-                return null;
-            }
-
-            @Override
-            public RSIterator listReifiedStatements() {
-                return null;
-            }
-
-            @Override
-            public RSIterator listReifiedStatements(Statement st) {
-                return null;
-            }
-
-            @Override
-            public Model query(Selector s) {
-                return null;
-            }
-
-            @Override
-            public Model union(Model model) {
-                return null;
-            }
-
-            @Override
-            public Model intersection(Model model) {
-                return null;
-            }
-
-            @Override
-            public Model difference(Model model) {
-                return null;
-            }
-
-            @Override
-            public Model begin() {
-                return null;
-            }
-
-            @Override
-            public Model abort() {
-                return null;
-            }
-
-            @Override
-            public Model commit() {
-                return null;
-            }
-
-            @Override
-            public Object executeInTransaction(Command cmd) {
-                return null;
-            }
-
-            @Override
-            public void executeInTxn(Runnable action) {
-
-            }
-
-            @Override
-            public <T> T calculateInTxn(Supplier<T> action) {
-                return null;
-            }
-
-            @Override
-            public boolean independent() {
-                return false;
-            }
-
-            @Override
-            public boolean supportsTransactions() {
-                return false;
-            }
-
-            @Override
-            public boolean supportsSetOperations() {
-                return false;
-            }
-
-            @Override
-            public boolean isIsomorphicWith(Model g) {
-                return false;
-            }
-
-            @Override
-            public void close() {
-
-            }
-
-            @Override
-            public Lock getLock() {
-                return null;
-            }
-
-            @Override
-            public Model register(ModelChangedListener listener) {
-                return null;
-            }
-
-            @Override
-            public Model unregister(ModelChangedListener listener) {
-                return null;
-            }
-
-            @Override
-            public Model notifyEvent(Object e) {
-                return null;
-            }
-
-            @Override
-            public Model removeAll() {
-                return null;
-            }
-
-            @Override
-            public Model removeAll(Resource s, Property p, RDFNode r) {
-                return null;
-            }
-
-            @Override
-            public boolean isClosed() {
-                return false;
-            }
-
-            @Override
-            public Model setNsPrefix(String prefix, String uri) {
-                return null;
-            }
-
-            @Override
-            public Model removeNsPrefix(String prefix) {
-                return null;
-            }
-
-            @Override
-            public Model clearNsPrefixMap() {
-                return null;
-            }
-
-            @Override
-            public Model setNsPrefixes(PrefixMapping other) {
-                return null;
-            }
-
-            @Override
-            public Model setNsPrefixes(Map<String, String> map) {
-                return null;
-            }
-
-            @Override
-            public Model withDefaultMappings(PrefixMapping map) {
-                return null;
-            }
-
-            @Override
-            public Resource getResource(String uri, ResourceF f) {
-                return null;
-            }
-
-            @Override
-            public Property getProperty(String uri) {
-                return null;
-            }
-
-            @Override
-            public Bag getBag(String uri) {
-                return null;
-            }
-
-            @Override
-            public Bag getBag(Resource r) {
-                return null;
-            }
-
-            @Override
-            public Alt getAlt(String uri) {
-                return null;
-            }
-
-            @Override
-            public Alt getAlt(Resource r) {
-                return null;
-            }
-
-            @Override
-            public Seq getSeq(String uri) {
-                return null;
-            }
-
-            @Override
-            public Seq getSeq(Resource r) {
-                return null;
-            }
-
-            @Override
-            public RDFList getList(String uri) {
-                return null;
-            }
-
-            @Override
-            public RDFList getList(Resource r) {
-                return null;
-            }
-
-            @Override
-            public Resource createResource(Resource type) {
-                return null;
-            }
-
-            @Override
-            public RDFNode getRDFNode(Node n) {
-                return null;
-            }
-
-            @Override
-            public Resource createResource(String uri, Resource type) {
-                return null;
-            }
-
-            @Override
-            public Resource createResource(ResourceF f) {
-                return null;
-            }
-
-            @Override
-            public Resource createResource(String uri, ResourceF f) {
-                return null;
-            }
-
-            @Override
-            public Property createProperty(String uri) {
-                return null;
-            }
-
-            @Override
-            public Literal createLiteral(String v) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(boolean v) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(int v) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(long v) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(Calendar d) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(char v) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(float v) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(double v) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(String v) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(String lex, String typeURI) {
-                return null;
-            }
-
-            @Override
-            public Literal createTypedLiteral(Object value, String typeURI) {
-                return null;
-            }
-
-            @Override
-            public Statement createLiteralStatement(Resource s, Property p, boolean o) {
-                return null;
-            }
-
-            @Override
-            public Statement createLiteralStatement(Resource s, Property p, float o) {
-                return null;
-            }
-
-            @Override
-            public Statement createLiteralStatement(Resource s, Property p, double o) {
-                return null;
-            }
-
-            @Override
-            public Statement createLiteralStatement(Resource s, Property p, long o) {
-                return null;
-            }
-
-            @Override
-            public Statement createLiteralStatement(Resource s, Property p, int o) {
-                return null;
-            }
-
-            @Override
-            public Statement createLiteralStatement(Resource s, Property p, char o) {
-                return null;
-            }
-
-            @Override
-            public Statement createLiteralStatement(Resource s, Property p, Object o) {
-                return null;
-            }
-
-            @Override
-            public Statement createStatement(Resource s, Property p, String o) {
-                return null;
-            }
-
-            @Override
-            public Statement createStatement(Resource s, Property p, String o, String l) {
-                return null;
-            }
-
-            @Override
-            public Statement createStatement(Resource s, Property p, String o, boolean wellFormed) {
-                return null;
-            }
-
-            @Override
-            public Statement createStatement(Resource s, Property p, String o, String l, boolean wellFormed) {
-                return null;
-            }
-
-            @Override
-            public Bag createBag() {
-                return null;
-            }
-
-            @Override
-            public Bag createBag(String uri) {
-                return null;
-            }
-
-            @Override
-            public Alt createAlt() {
-                return null;
-            }
-
-            @Override
-            public Alt createAlt(String uri) {
-                return null;
-            }
-
-            @Override
-            public Seq createSeq() {
-                return null;
-            }
-
-            @Override
-            public Seq createSeq(String uri) {
-                return null;
-            }
-
-            @Override
-            public Model add(Resource s, Property p, RDFNode o) {
-                return null;
-            }
-
-            @Override
-            public Model addLiteral(Resource s, Property p, boolean o) {
-                return null;
-            }
-
-            @Override
-            public Model addLiteral(Resource s, Property p, long o) {
-                return null;
-            }
-
-            @Override
-            public Model addLiteral(Resource s, Property p, int o) {
-                return null;
-            }
-
-            @Override
-            public Model addLiteral(Resource s, Property p, char o) {
-                return null;
-            }
-
-            @Override
-            public Model addLiteral(Resource s, Property p, float o) {
-                return null;
-            }
-
-            @Override
-            public Model addLiteral(Resource s, Property p, double o) {
-                return null;
-            }
-
-            @Override
-            public Model addLiteral(Resource s, Property p, Object o) {
-                return null;
-            }
-
-            @Override
-            public Model addLiteral(Resource s, Property p, Literal o) {
-                return null;
-            }
-
-            @Override
-            public Model add(Resource s, Property p, String o) {
-                return null;
-            }
-
-            @Override
-            public Model add(Resource s, Property p, String lex, RDFDatatype datatype) {
-                return null;
-            }
-
-            @Override
-            public Model add(Resource s, Property p, String o, boolean wellFormed) {
-                return null;
-            }
-
-            @Override
-            public Model add(Resource s, Property p, String o, String l) {
-                return null;
-            }
-
-            @Override
-            public Model remove(Resource s, Property p, RDFNode o) {
-                return null;
-            }
-
-            @Override
-            public Model remove(StmtIterator iter) {
-                return null;
-            }
-
-            @Override
-            public Model remove(Model m) {
-                return null;
-            }
-
-            @Override
-            public StmtIterator listLiteralStatements(Resource subject, Property predicate, boolean object) {
-                return null;
-            }
-
-            @Override
-            public StmtIterator listLiteralStatements(Resource subject, Property predicate, char object) {
-                return null;
-            }
-
-            @Override
-            public StmtIterator listLiteralStatements(Resource subject, Property predicate, long object) {
-                return null;
-            }
-
-            @Override
-            public StmtIterator listLiteralStatements(Resource subject, Property predicate, int object) {
-                return null;
-            }
-
-            @Override
-            public StmtIterator listLiteralStatements(Resource subject, Property predicate, float object) {
-                return null;
-            }
-
-            @Override
-            public StmtIterator listLiteralStatements(Resource subject, Property predicate, double object) {
-                return null;
-            }
-
-            @Override
-            public StmtIterator listStatements(Resource subject, Property predicate, String object) {
-                return null;
-            }
-
-            @Override
-            public StmtIterator listStatements(Resource subject, Property predicate, String object, String lang) {
-                return null;
-            }
-
-            @Override
-            public ResIterator listResourcesWithProperty(Property p, boolean o) {
-                return null;
-            }
-
-            @Override
-            public ResIterator listResourcesWithProperty(Property p, long o) {
-                return null;
-            }
-
-            @Override
-            public ResIterator listResourcesWithProperty(Property p, char o) {
-                return null;
-            }
-
-            @Override
-            public ResIterator listResourcesWithProperty(Property p, float o) {
-                return null;
-            }
-
-            @Override
-            public ResIterator listResourcesWithProperty(Property p, double o) {
-                return null;
-            }
-
-            @Override
-            public ResIterator listResourcesWithProperty(Property p, Object o) {
-                return null;
-            }
-
-            @Override
-            public ResIterator listSubjectsWithProperty(Property p, String o) {
-                return null;
-            }
-
-            @Override
-            public ResIterator listSubjectsWithProperty(Property p, String o, String l) {
-                return null;
-            }
-
-            @Override
-            public boolean containsLiteral(Resource s, Property p, boolean o) {
-                return false;
-            }
-
-            @Override
-            public boolean containsLiteral(Resource s, Property p, long o) {
-                return false;
-            }
-
-            @Override
-            public boolean containsLiteral(Resource s, Property p, int o) {
-                return false;
-            }
-
-            @Override
-            public boolean containsLiteral(Resource s, Property p, char o) {
-                return false;
-            }
-
-            @Override
-            public boolean containsLiteral(Resource s, Property p, float o) {
-                return false;
-            }
-
-            @Override
-            public boolean containsLiteral(Resource s, Property p, double o) {
-                return false;
-            }
-
-            @Override
-            public boolean containsLiteral(Resource s, Property p, Object o) {
-                return false;
-            }
-
-            @Override
-            public boolean contains(Resource s, Property p, String o) {
-                return false;
-            }
-
-            @Override
-            public boolean contains(Resource s, Property p, String o, String l) {
-                return false;
-            }
-
-            @Override
-            public Statement asStatement(Triple t) {
-                return null;
-            }
-
-            @Override
-            public Graph getGraph() {
-                return null;
-            }
-
-            @Override
-            public RDFNode asRDFNode(Node n) {
-                return null;
-            }
-
-            @Override
-            public Resource wrapAsResource(Node n) {
-                return null;
-            }
-
-            @Override
-            public RDFReader getReader() {
-                return null;
-            }
-
-            @Override
-            public RDFReader getReader(String lang) {
-                return null;
-            }
-
-            @Override
-            public String setReaderClassName(String lang, String className) {
-                return null;
-            }
-
-            @Override
-            public void resetRDFReaderF() {
-
-            }
-
-            @Override
-            public String removeReader(String lang) throws IllegalArgumentException {
-                return null;
-            }
-
-            @Override
-            public RDFWriter getWriter() {
-                return null;
-            }
-
-            @Override
-            public RDFWriter getWriter(String lang) {
-                return null;
-            }
-
-            @Override
-            public String setWriterClassName(String lang, String className) {
-                return null;
-            }
-
-            @Override
-            public void resetRDFWriterF() {
-
-            }
-
-            @Override
-            public String removeWriter(String lang) throws IllegalArgumentException {
-                return null;
-            }
-
-            @Override
-            public void enterCriticalSection(boolean readLockRequested) {
-
-            }
-
-            @Override
-            public void leaveCriticalSection() {
-
-            }
-
-            @Override
-            public String getNsPrefixURI(String prefix) {
-                return null;
-            }
-
-            @Override
-            public String getNsURIPrefix(String uri) {
-                return null;
-            }
-
-            @Override
-            public Map<String, String> getNsPrefixMap() {
-                return null;
-            }
-
-            @Override
-            public String expandPrefix(String prefixed) {
-                return null;
-            }
-
-            @Override
-            public String shortForm(String uri) {
-                return null;
-            }
-
-            @Override
-            public String qnameFor(String uri) {
-                return null;
-            }
-
-            @Override
-            public PrefixMapping lock() {
-                return null;
-            }
-
-            @Override
-            public int numPrefixes() {
-                return 0;
-            }
-
-            @Override
-            public boolean samePrefixMappingAs(PrefixMapping other) {
-                return false;
-            }
-        };
-        entryAsTurtle.read(new ByteArrayInputStream(response.getBytes()), null, "TTL");
-
+        Model entryAsTurtle = parseTurtleEntry(response);
         return entryAsTurtle;
+    }
+
+    /**
+     * Returns the entry in the dictionary in form of TEI document
+     *
+     * @param dictionary
+     * @param id
+     * @return dictionary entry as TEI
+     * @throws MalformedURLException
+     * @throws TransformerException
+     */
+    public Model getEntryAsTEI(String dictionary, String id) throws MalformedURLException, TransformerException {
+        URL entryAsTEIEndPoint = new URL(endpoint.toString()+"/tei/"+dictionary+"/"+id);
+        String response = apiConnection.executeAPICall(entryAsTEIEndPoint);
+
+        // Appending the start and end XML tags for proper transformation
+        response = XML_START+response+XML_END;
+
+        // Using the xsl file to process the API response
+        TransformerFactory factory = TransformerFactory.newInstance();
+        Source xsl = new StreamSource(new File(XSL_FILEPATH));
+        Source text = new StreamSource(new StringReader(response));
+        Transformer transformer = factory.newTransformer(xsl);
+
+        // Reading the transformed XML
+        StringWriter outWriter = new StringWriter();
+        transformer.transform(text, new StreamResult(outWriter));
+        String finalResponse = outWriter.getBuffer().toString();
+
+        // Converting the transformed XML into RDF Model
+        Model entryAsTEI = ModelFactory.createDefaultModel();
+        entryAsTEI.read(new ByteArrayInputStream(finalResponse.getBytes()), null, "RDF/XML");
+
+        return entryAsTEI;
+    }
+
+    /**
+     * Parses the input JSON object and creates an equivalent RDF model
+     *
+     * @param jsonObject
+     * @return converted RDF model
+     */
+    public Model jsonToRDF(JSONObject jsonObject) {
+
+        // Creating default model and adding prefixes
+        Model rdfModel = ModelFactory.createDefaultModel();
+        rdfModel.setNsPrefix("lexinfo", LEXINFO_HEADER);
+        rdfModel.setNsPrefix("skos", SKOS_HEADER);
+        rdfModel.setNsPrefix("ontolex", ONTOLEX_HEADER);
+
+        // Getting the id and creating basic RDF model
+        String id = "#" + jsonObject.getString("@id");
+        rdfModel.createResource(id).addProperty(RDF.type, rdfModel.createResource(ONTOLEX_HEADER + "LexicalEntry"));
+
+        // Appending partOfSpeech details
+        String partOfSpeech = jsonObject.get("partOfSpeech").toString();
+        Resource posResource = rdfModel.createResource(LEXINFO_HEADER+partOfSpeech);
+        Property posProperty = rdfModel.createProperty(LEXINFO_HEADER, "partOfSpeech");
+        rdfModel.getResource(id).addProperty(posProperty, posResource);
+
+        // Adding canonicalForm(writtenRep + phoneticRep) details
+        Resource canonicalFormNode = rdfModel.createResource();
+        JSONObject canonicalForm = jsonObject.getJSONObject("canonicalForm");
+        String writtenRep = canonicalForm.get("writtenRep").toString();
+        String language = "";
+        if(jsonObject.has("language"))
+           language = jsonObject.getString("language");
+
+        Property writtenRepProperty = rdfModel.createProperty(ONTOLEX_HEADER, "writtenRep");
+        Literal writtenRepLiteral = rdfModel.createLiteral(writtenRep, language);
+        canonicalFormNode.addProperty(writtenRepProperty, writtenRepLiteral);
+
+        if(canonicalForm.has("phoneticRep")) {
+            String phoneticRep = canonicalForm.get("phoneticRep").toString();
+            Property phoneticRepProperty = rdfModel.createProperty(ONTOLEX_HEADER, "phoneticRep");
+            Literal phoneticRepLiteral = rdfModel.createLiteral(phoneticRep);
+            canonicalFormNode.addProperty(phoneticRepProperty, phoneticRepLiteral);
+        }
+        rdfModel.getResource(id).addProperty(rdfModel.createProperty(ONTOLEX_HEADER, "canonicalForm"), canonicalFormNode);
+
+        // Adding senses(definition + reference) details
+        Resource sensesNode = rdfModel.createResource();
+        JSONArray senses = jsonObject.getJSONArray("senses");
+        for (Object s: senses) {
+            JSONObject sense = (JSONObject) s;
+            for (Object k : sense.keySet()) {
+                String key = (String) k;
+                if(key.equals("definition")) {
+                    Property definitionProperty = rdfModel.createProperty(SKOS_HEADER, "definition");
+                    Literal definitionLiteral = rdfModel.createLiteral(sense.get(key).toString(), language);
+                    sensesNode.addProperty(definitionProperty, definitionLiteral);
+                } else if(key.equals("reference")) {
+                    Property referenceProperty = rdfModel.createProperty(ONTOLEX_HEADER, "reference");
+                    Literal referenceLiteral = rdfModel.createLiteral(sense.get(key).toString());
+                    sensesNode.addProperty(referenceProperty, referenceLiteral);
+                }
+            }
+        }
+        rdfModel.getResource(id).addProperty(rdfModel.createProperty(ONTOLEX_HEADER, "sense"), sensesNode);
+
+        return rdfModel;
     }
 }

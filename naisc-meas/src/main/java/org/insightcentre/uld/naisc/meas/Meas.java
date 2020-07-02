@@ -1,26 +1,20 @@
 package org.insightcentre.uld.naisc.meas;
 
-import org.insightcentre.uld.naisc.meas.execution.Execution;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.insightcentre.uld.naisc.Alignment.Valid;
+import org.insightcentre.uld.naisc.EvaluationSet;
+import org.insightcentre.uld.naisc.NaiscListener.Stage;
+import org.insightcentre.uld.naisc.main.Configuration;
+import org.insightcentre.uld.naisc.meas.execution.Execution;
+import org.insightcentre.uld.naisc.util.LangStringPair;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.TreeMap;
-
-import org.insightcentre.uld.naisc.Alignment.Valid;
-import org.insightcentre.uld.naisc.NaiscListener.Stage;
-import org.insightcentre.uld.naisc.main.Configuration;
-import org.insightcentre.uld.naisc.EvaluationSet;
-import org.insightcentre.uld.naisc.util.LangStringPair;
+import java.util.*;
 
 /**
  * The main work of the Meas applet
@@ -40,6 +34,8 @@ public class Meas {
 
     public static String json() {
         try {
+            data.configs = configNames();
+            data.datasetNames = datasetNames();
             data.activeRuns = ExecuteServlet.activeRuns();
             data.availableDatasets = getAvailableDataset();
             return mapper.writeValueAsString(data);
@@ -288,5 +284,4 @@ public class Meas {
             this.secondValid = secondValid;
         }
     }
-
 }

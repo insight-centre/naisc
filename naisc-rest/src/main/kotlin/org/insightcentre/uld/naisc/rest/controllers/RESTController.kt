@@ -65,8 +65,8 @@ class RESTController {
             val feats = ConfigurationManager.getGraphFeatures(config, body.entity1.dataset, body.entity2.dataset)
             var result = mutableListOf<Feature>()
             for(feat in feats) {
-                result.addAll(feat.extractFeatures(body.entity1.toJena(ConfigurationManager.getDataset(body.entity1.dataset)),
-                    body.entity2.toJena(ConfigurationManager.getDataset(body.entity2.dataset))))
+                result.addAll(feat.extractFeatures(body.entity1,
+                    body.entity2))
             }
             return Response.ok().entity(result).build()
         } catch(x : Exception) {
@@ -101,8 +101,9 @@ class RESTController {
             val scorers = ConfigurationManager.getScorer(config)
             val features = FeatureSet(body)
             val scores = mutableListOf<Score>()
-            for(s in scorers) {
-                scores.add(Score(s.relation(),s.similarity(features).value()))
+            val sims = scorers.similarity(features)
+            for(sim in sims) {
+                scores.add(Score(sim.property, sim.probability))
             }
             return Response.ok().entity(scores).build()
         } catch(x : Exception) {

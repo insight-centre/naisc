@@ -122,7 +122,6 @@ public class Command implements LensFactory {
                     BufferedReader err = new BufferedReader(new InputStreamReader(pr.get().getErrorStream()));
                     String eline = err.readLine();
                     while (eline != null) {
-                        System.err.println(eline);
                         eline = err.readLine();
                     }
                     throw new RuntimeException("Command failed");

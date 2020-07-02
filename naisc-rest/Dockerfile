@@ -6,3 +6,4 @@ RUN mkdir /usr/local/tomcat/configs/
 COPY configs/* /usr/local/tomcat/configs/
 RUN mkdir /usr/local/tomcat/models/
 COPY models/* /usr/local/tomcat/models/
+COPY openapi.yaml /

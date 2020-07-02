@@ -35,9 +35,9 @@ public class Average implements ScorerFactory {
     }
 
     @Override
-    public List<Scorer> makeScorer(Map<String, Object> params, File modelPath) {
+    public Scorer makeScorer(Map<String, Object> params, File modelPath) {
         Configuration config = mapper.convertValue(params, Configuration.class);
-        return Collections.singletonList(new AverageImpl(config.weights, config.property, config.softmax));
+        return new AverageImpl(config.weights, config.property, config.softmax);
     }
 
     @Override
@@ -81,7 +81,7 @@ public class Average implements ScorerFactory {
         
 
         @Override
-        public ScoreResult similarity(FeatureSet features, NaiscListener log) {
+        public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) {
             if(weights != null && weights.length != features.values.length) {
                 throw new IllegalArgumentException("Length of feature vector does not match that of weights");
             }
@@ -94,15 +94,10 @@ public class Average implements ScorerFactory {
                 }
             }
             if(softmax) {
-                return ScoreResult.fromDouble(sigmoid(score));
+                return Collections.singletonList(new ScoreResult(sigmoid(score), relation));
             } else {
-                return ScoreResult.fromDouble(max(0.0, min(1.0, score)));
+                return Collections.singletonList(new ScoreResult(max(0.0, min(1.0, score)), relation));
             }
-        }
-
-        @Override
-        public String relation() {
-            return relation;
         }
 
         @Override

@@ -40,7 +40,7 @@ public class Command implements GraphFeatureFactory {
 
     @Override
     public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params,
-            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking, NaiscListener listener) {
+            Lazy<Analysis> analysis, AlignmentSet prelinking, NaiscListener listener) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if(config.command == null) {
             throw new ConfigurationException("Command cannot be null");
@@ -120,7 +120,6 @@ public class Command implements GraphFeatureFactory {
                         if (line == null) {
                             String eline = err.get().readLine();
                             while (eline != null) {
-                                System.err.println(eline);
                                 eline = err.get().readLine();
                             }
                             throw new RuntimeException("Command failed to start");
@@ -140,7 +139,7 @@ public class Command implements GraphFeatureFactory {
         }
 
         @Override
-        public Feature[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
+        public Feature[] extractFeatures(URIRes entity1, URIRes entity2, NaiscListener log) {
 
             try {
                 out.get().println(entity1.getURI() + "\t" + entity2.getURI());
@@ -151,7 +150,6 @@ public class Command implements GraphFeatureFactory {
             }
         }
 
-        @Override
         public String[] getFeatureNames() {
             return features;
         }

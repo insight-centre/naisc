@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
@@ -23,6 +24,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.vocabulary.RDFS;
 import org.apache.jena.vocabulary.SKOS;
 import org.insightcentre.uld.naisc.*;
+import org.insightcentre.uld.naisc.scorer.ModelNotTrainedException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.insightcentre.uld.naisc.util.Option;
@@ -160,7 +162,7 @@ public class Main {
      */
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute2(String name, File leftFile, File rightFile, Configuration config,
-                                        Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
+                                        Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) throws ModelNotTrainedException {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
             Dataset leftModel = loader.fromFile(leftFile, "left");
@@ -170,6 +172,8 @@ public class Main {
 
             return execute(name, leftModel, rightModel, config, partialSoln, monitor, null, null, loader);
 
+        } catch (ModelNotTrainedException x) {
+            throw x;
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
@@ -192,7 +196,7 @@ public class Main {
      */
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet executeLimitedToGold(String name, File leftFile, File rightFile, File goldFile, Configuration config,
-                                                    Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) {
+                                                    Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) throws ModelNotTrainedException {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
             Dataset leftModel = loader.fromFile(leftFile, "left");
@@ -207,7 +211,8 @@ public class Main {
             Set<URIRes> right = gold.stream().map(a -> a.entity2).collect(Collectors.toSet());
 
             return execute(name, leftModel, rightModel, config, partialSoln, monitor, left, right, loader);
-
+        } catch (ModelNotTrainedException x) {
+            throw x;
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
@@ -217,7 +222,8 @@ public class Main {
 
     @SuppressWarnings("UseSpecificCatch")
     public static AlignmentSet execute(String name, Dataset leftModel, Dataset rightModel, Configuration config,
-                                       Option<AlignmentSet> partialSoln, ExecuteListener monitor, Set<URIRes> left, Set<URIRes> right, DatasetLoader loader) {
+                                       Option<AlignmentSet> partialSoln, ExecuteListener monitor, Set<URIRes> left,
+                                       Set<URIRes> right, DatasetLoader loader) throws ModelNotTrainedException {
         try {
             Lazy<Analysis> analysis = Lazy.fromClosure(() -> {
                 DatasetAnalyzer analyzer = new DatasetAnalyzer();
@@ -241,7 +247,7 @@ public class Main {
             List<TextFeature> textFeatures = config.makeTextFeatures();
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Scorers");
-            List<Scorer> scorers = config.makeScorer();
+            Scorer scorer = config.makeScorer();
 
             monitor.updateStatus(Stage.INITIALIZING, "Loading Matcher");
             Matcher matcher = config.makeMatcher();
@@ -252,7 +258,7 @@ public class Main {
             Collection<Blocking> _blocks = blocking.block(leftModel, rightModel, monitor);
             final Collection<Blocking> blocks;
             if (config.ignorePreexisting) {
-                _blocks = ExistingLinks.filterBlocking(_blocks, ExistingLinks.findPreexisting(scorers, leftModel, rightModel));
+                _blocks = ExistingLinks.filterBlocking(_blocks, ExistingLinks.findPreexisting(leftModel, rightModel));
             }
             if (left != null && right != null) {
                 blocks = new FilterBlocks(_blocks, left, right);
@@ -260,7 +266,7 @@ public class Main {
                 blocks = _blocks;
             }
             monitor.updateStatus(Stage.INITIALIZING, "Loading Graph Extractors");
-            Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocks, leftModel, rightModel));
+            AlignmentSet prematch = new Prematcher().prematch(blocks, leftModel, rightModel);
             List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
             monitor.updateStatus(Stage.SCORING, "Scoring");
@@ -270,67 +276,79 @@ public class Main {
             ExecutorService executor = new ThreadPoolExecutor(config.nThreads, config.nThreads, 0,
                     TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(1000),
                     new ThreadPoolExecutor.CallerRunsPolicy());
+            final AtomicReference<ModelNotTrainedException> modelNotTrainedException = new AtomicReference<>();
             boolean blocksEmpty = true;
             for (Blocking block : blocks) {
+                if(modelNotTrainedException.get() != null)
+                    throw modelNotTrainedException.get();
                 blocksEmpty = false;
-                executor.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        Resource block1 = block.asJena1(leftModel), block2 = block.asJena2(rightModel);
-                        try {
-                            if (block1.getURI() == null || block1.getURI().equals("")
-                                    || block2.getURI() == null || block2.getURI().equals("")) {
-                                System.err.println(block1);
-                                System.err.println(block2);
-                                throw new RuntimeException("URIRes without URI");
-                            }
-                            monitor.addBlock(block.entity1, block.entity2);
-                            int c = count.incrementAndGet();
-                            if (c % 1000 == 0) {
-                                monitor.updateStatus(Stage.SCORING, "Scoring (" + c + " done)");
-                            }
-                            FeatureSet featureSet = new FeatureSet();
-                            boolean labelsProduced = false;
-                            for (Lens lens : lenses) {
-                                for(LensResult facet : lens.extract(block.entity1, block.entity2, monitor)) {
-                                    labelsProduced = true;
-                                    monitor.addLensResult(block.entity1, block.entity2, facet.tag, facet);
-                                    for (TextFeature featureExtractor : textFeatures) {
-                                        if (featureExtractor.tags() == null || facet.tag == null
-                                                || featureExtractor.tags().contains(facet.tag)) {
-                                            Feature[] features = featureExtractor.extractFeatures(facet, monitor);
-                                            featureSet = featureSet.add(new FeatureSet(features,
-                                                    facet.tag));
+                String property = config.noPrematching ? null : prematch.findLink(block.entity1, block.entity2);
+                if(property != null) {
+                    alignments.add(new TmpAlignment(block.entity1, block.entity2, new ScoreResult(1.0, property), property, null));
+                } else {
+                    executor.submit(new Runnable() {
+                        @Override
+                        public void run() {
+                            Resource block1 = block.asJena1(leftModel), block2 = block.asJena2(rightModel);
+                            try {
+                                if (block1.getURI() == null || block1.getURI().equals("")
+                                        || block2.getURI() == null || block2.getURI().equals("")) {
+                                    System.err.println(block1);
+                                    System.err.println(block2);
+                                    throw new RuntimeException("URIRes without URI");
+                                }
+                                monitor.addBlock(block.entity1, block.entity2);
+                                int c = count.incrementAndGet();
+                                if (c % 1000 == 0) {
+                                    monitor.updateStatus(Stage.SCORING, "Scoring (" + c + " done)");
+                                }
+                                FeatureSet featureSet = new FeatureSet();
+                                boolean labelsProduced = false;
+                                for (Lens lens : lenses) {
+                                    for(LensResult facet : lens.extract(block.entity1, block.entity2, monitor)) {
+                                        labelsProduced = true;
+                                        monitor.addLensResult(block.entity1, block.entity2, facet.tag, facet);
+                                        for (TextFeature featureExtractor : textFeatures) {
+                                            if (featureExtractor.tags() == null || facet.tag == null
+                                                    || featureExtractor.tags().contains(facet.tag)) {
+                                                Feature[] features = featureExtractor.extractFeatures(facet, monitor);
+                                                featureSet = featureSet.add(new FeatureSet(features,
+                                                        facet.tag));
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            if (!labelsProduced) {
-                                monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block1, block2));
+                                if (!labelsProduced) {
+                                    monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block1, block2));
+                                }
+                                for (GraphFeature feature : dataFeatures) {
+                                    Feature[] features = feature.extractFeatures(block.entity1, block.entity2, monitor);
+                                    featureSet = featureSet.add(new FeatureSet(features, feature.id()));
+                                }
+                                if (featureSet.isEmpty()) {
+                                    monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "An empty feature set was created");
+                                }
+                                List<ScoreResult> scores = scorer.similarity(featureSet, monitor);
+                                for(ScoreResult score : scores) {
+                                    alignments.add(new TmpAlignment(block.entity1, block.entity2, score, score.getProperty(), config.includeFeatures ? featureSet : null));
+                                }
+                            } catch (ModelNotTrainedException x) {
+                                modelNotTrainedException.set(x);
+                            } catch (Exception x) {
+                                monitor.updateStatus(Stage.FAILED, String.format("Failed to get probability %s <-> %s due to %s (%s)\n", block1, block2, x.getMessage(), x.getClass().getName()));
+                                x.printStackTrace();
+
                             }
-                            for (GraphFeature feature : dataFeatures) {
-                                Feature[] features = feature.extractFeatures(block1, block2, monitor);
-                                featureSet = featureSet.add(new FeatureSet(features, feature.id()));
-                            }
-                            if (featureSet.isEmpty()) {
-                                monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "An empty feature set was created");
-                            }
-                            for (Scorer scorer : scorers) {
-                                ScoreResult score = scorer.similarity(featureSet, monitor);
-                                alignments.add(new TmpAlignment(block.entity1, block.entity2, score, scorer.relation(), config.includeFeatures ? featureSet : null));
-                            }
-                        } catch (Exception x) {
-                            monitor.updateStatus(Stage.FAILED, String.format("Failed to probability %s <-> %s due to %s (%s)\n", block1, block2, x.getMessage(), x.getClass().getName()));
-                            x.printStackTrace();
 
                         }
-
-                    }
-                });
+                    });
+                }
             }
             executor.shutdown();
             executor.awaitTermination(30, TimeUnit.DAYS);
+            if(modelNotTrainedException.get() != null)
+                throw modelNotTrainedException.get();
             monitor.updateStatus(Stage.SCORING, String.format("Scored %d pairs", count.get()));
             if (blocksEmpty) {
                 monitor.message(Stage.BLOCKING, NaiscListener.Level.CRITICAL, "Blocking failed to extract any pairs");
@@ -338,9 +356,7 @@ public class Main {
                 monitor.message(Stage.SCORING, NaiscListener.Level.CRITICAL, "Failed to extract any pairs!");
             }
 
-            for (Scorer scorer : scorers) {
-                scorer.close();
-            }
+            scorer.close();
 
             AlignmentSet alignmentSet = convertAligns(alignments, rescaler);
 
@@ -350,6 +366,8 @@ public class Main {
             } else {
                 return matcher.align(alignmentSet, monitor);
             }
+        } catch (ModelNotTrainedException x) {
+            throw x;
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
@@ -588,7 +606,7 @@ public class Main {
         double[] scores = new double[tmpAligns.size()];
         int i = 0;
         for (TmpAlignment t : tmpAligns) {
-            scores[i++] = t.result.value();
+            scores[i++] = t.result.getProbability();
         }
         i = 0;
         scores = rescaler.rescale(scores);

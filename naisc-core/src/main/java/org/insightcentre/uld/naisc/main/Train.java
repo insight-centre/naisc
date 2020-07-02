@@ -114,9 +114,6 @@ public class Train {
             DatasetLoader loader, @Nullable String tag) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading Configuration");
         final Configuration config = mapper.readValue(configuration, Configuration.class);
-        if (config.scorers.size() >= 1) {
-            System.err.println("modelFile=" + config.scorers.get(0).modelFile);
-        }
         execute(name, leftFile, rightFile, alignment, negativeSampling, config, monitor, loader, tag);
     }
 
@@ -224,7 +221,7 @@ public class Train {
         List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
-        Lazy<AlignmentSet> prematch = Lazy.fromClosure(() -> new Prematcher().prematch(blocking.block(leftModel, rightModel), leftModel, rightModel));
+        AlignmentSet prematch = new Prematcher().prematch(blocking.block(leftModel, rightModel), leftModel, rightModel);
         List<TextFeature> textFeatures = config.makeTextFeatures();
         List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
@@ -232,7 +229,6 @@ public class Train {
         final Iterable<Blocking> blocks = blocking.block(leftModel, rightModel);
 
         monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Constructing Training Data");
-        Map<String, List<FeatureSetWithScore>> negData = negativeSampling > 0 ? new HashMap<>() : null;
         Set<String> goldProps = goldAlignments.properties();
         if (goldProps.isEmpty()) {
             monitor.updateStatus(ExecuteListener.Stage.FAILED, "No properties in the gold set. Is the training data empty?");
@@ -240,9 +236,6 @@ public class Train {
         }
         for (String prop : goldProps) {
             trainingData.put(prop, new ArrayList<>());
-            if (negData != null) {
-                negData.put(prop, new ArrayList<>());
-            }
         }
 
         boolean blocksGenerated = false;
@@ -273,7 +266,7 @@ public class Train {
                     goldAlignments.remove(a.get());
                     positives.put(prop, positives.getInt(prop) + 1);
                 } else {
-                    if (negData != null && random.nextDouble() < negSampProp) {
+                    if (negativeSampling > 0 && random.nextDouble() < negSampProp) {
                         FeatureSet featureSet = makeFeatures(block.entity1, block.entity2, lenses, monitor, textFeatures, dataFeatures, leftModel, rightModel);
                         trainingData.get(prop).add(featureSet.withScore(0.0));
                         negatives.put(prop, negatives.getInt(prop) + 1);
@@ -291,7 +284,7 @@ public class Train {
         }
 
         for (String prop : goldProps) {
-            if (negData != null) {
+            if (negativeSampling > 0) {
                 monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Adding " + negatives.getInt(prop)
                         + " negative examples to " + positives.getInt(prop)
                         + " positive examples for property " + prop);
@@ -361,7 +354,7 @@ public class Train {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", res1, res2));
         }
         for (GraphFeature feature : dataFeatures) {
-            Feature[] features = feature.extractFeatures(res1.toJena(left), res2.toJena(right));
+            Feature[] features = feature.extractFeatures(res1, res2);
             featureSet = featureSet.add(new FeatureSet(features, feature.id()));
         }
         return featureSet;

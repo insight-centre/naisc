@@ -1,5 +1,7 @@
 package org.insightcentre.uld.naisc.scorer;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import java.util.Arrays;
@@ -20,9 +22,51 @@ public class LogGap {
     private double[] values = null;
     private double[] diffs = null;
     private double sumdiff = 0.0;
+    private boolean complete = false;
+
+    /**
+     * Create a new log gap that has not seen any data
+     */
+    public LogGap() {
+    }
+
+    private LogGap(double[] values, double[] diffs, double sumdiff) {
+        this.values = values;
+        this.diffs = diffs;
+        this.sumdiff = sumdiff;
+        this.complete = true;
+    }
+
+    public LogGapModel toModel() {
+        return new LogGapModel(values, diffs, sumdiff);
+    }
+
+    public LogGapModel toModel(int maxSize) {
+        if(values == null) {
+            makeModel(valuesBuilder.toDoubleArray());
+        }
+        if(values.length < maxSize) {
+            return this.toModel();
+        } else {
+            double[] v = new double[maxSize];
+            double[] d = new double[maxSize];
+            double n = (double)values.length / maxSize;
+            for(int i = 0; i < maxSize; i++) {
+                v[i] = values[values.length * i / maxSize];
+                d[i] = diffs[values.length * i / maxSize];
+            }
+            v[maxSize - 1] = values[values.length - 1];
+            d[maxSize - 1] = diffs[diffs.length - 1];
+            return new LogGapModel(v, d, sumdiff);
+        }
+    }
+
+    public static LogGap fromModel(LogGapModel model) {
+        return new LogGap(model.values, model.diffs, model.sumdiff);
+    }
 
     public boolean isComplete() {
-        return valuesBuilder.size() >= MAX_VALUES;
+        return complete || valuesBuilder.size() >= MAX_VALUES;
     }
 
     public void addResult(double d) {
@@ -31,15 +75,8 @@ public class LogGap {
         }
     }
 
-    public ScoreResult result(double d) {
-        if (valuesBuilder.size() < MAX_VALUES && Double.isFinite(d)) {
-            valuesBuilder.add(d);
-        }
-        if (values != null) {
-            values = null;
-            diffs = null;
-        }
-        return new LogGapResult(d);
+    public ScoreResult result(double d, String relation) {
+        return new ScoreResult(normalize(d), relation);
     }
 
     public static double[] dedupe(double[] sorted) {
@@ -63,6 +100,7 @@ public class LogGap {
     }
 
     public void makeModel(double[] _values) {
+        _values = removeNaNs(_values);
         Arrays.sort(_values);
         this.values = dedupe(_values);
         this.diffs = new double[values.length];
@@ -81,6 +119,25 @@ public class LogGap {
             diffs[i] = diffs[i - 1] + diffs[i] / sumdiff;
         }
         valuesBuilder.clear();
+    }
+
+    /**
+     * Strip all NaN values from a vector and return only the non-NaN values
+     */
+    public static double[] removeNaNs(double[] values) {
+        int nanCount = 0;
+        for(int i = 0; i < values.length - nanCount; i++) {
+            if(Double.isNaN(values[i])) {
+                values[i] = values[values.length - 1 - nanCount];
+                nanCount++;
+                i--;
+            }
+        }
+        if(nanCount > 0) {
+            return Arrays.copyOf(values, values.length - nanCount);
+        } else {
+            return values;
+        }
     }
 
     public double normalize(double d) {
@@ -120,12 +177,14 @@ public class LogGap {
         }
     }
 
-    private class LogGapResult implements ScoreResult {
+    /*private class LogGapResult implements ScoreResult {
 
         private final double d;
+        private final String relation;
 
-        public LogGapResult(double d) {
+        public LogGapResult(double d, String relation) {
             this.d = d;
+            this.relation = relation;
         }
 
         @Override
@@ -136,5 +195,25 @@ public class LogGap {
             return normalize(d);
         }
 
-    }
+        @Override
+        public String relation() {
+            return relation;
         }
+    }*/
+
+    public static class LogGapModel {
+        public final double[] values;
+        public final double[] diffs;
+        public final double sumdiff;
+
+        /**
+         * Create a log gap model
+         */
+         @JsonCreator
+        public LogGapModel(@JsonProperty("values") double[] values, @JsonProperty("diffs") double[] diffs, @JsonProperty("sumdiff") double sumdiff) {
+            this.values = values;
+            this.diffs = diffs;
+            this.sumdiff = sumdiff;
+        }
+    }
+}

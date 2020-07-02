@@ -38,6 +38,7 @@ import org.insightcentre.uld.naisc.ScorerFactory;
 import org.insightcentre.uld.naisc.feature.*;
 import org.insightcentre.uld.naisc.rescaling.MinMax;
 import org.insightcentre.uld.naisc.rescaling.NoRescaling;
+import org.insightcentre.uld.naisc.scorer.MergedScorer;
 import org.insightcentre.uld.naisc.util.Services;
 import org.insightcentre.uld.naisc.ScorerTrainer;
 import org.insightcentre.uld.naisc.TextFeature;
@@ -131,6 +132,11 @@ public class Configuration {
      */
     public boolean ignorePreexisting = false;
 
+    /**
+     * Do not force the matching of unique pairs; Match all elements.
+     */
+    public boolean noPrematching = false;
+
     @JsonCreator
     public Configuration(
             @JsonProperty("blocking") BlockingStrategyConfiguration blocking,
@@ -164,7 +170,7 @@ public class Configuration {
     }
 
     public List<GraphFeature> makeGraphFeatures(Dataset model, Lazy<Analysis> analysis,
-            Lazy<AlignmentSet> prelinking, NaiscListener listener) {
+            AlignmentSet prelinking, NaiscListener listener) {
         List<GraphFeature> extractors = new ArrayList<>();
         for (GraphFeatureConfiguration config : graphFeatures) {
             GraphFeatureFactory extractor = Services.get(GraphFeatureFactory.class, config.name);
@@ -201,16 +207,17 @@ public class Configuration {
         return ls;
     }
 
-    public List<Scorer> makeScorer() throws IOException {
-        List<Scorer> scorerList = new ArrayList<>();
+    public Scorer makeScorer() throws IOException {
+        Scorer scorer = null;
         for (ScorerConfiguration config : this.scorers) {
             File path = config.modelFile == null ? null : new File(config.modelFile);
-            scorerList.addAll(Services.get(ScorerFactory.class, config.name).makeScorer(config.params, path));
+            if(scorer == null) {
+                scorer = Services.get(ScorerFactory.class, config.name).makeScorer(config.params, path);
+            } else {
+                scorer = new MergedScorer(scorer, Services.get(ScorerFactory.class, config.name).makeScorer(config.params, path));
+            }
         }
-        if (scorerList.isEmpty()) {
-            System.err.println("No scorers loaded!");
-        }
-        return scorerList;
+        return scorer;
     }
 
     public List<ScorerTrainer> makeTrainableScorers(String property, String tag) {

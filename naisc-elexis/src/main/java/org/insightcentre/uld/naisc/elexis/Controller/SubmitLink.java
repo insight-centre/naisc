@@ -10,6 +10,7 @@ import org.insightcentre.uld.naisc.elexis.Model.MessageBody;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.elexis.RestService.ELEXISRest;
 import org.insightcentre.uld.naisc.main.Configuration;
+import org.insightcentre.uld.naisc.main.DefaultDatasetLoader;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
 import org.insightcentre.uld.naisc.util.None;
 import org.json.JSONException;
@@ -21,9 +22,11 @@ import org.springframework.web.bind.annotation.*;
 import javax.swing.text.html.parser.Entity;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,6 +52,17 @@ public class SubmitLink {
         return elexisRest.getDictionaries();
     }
 
+    @GetMapping("/test")
+    public String[] entriesTest()
+    {
+        String[] entries = {"cat", "dog"};
+        MessageBody messageBody = new MessageBody();
+        Source source = new Source();
+        source.setEntries(entries);
+
+        return source.getEntries();
+    }
+
     /**
      * @param messageBody
      * @return
@@ -61,39 +75,22 @@ public class SubmitLink {
 //      Generate unique name for each submit request
         String uniqueID = UUID.randomUUID().toString();
 //        Test connection string
-        URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
+        URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019");
 //        URL endpoint = new URL(messageBody.getSource().getEndpoint());
         ELEXISRest elexisRest = new ELEXISRest(endpoint);
 
-//        listener.updateStatus(NaiscListener.Stage.INITIALIZING, "Linking dictionaries");
-//        Test
-//        modelObj = elexisRest.getEntryAsTurtle("dictionary","entry1");
         List<Model> modelObj = new ArrayList<Model>();
-        List<String> entries = messageBody.getSource().getEntries();
-        for(int i = 0; i < entries.size() ; i++)
+
+        String[] entries = messageBody.getSource().getEntries();
+        for(int i = 0; i < entries.length ; i++)
         {
-            modelObj.add(i, elexisRest.getEntryAsTurtle(messageBody.getSource().getId(), entries.get(i)));
+            modelObj.add(i, elexisRest.getEntryAsTurtle(messageBody.getSource().getId(), entries[i]));
         }
+
         org.insightcentre.uld.naisc.main.Configuration config = messageBody.getConfiguration().getSome();
-//        alignmentSet = org.insightcentre.uld.naisc.main.Main.execute("uniqueID", null, null,
-//                config, new None<>(), listener, new DefaultDatasetLoader() );
-        alignmentSet = org.insightcentre.uld.naisc.main.Main.execute(uniqueID, null, null, config,
-                new None<>(), listener, new DatasetLoader() {
-                    @Override
-                    public Dataset fromFile(File file, String name) throws IOException {
-                        return null;
-                    }
+        alignmentSet = org.insightcentre.uld.naisc.main.Main.execute("uniqueID", null, null,
+                config, new None<>(), listener, new DefaultDatasetLoader() );
 
-                    @Override
-                    public Dataset fromEndpoint(URL endpoint) {
-                        return null;
-                    }
-
-                    @Override
-                    public Dataset combine(Dataset dataset1, Dataset dataset2, String name) {
-                        return null;
-                    }
-                });
         return modelObj;
     }
 
@@ -124,14 +121,14 @@ public class SubmitLink {
     {
         Result createResult = new Result();
         Linking linking = new Linking();
-
-        List<String> entries = Source.getEntries();
-        List<String> targetEntries = Target.getEntries();
+        Source source = new Source();
+        String[] entries = source.getEntries();
+        String[] targetEntries = Target.getEntries();
         List<Linking> linkList = new ArrayList<>();
-        for(int i = 0; i < entries.size() ; i++)
+        for(int i = 0; i < entries.length ; i++)
         {
-            createResult.setSourceEntry(entries.get(i));
-            createResult.setTargetEntry(targetEntries.get(i));
+            createResult.setSourceEntry(entries[i]);
+            createResult.setTargetEntry(targetEntries[i]);
 
             linking.setSourceSense("");
             linking.setTargetSense("");
