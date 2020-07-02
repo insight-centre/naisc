@@ -18,6 +18,11 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.FileEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
@@ -101,14 +106,15 @@ public class Main {
                                File outputFile, Option<File> partialSoln, boolean outputXML, ExecuteListener monitor, DatasetLoader loader) {
         try {
             AlignmentSet finalAlignment = execute(name, leftFile, rightFile, config, partialSoln, monitor, loader);
-            monitor.updateStatus(Stage.FINALIZING, "Saving");
-            if (outputXML) {
-                finalAlignment.toXML(outputFile == null ? System.out : new PrintStream(outputFile));
-            } else {
-                finalAlignment.toRDF(outputFile == null ? System.out : new PrintStream(outputFile));
+            if(finalAlignment != null) {
+                monitor.updateStatus(Stage.FINALIZING, "Saving");
+                if (outputXML) {
+                    finalAlignment.toXML(outputFile == null ? System.out : new PrintStream(outputFile));
+                } else {
+                    finalAlignment.toRDF(outputFile == null ? System.out : new PrintStream(outputFile));
+                }
             }
             monitor.updateStatus(Stage.COMPLETED, "Done");
-
         } catch (Exception x) {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
@@ -166,9 +172,17 @@ public class Main {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
             Dataset leftModel = loader.fromFile(leftFile, "left");
+            if(config.externalEndpoint != null) {
+                monitor.updateStatus(Stage.INITIALIZING, "Uploading left to external");
+                uploadExternalFile(config.externalEndpoint, leftFile, "left");
+            }
 
             monitor.updateStatus(Stage.INITIALIZING, "Reading right dataset");
             Dataset rightModel = loader.fromFile(rightFile, "right");
+            if(config.externalEndpoint != null) {
+                monitor.updateStatus(Stage.INITIALIZING, "Uploading right to external");
+                uploadExternalFile(config.externalEndpoint, rightFile, "right");
+            }
 
             return execute(name, leftModel, rightModel, config, partialSoln, monitor, null, null, loader);
 
@@ -178,6 +192,25 @@ public class Main {
             x.printStackTrace();
             monitor.updateStatus(Stage.FAILED, x.getClass().getName() + ": " + x.getMessage());
             return null;
+        }
+    }
+
+    private static void uploadExternalFile(String externalService, File file, String left) throws IOException {
+        try(CloseableHttpClient httpclient = HttpClients.createDefault()) {
+            final ObjectMapper mapper = new ObjectMapper();
+            HttpPut put = new HttpPut(String.format("%s/naisc/upload/%s", externalService, left));
+            FileEntity entity = new FileEntity(file);
+            if(file.getName().endsWith(".rdf")) {
+                entity.setContentType("application/rdf+xml");
+            } else if(file.getName().endsWith(".ttl")) {
+                entity.setContentType("text/turtle");
+            } else if(file.getName().endsWith(".nt")) {
+                entity.setContentType("application/n-triples");
+            } else {
+                entity.setContentType("application/rdf+xml");
+            }
+            put.setEntity(entity);
+            httpclient.execute(put);
         }
     }
 
@@ -195,11 +228,11 @@ public class Main {
      * @return The alignment
      */
     @SuppressWarnings("UseSpecificCatch")
-    public static AlignmentSet executeLimitedToGold(String name, File leftFile, File rightFile, File goldFile, Configuration config,
+    public static AlignmentSet executeLimitedToGold(String name, File file, File rightFile, File goldFile, Configuration config,
                                                     Option<AlignmentSet> partialSoln, ExecuteListener monitor, DatasetLoader loader) throws ModelNotTrainedException {
         try {
             monitor.updateStatus(Stage.INITIALIZING, "Reading left dataset");
-            Dataset leftModel = loader.fromFile(leftFile, "left");
+            Dataset leftModel = loader.fromFile(file, "left");
 
             monitor.updateStatus(Stage.INITIALIZING, "Reading right dataset");
             Dataset rightModel = loader.fromFile(rightFile, "right");

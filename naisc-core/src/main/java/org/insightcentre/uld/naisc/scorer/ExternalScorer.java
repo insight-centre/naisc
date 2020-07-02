@@ -29,7 +29,7 @@ public class ExternalScorer implements ScorerFactory {
     public Scorer makeScorer(Map<String, Object> params, File modelPath) throws IOException {
         Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
         if(config.path == null) {
-            return new ExternalScorerImpl(String.format("%s/naisc/%s/score"));
+            return new ExternalScorerImpl(String.format("%s/naisc/%s/score", config.endpoint, config.configName));
         } else {
             return new ExternalScorerImpl(config.path);
         }

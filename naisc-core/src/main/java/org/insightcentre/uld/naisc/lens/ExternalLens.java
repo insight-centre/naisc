@@ -27,7 +27,7 @@ public class ExternalLens implements LensFactory {
     public Lens makeLens(Dataset dataset, Map<String, Object> params) {
         Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
         if(config.path == null) {
-            return new ExternalLensImpl(String.format("%s/naisc/%s/extract_text"));
+            return new ExternalLensImpl(String.format("%s/naisc/%s/extract_text", config.endpoint, config.configName));
         } else {
             return new ExternalLensImpl(config.path);
         }
@@ -57,7 +57,9 @@ public class ExternalLens implements LensFactory {
             try(CloseableHttpClient httpclient = HttpClients.createDefault()) {
                 final ObjectMapper mapper = new ObjectMapper();
                 HttpPost post = new HttpPost(endpoint);
-                post.setEntity(new StringEntity(mapper.writeValueAsString(new ResourcePair(entity1, entity2))));
+                StringEntity entity = new StringEntity(mapper.writeValueAsString(new ResourcePair(entity1, entity2)));
+                entity.setContentType("application/json");
+                post.setEntity(entity);
                 ResponseHandler<Collection<LensResult>> handler = new ResponseHandler<Collection<LensResult>>() {
                     @Override
                     public Collection<LensResult> handleResponse(HttpResponse httpResponse) throws ClientProtocolException, IOException {

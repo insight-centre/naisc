@@ -27,7 +27,7 @@ public class ExternalMatcher implements MatcherFactory {
     public Matcher makeMatcher(Map<String, Object> params) {
         Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
         if(config.path == null) {
-            return new ExternalMatcherImpl(String.format("%s/naisc/%s/match"));
+            return new ExternalMatcherImpl(String.format("%s/naisc/%s/match", config.endpoint, config.configName));
         } else {
             return new ExternalMatcherImpl(config.path);
         }

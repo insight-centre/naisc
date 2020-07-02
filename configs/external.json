@@ -1,0 +1,35 @@
+{
+    "blocking": {
+        "name": "blocking.ExternalBlocking",
+        "endpoint": "http://localhost:8080/naisc-rest",
+        "configName": "auto"
+    },
+    "lenses": [{
+        "name": "lens.ExternalLens",
+        "endpoint": "http://localhost:8080/naisc-rest",
+        "configName": "auto"
+    }],
+    "textFeatures": [{
+        "name": "feature.ExternalTextFeature",
+        "endpoint": "http://localhost:8080/naisc-rest",
+        "configName": "auto"
+    }],
+    "graphFeatures": [{
+        "name": "graph.ExternalGraphFeature",
+        "endpoint": "http://localhost:8080/naisc-rest",
+        "configName": "auto"
+    }],
+    "scorers": [{
+        "name": "scorer.ExternalScorer",
+        "endpoint": "http://localhost:8080/naisc-rest",
+        "configName": "auto"
+    }],
+    "matcher": {
+        "name": "matcher.ExternalMatcher",
+        "endpoint": "http://localhost:8080/naisc-rest",
+        "configName": "auto"
+    },
+    "description": "A configuration that uses external features for all the components",
+    "externalEndpoint": "http://localhost:8080/naisc-rest"
+}
+        

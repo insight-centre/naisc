@@ -23,7 +23,7 @@ public class ExternalGraphFeature implements GraphFeatureFactory {
     public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params, Lazy<Analysis> analysis, AlignmentSet prelinking, NaiscListener listener) {
         Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
         if(config.path == null) {
-            return new ExternalGraphFeatureImpl(String.format("%s/naisc/%s/graph_features"));
+            return new ExternalGraphFeatureImpl(String.format("%s/naisc/%s/graph_features", config.endpoint, config.configName));
         } else {
             return new ExternalGraphFeatureImpl(config.path);
         }
