@@ -34,6 +34,7 @@ public class Predefined implements BlockingStrategyFactory {
     /**
      * The configuration of the predefined mapping
      */
+     @ConfigurationClass("Used when the blocking is already known. This blocker simply loads a blocking from a file and returns it.")
     public static class Configuration {
         /** The path to the file containing the links to playback */
         @ConfigurationParameter(description = "The path to the file containing the links to produce")

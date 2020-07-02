@@ -16,7 +16,7 @@ public @interface ConfigurationClass {
     /**
      * The description of what this component does
      */
-    public String description() default "";
+    public String value() default "";
 
     /**
      * The readable name of this component

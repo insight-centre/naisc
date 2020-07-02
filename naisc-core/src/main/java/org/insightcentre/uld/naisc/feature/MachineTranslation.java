@@ -31,12 +31,25 @@ public class MachineTranslation implements TextFeatureFactory  {
         TER
     }
 
+    /**
+     * Configuration for machine translation metrics
+     */
+    @ConfigurationClass("String similarity methods based on those widely-used for the evaluation of machine translation")
     public static class Configuration {
+        /**
+         * The methods to use
+         */
+         @ConfigurationParameter(description = "The methods to use", defaultValue = "[\"BLEU\", \"BLEU-2\", \"chrF\", \"METEOR\", \"NIST\", \"TER\"]")
         public List<Method> methods = Arrays.asList(Method.BLEU, Method.BLEU2, Method.chrF, Method.METEOR, Method.NIST, Method.TER);
+        @ConfigurationParameter(description = "The n-gram to use for BLEU", defaultValue = "4")
         public int bleuN = 4;
+        @ConfigurationParameter(description = "The n-gram to use for the second BLEU", defaultValue = "2")
         public int bleuN2 = 2;
+        @ConfigurationParameter(description = "The n-gram size for chrF", defaultValue = "6")
         public int chrFN = 6;
+        @ConfigurationParameter(description = "The beat paramater for chrF", defaultValue = "3")
         public int chrFbeta = 3;
+        @ConfigurationParameter(description = "The n-gram size for NIST", defaultValue = "4")
         public int nistN = 4;
     }
 

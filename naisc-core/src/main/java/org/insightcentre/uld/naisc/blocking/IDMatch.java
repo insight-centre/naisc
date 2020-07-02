@@ -38,6 +38,7 @@ public class IDMatch implements BlockingStrategyFactory {
     /**
      * The configuration of the ID match
      */
+     @ConfigurationClass("Match according to the identifier. This is used in the case of a dataset where the linking is already known (by the URI) and the goal is to find the semantic similarity. When using this setting pre-linking should be disabled")
     public static class Configuration {
         /**
          * The method to match {@link IDMatching}

@@ -62,40 +62,49 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
     /**
      * Configuration for approximate string matching
      */
+     @ConfigurationClass("String matching generates a blocking that consists of the most similar entities between the two datasets based on a string label. It can be implemented with either Levenshtein or N-Gram similarity")
     public static class Configuration {
 
         /**
          * The maximum number of matches
          */
+         @ConfigurationParameter(description = "The maximum number of matches to return per entity")
         public int maxMatches;
         /**
          * The labeling property
          */
+         @ConfigurationParameter(description = "The property to use to find a text label", defaultValue = RDFS_LABEL)
         public String property = RDFS_LABEL;
         /**
          * The property for the right ontology (if different)
          */
+         @ConfigurationParameter(description = "The property to use in the right dataset. If this is null or omitted then the `property` is used for both the left and right dataset")
         public String rightProperty = null;
         /**
          * The maximum size of the queue (sets the default queue size, 0 for no
          * limit, only for Levenshtein)
          */
+         @ConfigurationParameter(description = "The maximum size of the queue (sets the default queue size, 0 for no limit, only for Levenshtein)")
         public int queueMax = maxMatches * 20;
         /**
          * The metric to use
          */
+         @ConfigurationParameter(description = "The string similarity metric to use", defaultValue = "ngrams")
         public StringMetric metric = StringMetric.ngrams;
         /**
          * The size of ngrams to use
          */
+         @ConfigurationParameter(description = "The maximum size of character n-gram to use in matching", defaultValue = "3")
         public int ngrams = 3;
         /**
          * Lowercase all strings
          */
+         @ConfigurationParameter(description = "Use case-insensitive matching", defaultValue = "true")
         public boolean lowercase = true;
         /**
          * Type of the element. If set all matched elements are of rdf:type with this URI
          */
+         @ConfigurationParameter(description = "Type of the element. If set all matched elements are of rdf:type with this URI")
         public String type = null;
     }
 

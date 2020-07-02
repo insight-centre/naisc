@@ -26,29 +26,37 @@ strategy so value of `blocking` is an object with a `name` property.
 
 ### Automatic
 
+The smart, automatic matching strategy that builds on the analysis of the datasets to find potential matches. This setting should be used most of the time
+
 **Name:** `blocking.Automatic`
 
 #### Configuration Parameters
 
-* `maxMatches`: *No Description* *(int)*
-* `ngrams`: *No Description* *(int)*
+* `maxMatches`: The maximum number of candidates to generate per entity *(int)*
+* `ngrams`: The character n-gram to use in matching (Default value: 3) *(int)*
 
 ### All
+
+This blocking strategy matches all possible URIs between the two datasets. It has no configuration parameters.
 
 **Name:** `blocking.All`
 No parameters
 
 ### IDMatch
 
+Match according to the identifier. This is used in the case of a dataset where the linking is already known (by the URI) and the goal is to find the semantic similarity. When using this setting pre-linking should be disabled
+
 **Name:** `blocking.IDMatch`
 
 #### Configuration Parameters
 
-* `method`: The method to match (Default value: "endOfPath") *One of exact|fragment|endOfPath|namespace*
+* `method`: The method to match (Default value: "endOfPath") *(One of exact|fragment|endOfPath|namespace)*
 * `leftNamespace`: The namespace for matching elements in the left dataset (Default value: "") *(String)*
 * `rightNamespace`: The namespace for matching elements in the right dataset (Default value: "") *(String)*
 
 ### Label Match
+
+This setting assumes that there is a matching label that indicates candidates. This can be used for example for dictionary sense linking where the goal is to match senses with the same entry, although note the same behaviour is implemented by the `OntoLex` linker
 
 **Name:** `blocking.LabelMatch`
 
@@ -57,25 +65,29 @@ No parameters
 * `property`: The label property to match on (Default value: "http://www.w3.org/2000/01/rdf-schema#label") *(String)*
 * `rightProperty`: The label property in the right datasets (if different from left) (Default value: "") *(String)*
 * `language`: The language to match on, as an ISO 639 code (Default value: "en") *(String)*
-* `mode`: The mode to match; strict for exact matching, or lenient for partial (Default value: "strict") *One of strict|lenient*
+* `mode`: The mode to match; strict for exact matching, or lenient for partial (Default value: "strict") *(One of strict|lenient)*
 * `lowercase`: Whether to lowercase labels before matching (Default value: true) *(boolean)*
 
 ### Approximate String Matching
+
+String matching generates a blocking that consists of the most similar entities between the two datasets based on a string label. It can be implemented with either Levenshtein or N-Gram similarity
 
 **Name:** `blocking.ApproximateStringMatching`
 
 #### Configuration Parameters
 
-* `maxMatches`: *No Description* *(int)*
-* `property`: *No Description* *(String)*
-* `rightProperty`: *No Description* *(String)*
-* `queueMax`: *No Description* *(int)*
-* `metric`: *No Description* *One of levenshtein|ngrams*
-* `ngrams`: *No Description* *(int)*
-* `lowercase`: *No Description* *(boolean)*
-* `type`: *No Description* *(String)*
+* `maxMatches`: The maximum number of matches to return per entity *(int)*
+* `property`: The property to use to find a text label (Default value: http://www.w3.org/2000/01/rdf-schema#label) *(String)*
+* `rightProperty`: The property to use in the right dataset. If this is null or omitted then the `property` is used for both the left and right dataset *(String)*
+* `queueMax`: The maximum size of the queue (sets the default queue size, 0 for no limit, only for Levenshtein) *(int)*
+* `metric`: The string similarity metric to use (Default value: ngrams) *(One of levenshtein|ngrams)*
+* `ngrams`: The maximum size of character n-gram to use in matching (Default value: 3) *(int)*
+* `lowercase`: Use case-insensitive matching (Default value: true) *(boolean)*
+* `type`: Type of the element. If set all matched elements are of rdf:type with this URI *(String)*
 
 ### Predefined
+
+Used when the blocking is already known. This blocker simply loads a blocking from a file and returns it.
 
 **Name:** `blocking.Predefined`
 
@@ -84,6 +96,8 @@ No parameters
 * `links`: The path to the file containing the links to produce *(String)*
 
 ### Onto Lex
+
+This is used to create a monolingual word sense alignment between two dictionaries in the OntoLex-Lemon format
 
 **Name:** `blocking.OntoLex`
 No parameters
@@ -97,6 +111,8 @@ No parameters
 * `command`: The command to run it should have to slots $SPARQL_LEFT and $SPARQL_RIGHT for the URL of the left and right SPARQL endpoint *(String)*
 
 ### Path
+
+This blocking strategy uses the graph distance based on a number of pre-linked elements. This means that this blocker first looks for a set of elements where there is a value shared by exactly two elements in the left and right dataset, and then returns as candidates all elements that are within n hops in the graph from one of these pre-links
 
 **Name:** `blocking.Path`
 
@@ -115,6 +131,8 @@ such the `lenses` parameter takes an array of objects, where each object has a `
 
 ### Label
 
+Extract a string from a pair of entities by a single property
+
 **Name:** `lens.Label`
 
 #### Configuration Parameters
@@ -126,15 +144,26 @@ such the `lenses` parameter takes an array of objects, where each object has a `
 
 ### URI
 
+Extract a label from the URI itself by de-camel-casing the final part of the URI string
+
 **Name:** `lens.URI`
 
 #### Configuration Parameters
 
-* `location`: The location of the label in the URL *One of fragment|endOfPath|infer*
-* `form`: The form (camelCased, under_scored) of the label *One of camelCased|underscored|urlEncoded|smart*
+* `location`: The location of the label in the URL *(One of fragment|endOfPath|infer)*
+* `form`: The form (camelCased, under_scored) of the label *(One of camelCased|underscored|urlEncoded|smart)*
 * `separator`: The character that separates words in the label *(String)*
 
 ### SPARQL
+
+A lens that is implemented by a SPARQL query. The query should return exactly two string literals and should contain the special variables $entity1 and $entity2. For example
+```sparql
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?label1 ?label2 WHERE { 
+   $entity1 rdfs:label ?label1 .
+   $entity2 rdfs:label ?label2 .
+}
+```
 
 **Name:** `lens.SPARQL`
 
@@ -145,11 +174,13 @@ such the `lenses` parameter takes an array of objects, where each object has a `
 
 ### Onto Lex
 
+Analyse a dataset according to the OntoLex model and extract labels accordingly
+
 **Name:** `lens.OntoLex`
 
 #### Configuration Parameters
 
-* `dialect`: The dialect (namespace) to use *One of ONTOLEX|LEMON|MONNET_LEMON*
+* `dialect`: The dialect (namespace) to use *(One of ONTOLEX|LEMON|MONNET_LEMON)*
 * `onlyCanonical`: Only use canonical forms or use all forms *(boolean)*
 * `language`: The language to extract, null for first language available *(String)*
 
@@ -172,15 +203,19 @@ provide a `tags` parameter to any text feature, which selects the lenses it may 
 
 ### Bag Of Words Sim
 
+Similarity based on bag of words
+
 **Name:** `feature.BagOfWordsSim`
 
 #### Configuration Parameters
 
-* `method`: The similarity method to use *One of jaccard|jaccardExponential*
+* `method`: The similarity method to use *(One of jaccard|jaccardExponential)*
 * `weighting`: The weighting value. Near-zero values will penalize low agreement morewhile high values will be nearly binary *(double)*
 * `lowerCase`: Whether to lowercase the text before processing *(boolean)*
 
 ### Basic String
+
+Basic language-independent string-based similarity
 
 **Name:** `feature.BasicString`
 
@@ -189,18 +224,22 @@ provide a `tags` parameter to any text feature, which selects the lenses it may 
 * `labelChar`: Also extract character-level features *(boolean)*
 * `wordWeights`: Weight the words according to this file *(String)*
 * `ngramWeights`: Weight the character n-grams according to this file *(String)*
-* `features`: The features to extract (Default value: null) *(List)*
+* `features`: The features to extract (Default value: null) *(List of One of lcs|lc_prefix|lc_suffix|ngram_1|ngram_2|ngram_3|ngram_4|ngram_5|jaccard|dice|containment|senLenRatio|aveWordLenRatio|negation|number|jaroWinkler|levenshtein|mongeElkanJaroWinkler|mongeElkanLevenshtein)*
 * `lowerCase`: Convert all strings to lower case before processing (Default value: true) *(boolean)*
 
 ### Dictionary
+
+Check for synonyms in a dictionary
 
 **Name:** `feature.Dictionary`
 
 #### Configuration Parameters
 
-* `dict`: The dictionary to use *(String)*
+* `dict`: The dictionary to use (tab-separated synonyms, one per line) *(String)*
 
 ### Key Words
+
+Keywords feature measures the Jaccard/Dice overlap of a set of key terms.
 
 **Name:** `feature.KeyWords`
 
@@ -210,24 +249,28 @@ provide a `tags` parameter to any text feature, which selects the lenses it may 
 
 ### Word Embeddings
 
+Similarity based on word embeddings. This method creates a grid of word similarity 
+
 **Name:** `feature.WordEmbeddings`
 
 #### Configuration Parameters
 
 * `embeddingPath`: The path to the embeddings file *(String)*
 * `features`: The features to use; values include "fp", "bp", "ham", "max", "max2", "max.5",
-        "max.1", "collp2", "collp10", "Hg" *(List)*
+        "max.1", "collp2", "collp10", "Hg" *(List of String)*
 * `saliencyFile`: The path to the saliency values *(String)*
 * `stopwords`: The stopwords file (if used) *(String)*
 
 ### Word Net
+
+Similarity based on the overlap of synonymous and closely related words according to WordNet
 
 **Name:** `feature.WordNet`
 
 #### Configuration Parameters
 
 * `wordnetXmlFile`: The path to the WordNet file in GWA XML format *(String)*
-* `methods`: The methods to use *(List)*
+* `methods`: The methods to use *(List of One of SHORTEST_PATH|WU_PALMER|LEAKCOCK_CHODOROW|LI)*
 
 ### Command
 
@@ -240,16 +283,18 @@ provide a `tags` parameter to any text feature, which selects the lenses it may 
 
 ### Machine Translation
 
+String similarity methods based on those widely-used for the evaluation of machine translation
+
 **Name:** `feature.MachineTranslation`
 
 #### Configuration Parameters
 
-* `methods`: *No Description* *(List)*
-* `bleuN`: *No Description* *(int)*
-* `bleuN2`: *No Description* *(int)*
-* `chrFN`: *No Description* *(int)*
-* `chrFbeta`: *No Description* *(int)*
-* `nistN`: *No Description* *(int)*
+* `methods`: The methods to use (Default value: ["BLEU", "BLEU-2", "chrF", "METEOR", "NIST", "TER"]) *(List of One of BLEU|BLEU2|chrF|METEOR|NIST|TER)*
+* `bleuN`: The n-gram to use for BLEU (Default value: 4) *(int)*
+* `bleuN2`: The n-gram to use for the second BLEU (Default value: 2) *(int)*
+* `chrFN`: The n-gram size for chrF (Default value: 6) *(int)*
+* `chrFbeta`: The beat paramater for chrF (Default value: 3) *(int)*
+* `nistN`: The n-gram size for NIST (Default value: 4) *(int)*
 
 
 ## Graph Feature Configurations
@@ -260,11 +305,13 @@ so the `graphFeatures` parameter takes an array of objects, where each object ha
 
 ### Property Overlap
 
+Measures the overlap of two entities by properties that they both have. This is useful if there are properties such as part-of-speech or type that can guide the linking
+
 **Name:** `graph.PropertyOverlap`
 
 #### Configuration Parameters
 
-* `properties`: The set of properties to use for overlap or empty for no properties *(Set)*
+* `properties`: The set of properties to use for overlap or empty for no properties *(Set of String)*
 
 ### Command
 
@@ -277,14 +324,18 @@ so the `graphFeatures` parameter takes an array of objects, where each object ha
 
 ### Automatic
 
+The smart, automatic matching strategy that builds on the analysis of the datasets to find potential matches. This setting should be used most of the time
+
 **Name:** `blocking.Automatic`
 
 #### Configuration Parameters
 
-* `maxMatches`: *No Description* *(int)*
-* `ngrams`: *No Description* *(int)*
+* `maxMatches`: The maximum number of candidates to generate per entity *(int)*
+* `ngrams`: The character n-gram to use in matching (Default value: 3) *(int)*
 
 ### PPR
+
+The Personalised PageRank metric estimates how close two elements in the two datasets. This method relies on pre-links being constructed between the two datasets. The implementation is based on Lofgren, Peter A., et al. "FAST-PPR: scaling personalized pagerank estimation for large graphs." and details of the parameters are in the paper
 
 **Name:** `graph.PPR`
 No parameters
@@ -298,6 +349,8 @@ predicting different properties) so this parameter takes an array of objects, wh
 
 ### Average
 
+The scorer simply averages the weight of the scores generated
+
 **Name:** `scorer.Average`
 
 #### Configuration Parameters
@@ -307,6 +360,8 @@ predicting different properties) so this parameter takes an array of objects, wh
 * `softmax`: Apply a soft clipping of average using the sigmoid function *(boolean)*
 
 ### Lib SVM
+
+This scorer learns and applies an optimal scoring given the features. This is a supervised method and must be trained in advance. It is not robust to changes in the features generated so cannot easily be applied to other datasets
 
 **Name:** `scorer.LibSVM`
 
@@ -327,11 +382,13 @@ predicting different properties) so this parameter takes an array of objects, wh
 
 ### RAd LR
 
+Robust Adaptive Linear Regression. This scorer is based on linear regression but can produce reasonable results for unseen features (assuming some positive correlation). This works better as a supervised model (although not as well as SVM) but is more robust and effective as an unsupervised method as well
+
 **Name:** `scorer.RAdLR`
 
 #### Configuration Parameters
 
-* `errorFunction`: The error function to use in training *One of KullbackLeibler|SoftkullbackLeibler|FMeasure*
+* `errorFunction`: The error function to use in training *(One of KullbackLeibler|SoftkullbackLeibler|FMeasure)*
 
 
 ## Matcher Configuration
@@ -341,6 +398,8 @@ The matcher is given in the `matcher` section of the configuration. It should be
 
 ### Threshold
 
+Simple matcher that outputs all links over a certain score threshold
+
 **Name:** `matcher.Threshold`
 
 #### Configuration Parameters
@@ -348,6 +407,8 @@ The matcher is given in the `matcher` section of the configuration. It should be
 * `threshold`: The threshold to accept *(double)*
 
 ### Unique Assignment
+
+A special matcher that implements the Hungarian algorithm (a.k.a. MunkRes) to find a matching that gives the highest score given that no element is linked to more than one element in the other dataset
 
 **Name:** `matcher.UniqueAssignment`
 
@@ -358,20 +419,24 @@ The matcher is given in the `matcher` section of the configuration. It should be
 
 ### Greedy
 
+The greedy matcher finds a solution given an arbitrary constraint quickly by always taking the highest scoring link. It may produce poorer results than other methods
+
 **Name:** `matcher.Greedy`
 
 #### Configuration Parameters
 
-* `constraint`: The constraint that the searcher will optimize *(ConstraintConfiguration)*
+* `constraint`: The constraint that the searcher will optimize *(Constraint - see 'Constriants' section)*
 * `threshold`: The threshold (minimum value to accept) *(double)*
 
 ### Beam Search
+
+Beam search finds a matching according to a generic constraint by keeping a list of top solutions found during the search
 
 **Name:** `matcher.BeamSearch`
 
 #### Configuration Parameters
 
-* `constraint`: The constraint that the searcher will optimize *(ConstraintConfiguration)*
+* `constraint`: The constraint that the searcher will optimize *(Constraint - see 'Constriants' section)*
 * `threshold`: The threshold (minimum value to accept) *(double)*
 * `beamSize`: The size of beam. Trades the speed and memory usage of the algorithm off with the quality of the solution *(int)*
 * `maxIterations`: The maxiumum number of iterations to perform (zero for no limit) *(int)*
@@ -386,13 +451,41 @@ The matcher is given in the `matcher` section of the configuration. It should be
 
 ### Monte Carlo Tree Search
 
+Find a matching that satisifies an arbitrary constraint by means of the Monte-Carlo Tree Search algorithm
+
 **Name:** `matcher.MonteCarloTreeSearch`
 
 #### Configuration Parameters
 
-* `ce`: The exploration paramter (expert) *(double)*
-* `maxIterations`: The maxiumum number of iterations to perform *(int)*
-* `constraint`: The constraint that the searcher will optimize *(ConstraintConfiguration)*
+* `ce`: The exploration parameter (expert) *(double)*
+* `maxIterations`: The maximum number of iterations to perform *(int)*
+* `constraint`: The constraint that the searcher will optimize *(Constraint - see 'Constriants' section)*
+
+
+## Constraint Configuration
+
+Constraints are elements based to some matchers that restrict the kind of linking Naisc can produce. It should be a single object with a `name`.
+
+
+### Threshold Constraint
+
+A simple constraint that says that the score must be over a threshold
+
+**Name:** `constraint.ThresholdConstraint`
+
+#### Configuration Parameters
+
+* `threshold`: The minimum threshold to accept *(double)*
+
+### Bijective
+
+The bijective constraint requires that no more than one link exists for each element on the source and/or target dataset
+
+**Name:** `constraint.Bijective`
+
+#### Configuration Parameters
+
+* `surjection`: The type of constraint: *bijective* means at most one link on the source and target side, *surjective* means at most one link on the source side, and *inverseSurjective* means at most one link on the target side (Default value: bijective) *(One of surjective|inverseSurjective|bijective)*
 
 
 ## Rescaler Configuration (experimental)

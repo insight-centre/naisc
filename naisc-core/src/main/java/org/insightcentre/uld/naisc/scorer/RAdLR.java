@@ -22,17 +22,9 @@ import static org.insightcentre.uld.naisc.scorer.LogGap.removeNaNs;
 import java.util.*;
 
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.FeatureSet;
-import org.insightcentre.uld.naisc.FeatureSetWithScore;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.NaiscListener.Level;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
-import org.insightcentre.uld.naisc.ScoreResult;
-import org.insightcentre.uld.naisc.Scorer;
-import org.insightcentre.uld.naisc.ScorerFactory;
-import org.insightcentre.uld.naisc.ScorerTrainer;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
 import org.insightcentre.uld.naisc.util.StringPair;
@@ -126,6 +118,7 @@ public class RAdLR implements ScorerFactory {
         FMeasure
     }
 
+    @ConfigurationClass("Robust Adaptive Linear Regression. This scorer is based on linear regression but can produce reasonable results for unseen features (assuming some positive correlation). This works better as a supervised model (although not as well as SVM) but is more robust and effective as an unsupervised method as well")
     public static class Configuration {
 
         @ConfigurationParameter(description = "The error function to use in training")

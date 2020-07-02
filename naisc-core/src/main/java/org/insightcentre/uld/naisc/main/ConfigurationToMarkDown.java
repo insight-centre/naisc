@@ -10,6 +10,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Set;
 
 public class ConfigurationToMarkDown {
 
@@ -126,6 +130,16 @@ public class ConfigurationToMarkDown {
         }
 
         out.println("");
+        out.println("## Constraint Configuration");
+        out.println("\n" +
+                "Constraints are elements based to some matchers that restrict the kind of linking Naisc can produce. It should be a single object with a `name`.\n\n");
+        for(Class config : Configuration.knownConstraints) {
+            writeSingleConfiguration(out, config);
+        }
+
+
+
+        out.println("");
         out.println("## Rescaler Configuration (experimental)");
         out.println("\n" +
                 "Rescalers are still experimental, currently you can only configure to use one of the following methods:\n\n" +
@@ -146,13 +160,14 @@ public class ConfigurationToMarkDown {
     private static void writeSingleConfiguration(PrintWriter out, Class config) throws Exception {
         Class configClass = Class.forName(config.getName() + "$Configuration");
         ConfigurationClass cc = (ConfigurationClass)configClass.getAnnotation(ConfigurationClass.class);
-        if(cc != null && cc.description() != null && !cc.description().equals("")) {
-            out.println(cc.description());
-        }
         if(cc != null && cc.name() != null && !cc.name().equals("")) {
             out.println("### " + cc.name());
         } else {
             out.println("### " + config.getSimpleName().replaceAll("([a-z])([A-Z])","$1 $2"));
+        }
+        if(cc != null && cc.value() != null && !cc.value().equals("")) {
+            out.println();
+            out.println(cc.value());
         }
         out.println("");
         out.println("**Name:** `" + config.getName().substring("org.insightcentre.uld.naisc.".length()) + "`");
@@ -171,26 +186,44 @@ public class ConfigurationToMarkDown {
                 } else {
                     out.print("*No Description*");
                 }
-                if(f.getType().isEnum()) {
-                    out.print(" *One of ");
-                    boolean first = true;
-                    for(String e : getEnumValues(f.getType())) {
-                        if(first) {
-                            first = false;
-                        } else {
-                            out.print("|");
-                        }
-                        out.print(e);
-                    }
-                    out.println("*");
-                } else {
-                    out.println(" *(" + f.getType().getSimpleName() + ")*");
-                }
+                out.print(" *(");
+                out.print(typeToString(f.getType(), f.getGenericType()));
+                out.println(")*");
             }
         } else {
             out.println("No parameters");
         }
         out.println();
+    }
+
+    private static String typeToString(Class t, Type generic) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        if(t.isEnum()) {
+            sb.append("One of ");
+            boolean first = true;
+            for(String e : getEnumValues(t)) {
+                if(first) {
+                    first = false;
+                } else {
+                    sb.append("|");
+                }
+                sb.append(e);
+            }
+            return sb.toString();
+        } else if(t.equals(List.class)) {
+            sb.append("List of ");
+            sb.append(typeToString((Class)((ParameterizedType)generic).getActualTypeArguments()[0], null));
+            return sb.toString();
+        } else if(t.equals(Set.class)) {
+            sb.append("Set of ");
+            sb.append(typeToString((Class)((ParameterizedType)generic).getActualTypeArguments()[0], null));
+            return sb.toString();
+        } else if(t.equals(Configuration.ConstraintConfiguration.class)) {
+            return "Constraint - see 'Constriants' section";
+        } else {
+            return t.getSimpleName();
+        }
+
     }
 
     private static <E> String[] getEnumValues(Class<E> enumClass)

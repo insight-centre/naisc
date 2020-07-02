@@ -283,6 +283,7 @@ public class OntoLex implements BlockingStrategyFactory {
         }
 
     }
-    
+
+    @ConfigurationClass("This is used to create a monolingual word sense alignment between two dictionaries in the OntoLex-Lemon format")
     public static class Configuration {}
 }

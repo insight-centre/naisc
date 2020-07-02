@@ -33,12 +33,17 @@ public class PPR implements GraphFeatureFactory {
         return new PPRImpl(graph, identifiers, pprConfig, sparqlData);
     }
 
+    @ConfigurationClass("The Personalised PageRank metric estimates how close two elements in the two datasets. This method relies on pre-links being constructed between the two datasets. The implementation is based on Lofgren, Peter A., et al. \"FAST-PPR: scaling personalized pagerank estimation for large graphs.\" and details of the parameters are in the paper")
     public static class Configuration {
-
+        @ConfigurationParameter(description = "PPR Significance Threshold", defaultValue = "1.0e-3")
         float pprSignificanceThreshold = 1.0e-3f;
+        @ConfigurationParameter(description = "Reverse PPR Approximation Factory", defaultValue = "0.1666")
         float reversePPRApproximationFactor = 1.0f / 6.0f;
+        @ConfigurationParameter(description = "Teleport probability", defaultValue = "0.2")
         float teleportProbability = 0.2f;
+        @ConfigurationParameter(description = "Forward Steps per Reverse Step", defaultValue = "6.7")
         float forwardStepsPerReverseStep = 6.7f;
+        @ConfigurationParameter(description = "n Walks Constant", defaultValue = "-276.31")
         float nWalksConstant = (float) (24 * Math.log(1.0e6));
     }
 
