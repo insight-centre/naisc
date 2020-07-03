@@ -166,11 +166,6 @@ public class WordEmbeddings implements TextFeatureFactory {
             }
         }
 
-        @Override
-        public String[] getFeatureNames() {
-            return featureNames;
-        }
-
         private double[] _extractFeatures(String s1, String s2, WordAligner a) {
             if (stopwords != null) {
                 return wafe.makeFeatures(a.align(s1, s2, stopwords));

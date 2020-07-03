@@ -1,10 +1,14 @@
 package org.insightcentre.uld.naisc;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Blocking {
     public final URIRes entity1;
     public final URIRes entity2;
 
-    public Blocking(URIRes entity1, URIRes entity2) {
+    @JsonCreator
+    public Blocking(@JsonProperty("entity1") URIRes entity1, @JsonProperty("entity2") URIRes entity2) {
         this.entity1 = entity1;
         this.entity2 = entity2;
     }

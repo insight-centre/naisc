@@ -193,7 +193,6 @@ public class BasicString implements TextFeatureFactory {
 
         private String[] _featureNames;
 
-        @Override
         public String[] getFeatureNames() {
             if (_featureNames != null) {
                 return _featureNames;

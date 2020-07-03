@@ -94,7 +94,6 @@ public class BagOfWordsSim implements TextFeatureFactory {
             }
         }
 
-        @Override
         public String[] getFeatureNames() {
             return new String[]{"bow"};
         }

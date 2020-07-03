@@ -128,11 +128,39 @@ class RESTController {
 
     @PUT
     @Path("/upload/{id}")
-    @Consumes("application/rdf+xml", "text/turtle", "application/n-triples")
+    @Consumes("application/rdf+xml")
     @Throws(NotFoundException::class)
-    fun upload(@PathParam("id") id: String, body: String, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
+    fun uploadRdfXml(@PathParam("id") id: String, body: String, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
         try {
-            ConfigurationManager.loadDataset(id, body)
+            ConfigurationManager.loadDataset(id, body, "RDFXML")
+            return Response.ok().entity("Uploaded $id").build()
+        } catch(x : Exception) {
+            x.printStackTrace()
+            return Response.status(500).entity(x.message).build()
+        }
+    }
+
+    @PUT
+    @Path("/upload/{id}")
+    @Consumes("text/turtle")
+    @Throws(NotFoundException::class)
+    fun uploadTurtle(@PathParam("id") id: String, body: String, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
+        try {
+            ConfigurationManager.loadDataset(id, body, "TTL")
+            return Response.ok().entity("Uploaded $id").build()
+        } catch(x : Exception) {
+            x.printStackTrace()
+            return Response.status(500).entity(x.message).build()
+        }
+    }
+
+    @PUT
+    @Path("/upload/{id}")
+    @Consumes("application/n-triples")
+    @Throws(NotFoundException::class)
+    fun uploadNT(@PathParam("id") id: String, body: String, @Context @Suppress("UNUSED_PARAMETER") securityContext: SecurityContext): Response {
+        try {
+            ConfigurationManager.loadDataset(id, body, "N-TRIPLES")
             return Response.ok().entity("Uploaded $id").build()
         } catch(x : Exception) {
             x.printStackTrace()

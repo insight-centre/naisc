@@ -97,10 +97,6 @@ public class Dictionary implements TextFeatureFactory {
         }
 
         private static final String[] featName = new String[] { "dict" };
-        @Override
-        public String[] getFeatureNames() {
-            return featName;
-        }
 
         @Override
         public void close() throws IOException {

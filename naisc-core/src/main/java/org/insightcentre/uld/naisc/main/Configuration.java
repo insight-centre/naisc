@@ -38,10 +38,16 @@ import org.insightcentre.uld.naisc.Matcher;
 import org.insightcentre.uld.naisc.MatcherFactory;
 import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerFactory;
+import org.insightcentre.uld.naisc.blocking.*;
+import org.insightcentre.uld.naisc.blocking.Command;
+import org.insightcentre.uld.naisc.blocking.OntoLex;
 import org.insightcentre.uld.naisc.feature.*;
+import org.insightcentre.uld.naisc.graph.ExternalGraphFeature;
+import org.insightcentre.uld.naisc.lens.*;
+import org.insightcentre.uld.naisc.matcher.*;
 import org.insightcentre.uld.naisc.rescaling.MinMax;
 import org.insightcentre.uld.naisc.rescaling.NoRescaling;
-import org.insightcentre.uld.naisc.scorer.MergedScorer;
+import org.insightcentre.uld.naisc.scorer.*;
 import org.insightcentre.uld.naisc.util.Services;
 import org.insightcentre.uld.naisc.ScorerTrainer;
 import org.insightcentre.uld.naisc.TextFeature;
@@ -51,33 +57,13 @@ import org.insightcentre.uld.naisc.GraphFeatureFactory;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.Rescaler;
 import org.insightcentre.uld.naisc.analysis.Analysis;
-import org.insightcentre.uld.naisc.blocking.All;
-import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching;
-import org.insightcentre.uld.naisc.blocking.Automatic;
-import org.insightcentre.uld.naisc.blocking.IDMatch;
-import org.insightcentre.uld.naisc.blocking.LabelMatch;
-import org.insightcentre.uld.naisc.blocking.Path;
-import org.insightcentre.uld.naisc.blocking.Predefined;
 import org.insightcentre.uld.naisc.constraint.Bijective;
 import org.insightcentre.uld.naisc.constraint.Constraint;
 import org.insightcentre.uld.naisc.constraint.ConstraintFactory;
 import org.insightcentre.uld.naisc.constraint.ThresholdConstraint;
 import org.insightcentre.uld.naisc.graph.PPR;
 import org.insightcentre.uld.naisc.graph.PropertyOverlap;
-import org.insightcentre.uld.naisc.lens.Label;
-import org.insightcentre.uld.naisc.lens.LensAutoConfig;
-import org.insightcentre.uld.naisc.lens.OntoLex;
-import org.insightcentre.uld.naisc.lens.SPARQL;
-import org.insightcentre.uld.naisc.lens.URI;
-import org.insightcentre.uld.naisc.matcher.BeamSearch;
-import org.insightcentre.uld.naisc.matcher.Greedy;
-import org.insightcentre.uld.naisc.matcher.MonteCarloTreeSearch;
-import org.insightcentre.uld.naisc.matcher.Threshold;
-import org.insightcentre.uld.naisc.matcher.UniqueAssignment;
 import org.insightcentre.uld.naisc.rescaling.Percentile;
-import org.insightcentre.uld.naisc.scorer.Average;
-import org.insightcentre.uld.naisc.scorer.LibSVM;
-import org.insightcentre.uld.naisc.scorer.RAdLR;
 import org.insightcentre.uld.naisc.util.Lazy;
 
 /**
@@ -139,6 +125,11 @@ public class Configuration {
      * Do not force the matching of unique pairs; Match all elements.
      */
     public boolean noPrematching = false;
+
+    /**
+     * Upload path for loading datasets for external services
+     */
+     public String externalEndpoint = null;
 
     @JsonCreator
     public Configuration(
@@ -257,8 +248,8 @@ public class Configuration {
         KeyWords.class,
         WordEmbeddings.class,
         WordNet.class,
-        org.insightcentre.uld.naisc.feature.Command.class,
-            MachineTranslation.class
+            MachineTranslation.class,
+            ExternalTextFeature.class
     };
 
     public Rescaler makeRescaler() {
@@ -433,9 +424,9 @@ public class Configuration {
 
     public static Class[] knownGraphFeatures = new Class[]{
         PropertyOverlap.class,
-        org.insightcentre.uld.naisc.graph.Command.class,
         Automatic.class,
-        PPR.class
+        PPR.class,
+            ExternalGraphFeature.class
     };
 
     /**
@@ -545,8 +536,8 @@ public class Configuration {
     public static Class[] knownScorers = new Class[]{
         Average.class,
         LibSVM.class,
-        org.insightcentre.uld.naisc.scorer.Command.class,
-        RAdLR.class
+        RAdLR.class,
+            ExternalScorer.class
     };
 
     /**
@@ -675,8 +666,8 @@ public class Configuration {
         UniqueAssignment.class,
         Greedy.class,
         BeamSearch.class,
-        org.insightcentre.uld.naisc.matcher.Command.class,
-        MonteCarloTreeSearch.class
+        MonteCarloTreeSearch.class,
+            ExternalMatcher.class
     };
 
     /**
@@ -794,7 +785,7 @@ public class Configuration {
         URI.class,
         SPARQL.class,
         OntoLex.class,
-        org.insightcentre.uld.naisc.lens.Command.class
+            ExternalLens.class
     };
 
     /**
@@ -914,8 +905,8 @@ public class Configuration {
         ApproximateStringMatching.class,
         Predefined.class,
         org.insightcentre.uld.naisc.blocking.OntoLex.class,
-        org.insightcentre.uld.naisc.blocking.Command.class,
-        Path.class
+        Path.class,
+        ExternalBlocking.class
     };
 
     /**
