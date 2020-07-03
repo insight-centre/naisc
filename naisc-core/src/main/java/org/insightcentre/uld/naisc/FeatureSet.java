@@ -16,7 +16,7 @@ import org.insightcentre.uld.naisc.util.StringPair;
  * 
  * @author John McCrae
  */
-public class FeatureSet {
+public class FeatureSet extends AbstractCollection<Feature> {
    public final StringPair[] names;
    public final double[] values;
 
@@ -26,6 +26,27 @@ public class FeatureSet {
     public FeatureSet() {
         this.names = new StringPair[] {};
         this.values = new double[] {};
+    }
+
+    @Override
+    public Iterator<Feature> iterator() {
+        return new Iterator<Feature>() {
+            int i = 0;
+            @Override
+            public boolean hasNext() {
+                return i < values.length;
+            }
+
+            @Override
+            public Feature next() {
+                return new Feature(names[i]._1 + (names[i]._2.length() > 0 ? "-" : "") + names[i]._2, values[i++]);
+            }
+        };
+    }
+
+    @Override
+    public int size() {
+        return names.length;
     }
 
     @JsonCreator public FeatureSet(@JsonProperty("name") StringPair[] names, 

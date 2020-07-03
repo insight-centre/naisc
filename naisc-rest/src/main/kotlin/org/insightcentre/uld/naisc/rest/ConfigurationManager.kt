@@ -56,9 +56,9 @@ object ConfigurationManager {
         return datasets.getOrElse(dataset, { throw DatasetNotFoundException("$dataset has not been uploaded") })
     }
 
-    fun loadDataset(dataset : String, content : String) : Dataset {
+    fun loadDataset(dataset : String, content : String, format : String) : Dataset {
         val model = ModelFactory.createDefaultModel()
-        model.read(StringReader(content), "file:$dataset/")
+        model.read(StringReader(content), "file:$dataset/", format)
         val modelDataset = DefaultDatasetLoader.ModelDataset(model, dataset)
         datasets[dataset] = modelDataset
         return modelDataset
