@@ -264,15 +264,4 @@ public class ELEXISRest {
 
         return rdfModel;
     }
-
-    public File readFile(String sourcePath, String destinationPath) throws IOException {
-        Model model = ModelFactory.createDefaultModel();
-        model.read(sourcePath) ;
-
-        File fileObject = new File(destinationPath);
-        FileWriter out = new FileWriter(fileObject);
-        model.write( out, "RDF/XML-ABBREV" );
-
-        return fileObject;
-    }
 }
