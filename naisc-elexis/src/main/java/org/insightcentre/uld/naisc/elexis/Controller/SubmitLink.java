@@ -9,9 +9,8 @@ import org.insightcentre.uld.naisc.elexis.Model.*;
 import org.insightcentre.uld.naisc.elexis.Model.MessageBody;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.elexis.RestService.ELEXISRest;
+import org.insightcentre.uld.naisc.main.*;
 import org.insightcentre.uld.naisc.main.Configuration;
-import org.insightcentre.uld.naisc.main.DefaultDatasetLoader;
-import org.insightcentre.uld.naisc.main.ExecuteListener;
 import org.insightcentre.uld.naisc.util.None;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -36,7 +35,6 @@ import java.util.UUID;
 @RestController
 public class SubmitLink {
     static Model model;
-    static ExecuteListener listener;
     static AlignmentSet alignmentSet;
 
     /**
@@ -53,9 +51,12 @@ public class SubmitLink {
     }
 
     @GetMapping("/test")
-    public String[] entriesTest()
+    public ArrayList<String> entriesTest()
     {
-        String[] entries = {"cat", "dog"};
+        ArrayList<String> entries = new ArrayList<String>();
+        entries.add("cat");
+        entries.add("dog");
+
         MessageBody messageBody = new MessageBody();
         Source source = new Source();
         source.setEntries(entries);
@@ -64,41 +65,52 @@ public class SubmitLink {
     }
 
     /**
+     *
      * @param messageBody
      * @return
-     * @throws MalformedURLException
      * @throws JSONException
-     * @throws JsonProcessingException
+     * @throws IOException
      */
-    @RequestMapping(value = "/submit", method = RequestMethod.POST)
-    public List<Model> submitLinkRequest(@RequestBody MessageBody messageBody) throws MalformedURLException, JSONException, JsonProcessingException {
-//      Generate unique name for each submit request
+    @PostMapping(value = "/submit")
+    public String submitLinkRequest(@RequestBody MessageBody messageBody) throws JSONException, IOException {
+        // Generating uniqueID for each submit request
         String uniqueID = UUID.randomUUID().toString();
-//        Test connection string
-        URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019");
-//        URL endpoint = new URL(messageBody.getSource().getEndpoint());
+
+
+        // Getting the endpoint URL and creating ElexisRest object to retrieve the data
+        URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
+        if(null != messageBody.getSource().getEndpoint()) {
+            endpoint = new URL(messageBody.getSource().getEndpoint());
+        }
         ELEXISRest elexisRest = new ELEXISRest(endpoint);
 
-        List<Model> modelObj = new ArrayList<Model>();
+        // Setting the configurations sent in the MessageBody
+        org.insightcentre.uld.naisc.main.Configuration config = null;
+        if(null != messageBody.getConfiguration())
+            config = messageBody.getConfiguration().getSome();
 
-        String[] entries = messageBody.getSource().getEntries();
-        for(int i = 0; i < entries.length ; i++)
-        {
-            modelObj.add(i, elexisRest.getEntryAsTurtle(messageBody.getSource().getId(), entries[i]));
-        }
+        // Getting the nt filepath from messageBody
+        String sourceId = messageBody.getSource().getId();
+        String destinationId = messageBody.getSource().getId();
 
-        org.insightcentre.uld.naisc.main.Configuration config = messageBody.getConfiguration().getSome();
-        alignmentSet = org.insightcentre.uld.naisc.main.Main.execute("uniqueID", null, null,
-                config, new None<>(), listener, new DefaultDatasetLoader() );
+        File leftFile = elexisRest.readFile(sourceId, "leftFile.rdf");
+        File rightFile = elexisRest.readFile(destinationId, "rightFile.rdf");
 
-        return modelObj;
+        // Checking the file formats available and reading the entries
+
+
+        // Calling the execute method with the generated files
+        alignmentSet = org.insightcentre.uld.naisc.main.Main.execute(uniqueID, leftFile, rightFile,
+                config, new None<>(), ExecuteListeners.NONE, new DefaultDatasetLoader());
+
+        return uniqueID;
     }
 
     /**
      *
      * @return
      */
-    @RequestMapping(value = "/status", method = RequestMethod.POST)
+    @PostMapping(value = "/status")
     public ResponseEntity getLinkStatus()
     {
         List<JSONObject> entities = new ArrayList<JSONObject>();
@@ -122,13 +134,14 @@ public class SubmitLink {
         Result createResult = new Result();
         Linking linking = new Linking();
         Source source = new Source();
-        String[] entries = source.getEntries();
-        String[] targetEntries = Target.getEntries();
+        Target target = new Target();
+        ArrayList<String> entries = source.getEntries();
+        ArrayList<String> targetEntries = target.getEntries();
         List<Linking> linkList = new ArrayList<>();
-        for(int i = 0; i < entries.length ; i++)
+        for(int i = 0; i < entries.size() ; i++)
         {
-            createResult.setSourceEntry(entries[i]);
-            createResult.setTargetEntry(targetEntries[i]);
+            createResult.setSourceEntry(entries.get(i));
+            createResult.setTargetEntry(targetEntries.get(i));
 
             linking.setSourceSense("");
             linking.setTargetSense("");

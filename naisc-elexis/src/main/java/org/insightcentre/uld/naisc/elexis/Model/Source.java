@@ -16,7 +16,7 @@ public class Source {
     String id;
 
     @JsonProperty("entries")
-    String[] entries;
+    ArrayList<String> entries = new ArrayList<>();
 
     @JsonProperty("apiKey")
     String apiKey;
@@ -37,11 +37,11 @@ public class Source {
         this.id = id;
     }
 
-    public String[] getEntries() {
+    public ArrayList<String> getEntries() {
         return entries;
     }
 
-    public void setEntries(String[] entries) { this.entries = entries; }
+    public void setEntries(ArrayList<String> entries) { this.entries = entries; }
 
     public String getApiKey() {
         return apiKey;

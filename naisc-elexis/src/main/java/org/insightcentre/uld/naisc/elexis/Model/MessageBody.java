@@ -7,15 +7,13 @@ import org.jvnet.hk2.annotations.Optional;
 import javax.validation.constraints.NotEmpty;
 
 public class MessageBody {
-    @JsonProperty("source")
+
     @NotEmpty
     Source source;
 
-    @JsonProperty("target")
     @NotEmpty
     Target target;
 
-    @JsonProperty("configuration")
     @Optional
     Configuration configuration;
 
