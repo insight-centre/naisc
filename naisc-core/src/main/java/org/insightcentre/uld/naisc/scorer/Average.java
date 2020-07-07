@@ -23,7 +23,6 @@ import org.insightcentre.uld.naisc.util.Option;
 public class Average implements ScorerFactory {
     private ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     
-    @Override
     public String id() {
         return "average";
     }

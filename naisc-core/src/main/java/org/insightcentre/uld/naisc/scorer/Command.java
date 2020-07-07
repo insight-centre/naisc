@@ -52,7 +52,6 @@ import org.insightcentre.uld.naisc.util.Some;
  */
 public class Command implements ScorerFactory {
 
-    @Override
     public String id() {
         return "command";
     }
