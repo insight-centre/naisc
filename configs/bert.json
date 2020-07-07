@@ -1,0 +1,33 @@
+{
+    "blocking": {
+        "name": "blocking.Automatic"
+    },
+    "lenses": [],
+    "textFeatures": [{
+        "name": "feature.BasicString",
+        "wordWeights": "models/idf",
+        "ngramWeights": "models/ngidf",
+        "labelChar": true
+    },{
+        "name": "feature.WordEmbeddings",
+        "embeddingPath": "models/glove.6B.100d.txt"
+    },{
+        "name": "feature.ExternalTextFeature",
+        "endpoint": "http://localhost:5000/"
+    }],
+    "graphFeatures": [{
+        "name": "graph.Automatic"
+    }],
+    "scorers": [{
+        "name": "scorer.RAdLR",
+        "modelFile": "models/auto.radlr"
+    }],
+    "matcher": {
+        "name": "matcher.Greedy",
+        "constraint": {
+            "name": "constraint.Bijective"
+        }
+    },
+    "description": "The default setting with Sentence BERT cosine simiarity (please start S-BERT server manually before using)",
+    "rescaler": "Percentile"
+}

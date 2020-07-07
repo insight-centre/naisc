@@ -4,6 +4,7 @@ from flask import Flask, json, make_response
 from flask_restful import request
 from numpy import dot
 from numpy.linalg import norm
+from functools import lru_cache
 
 model = SentenceTransformer('bert-base-nli-mean-tokens')
 
@@ -13,13 +14,16 @@ api = Flask(__name__)
 def sbert_sim():
     print(request.json)
     if request.json and "string1" in request.json and "string2" in request.json:
-        sentences = [request.json["string1"], request.json["string2"]]
-        se = model.encode(sentences)
-        sim = dot(se[0],se[1]) / norm(se[0]) / norm(se[1])
-        return "[{\"name\":\"sbert-cosine\",value:%.8f}]" % sim
+        e0 = encode(request.json["string1"])
+        e1 = encode(request.json["string2"])
+        sim = dot(e0,e1) / norm(e0) / norm(e1)
+        return "[{\"name\":\"sbert-cosine\",\"value\":%.8f}]" % sim
     else:
         return make_response("Arguments not set", 400)
 
+@lru_cache(maxsize=10000)
+def encode(string):
+    return model.encode([string])[0]
 
 if __name__ == "__main__":
     api.run(debug=True)
