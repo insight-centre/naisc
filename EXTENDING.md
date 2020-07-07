@@ -113,7 +113,7 @@ This endpoint will be passed a document that looks something like:
 {
     "string1": "This is the first string",
     "lang1": "en",
-    "string2: "This is the second string",
+    "string2": "This is the second string",
     "lang2": "en",
     "tag": "tag"
 }
