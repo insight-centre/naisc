@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.elexis.Controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.AlignmentSet;
@@ -9,6 +10,7 @@ import org.insightcentre.uld.naisc.elexis.Model.MessageBody;
 
 import org.insightcentre.uld.naisc.elexis.RestService.ELEXISRest;
 import org.insightcentre.uld.naisc.elexis.RestService.Lemma;
+import org.insightcentre.uld.naisc.main.Configuration;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader;
 import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.util.None;
@@ -79,8 +81,12 @@ public class SubmitLink {
 
         // Setting the configurations sent in the MessageBody
         org.insightcentre.uld.naisc.main.Configuration config = null;
-        if(null != messageBody.getConfiguration())
+        if(config == null) {
+            // Reading default configuration details
+            config = new ObjectMapper().readValue(new File("configs/auto.json"), Configuration.class);
+        } else {
             config = messageBody.getConfiguration().getSome();
+        }
 
         // Processing source object from MessageBody
         URL sourceEndpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
@@ -92,7 +98,12 @@ public class SubmitLink {
         // Getting the left dictionary id and the entries from messageBody
         String sourceId = messageBody.getSource().getId();
         ArrayList<String> sourceEntries = messageBody.getSource().getEntries();
-        File leftFile = processDictionary(sourceEntries, elexisRest, sourceId, "leftFile.rdf");
+        Model leftModel = processDictionary(sourceEntries, elexisRest, sourceId);
+
+        // Writing the left dictinary into leftFile
+        File leftFile = new File("leftFile.ttl");
+        FileWriter out = new FileWriter(leftFile);
+        leftModel.write( out, "TTL" );
 
         // Processing target object from MessageBody
         URL targetEndpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
@@ -104,11 +115,15 @@ public class SubmitLink {
         // Getting the left dictionary id and the entries from messageBody
         String targetId = messageBody.getTarget().getId();
         ArrayList<String> targetEntries = messageBody.getTarget().getEntries();
-        File rightFile = processDictionary(targetEntries, elexisRest, targetId, "rightFile.rdf");
+        Model rightModel = processDictionary(targetEntries, elexisRest, targetId);
+
+        File rightFile = new File("rightFile.ttl");
+        out = new FileWriter(rightFile);
+        rightModel.write( out, "TTL" );
 
         // Calling the execute method with the generated files
         alignmentSet = org.insightcentre.uld.naisc.main.Main.execute(uniqueID, leftFile, rightFile,
-                config, new None<>(), ExecuteListeners.NONE, new DefaultDatasetLoader());
+                config, new None<>(), ExecuteListeners.STDERR, new DefaultDatasetLoader());
 
         return uniqueID;
     }
@@ -118,13 +133,13 @@ public class SubmitLink {
      * @param entries
      * @param elexisRest
      * @param id
-     * @param filepath
      * @return
      * @throws IOException
      * @throws TransformerException
      */
-    private File processDictionary(ArrayList<String> entries, ELEXISRest elexisRest,
-                                   String id, String filepath) throws IOException, TransformerException {
+    private Model processDictionary(ArrayList<String> entries, ELEXISRest elexisRest,
+                                   String id) throws IOException, TransformerException {
+        
         Lemma[] lemmas = elexisRest.getAllLemmas(id);
         HashMap<String,Lemma> map = new HashMap<String,Lemma>();
         for (Lemma l : lemmas)
@@ -140,11 +155,7 @@ public class SubmitLink {
                 model.add(getEntry(map, elexisRest, id, l.getId()));
             }
         }
-        File file = new File(filepath);
-        FileWriter out = new FileWriter(file);
-        model.write( out, "TTL" );
-
-        return file;
+        return model;
     }
 
     /**
