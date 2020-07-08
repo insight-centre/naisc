@@ -38,7 +38,6 @@ import org.insightcentre.uld.naisc.util.StringPair;
  */
 public class RAdLR implements ScorerFactory {
 
-    @Override
     public String id() {
         return "radlr";
     }

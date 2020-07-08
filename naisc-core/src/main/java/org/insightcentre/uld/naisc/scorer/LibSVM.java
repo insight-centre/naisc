@@ -80,7 +80,6 @@ public class LibSVM implements ScorerFactory {
         }
     }
 
-    @Override
     public String id() {
         return "libsvm";
     }
