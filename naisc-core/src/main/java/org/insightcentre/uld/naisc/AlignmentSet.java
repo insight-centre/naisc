@@ -224,7 +224,7 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
 
     public void toRDF(PrintStream out) {
         for(Alignment alignment : alignments) {
-            out.println(String.format("<%s> <%s> <%s> . # %.4f", alignment.entity1, alignment.property, alignment.entity2, alignment.probability));
+            out.println(String.format("<%s> <%s> <%s> . # %.4f", alignment.entity1.uri, alignment.property, alignment.entity2.uri, alignment.probability));
         }
     }
 
