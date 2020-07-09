@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 public class ExternalScorer implements ScorerFactory {
-    @Override
     public String id() {
         return "external";
     }

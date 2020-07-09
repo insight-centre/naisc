@@ -2,7 +2,7 @@
 
 _'Naisc' means 'links' in Irish and is pronounced 'nashk'._
 
-![Naisc Logo](Naisc Logo.png)
+![Naisc Logo](https://github.com/insight-centre/naisc/raw/dev/Naisc%20Logo.png)
 
 ## Installation
 
@@ -69,3 +69,5 @@ The following basic configurations are available:
 Javadoc for Naisc is available at https://uld.pages.insight-centre.org/naisc
 
 There is an overview of the tool available [here](https://docs.google.com/presentation/d/1bWThA0umgkZY1CcUguNTHspNQQt3tAvOMKUaS2i0M-U/edit?usp=sharing)
+
+For extending Naisc with new services please see the guide [here](EXTENDING.md)

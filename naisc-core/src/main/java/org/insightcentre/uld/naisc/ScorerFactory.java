@@ -12,12 +12,6 @@ import org.insightcentre.uld.naisc.util.Option;
  */
 public interface ScorerFactory {
     /**
-     * An identifier for this trainer
-     * @return The identifier
-     */
-    String id();
-
-    /**
      * Train the classifier
      * @param params Any extra parameters
      * @param modelPath The path to the model
