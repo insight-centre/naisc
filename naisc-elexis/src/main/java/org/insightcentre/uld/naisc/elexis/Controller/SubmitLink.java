@@ -15,12 +15,8 @@ import org.insightcentre.uld.naisc.main.DefaultDatasetLoader;
 import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.util.None;
 import org.json.JSONException;
-import org.json.JSONObject;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.swing.text.html.parser.Entity;
 import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.FileWriter;
@@ -30,61 +26,51 @@ import java.net.URL;
 import java.util.*;
 
 /**
- * ELEXIS REST APIs for linking two dictionaries
+ * Implementation of ELEXIS Linking APIs to return the linking between two dictionaries
  * defined at: https://elexis-eu.github.io/elexis-rest/linking.html#
  *
- * @author Suruchi Gupta
+ * @author Sampritha Manjunath
  */
 @RestController
 public class SubmitLink {
-//    static Model model;
-    static AlignmentSet alignmentSet;
+    private AlignmentSet alignmentSet;
 
     /**
-     *
-     * @return
+     * Default call to the ELEXIS Linking API
+     * @return List of available dictionaries
      * @throws MalformedURLException
      * @throws JSONException
      */
     @GetMapping("/")
-    public List<String> test() throws MalformedURLException, JSONException {
+    public DefaultResponse test() throws MalformedURLException, JSONException {
         URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
         ELEXISRest elexisRest = new ELEXISRest(endpoint);
-        return elexisRest.getDictionaries();
-    }
 
-    @GetMapping("/test")
-    public ArrayList<String> entriesTest()
-    {
-        ArrayList<String> entries = new ArrayList<String>();
-        entries.add("cat");
-        entries.add("dog");
-
-        Source source = new Source();
-        source.setEntries(entries);
-
-        return source.getEntries();
+        DefaultResponse defaultResponse = new DefaultResponse();
+        defaultResponse.setDictionaries((ArrayList<String>) elexisRest.getDictionaries());
+        return defaultResponse;
     }
 
     /**
-     *
+     * API call to link the sense of two dictionaries
      * @param messageBody
-     * @return
+     * @return requestID for the request
      * @throws JSONException
      * @throws IOException
      */
     @PostMapping(value = "/submit")
-    public String submitLinkRequest(@RequestBody MessageBody messageBody)
+    public SubmitResponse submitLinkRequest(@RequestBody MessageBody messageBody)
             throws IOException, TransformerException {
+
         // Generating uniqueID for each submit request
         String uniqueID = UUID.randomUUID().toString();
 
-        // Setting the configurations sent in the MessageBody
         org.insightcentre.uld.naisc.main.Configuration config = null;
         if(config == null) {
             // Reading default configuration details
             config = new ObjectMapper().readValue(new File("configs/auto.json"), Configuration.class);
         } else {
+            // Setting the configurations sent in the MessageBody
             config = messageBody.getConfiguration().getSome();
         }
 
@@ -100,7 +86,7 @@ public class SubmitLink {
         ArrayList<String> sourceEntries = messageBody.getSource().getEntries();
         Model leftModel = processDictionary(sourceEntries, elexisRest, sourceId);
 
-        // Writing the left dictinary into leftFile
+        // Writing the left dictionary into leftFile
         File leftFile = new File("leftFile.ttl");
         FileWriter out = new FileWriter(leftFile);
         leftModel.write( out, "TTL" );
@@ -112,24 +98,34 @@ public class SubmitLink {
         }
         elexisRest = new ELEXISRest(targetEndpoint);
 
-        // Getting the left dictionary id and the entries from messageBody
+        // Getting the right dictionary id and the entries from messageBody
         String targetId = messageBody.getTarget().getId();
         ArrayList<String> targetEntries = messageBody.getTarget().getEntries();
         Model rightModel = processDictionary(targetEntries, elexisRest, targetId);
 
+        // Writing the right dictionary into rightFile
         File rightFile = new File("rightFile.ttl");
         out = new FileWriter(rightFile);
         rightModel.write( out, "TTL" );
 
+
         // Calling the execute method with the generated files
+        // TODO - Making the call Async - WIP
         alignmentSet = org.insightcentre.uld.naisc.main.Main.execute(uniqueID, leftFile, rightFile,
                 config, new None<>(), ExecuteListeners.STDERR, new DefaultDatasetLoader());
 
-        return uniqueID;
+//      TODO - Direct execute call not working - need to check
+//        alignmentSet = org.insightcentre.uld.naisc.main.Main.execute(uniqueID, leftModel, rightModel,
+//                config, new None<>(), listener, null, null, new DefaultDatasetLoader());
+
+        // Returning the requestId for the request
+        SubmitResponse submitResponse = new SubmitResponse();
+        submitResponse.setRequestId(uniqueID);
+        return submitResponse;
     }
 
     /**
-     *
+     * Method to return all the valid entries for linking as Model
      * @param entries
      * @param elexisRest
      * @param id
@@ -139,14 +135,16 @@ public class SubmitLink {
      */
     private Model processDictionary(ArrayList<String> entries, ELEXISRest elexisRest,
                                    String id) throws IOException, TransformerException {
-        
+
+        // Getting all the lemmas from the dictionary and creating a map
         Lemma[] lemmas = elexisRest.getAllLemmas(id);
         HashMap<String,Lemma> map = new HashMap<String,Lemma>();
         for (Lemma l : lemmas)
             map.put(l.getId(),l);
 
+        // Creating a model and retrieving the relevant entries
         Model model = ModelFactory.createDefaultModel();
-        if(entries.size() != 0) {
+        if(null != entries && entries.size() != 0) {
             for(String entry : entries) {
                 model.add(getEntry(map, elexisRest, id, entry));
             }
@@ -159,7 +157,7 @@ public class SubmitLink {
     }
 
     /**
-     *
+     * Method to return the lemma as model based on the available format
      * @param map
      * @param elexisRest
      * @param id
@@ -182,51 +180,24 @@ public class SubmitLink {
     }
 
     /**
-     *
+     * API call to retrieve the status of linking
      * @return
      */
     @PostMapping(value = "/status")
-    public ResponseEntity getLinkStatus()
+    public String getLinkStatus()
     {
-        List<JSONObject> entities = new ArrayList<JSONObject>();
-        Entity[] entityList = new Entity[0];
-        for (Entity n : entityList) {
-            JSONObject status = new JSONObject();
-            status.put("state", "processing");
-            status.put("message", "Still working away");
-            entities.add(status);
-        }
-        return new ResponseEntity<Object>(entities, HttpStatus.OK);
+        // TODO - WIP
+        return "";
     }
 
     /**
-     *
+     * API call to return the linking response
      * @return
      */
     @PostMapping("/result")
-    public ResponseEntity<Result> getResults()
+    public AlignmentSet getResults()
     {
-        Result createResult = new Result();
-        Linking linking = new Linking();
-        Source source = new Source();
-        Target target = new Target();
-        ArrayList<String> entries = source.getEntries();
-        ArrayList<String> targetEntries = target.getEntries();
-        List<Linking> linkList = new ArrayList<>();
-        for(int i = 0; i < entries.size() ; i++)
-        {
-            createResult.setSourceEntry(entries.get(i));
-            createResult.setTargetEntry(targetEntries.get(i));
-
-            linking.setSourceSense("");
-            linking.setTargetSense("");
-            linking.setScore(0.0);
-            linking.setType("");
-
-            linkList.add(linking);
-            createResult.setLinking(linkList);
-        }
-
-        return new ResponseEntity<Result>(HttpStatus.OK);
+        //TODO - Format response
+        return alignmentSet;
     }
 }
