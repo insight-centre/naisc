@@ -72,4 +72,9 @@ There is an overview of the tool available [here](https://docs.google.com/presen
 
 For extending Naisc with new services please see the guide [here](EXTENDING.md)
 
+There is a quick video introduction on YouTube:
+
 [![Watch an introduction to Naisc](https://img.youtube.com/vi/maYEv8rG0_k/0.jpg)](https://www.youtube.com/watch?v=maYEv8rG0_k)
+
+
+
