@@ -1,12 +1,18 @@
 package org.insightcentre.uld.naisc.elexis.Model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 import org.jvnet.hk2.annotations.Optional;
 
 import javax.validation.constraints.NotEmpty;
 import java.util.ArrayList;
-import java.util.List;
 
+/**
+ * Stores the Target details for the linking request
+ *
+ * @author Suruchi Gupta
+ */
+@Data
 public class Target {
 
     @JsonProperty("endpoint")
@@ -19,28 +25,4 @@ public class Target {
     @JsonProperty("entries")
     @Optional
     ArrayList<String> entries;
-
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public ArrayList<String> getEntries() {
-        return entries;
-    }
-
-    public void setEntries(ArrayList<String> entries) {
-        this.entries = entries;
-    }
 }
