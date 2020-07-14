@@ -1,6 +1,7 @@
 package org.insightcentre.uld.naisc.elexis.Helper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.java.Log;
 import org.apache.jena.rdf.model.*;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
@@ -30,6 +31,7 @@ import java.util.HashMap;
  *
  * @author Suruchi Gupta
  */
+@Log
 @Service
 @Scope(value = "prototype")
 public class AsyncDictionaryLinkingHelper {
@@ -58,6 +60,10 @@ public class AsyncDictionaryLinkingHelper {
         this.requestId = requestId;
     }
 
+    public String getRequestId() {
+        return requestId;
+    }
+
     /**
      * The Method reads the configuration sent in the messageBody or sets the default configuration
      *
@@ -67,9 +73,11 @@ public class AsyncDictionaryLinkingHelper {
     public void getConfigurationDetails(MessageBody messageBody) throws IOException {
         if (messageBody.getConfiguration() == null) {
             // Reading default configuration details
+            log.info("[ Loading default config details for request: "+requestId+" ]");
             config = new ObjectMapper().readValue(new File("configs/auto.json"), Configuration.class);
         } else {
             // Setting the configurations sent in the MessageBody
+            log.info("[ Loading config from messageBody for request: "+requestId+" ]");
             config = messageBody.getConfiguration().getSome();
         }
     }
@@ -96,10 +104,12 @@ public class AsyncDictionaryLinkingHelper {
         // Creating a model and retrieving the relevant entries
         Model model = ModelFactory.createDefaultModel();
         if (null != entries && entries.size() != 0) {
+            log.info("[ Loading entries from messageBody for request: "+requestId+" ]");
             for (String entry : entries) {
                 model.add(getEntry(map, elexisRest, id, entry));
             }
         } else {
+            log.info("[ Loading all entries for request: "+requestId+" ]");
             for (Lemma l : lemmas) {
                 model.add(getEntry(map, elexisRest, id, l.getId()));
             }
@@ -147,6 +157,7 @@ public class AsyncDictionaryLinkingHelper {
         ELEXISRest elexisRest = new ELEXISRest(sourceEndpoint);
 
         // Getting the left dictionary id and the entries from messageBody
+        log.info("[ Loading Source details for request: "+requestId+" ]");
         String sourceId = messageBody.getSource().getId();
         ArrayList<String> sourceEntries = messageBody.getSource().getEntries();
         leftModel = processDictionary(sourceEntries, elexisRest, sourceId);
@@ -163,6 +174,7 @@ public class AsyncDictionaryLinkingHelper {
         elexisRest = new ELEXISRest(targetEndpoint);
 
         // Getting the right dictionary id and the entries from messageBody
+        log.info("[ Loading Target details for request: "+requestId+" ]");
         String targetId = messageBody.getTarget().getId();
         ArrayList<String> targetEntries = messageBody.getTarget().getEntries();
         rightModel = processDictionary(targetEntries, elexisRest, targetId);
