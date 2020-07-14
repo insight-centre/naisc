@@ -47,8 +47,8 @@ public class SubmitLink {
      */
     @GetMapping("/")
     public ResponseEntity<DefaultResponse> test() throws MalformedURLException, JSONException {
-        URL endpoint = new URL("http://localhost:8000/");
-//        URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
+//        URL endpoint = new URL("http://localhost:8000/");
+        URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
         ELEXISRest elexisRest = new ELEXISRest(endpoint);
 
         log.info("[ Initiating default request ]");
@@ -101,7 +101,7 @@ public class SubmitLink {
         StatusResponse statusResponse = new StatusResponse();
 
         log.info("[ Checking the request status for "+asyncHelper.getRequestId()+" ]");
-        if (status.equals("COMPLETED") || status.equals("FAILED")) {
+        if (status.equals("COMPLETED") || status.equals("FAILED") || status.equals("MATCHING")) { // TODO remove MATCHING
             statusResponse.setState("COMPLETED");
             statusResponse.setMessage("Results are ready");
         } else {
@@ -124,7 +124,7 @@ public class SubmitLink {
         if(status.equals("FAILED")) {
             log.severe("[ Request status FAILED for "+asyncHelper.getRequestId()+" ]");
             return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
-        } else if (status.equals("COMPLETED") || status.equals("MATCHING")) {
+        } else if (status.equals("COMPLETED") || status.equals("MATCHING")) { // TODO remove MATCHING
             log.info("[ Fetching results for the request "+asyncHelper.getRequestId()+" ]");
             ArrayList<Result> results = asyncHelper.generateResults();
             return new ResponseEntity(results, HttpStatus.OK);
