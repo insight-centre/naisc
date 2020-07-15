@@ -3,8 +3,10 @@ package org.insightcentre.uld.naisc.elexis.Helper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.java.Log;
 import org.apache.jena.rdf.model.*;
+import org.apache.jena.vocabulary.SKOS;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
+import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.elexis.Model.Linking;
 import org.insightcentre.uld.naisc.elexis.Model.MessageBody;
 import org.insightcentre.uld.naisc.elexis.Model.Result;
@@ -191,6 +193,7 @@ public class AsyncDictionaryLinkingHelper {
     public void asyncExecute() {
         alignments = org.insightcentre.uld.naisc.main.Main.execute(requestId, leftFile, rightFile,
                 config, new None<>(), requestStatusListener, new DefaultDatasetLoader());
+        requestStatusListener.updateStatus(NaiscListener.Stage.COMPLETED, "Linking Process Complete");
     }
 
     /**
@@ -236,7 +239,7 @@ public class AsyncDictionaryLinkingHelper {
             }
 
             link.setScore(a.probability);
-            link.setType(a.property);
+            link.setType(mapResult(a.property));
 
             links.add(link);
             result.setLinking(links);
@@ -244,4 +247,25 @@ public class AsyncDictionaryLinkingHelper {
         }
         return results;
     }
+
+    /**
+     * Method to map the link type
+     * @param result
+     * @return mapped link type
+     */
+    private String mapResult(String result) {
+        if(result.equals(Alignment.SKOS_EXACT_MATCH)) {
+            return "exact";
+        } else if(result.equals(SKOS.narrowMatch.toString())) {
+            return "narrower";
+        } else if(result.equals(SKOS.broadMatch.toString())) {
+            return "narrower";
+        } else if(result.equals(SKOS.relatedMatch.toString())) {
+            return "narrower";
+        } else {
+            System.err.println("Unrecognized property: " + result);
+            return "none";
+        }
+    }
+
 }
