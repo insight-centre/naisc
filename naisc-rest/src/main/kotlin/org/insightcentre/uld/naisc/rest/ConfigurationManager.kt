@@ -32,7 +32,7 @@ object ConfigurationManager {
     private val matchers = mutableMapOf<String, Matcher>()
 
     @Throws(InvalidConfigurationException::class)
-    private fun loadConfiguration(configuration: String): Configuration {
+    fun loadConfiguration(configuration: String): Configuration {
         if (configurations[configuration] != null) {
             return configurations[configuration]!!
         }
@@ -150,6 +150,18 @@ object ConfigurationManager {
         val features = loadConfiguration(configuration).makeTextFeatures()
         textFeatures[configuration] = features
         return features
+    }
+
+    fun getAllConfigurations() : List<Pair<String,Configuration>> {
+        val mapper = ObjectMapper()
+        var configs = mutableListOf<Pair<String,Configuration>>()
+        for(f in File("configs/").listFiles()) {
+            if(f.name.endsWith(".json")) {
+                val config = mapper.readValue<Configuration>(FileReader(f), Configuration::class.java)
+                configs.add(Pair(f.name.substring(0, f.name.length - 5), config))
+            }
+        }
+        return configs
     }
 
 }
