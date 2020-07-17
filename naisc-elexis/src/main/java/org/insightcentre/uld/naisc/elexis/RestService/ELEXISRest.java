@@ -95,6 +95,9 @@ public class ELEXISRest {
         URL allLemmasEndPoint = new URL(endpoint.toString()+"/list/"+dictionary);
         String response = apiConnection.executeAPICall(allLemmasEndPoint);
 
+        if(response == null) {
+            throw new RuntimeException("Failed to get a response from " + endpoint.toString() + " perhaps it has not started?");
+        }
         ObjectMapper objectMapper = new ObjectMapper();
         Lemma[] allLemmas = objectMapper.readValue(response, Lemma[].class);
 
