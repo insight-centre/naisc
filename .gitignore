@@ -164,3 +164,8 @@ local.properties
 runs_dev/
 mwsa
 runs_mwsa/
+
+naisc-elexis/leftFile.ttl
+naisc-elexis/rightFile.ttl
+eds.db
+Testing_Steps.sh

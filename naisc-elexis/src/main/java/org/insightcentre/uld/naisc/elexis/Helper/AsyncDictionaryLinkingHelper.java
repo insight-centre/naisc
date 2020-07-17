@@ -76,7 +76,11 @@ public class AsyncDictionaryLinkingHelper {
         if (messageBody.getConfiguration() == null) {
             // Reading default configuration details
             log.info("[ Loading default config details for request: "+requestId+" ]");
-            config = new ObjectMapper().readValue(new File("configs/auto.json"), Configuration.class);
+            try {
+                config = new ObjectMapper().readValue(new File("configs/auto.json"), Configuration.class);
+            } catch(IOException x) {
+                throw new RuntimeException("could not find auto config in " + new File("configs/auto.json").getAbsolutePath(), x);
+            }
         } else {
             // Setting the configurations sent in the MessageBody
             log.info("[ Loading config from messageBody for request: "+requestId+" ]");
