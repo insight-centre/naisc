@@ -247,8 +247,49 @@
                             </div>
                         </div>
                     </div>
-                </div>          
+                </div>
+
+                <div class="modal fade" id="crossFoldModal" tabindex="-1" role="dialog" aria-labelledby="crossFoldModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="crossFoldModalLabel">Cross-fold Validation</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span arid-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <form>
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label for="foldCount">Number of folds:</label>
+                                        <input type="number" id="foldCount" value="10" min="2" class="form-control"/>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Folding methodology:</label><br/>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" id="foldDir1" name="foldDir" value="left" checked>
+                                            <label for="foldDir1" class="form-check-label">Fold on left dataset</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" id="foldDir2" name="foldDir" value="right">
+                                            <label for="foldDir2" class="form-check-label">Fold on right dataset</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" id="foldDir2" name="foldDir" value="both">
+                                            <label for="foldDir3" class="form-check-label">Fold on both datasets <i>(Not recommended: overestimates scores!)</i></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-secondary" data-dismiss="modal" v-on:click.prevent="crossfoldSubmit()">Submit</button>
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
+
             <div class="row">
                 <h3>Previous runs</h3>
             </div>
@@ -256,13 +297,13 @@
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <td>Run Identifier</td>
-                            <td>Configuration</td>
-                            <td>Dataset</td>
-                            <td>Precision</td>
-                            <td>Recall</td>
-                            <td>F-Measure</td>
-                            <td>Time</td>
+                            <td>Run Identifier <i class="fas" v-bind:class="{ 'fa-sort-up': sortingProperty === 'identifier' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'identifier' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'identifier' }" v-on:click="sortColumn('identifier')"/></i></td>
+                            <td>Configuration <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'configName' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'configName' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'configName' }" v-on:click="sortColumn('configName')"/></i></td>
+                            <td>Dataset <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'datasetName' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'datasetName' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'datasetName' }" v-on:click="sortColumn('datasetName')"/></i></td>
+                            <td>Precision <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'precision' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'precision' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'precision' }" v-on:click="sortColumn('precision')"/></i></td>
+                            <td>Recall <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'recall' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'recall' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'recall' }" v-on:click="sortColumn('recall')"/></i></td>
+                            <td>F-Measure <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'fmeasure' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'fmeasure' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'fmeasure' }" v-on:click="sortColumn('fmeasure')"/></i></td>
+                            <td>Time <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'time' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'time' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'time' }" v-on:click="sortColumn('time')"/></i></td>
                             <td class="icon-table-col"></td>
                             <td class="icon-table-col"></td>
                             <td class="icon-table-col"></td>
@@ -366,8 +407,10 @@ function unflatten_config(config) {
     }
     return root;
 }
-data.polling = null;                
-         
+data.polling = null;
+data.sortingProperty = "none";
+data.sortingDir = "none";
+
 var app = new Vue({
   el: '#app',
   data: data,
@@ -403,9 +446,30 @@ var app = new Vue({
     },
     newConfig() {
         var configName = document.getElementById("newConfigName").value;
-        this.configs[configName] = {};
+        this.configs[configName] = {
+            "blocking": {
+                "name": "blocking.Automatic"
+            },
+            "lenses": [],
+            "textFeatures": [{
+                "name": "features.BasicString"
+            }],
+            "graphFeatures": [],
+            "scorers": [{
+                "name": "scorer.Average"
+            }],
+            "matcher": {
+                "name": "matcher.Threshold"
+            },
+            "description": "New configuration"
+        };
         this.configName = configName;
         this.config = flatten_config(this.configs[configName]);
+        jQuery.ajax({
+            url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/save_config/" + this.configName,
+            method: "POST",
+            data: JSON.stringify(unflatten_config(this.config))
+        });
     },
     toggleConfig() {
         this.showConfig = !this.showConfig;
@@ -503,13 +567,33 @@ var app = new Vue({
         });
     },
     crossfold() {
+        if(this.configName == null || this.configName == "" ||
+            this.datasetName == null || this.datasetName == "") {
+            $('#exceptionText').html("<h5>Configuration or dataset not set</h5>");
+            $('#error').modal('show');
+            return;
+        }
+        $('#crossFoldModal').modal('show');
+    },
+    crossfoldSubmit() {
         var configName = this.configName;
         var datasetName = this.datasetName;
         var data = this;
+        if(this.configName == null || this.configName == "" ||
+            this.datasetName == null || this.datasetName == "") {
+            $('#exceptionText').html("<h5>Configuration or dataset not set</h5>");
+            $('#error').modal('show');
+            return;
+        }
+        var postData = JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName,
+                                   "dataset": this.datasetName, "runId": this.identifier,
+                                   "foldDir": $('input[name="foldDir"]:checked').val(),
+                                   "foldCount": $('#foldCount').val()
+                                   });
         jQuery.ajax({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/crossfold",
             method: "POST",
-            data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier }),
+            data: postData,
             processData: false,
             success: function(result) {
                 var id = result;
@@ -554,6 +638,7 @@ var app = new Vue({
                                             }
                                         }
                                         app.runs.splice(0,0,data2);
+                                        app.sortData();
                                     }
                                 });
                             }
@@ -623,7 +708,41 @@ var app = new Vue({
                 console.log("failed to get messages");
             }
         });
-    }       
+    },
+    sortColumn(column) {
+        if(this.sortingProperty === column) {
+            if(this.sortingDir === "up") {
+                this.sortingDir = "down";
+            } else {
+                this.sortingDir = "up";
+            }
+        } else {
+            this.sortingProperty = column;
+            this.sortingDir = "down";
+        }
+        this.sortData();
+    },
+    sortData() {
+        var sortDir = 1;
+        if(this.sortingDir === "up") {
+            sortDir = -1;
+        }
+        var sortProp = this.sortingProperty;
+        if(this.sortingProperty !== "none") {
+            this.runs.sort(function(a,b) {
+                var avalue = a[sortProp];
+                var bvalue = b[sortProp];
+                if(avalue < bvalue) {
+                    return sortDir;
+                } else if(avalue > bvalue) {
+                    return -sortDir;
+                } else {
+                    return 0;
+                }
+            });
+         }
+    }
+
   },
   beforeDestroy() {
     clearInterval(this.polling);

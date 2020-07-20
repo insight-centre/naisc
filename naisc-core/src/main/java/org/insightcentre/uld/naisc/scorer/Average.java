@@ -9,35 +9,28 @@ import static java.lang.Double.min;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.FeatureSet;
-import org.insightcentre.uld.naisc.NaiscListener;
-import org.insightcentre.uld.naisc.ScoreResult;
-import org.insightcentre.uld.naisc.Scorer;
-import org.insightcentre.uld.naisc.ScorerFactory;
-import org.insightcentre.uld.naisc.ScorerTrainer;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
 
 /**
  * A scorer that averages the features given as input. Please note that this
- * score is limited to the range [0,1] and so may produce odd results
+ * probability is limited to the range [0,1] and so may produce odd results
  * 
  * @author John McCrae
  */
 public class Average implements ScorerFactory {
     private ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     
-    @Override
     public String id() {
         return "average";
     }
 
     @Override
-    public List<Scorer> makeScorer(Map<String, Object> params, File modelPath) {
+    public Scorer makeScorer(Map<String, Object> params, File modelPath) {
         Configuration config = mapper.convertValue(params, Configuration.class);
-        return Collections.singletonList(new AverageImpl(config.weights, config.property, config.softmax));
+        return new AverageImpl(config.weights, config.property, config.softmax);
     }
 
     @Override
@@ -48,6 +41,7 @@ public class Average implements ScorerFactory {
     /**
      * The configuration of the averaging scorer
      */
+     @ConfigurationClass("The scorer simply averages the weight of the scores generated")
     public static class Configuration {
         /**
          * The weights to be applied to the features. Or null for all features as 1.0
@@ -55,9 +49,9 @@ public class Average implements ScorerFactory {
         @ConfigurationParameter(description = "The weights to be applied to the features")
         public double[] weights;
         /**
-         * The relation to predict.
+         * The property to predict.
          */
-        @ConfigurationParameter(description = "The relation to predict")
+        @ConfigurationParameter(description = "The property to predict")
         public String property;
         /**
          * Apply a soft clipping of average using the sigmoid function. If false
@@ -81,7 +75,7 @@ public class Average implements ScorerFactory {
         
 
         @Override
-        public ScoreResult similarity(FeatureSet features, NaiscListener log) {
+        public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) {
             if(weights != null && weights.length != features.values.length) {
                 throw new IllegalArgumentException("Length of feature vector does not match that of weights");
             }
@@ -94,15 +88,10 @@ public class Average implements ScorerFactory {
                 }
             }
             if(softmax) {
-                return ScoreResult.fromDouble(sigmoid(score));
+                return Collections.singletonList(new ScoreResult(sigmoid(score), relation));
             } else {
-                return ScoreResult.fromDouble(max(0.0, min(1.0, score)));
+                return Collections.singletonList(new ScoreResult(max(0.0, min(1.0, score)), relation));
             }
-        }
-
-        @Override
-        public String relation() {
-            return relation;
         }
 
         @Override

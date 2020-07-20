@@ -106,9 +106,7 @@ public class ManageServlet extends HttpServlet {
             }
         } else if (path.equals("/alternatives")) {
             try {
-                System.err.println(req.getQueryString());
                 String leftId = req.getParameter("left");
-                System.err.println(leftId);
                 String rightId = req.getParameter("right");
                 String executionId = req.getParameter("id");
                 if (executionId != null) {
@@ -176,7 +174,6 @@ public class ManageServlet extends HttpServlet {
             String id = path.substring(8);
             if (id.matches(VALID_ID)) {
                 AddRemoveData data = mapper.readValue(req.getReader(), AddRemoveData.class);
-                System.err.println(data);
                 Run oldRun = getOldRun(data.data, id);
                 if (oldRun != null) {
                     Run run = new Meas.Run(data.data.identifier, oldRun.configName, oldRun.datasetName, data.data.precision, data.data.recall, data.data.fmeasure, -2, oldRun.time, oldRun.isTrain);
@@ -204,7 +201,6 @@ public class ManageServlet extends HttpServlet {
                 try (PrintWriter out = new PrintWriter("configs/" + configId + ".json")) {
                     mapper.writeValue(out, config);
                 }
-                Meas.data.configs.put(configId, config);
             } catch (IOException x) {
                 x.printStackTrace();
                 throw new ServletException(x);

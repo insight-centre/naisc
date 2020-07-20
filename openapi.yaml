@@ -1,0 +1,372 @@
+openapi: 3.0.0
+info:
+  title: Naisc Linking Services
+  version: "1.0"
+servers:
+  - url: http://localhost:8080/
+  description: SwaggerHub API Auto Mocking
+paths:
+  /naisc/upload/{id}:
+    put:
+      summary: Upload a dataset to Naisc
+      operationId: upload
+      parameters:
+      - name: id
+        in: path
+        description: The identifier of the dataset
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/rdf+xml:
+            schema:
+              type: string
+          text/turtle:
+            schema:
+              type: string
+          application/n-triples:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Dataset uploaded successfully
+  /naisc/{config}/block:
+    get:
+      summary: Find a blocking between two datasets
+      operationId: block
+      parameters:
+      - name: left
+        in: query
+        description: The ID of the left dataset to block as uploaded to upload
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: right
+        in: query
+        description: The ID of the right dataset to block as uploaded to upload
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: config
+        in: path
+        description: The configuration to be used for matching
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The blocking succeeded
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Blocking'
+  /naisc/{config}/extract_text:
+    post:
+      summary: Extract text with a lens
+      operationId: extract_text
+      parameters:
+      - name: config
+        in: path
+        description: The configuration to be used for matching
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Blocking'
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LangStringPair'
+  /naisc/{config}/text_features:
+    post:
+      summary: Extract features from text
+      operationId: text_features
+      parameters:
+      - name: config
+        in: path
+        description: The configuration to use
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LangStringPair'
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Feature'
+  /naisc/{config}/graph_features:
+    post:
+      summary: Extract features from the graph
+      operationId: graph_features
+      parameters:
+      - name: config
+        in: path
+        description: The configuration to use
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Blocking'
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Feature'
+  /naisc/{config}/score:
+    post:
+      summary: Produce a score from a set of features
+      operationId: score
+      parameters:
+      - name: config
+        in: path
+        description: The configuration to use
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Feature'
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Score'
+  /naisc/{config}/match:
+    post:
+      summary: Produce a matching from some alignments
+      operationId: match
+      parameters:
+      - name: config
+        in: path
+        description: The configuration to use
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Alignment'
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alignment'
+  /naisc/{config}/prematch:
+    post:
+      summary: Check if a matching is trivial and can be computed without artificial
+        intelligence
+      operationId: prematch
+      parameters:
+      - name: config
+        in: path
+        description: The configuration to use
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Blocking'
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: boolean
+components:
+  schemas:
+    Blocking:
+      required:
+      - entity1
+      - entity2
+      type: object
+      properties:
+        entity1:
+          $ref: '#/components/schemas/Resource'
+        entity2:
+          $ref: '#/components/schemas/Resource'
+      example:
+        entity1:
+          uri: http://dbpedia.org/resource/Example
+          dataset: dbpedia
+        entity2:
+          uri: http://en-word.net/lemma/example
+          dataset: english-wordnet
+    Resource:
+      required:
+      - dataset
+      - uri
+      type: object
+      properties:
+        uri:
+          type: string
+          description: The URI of the resource
+          example: http://www.example.com/foo
+        dataset:
+          type: string
+          description: The Dataset ID this resource occurs in
+          example: dataset
+    LangStringPair:
+      required:
+      - lang1
+      - lang2
+      - string1
+      - string2
+      - tag
+      type: object
+      properties:
+        string1:
+          type: string
+          description: The first string
+        string2:
+          type: string
+          description: The second string
+        lang1:
+          type: string
+          description: The language of the first string
+          format: lang
+        lang2:
+          type: string
+          description: The language of the second string
+          format: lang
+        tag:
+          type: string
+          description: The tag decides how the feature will be extracted based on
+            the configuration, normally this is just `default`
+      example:
+        string1: example
+        lang1: en
+        string2: Beispiel
+        lang2: de
+        tag: default
+    Feature:
+      required:
+      - name
+      - value
+      type: object
+      properties:
+        name:
+          type: string
+          description: A name that identifies this feature. Unique in the feature
+            list
+        value:
+          type: number
+          description: The value of this feature
+          format: double
+      example:
+        name: jaccard
+        value: 0.6
+    Score:
+      required:
+      - probability
+      - property
+      type: object
+      properties:
+        property:
+          type: string
+          description: The URI of the property that is being predicted. Most frequently
+            this is `skos:exactMatch`
+          format: url
+        probability:
+          maximum: 1
+          minimum: 0
+          type: number
+          description: The probability that this property holds
+          format: double
+      example:
+        property: http://www.w3.org/2004/02/skos/core#exactMatch
+        probability: 0.8
+    Alignment:
+      required:
+      - entity1
+      - entity2
+      - probability
+      - property
+      type: object
+      properties:
+        entity1:
+          $ref: '#/components/schemas/Resource'
+        entity2:
+          $ref: '#/components/schemas/Resource'
+        probability:
+          maximum: 1
+          minimum: 0
+          type: number
+          description: The probability that the property holds
+          format: double
+        property:
+          type: string
+          description: The property that is predicted
+          format: url
+      example:
+        entity1:
+          uri: http://dbpedia.org/resource/Example
+          dataset: dbpedia
+        entity2:
+          uri: http://en-word.net/lemma/example
+          dataset: english-wordnet
+        property: http://www.w3.org/2004/02/skos/core#exactMatch
+        probability: 0.8

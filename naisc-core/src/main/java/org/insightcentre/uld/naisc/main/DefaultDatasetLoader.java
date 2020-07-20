@@ -33,13 +33,21 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
     public ModelDataset fromFile(File file, String name) throws IOException {
 
         final Model model = ModelFactory.createDefaultModel();
-        model.read(new FileReader(file), file.toURI().toString(), "riot");
-        return new ModelDataset(model);
+        if(file.getName().endsWith(".rdf")) {
+            model.read(new FileReader(file), file.toURI().toString(), "RDF/XML");
+        } else if(file.getName().endsWith(".ttl")) {
+            model.read(new FileReader(file), file.toURI().toString(), "Turtle");
+        } else if(file.getName().endsWith(".nt")) {
+            model.read(new FileReader(file), file.toURI().toString(), "N-TRIPLES");
+        } else {
+            model.read(new FileReader(file), file.toURI().toString(), "RDF/XML");
+        }
+        return new ModelDataset(model, name);
     }
 
     @Override
     public EndpointDataset fromEndpoint(final URL endpoint) {
-        return new EndpointDataset(endpoint);
+        return new EndpointDataset(endpoint, endpoint.toString());
     }
 
     @Override
@@ -49,18 +57,23 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
         final Model rightModel = dataset2.model;
         combined.add(leftModel);
         combined.add(rightModel);
-        return new ModelDataset(combined);
+        return new ModelDataset(combined, dataset1.id() + "+" + dataset2.id());
     }
 
     public static class ModelDataset implements Dataset {
         public final Model model;
+        public final String id;
 
-        public ModelDataset(Model model) {
+        public ModelDataset(Model model, String id) {
             this.model = model;
+            this.id = id;
         }
-        
-        
-        
+
+        @Override
+        public String id() {
+            return id;
+        }
+
         @Override
         public Option<URL> asEndpoint() {
             return new None<>();
@@ -115,12 +128,18 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
     
     public static class EndpointDataset implements Dataset {
         private final URL url;
+        private final String id;
 
-        public EndpointDataset(URL url) {
+        public EndpointDataset(URL url, String id) {
             this.url = url;
+            this.id = id;
         }
-        
-        
+
+        @Override
+        public String id() {
+            return id;
+        }
+
         @Override
         public Option<URL> asEndpoint() {
             return new Some<>(url);

@@ -1,0 +1,38 @@
+{
+  "blocking": {
+    "name": "blocking.ApproximateStringMatching",
+    "maxMatches": 20,
+    "property": "http://www.w3.org/2004/02/skos/core#definition"
+  },
+  "lenses": [{
+    "name": "lens.Label",
+    "property": "http://www.w3.org/2000/01/rdf-schema#label",
+    "id": "lemma"
+  },{
+    "name": "lens.Label",
+    "property": "http://www.w3.org/2004/02/skos/core#definition",
+    "id": "definition"
+  },{
+    "name": "lens.Label",
+    "property": "http://wordnet-rdf.princeton.edu/ontology#example",
+    "id": "example"
+  }],
+  "textFeatures": [{
+    "name": "feature.WordEmbeddings",
+    "embeddingPath": "models/glove.6B.100d.txt",
+    "features": ["max"]
+  }],
+  "graphFeatures": [{
+    "name": "graph.PPR"
+  }],
+  "scorers": [{
+    "name": "scorer.RAdLR"
+  }],
+  "matcher": {
+    "name": "matcher.Threshold",
+    "threshold": 0.7
+  },
+  "includeFeatures": true,
+  "ignorePreexisting": true,
+  "description": "Default CILI matching task"
+}

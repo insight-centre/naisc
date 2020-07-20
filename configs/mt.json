@@ -1,0 +1,21 @@
+{
+    "blocking": {
+        "name": "blocking.Automatic"
+    },
+    "lenses": [],
+    "textFeatures": [{
+        "name": "feature.MachineTranslation"
+    }],
+    "graphFeatures": [],
+    "scorers": [{
+        "name": "scorer.RAdLR",
+        "modelFile": "models/auto.radlr"
+    }],
+    "matcher": {
+        "name": "matcher.Greedy",
+        "constraint": {
+            "name": "constraint.Bijective"
+        }
+    },
+    "description": "Machine translation inspired metrics, such as BLEU"
+}

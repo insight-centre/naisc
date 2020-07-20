@@ -4,15 +4,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Iterator;
 import java.util.Map;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Matcher;
-import org.insightcentre.uld.naisc.MatcherFactory;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
 
 /**
- * Simply extract all links whose score is over a given threshold
+ * Simply extract all links whose probability is over a given threshold
  * 
  * @author John McCrae
  */
@@ -33,6 +30,7 @@ public class Threshold implements MatcherFactory {
     /**
      * The configuration for a threshold matcher.
      */
+     @ConfigurationClass("Simple matcher that outputs all links over a certain score threshold")
     public static class Configuration {
         /**
          * The threshold to accept.
@@ -53,7 +51,7 @@ public class Threshold implements MatcherFactory {
             matches.addAll(initial);
             Iterator<Alignment> iter = matches.iterator();
             while(iter.hasNext()) {
-                final double score = iter.next().score;
+                final double score = iter.next().probability;
                 if(score < threshold)
                     iter.remove();
             }

@@ -12,12 +12,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.NaiscListener;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.StringPair;
-import org.insightcentre.uld.naisc.TextFeature;
-import org.insightcentre.uld.naisc.TextFeatureFactory;
 
 /**
  * Simple check if a term is already a synonym in a dictionary
@@ -25,9 +23,10 @@ import org.insightcentre.uld.naisc.TextFeatureFactory;
  */
 public class Dictionary implements TextFeatureFactory {
     /** Configuration for basic.dict.Dictionary */
+    @ConfigurationClass("Check for synonyms in a dictionary")
     public static class Configuration {
         /** The dictionary to use */
-        @ConfigurationParameter(description = "The dictionary to use")
+        @ConfigurationParameter(description = "The dictionary to use (tab-separated synonyms, one per line)")
         public String dict;
     }
 
@@ -89,19 +88,15 @@ public class Dictionary implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair lsp, NaiscListener log) {
-            StringPair sp1 = new StringPair(lsp._1, lsp._2);
-            StringPair sp2 = new StringPair(lsp._2, lsp._1);
-            return new double[] {
+        public Feature[] extractFeatures(LensResult lsp, NaiscListener log) {
+            StringPair sp1 = new StringPair(lsp.string1, lsp.string2);
+            StringPair sp2 = new StringPair(lsp.string2, lsp.string1);
+            return Feature.mkArray(new double[] {
                 dictionary.contains(sp1) || dictionary.contains(sp2) ? 1.0 : 0.0
-            };
+            }, featName);
         }
 
         private static final String[] featName = new String[] { "dict" };
-        @Override
-        public String[] getFeatureNames() {
-            return featName;
-        }
 
         @Override
         public void close() throws IOException {

@@ -67,16 +67,16 @@ public class LabelMatchTest {
         right.add(right.createStatement(right.createResource("file:fuzz3"), right.createProperty(RDFS_LABEL), left.createLiteral("dog house", "en")));
         
         BlockingStrategy strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
-        assertEquals(3, count(strategy.block(new ModelDataset(left), new ModelDataset(right))));
+        assertEquals(3, count(strategy.block(new ModelDataset(left, "left"), new ModelDataset(right, "right"))));
         
         params.put("language", "en");
         strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
-        assertEquals(2, count(strategy.block(new ModelDataset(left), new ModelDataset(right))));
+        assertEquals(2, count(strategy.block(new ModelDataset(left, "left"), new ModelDataset(right, "right"))));
 
         
         params.put("mode", "lenient");
         strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
-        assertEquals(3, count(strategy.block(new ModelDataset(left), new ModelDataset(right))));
+        assertEquals(3, count(strategy.block(new ModelDataset(left, "left"), new ModelDataset(right, "right"))));
         
     }
     

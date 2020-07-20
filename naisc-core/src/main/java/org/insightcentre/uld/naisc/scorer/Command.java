@@ -26,7 +26,7 @@ import org.insightcentre.uld.naisc.util.Some;
 
 /**
  * Use an external command as the scorer of matches. The command will be fed the
- * datapoints one line at a time as a Json array and should print a score
+ * datapoints one line at a time as a Json array and should print a probability
  * between 0 and 1 on each corresponding line. For example
  *
  * Input:  <code>
@@ -39,7 +39,7 @@ import org.insightcentre.uld.naisc.util.Some;
  * 0.2
  * </code>
  *
- * The trainer is fed the same input but with the score appended after a tab.
+ * The trainer is fed the same input but with the probability appended after a tab.
  * There is no expected output. Instead the `trainCommand` and `command` should
  * both refer to the same saved model file.
  *
@@ -52,18 +52,17 @@ import org.insightcentre.uld.naisc.util.Some;
  */
 public class Command implements ScorerFactory {
 
-    @Override
     public String id() {
         return "command";
     }
 
     @Override
-    public List<Scorer> makeScorer(Map<String, Object> params, File modelPath) {
+    public Scorer makeScorer(Map<String, Object> params, File modelPath) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if (config.command == null) {
             throw new ConfigurationException("Command cannot be null");
         }
-        return Collections.singletonList(new CommandImpl(modelPath == null ? config.command : config.command.replace("$MODEL_PATH", modelPath.getAbsolutePath()), config.property));
+        return new CommandImpl(modelPath == null ? config.command : config.command.replace("$MODEL_PATH", modelPath.getAbsolutePath()), config.property);
     }
 
     @Override
@@ -142,20 +141,15 @@ public class Command implements ScorerFactory {
         }
 
         @Override
-        public ScoreResult similarity(FeatureSet features, NaiscListener log) {
+        public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) {
             try {
                 out.get().println(mapper.writeValueAsString(features.values));
                 out.get().flush();
                 String line = in.get().readLine();
-                return ScoreResult.fromDouble(Double.parseDouble(line.trim()));
+                return Collections.singletonList(new ScoreResult(Double.parseDouble(line.trim()), relation));
             } catch (IOException x) {
                 throw new RuntimeException(x);
             }
-        }
-
-        @Override
-        public String relation() {
-            return relation;
         }
 
         @Override

@@ -20,6 +20,6 @@ public interface GraphFeatureFactory {
      * @return The graph feature
      */
     GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params,
-            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking,
+            Lazy<Analysis> analysis, AlignmentSet prelinking,
             NaiscListener listener);
 }

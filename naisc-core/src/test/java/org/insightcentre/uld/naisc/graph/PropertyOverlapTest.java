@@ -6,7 +6,9 @@ import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
+import org.insightcentre.uld.naisc.Feature;
 import org.insightcentre.uld.naisc.GraphFeature;
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.junit.After;
@@ -50,7 +52,7 @@ public class PropertyOverlapTest {
         Model model = ModelFactory.createDefaultModel();
         Map<String, Object> params = new HashMap<>();
         PropertyOverlap instance = new PropertyOverlap();
-        GraphFeature feature = instance.makeFeature(new ModelDataset(model), params, null, null, ExecuteListeners.NONE);
+        GraphFeature feature = instance.makeFeature(new ModelDataset(model, "model"), params, null, null, ExecuteListeners.NONE);
 
         Resource res1 = model.createResource("http://www.example.com/res1");
         Resource res2 = model.createResource("http://www.example.com/res2");
@@ -63,16 +65,24 @@ public class PropertyOverlapTest {
         res2.addProperty(model.createProperty("http://www.example.com/bar"), model.createLiteral("foo"));
         res2.addProperty(model.createProperty("http://www.example.com/baz"), model.createLiteral("foo"));
 
-        double[] result = feature.extractFeatures(res1, res2);
+        Feature[] result = feature.extractFeatures(URIRes.fromJena(res1, "model"), URIRes.fromJena(res2, "model"));
 
-        assertArrayEquals(new double[]{ 4.0 / 7.0, 2.0 / 5.0 }, result, 0.000001);
+        assertArrayEquals(new double[]{ 4.0 / 7.0, 2.0 / 5.0 }, toDbA(result), 0.000001);
+
         
         params.put("properties", new HashSet<String>() {{ add("http://www.example.com/foo"); }});
         
-        feature = instance.makeFeature(new ModelDataset(model), params, null, null, ExecuteListeners.NONE);
-        result = feature.extractFeatures(res1, res2);
+        feature = instance.makeFeature(new ModelDataset(model, "model"), params, null, null, ExecuteListeners.NONE);
+        result = feature.extractFeatures(URIRes.fromJena(res1, "model"), URIRes.fromJena(res2, "model"));
 
-        assertArrayEquals(new double[]{ 2.0 / 3.0, 1.0 / 2.0 }, result, 0.000001);
+        assertArrayEquals(new double[]{ 2.0 / 3.0, 1.0 / 2.0 }, toDbA(result), 0.000001);
+    }
+    private double[] toDbA(Feature[] f) {
+        double[] d = new double[f.length];
+        for(int i = 0; i < f.length; i++) {
+            d[i] = f[i].value;
+        }
+        return d;
     }
 
 }

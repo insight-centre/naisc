@@ -12,6 +12,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.Matcher;
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.constraint.Bijective;
 import org.insightcentre.uld.naisc.constraint.Constraint;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
@@ -61,8 +62,8 @@ public class UniqueAssignmentTest {
 
 
     private Model m = ModelFactory.createDefaultModel();
-    private Resource r(String s) {
-        return m.createResource(new AnonId(s));
+    private URIRes r(String s) {
+        return new URIRes(s, "dataset");
     }
     /**
      * Test of makeMatcher method, of class UniqueAssignment.
@@ -74,23 +75,23 @@ public class UniqueAssignmentTest {
         UniqueAssignment instance = new UniqueAssignment();
         Matcher matcher = instance.makeMatcher(params);
         List<Alignment> alignments = new ArrayList<>();
-        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id2"), r("id3"), 0.0, Alignment.SKOS_EXACT_MATCH, null));
         AlignmentSet result = matcher.align(new AlignmentSet(alignments));
         assert(result.size() == 3);
-        assert(result.contains(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH, null)));
+        assert(result.contains(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH, null)));
+        assert(result.contains(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH, null)));
         
         params.put("threshold", 0.5);
         matcher = instance.makeMatcher(params);
         result = matcher.align(new AlignmentSet(alignments));
         assert(result.size() == 2);
-        assert(result.contains(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH, null)));
+        assert(result.contains(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH, null)));
         
     }
 
@@ -104,19 +105,19 @@ public class UniqueAssignmentTest {
         UniqueAssignment instance = new UniqueAssignment();
         Matcher matcher = instance.makeMatcher(params);
         List<Alignment> alignments = new ArrayList<>();
-        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id3"), r("id1"), 0.1, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH));
-        alignments.add(new Alignment(r("id2"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH));
+        alignments.add(new Alignment(r("id1"), r("id1"), 0.5, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id1"), r("id2"), 0.9, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id2"), r("id2"), 0.7, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id3"), r("id1"), 0.1, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id3"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH, null));
+        alignments.add(new Alignment(r("id2"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH, null));
         AlignmentSet initial = new AlignmentSet();
-        initial.add(new Alignment(r("id1"), r("id2"), 1.0, Alignment.SKOS_EXACT_MATCH));
+        initial.add(new Alignment(r("id1"), r("id2"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
         AlignmentSet result = matcher.alignWith(new AlignmentSet(alignments), initial, NONE);
         assert(result.size() == 3);
-        assert(result.contains(new Alignment(r("id1"), r("id2"), 1.0, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment(r("id2"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH)));
-        assert(result.contains(new Alignment(r("id3"), r("id1"), 0.1, Alignment.SKOS_EXACT_MATCH)));
+        assert(result.contains(new Alignment(r("id1"), r("id2"), 1.0, Alignment.SKOS_EXACT_MATCH, null)));
+        assert(result.contains(new Alignment(r("id2"), r("id3"), 0.1, Alignment.SKOS_EXACT_MATCH, null)));
+        assert(result.contains(new Alignment(r("id3"), r("id1"), 0.1, Alignment.SKOS_EXACT_MATCH, null)));
         
     }
     
@@ -126,7 +127,7 @@ public class UniqueAssignmentTest {
         Model m = ModelFactory.createDefaultModel();
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                    as.add(new Alignment(m.createResource("file:id" + i), m.createResource("file:id" + j), r.nextDouble()));
+                    as.add(new Alignment(new URIRes("file:id" + i, "left"), new URIRes("file:id" + j, "right"), r.nextDouble()));
             }
         }
         return as;

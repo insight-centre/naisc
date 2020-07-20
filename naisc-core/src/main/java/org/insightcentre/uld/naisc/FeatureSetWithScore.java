@@ -7,19 +7,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.insightcentre.uld.naisc.util.StringPair;
 
 /**
- * The feature set with a similarity score (for training)
+ * The feature set with a similarity probability (for training)
  * @author John McCrae
  */
 public class FeatureSetWithScore extends FeatureSet {
    public final double score;
 
    @JsonCreator public FeatureSetWithScore(
-       @JsonProperty("score") double score, 
+       @JsonProperty("probability") double score,
        @JsonProperty("names") StringPair[] names, 
        @JsonProperty("values") double[] values, 
        @JsonProperty("entity1") String entity1, 
        @JsonProperty("entity2") String entity2) {
-        super(names, values, entity1, entity2);
+        super(names, values);
         this.score = score;
     }
    

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import org.apache.jena.rdf.model.Literal;
@@ -12,11 +13,7 @@ import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.LensFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.Labels;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.None;
@@ -33,30 +30,27 @@ public class Label implements LensFactory {
     private ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
-    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
+    public Lens makeLens(Dataset dataset, Map<String, Object> params) {
         Configuration config = mapper.convertValue(params, Configuration.class);
-        return new LabelImpl(config.property, config.rightProperty, config.language, tag, dataset, config.id);
+        return new LabelImpl(config.property, config.rightProperty == null ? config.property : config.rightProperty, config.language, dataset, config.id);
     }
 
     static class LabelImpl implements Lens {
 
         private final Property leftProp, rightProp;
         private final Language language;
-        private final String tag;
         private final Dataset model;
         private final String id;
 
-        public LabelImpl(String leftProperty, String rightProperty, String language, String tag, Dataset model,
+        public LabelImpl(String leftProperty, String rightProperty, String language, Dataset model,
                 String id) {
             this.leftProp = model.createProperty(leftProperty);
             this.rightProp = model.createProperty(rightProperty);
             this.language = language == null ? null : Language.get(language);
-            this.tag = tag;
             this.model = model;
             this.id = id;
         }
 
-        @Override
         public String id() {
             if (id != null) {
                 return id;
@@ -72,8 +66,10 @@ public class Label implements LensFactory {
         }
 
         @Override
-        public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
+        public Collection<LensResult> extract(URIRes res1, URIRes res2, NaiscListener log) {
             List<Literal> lit1 = new ArrayList<>();
+            Resource entity1 = res1.toJena(model);
+            Resource entity2 = res2.toJena(model);
 
             NodeIterator iter1 = model.listObjectsOfProperty(entity1, leftProp);
             while (iter1.hasNext()) {
@@ -96,17 +92,11 @@ public class Label implements LensFactory {
 
             for (LangStringPair label : labels) {
                 if (language == null || label.lang1.equals(language)) {
-                    return new Some<>(label);
+                    return new Some<>(LensResult.fromLangStringPair(label,id()));
                 }
             }
             return new None<>();
         }
-
-        @Override
-        public String tag() {
-            return tag;
-        }
-
     }
 
     public static final String RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label";
@@ -115,6 +105,7 @@ public class Label implements LensFactory {
     /**
      * Configuration of the label lens.
      */
+     @ConfigurationClass("Extract a string from a pair of entities by a single property")
     public static class Configuration {
 
         /**
@@ -127,7 +118,7 @@ public class Label implements LensFactory {
          * property on both models
          */
         @ConfigurationParameter(description = "The property to extract", defaultValue = "[\"http://www.w3.org/2000/01/rdf-schema#label\"]")
-        public String rightProperty = RDFS_LABEL;
+        public String rightProperty = null;
         /**
          * The language to extract. Default is <code>null</code> for all
          * languages.

@@ -6,14 +6,11 @@ import eu.monnetproject.lang.Language;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
+import java.util.Collection;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.LensFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
@@ -31,15 +28,16 @@ public class URI implements LensFactory {
 
 
     @Override
-    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
+    public Lens makeLens(Dataset dataset, Map<String, Object> params) {
         //final Model sparqlData = dataset.asModel().getOrExcept(new RuntimeException("Cannot apply method to SPARQL endpoint"));
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
-        return new URIImpl(tag, config.location, config.form, config.separator);
+        return new URIImpl(config.location, config.form, config.separator);
     }
 
     /**
      * Configuration of the URI label extractor.
      */
+     @ConfigurationClass("Extract a label from the URI itself by de-camel-casing the final part of the URI string")
     public static class Configuration {
         /**
          * The location of the label in the URL.
@@ -108,48 +106,32 @@ public class URI implements LensFactory {
     }
     
     static class URIImpl implements Lens {
-        private final String tag;
         private final LabelLocation location;
         private final LabelForm form;
         private final String separator;
 
-        public URIImpl(String tag, LabelLocation location, LabelForm form, String separator) {
-            this.tag = tag;
+        public URIImpl(LabelLocation location, LabelForm form, String separator) {
             this.location = location;
             this.form = form;
             this.separator = separator;
         }
 
         @Override
-        public String id() {
-            return "uri";
-        }
-
-        @Override
-        public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
-            if(entity1.isURIResource() && entity2.isURIResource()) {
+        public Collection<LensResult> extract(URIRes entity1, URIRes entity2, NaiscListener log) {
                 try {
                     java.net.URI uri1 = new java.net.URI(entity1.getURI());
                     java.net.URI uri2 = new java.net.URI(entity2.getURI());
                     String raw1 = getRaw(uri1, location);
                     String raw2 = getRaw(uri2, location);
                     if(raw1 != null && raw2 != null) {
-                        return new Some<>(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, getLabel(raw1,form, separator), getLabel(raw2, form, separator)));
+                        return new Some<>(new LensResult(Language.UNDEFINED, Language.UNDEFINED, getLabel(raw1,form, separator), getLabel(raw2, form, separator), "uri"));
                     } else {
                         return new None<>();
                     }
                 } catch(URISyntaxException x) {
                     throw new RuntimeException("Bad URI in dataset", x);
                 }
-            }
-            return new None<>();
         }
-
-        @Override
-        public String tag() {
-            return tag;
-        }
-        
     }
     
     private static String getRaw(java.net.URI uri, LabelLocation location) {

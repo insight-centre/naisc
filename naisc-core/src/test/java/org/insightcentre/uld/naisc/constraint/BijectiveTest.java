@@ -7,6 +7,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
+import org.insightcentre.uld.naisc.URIRes;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -39,8 +40,8 @@ public class BijectiveTest {
     }
 
     private Model m = ModelFactory.createDefaultModel();
-    private Resource r(String s) {
-        return m.createResource("file:test#" + s);
+    private URIRes r(String s) {
+        return new URIRes("file:test#" + s, "dataset");
     }
     
     /**
@@ -52,21 +53,21 @@ public class BijectiveTest {
         Map<String, Object> params = new HashMap<>();
         Bijective instance = new Bijective();
         Constraint result = instance.make(params);
-        result.add(new Alignment(r("a"), r("b"), 1.0, "r"));
-        assert(!result.canAdd(new Alignment(r("a"), r("c"), 1.0, "r")));
-        assert(!result.canAdd(new Alignment(r("c"), r("b"), 1.0, "r")));
+        result.add(new Alignment(r("a"), r("b"), 1.0, "r", null));
+        assert(!result.canAdd(new Alignment(r("a"), r("c"), 1.0, "r", null)));
+        assert(!result.canAdd(new Alignment(r("c"), r("b"), 1.0, "r", null)));
         
         params.put("surjection","surjective");
         result = instance.make(params);
-        result.add(new Alignment(r("a"), r("b"), 1.0, "r"));
-        assert(!result.canAdd(new Alignment(r("a"), r("c"), 1.0, "r")));
-        assert(result.canAdd(new Alignment(r("c"), r("b"), 1.0, "r")));
+        result.add(new Alignment(r("a"), r("b"), 1.0, "r", null));
+        assert(!result.canAdd(new Alignment(r("a"), r("c"), 1.0, "r", null)));
+        assert(result.canAdd(new Alignment(r("c"), r("b"), 1.0, "r", null)));
         
         params.put("surjection","inverseSurjective");
         result = instance.make(params);
-        result.add(new Alignment(r("a"), r("b"), 1.0, "r"));
-        assert(result.canAdd(new Alignment(r("a"), r("c"), 1.0, "r")));
-        assert(!result.canAdd(new Alignment(r("c"), r("b"), 1.0, "r")));
+        result.add(new Alignment(r("a"), r("b"), 1.0, "r", null));
+        assert(result.canAdd(new Alignment(r("a"), r("c"), 1.0, "r", null)));
+        assert(!result.canAdd(new Alignment(r("c"), r("b"), 1.0, "r", null)));
     }
 
 }

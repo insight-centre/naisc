@@ -43,4 +43,6 @@ public interface Dataset {
     public StmtIterator listStatements();
     
     public QueryExecution createQuery(Query query);
+
+    public String id();
 }

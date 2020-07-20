@@ -1,8 +1,11 @@
 package org.insightcentre.uld.naisc;
 
+import org.insightcentre.uld.naisc.scorer.ModelNotTrainedException;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Predict if two entities are similar
@@ -12,23 +15,16 @@ public interface Scorer extends Closeable {
     /**
      * Predict the similarity of a pair of entities from a set of features
      * @param features The features
-     * @return The similarity score between 0.0 (not at all similar) and 1.0 (exactly the same)
+     * @return The similarity probability between 0.0 (not at all similar) and 1.0 (exactly the same)
      */
-    default ScoreResult similarity(FeatureSet features) {
+    default List<ScoreResult> similarity(FeatureSet features) throws ModelNotTrainedException {
         return similarity(features, NaiscListener.DEFAULT);
     }
       /**
      * Predict the similarity of a pair of entities from a set of features
      * @param features The features
      * @param log The listener
-     * @return The similarity score between 0.0 (not at all similar) and 1.0 (exactly the same)
+     * @return The similarity probability between 0.0 (not at all similar) and 1.0 (exactly the same)
      */
-    ScoreResult similarity(FeatureSet features, NaiscListener log);
-      
-    /**
-     * Get the relation that is predicted by this scorer
-     * @return The URI of the relation to be predicted
-     */
-    String relation();
-
+    List<ScoreResult> similarity(FeatureSet features, NaiscListener log) throws ModelNotTrainedException;
 }

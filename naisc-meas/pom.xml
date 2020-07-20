@@ -4,7 +4,7 @@
 
     <groupId>org.insightcentre</groupId>
     <artifactId>naisc-meas</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
 
     <name>Naisc - Meas Evaluation and Analysis Suite</name>
@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>org.insightcentre</groupId>
-            <artifactId>naisc</artifactId>
+            <artifactId>naisc-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -192,6 +192,18 @@
                         </execution>
                     </executions>
                 </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.7.1</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>3.0.0</version>
+            </plugin>
             </plugins>
         </pluginManagement>
     </build>

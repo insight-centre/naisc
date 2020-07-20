@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.scorer;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,23 +17,14 @@ import java.io.File;
 import java.io.IOException;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static org.insightcentre.uld.naisc.scorer.LogGap.removeNaNs;
+
+import java.util.*;
+
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.FeatureSet;
-import org.insightcentre.uld.naisc.FeatureSetWithScore;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.NaiscListener.Level;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
-import org.insightcentre.uld.naisc.ScoreResult;
-import org.insightcentre.uld.naisc.Scorer;
-import org.insightcentre.uld.naisc.ScorerFactory;
-import org.insightcentre.uld.naisc.ScorerTrainer;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
 import org.insightcentre.uld.naisc.util.StringPair;
@@ -46,13 +38,12 @@ import org.insightcentre.uld.naisc.util.StringPair;
  */
 public class RAdLR implements ScorerFactory {
 
-    @Override
     public String id() {
         return "radlr";
     }
 
     @Override
-    public List<Scorer> makeScorer(Map<String, Object> params, File modelFile) {
+    public Scorer makeScorer(Map<String, Object> params, File modelFile) {
         SimpleModule simpleModule = new SimpleModule();
         simpleModule.addKeyDeserializer(StringPair.class, new StdKeyDeserializer(0, StringPair.class) {
             @Override
@@ -68,20 +59,18 @@ public class RAdLR implements ScorerFactory {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(simpleModule);
         //Configuration config = mapper.convertValue(params, Configuration.class);
-        final List<Scorer> scorers = new ArrayList<>();
+        final Scorer scorer;
         if (modelFile == null || !modelFile.exists()) {
-            scorers.add(new RAdLRImpl(new RAdLRModel()));
+            scorer = new RAdLRImpl(Collections.singletonList(new RAdLRModel()));
         } else {
             try {
                 List<RAdLRModel> models = mapper.readValue(modelFile, mapper.getTypeFactory().constructCollectionLikeType(List.class, RAdLRModel.class));
-                for (RAdLRModel model : models) {
-                    scorers.add(new RAdLRImpl(model));
-                }
+                scorer = new RAdLRImpl(models);
             } catch (IOException x) {
                 throw new RuntimeException(x);
             }
         }
-        return scorers;
+        return scorer;
     }
 
     @Override
@@ -117,10 +106,8 @@ public class RAdLR implements ScorerFactory {
 
         }
 
-        public void save(String property, RAdLRModel model) throws IOException {
-            models.put(property, model);
-            List<RAdLRModel> modelList = new ArrayList<>(models.values());
-            mapper.writeValue(modelFile, modelList);
+        public void save(String property, List<RAdLRModel> models) throws IOException {
+            mapper.writeValue(modelFile, models);
         }
     }
 
@@ -130,6 +117,7 @@ public class RAdLR implements ScorerFactory {
         FMeasure
     }
 
+    @ConfigurationClass("Robust Adaptive Linear Regression. This scorer is based on linear regression but can produce reasonable results for unseen features (assuming some positive correlation). This works better as a supervised model (although not as well as SVM) but is more robust and effective as an unsupervised method as well")
     public static class Configuration {
 
         @ConfigurationParameter(description = "The error function to use in training")
@@ -142,50 +130,53 @@ public class RAdLR implements ScorerFactory {
         public double alpha = 1.0, beta = 0.0;
         public Object2DoubleOpenHashMap<StringPair> weights = new Object2DoubleOpenHashMap<>();
         public String property = Alignment.SKOS_EXACT_MATCH;
+        public final Map<StringPair, LogGap.LogGapModel> feats = new HashMap<>();
+
+        @JsonIgnore
+        public LogGap getFeatModel(StringPair sp) {
+            LogGap.LogGapModel lgm = feats.get(sp);
+            if(sp != null) {
+                return LogGap.fromModel(lgm);
+            } else {
+                return null;
+            }
+        }
     }
 
     private static class RAdLRImpl implements Scorer {
 
-        private final RAdLRModel model;
-        private final Map<StringPair, LogGap> feats = new HashMap<>();
+        private final List<RAdLRModel> models;
 
-        public RAdLRImpl(RAdLRModel model) {
-            this.model = model;
+        public RAdLRImpl(List<RAdLRModel> models) {
+            this.models = models;
         }
 
         @Override
-        public ScoreResult similarity(FeatureSet features, NaiscListener log) {
-            DoubleList weights = new DoubleArrayList(features.names.length);
-            double[] result = new double[features.names.length];
-            LogGap[] loggaps = new LogGap[features.names.length];
-            boolean allComplete = true;
-            //List<ScoreResult> result = new ArrayList<>(features.names.length);
-            for (int i = 0; i < features.names.length; i++) {
-                weights.add(model.weights.getOrDefault(features.names[i], 1.0));
-                synchronized (feats) {
-                    final LogGap lg;
-                    if (!feats.containsKey(features.names[i])) {
-                        feats.put(features.names[i], lg = new LogGap());
-                    } else {
-                        lg = feats.get(features.names[i]);
+        public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) {
+            List<ScoreResult> results = new ArrayList<>();
+            for(RAdLRModel model : models) {
+                DoubleList weights = new DoubleArrayList(features.names.length);
+                double[] result = new double[features.names.length];
+                LogGap[] loggaps = new LogGap[features.names.length];
+                //List<ScoreResult> result = new ArrayList<>(features.names.length);
+                for (int i = 0; i < features.names.length; i++) {
+                    weights.add(model.weights.getOrDefault(features.names[i], 1.0));
+                    synchronized (model) {
+                        final LogGap lg;
+                        if (!model.feats.containsKey(features.names[i])) {
+                            lg = new LogGap();
+                        } else {
+                            lg = LogGap.fromModel(model.feats.get(features.names[i]));
+                        }
+                        //result.add(feats.get(features.names[i]).result(features.values[i]));
+                        lg.addResult(features.values[i]);
+                        result[i] = features.values[i];
+                        loggaps[i] = lg;
                     }
-                    //result.add(feats.get(features.names[i]).result(features.values[i]));
-                    lg.addResult(features.values[i]);
-                    result[i] = features.values[i];
-                    loggaps[i] = lg;
-                    allComplete = allComplete && lg.isComplete();
                 }
+                results.add(new ScoreResult(logGapScore(result, weights, model, loggaps, model.property), model.property));
             }
-            if (allComplete) {
-                return ScoreResult.fromDouble(new LogGapScorer(result, weights, model, loggaps).value());
-            } else {
-                return new LogGapScorer(result, weights, model, loggaps);
-            }
-        }
-
-        @Override
-        public String relation() {
-            return model.property;
+            return results;
         }
 
         @Override
@@ -194,42 +185,20 @@ public class RAdLR implements ScorerFactory {
 
     }
 
-    private static class LogGapScorer implements ScoreResult {
 
-        private final double[] features;
-        private final DoubleList weights;
-        private final RAdLRModel model;
-        private final LogGap[] feats;
-
-        public LogGapScorer(double[] features, DoubleList weights, RAdLRModel model, LogGap[] feats) {
-            this.features = features;
-            this.weights = weights;
-            this.model = model;
-            this.feats = feats;
-        }
-
-        @Override
-        public double value() {
-            double x = 0.0;
-            int n = 0;
-            //StringBuilder sb = new StringBuilder("[");
-            for (int i = 0; i < features.length; i++) {
-                if (Double.isFinite(features[i])) {
-                    //sb.append(String.format("%.4f(%.4f), ", feats[i].normalize(features[i]), features[i]));
-                    x += weights.get(i) * feats[i].normalize(features[i]);
-                    n++;
-                }
+    private static double logGapScore(double[] features, DoubleList weights, RAdLRModel model, LogGap[] feats, String relation) {
+        double x = 0.0;
+        int n = 0;
+        for (int i = 0; i < features.length; i++) {
+            if (Double.isFinite(features[i])) {
+                x += weights.get(i) * feats[i].normalize(features[i]);
+                n++;
             }
-            if (n > 0) {
-                x /= n;
-            }
-            //sb.replace(sb.length()-2, sb.length(), " ");
-            //sb.append(String.format("] = %.4f", x));//1.0 / (1.0 + exp(-model.alpha * x - model.beta))));
-            //System.err.println(sb.toString());
-           // return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
-           return x;
         }
-
+        if (n > 0) {
+            x /= n;
+        }
+       return 1.0 / (1.0 + exp(-model.alpha * x - model.beta));
     }
 
     private static class RAdLRTrainer implements ScorerTrainer {
@@ -256,6 +225,11 @@ public class RAdLR implements ScorerFactory {
                         featureIDs.put(fid, featureIDs.size());
                     }
                 }
+                for(int k = 0; k < fss.values.length; k++) {
+                    if(!Double.isFinite(fss.values[k])) {
+                        throw new IllegalArgumentException("Non-finite score for " + fss.names[k]);
+                    }
+                }
                 scores[i++] = fss.score;
             }
             i = 0;
@@ -267,6 +241,7 @@ public class RAdLR implements ScorerFactory {
                 }
                 i++;
             }
+            LogGap[] logGaps = new LogGap[data[0].length];
             // Apply Log Gap normalization
             if (data.length > 0) {
                 for (int j = 0; j < data[0].length; j++) {
@@ -279,6 +254,7 @@ public class RAdLR implements ScorerFactory {
                     for (i = 0; i < data.length; i++) {
                         data[i][j] = lg.normalize(data[i][j]);
                     }
+                    logGaps[j] = lg;
                 }
             }
             final Function f;
@@ -301,9 +277,10 @@ public class RAdLR implements ScorerFactory {
             model.beta = soln[1];
             for (Object2IntMap.Entry<StringPair> e : featureIDs.object2IntEntrySet()) {
                 model.weights.put(e.getKey(), soln[e.getIntValue() + 2]);
+                model.feats.put(e.getKey(), logGaps[e.getIntValue()].toModel(100));
             }
 
-            return new RAdLRImpl(model);
+            return new RAdLRImpl(Collections.singletonList(model));
         }
 
         @Override
@@ -318,7 +295,7 @@ public class RAdLR implements ScorerFactory {
         @Override
         public void save(Scorer scorer) throws IOException {
             if (scorer instanceof RAdLRImpl) {
-                serializer.save(model.property, ((RAdLRImpl) scorer).model);
+                serializer.save(model.property, ((RAdLRImpl) scorer).models);
             } else {
                 throw new IllegalArgumentException("RAdLR cannot serialize models not created by RAdLR");
             }
@@ -357,39 +334,11 @@ public class RAdLR implements ScorerFactory {
         public double[] initial() {
             if (data.length > 0) {
                 double[] init = new double[data[0].length + 2];
-                /*Arrays.fill(init, 1.0);
-                init[1] = 0.0;
-                return init;*/
-                int pos = 0;
-                int neg = 0;
-                for (double score : scores) {
-                    if (score > 0.5) {
-                        pos++;
-                    } else {
-                        neg++;
-                    }
-                }
-                init[0] = 3.0;
-                init[1] = -6.0 * neg / (neg + pos);
-                PearsonsCorrelation correl = new PearsonsCorrelation();
-                double sumsq = 0.0;
-                for (int i = 0; i < data[0].length; i++) {
-                    double[] z = new double[data.length];
-                    for (int j = 0; j < data.length; j++) {
-                        z[j] = data[j][i];
-                    }
-                    init[i + 2] = correl.correlation(z, scores);
-                    if (!Double.isFinite(init[i + 2])) {
-                        init[i + 2] = 0.0;
-                    }
-                    sumsq += init[i + 2] * init[i + 2];
-                }
-                sumsq /= data[0].length;
-                for (int i = 0; i < data[0].length; i++) {
-                    init[i + 2] /= sumsq;
+                Random r = new Random();
+                for(int i = 0; i < init.length; i++) {
+                    init[i] = r.nextDouble() * 2.0 - 1;
                 }
                 return init;
-
             } else {
                 throw new RuntimeException("Cannot learn from empty data");
             }
@@ -403,6 +352,9 @@ public class RAdLR implements ScorerFactory {
         public RAdLRFunction(double[][] data, double[] scores, double smooth) {
             super(data, scores);
             this.smooth = smooth;
+            if(data.length == 0) {
+                throw new IllegalArgumentException("Data is empty");
+            }
         }
 
         @Override
@@ -427,9 +379,6 @@ public class RAdLR implements ScorerFactory {
                 double q = 1.0 / (1.0 + exp(-alpha * z - beta));
                 assert (q != 0.0);
                 assert (q != 1.0);
-                if (x[0] == 3.0) {
-                    System.err.printf("%.4f (%.4f) <-> %.4f = %.4f\n", q, z, scores[i], (scores[i] - 1) * log(1 - q + smooth) - scores[i] * log(q + smooth));
-                }
                 value += (scores[i] - 1) * log(1 - q + smooth) - scores[i] * log(q + smooth);
                 double d = (1 - scores[i]) / (1 - q + smooth) - scores[i] / (q + smooth);
                 g[0] += d * q * (1 - q) * z / data.length;
@@ -448,6 +397,9 @@ public class RAdLR implements ScorerFactory {
 
         public FMRAdLRFunction(double[][] data, double[] scores) {
             super(data, scores);
+            if(data.length == 0) {
+                throw new IllegalArgumentException("Data is empty");
+            }
         }
 
         @Override
@@ -491,9 +443,15 @@ public class RAdLR implements ScorerFactory {
                 }
             }
             for (int i = 0; i < g.length; i++) {
-                g[i] = -1.0 / (P + Q) / (P + Q) * ((P + Q) * qd[i] - PQ * d[i]);
+                if(P + Q != 0.0) {
+                    g[i] = -1.0 / (P + Q) / (P + Q) * ((P + Q) * qd[i] - PQ * d[i]);
+                }
             }
-            return -PQ / (P + Q);
+            if(P + Q != 0.0) {
+                return -PQ / (P + Q);
+            } else {
+                return 0.0;
+            }
         }
     }
 
@@ -514,9 +472,11 @@ public class RAdLR implements ScorerFactory {
             double gradSum = 0.0;
             // Update gsum
             for (int j = 0; j < n; j++) {
-                double gjj = grad[j] * grad[j];
-                gradSum += gjj;
-                gsum[j] += gjj;
+                if(Double.isFinite(grad[j])) {
+                    double gjj = grad[j] * grad[j];
+                    gradSum += gjj;
+                    gsum[j] += gjj;
+                }
             }
             if (i % 1000 == 0) {
                 log.message(Stage.TRAINING, Level.INFO, String.format("Iteration %d: Value=%.8f, Gradient=%.8f", i, fx, Math.sqrt(gradSum)));
@@ -526,20 +486,10 @@ public class RAdLR implements ScorerFactory {
             }
             // Learn
             for (int j = 0; j < n; j++) {
-                x[j] -= initialLearningRate / Math.sqrt(gsum[j] + smoothing) * grad[j];
+                if(Double.isFinite(grad[j])) {
+                    x[j] -= initialLearningRate / Math.sqrt(gsum[j] + smoothing) * grad[j];
+                }
             }
-
-            /*// This bit is specific, we want to keep the mean of the weights as zero
-            double sum = 0.0;
-            for (int j = 2; j < n; j++) {
-                //sum += Math.abs(x[j]);
-                sum += x[j]*x[j];
-            }
-            sum /= n - 2;
-            sum = Math.sqrt(sum);
-            for (int j = 2; j < n; j++) {
-                x[j] /= sum;
-            }*/
         }
         return x;
     }

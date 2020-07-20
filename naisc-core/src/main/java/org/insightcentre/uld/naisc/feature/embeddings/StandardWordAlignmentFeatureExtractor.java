@@ -39,6 +39,9 @@ public class StandardWordAlignmentFeatureExtractor {
                     case "bp":
                         values[i++] = AlignmentFeatures.backProp(alignment);
                         break;
+                    case "ap":
+                        values[i++] = AlignmentFeatures.alignProportion(alignment);
+                        break;
                     case "ham":
                         values[i++] = AlignmentFeatures.harmonicAlignmentMean(alignment);
                         break;

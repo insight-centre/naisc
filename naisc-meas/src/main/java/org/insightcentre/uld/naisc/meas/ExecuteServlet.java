@@ -1,5 +1,7 @@
 package org.insightcentre.uld.naisc.meas;
 
+import org.insightcentre.uld.naisc.URIRes;
+import org.insightcentre.uld.naisc.main.CrossFold;
 import org.insightcentre.uld.naisc.meas.execution.ExecutionMode;
 import org.insightcentre.uld.naisc.meas.execution.ExecutionTask;
 import org.insightcentre.uld.naisc.meas.execution.Execution;
@@ -86,7 +88,7 @@ public class ExecuteServlet extends HttpServlet {
                     throw new RuntimeException("Unreachable");
                 }
                 ExecutionTask execution = new ExecutionTask(er.config, er.configName, er.dataset, id, mode,
-                        getURL(req), new None<>());
+                        getURL(req), new None<>(), er.foldCount, er.foldDir);
                 executions.put(id, execution);
                 Thread t = new Thread(execution);
                 t.start();
@@ -129,7 +131,7 @@ public class ExecuteServlet extends HttpServlet {
 
                 ExecutionTask execution = new ExecutionTask(config, r.configName, r.datasetName, id,
                         path.startsWith("/retrain/") ? ExecutionMode.TRAIN : ExecutionMode.EVALUATE,
-                        getURL(req), new Some<>(gold));
+                        getURL(req), new Some<>(gold), -1, null);
                 executions.put(id, execution);
                 Thread t = new Thread(execution);
                 t.start();
@@ -153,7 +155,7 @@ public class ExecuteServlet extends HttpServlet {
         Model model = ModelFactory.createDefaultModel();
         for (Meas.RunResultRow rrr : data) {
             if (rrr.valid == Valid.yes || rrr.valid == Valid.novel) {
-                as.add(new Alignment(model.createResource(rrr.subject), model.createResource(rrr.object), rrr.score, rrr.property));
+                as.add(new Alignment(new URIRes(rrr.subject, "left"), new URIRes(rrr.object, "right"), rrr.score, rrr.property, null));
             }
         }
         return as;
@@ -165,9 +167,9 @@ public class ExecuteServlet extends HttpServlet {
         public String configName;
         public String dataset;
         public String runId;
+        public int foldCount = 0;
+        public CrossFold.FoldDirection foldDir;
     }
-
-
 
     /**
      * Get all the runs that are in progress at the moment

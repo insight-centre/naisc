@@ -1,5 +1,8 @@
 package org.insightcentre.uld.naisc.blocking;
 
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.vocabulary.RDF;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.TreeNode;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,25 +10,9 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import java.util.AbstractCollection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.apache.jena.rdf.model.NodeIterator;
-import org.apache.jena.rdf.model.Property;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.ResIterator;
-import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.BlockingStrategyFactory;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.NaiscListener;
+
+import java.util.*;
+
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
@@ -66,7 +53,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             case levenshtein:
                 return new LevenshteinApproximateStringMatch(config.maxMatches, config.property, config.rightProperty, config.queueMax, config.lowercase);
             case ngrams:
-                return new NgramApproximateStringMatch(config.maxMatches, config.property, config.rightProperty, config.ngrams, config.lowercase);
+                return new NgramApproximateStringMatch(config.maxMatches, config.property, config.rightProperty, config.ngrams, config.lowercase, config.type);
             default:
                 throw new RuntimeException("Unreachable");
         }
@@ -75,40 +62,53 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
     /**
      * Configuration for approximate string matching
      */
+     @ConfigurationClass("String matching generates a blocking that consists of the most similar entities between the two datasets based on a string label. It can be implemented with either Levenshtein or N-Gram similarity")
     public static class Configuration {
 
         /**
          * The maximum number of matches
          */
+         @ConfigurationParameter(description = "The maximum number of matches to return per entity")
         public int maxMatches;
         /**
          * The labeling property
          */
+         @ConfigurationParameter(description = "The property to use to find a text label", defaultValue = RDFS_LABEL)
         public String property = RDFS_LABEL;
         /**
          * The property for the right ontology (if different)
          */
+         @ConfigurationParameter(description = "The property to use in the right dataset. If this is null or omitted then the `property` is used for both the left and right dataset")
         public String rightProperty = null;
         /**
          * The maximum size of the queue (sets the default queue size, 0 for no
          * limit, only for Levenshtein)
          */
+         @ConfigurationParameter(description = "The maximum size of the queue (sets the default queue size, 0 for no limit, only for Levenshtein)")
         public int queueMax = maxMatches * 20;
         /**
          * The metric to use
          */
+         @ConfigurationParameter(description = "The string similarity metric to use", defaultValue = "ngrams")
         public StringMetric metric = StringMetric.ngrams;
         /**
          * The size of ngrams to use
          */
+         @ConfigurationParameter(description = "The maximum size of character n-gram to use in matching", defaultValue = "3")
         public int ngrams = 3;
         /**
          * Lowercase all strings
          */
+         @ConfigurationParameter(description = "Use case-insensitive matching", defaultValue = "true")
         public boolean lowercase = true;
+        /**
+         * Type of the element. If set all matched elements are of rdf:type with this URI
+         */
+         @ConfigurationParameter(description = "Type of the element. If set all matched elements are of rdf:type with this URI")
+        public String type = null;
     }
 
-    public static enum StringMetric {
+    public enum StringMetric {
         levenshtein,
         ngrams
     }
@@ -121,8 +121,9 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
         private final int n;
         private final Set<Resource> leftPreBlocks, rightPreBlocks;
         private final boolean lowercase;
+        private final String type;
 
-        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n, boolean lowercase) {
+        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n, boolean lowercase, String type) {
             this.maxMatches = maxMatches;
             this.property = property;
             this.rightProperty = rightProperty;
@@ -130,9 +131,10 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             this.leftPreBlocks = Collections.EMPTY_SET;
             this.rightPreBlocks = Collections.EMPTY_SET;
             this.lowercase = lowercase;
+            this.type = type;
         }
 
-        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n, Set<Resource> leftPreBlocks, Set<Resource> rightPreBlocks, boolean lowercase) {
+        public NgramApproximateStringMatch(int maxMatches, String property, String rightProperty, int n, Set<Resource> leftPreBlocks, Set<Resource> rightPreBlocks, boolean lowercase, String type) {
             this.maxMatches = maxMatches;
             this.property = property;
             this.rightProperty = rightProperty;
@@ -140,10 +142,17 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             this.leftPreBlocks = leftPreBlocks;
             this.rightPreBlocks = rightPreBlocks;
             this.lowercase = lowercase;
+            this.type = type;
+        }
+
+        private boolean hasType(Dataset ds, Resource r, Resource type) {
+            return ds.listStatements(r, RDF.type, type).hasNext();
         }
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
+        public Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log) {
+            final Resource leftType = type == null ? null : left.createResource(type);
+            final Resource rightType = type == null ? null : right.createResource(type);
             final List<Resource> lefts = new ArrayList<>();
             final ResIterator leftIter;
             if (property.equals("")) {
@@ -153,7 +162,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             }
             while (leftIter.hasNext()) {
                 Resource r = leftIter.next();
-                if (r.isURIResource()) {
+                if (r.isURIResource() && (type == null || hasType(left, r, leftType))) {
                     lefts.add(r);
                 }
             }
@@ -171,7 +180,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             }
             while (rightIter.hasNext()) {
                 Resource r = rightIter.next();
-                if (r.isURIResource()) {
+                if (r.isURIResource() && (type == null || hasType(right, r, rightType))) {
                     rights.add(r);
                 }
             }
@@ -229,15 +238,19 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                 }
             }
 
-            return new Iterable<Pair<Resource, Resource>>() {
+            return new AbstractCollection<Blocking>() {
                 @Override
-                public Iterator<Pair<Resource, Resource>> iterator() {
+                public Iterator<Blocking> iterator() {
                     return labels.stream().flatMap(pair -> {
                         return nearest(pair._2, ngrams).stream().
-                                map(x -> new Pair<Resource, Resource>(pair._1, x));
+                                map(x -> new Blocking(pair._1, x, left.id(), right.id()));
                     }).iterator();
                 }
 
+                @Override
+                public int size() {
+                    throw new UnsupportedOperationException();
+                }
             };
         }
 
@@ -260,17 +273,14 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             for (String r : labels) {
                 for (int i = 0; i < Math.min(100,r.length()) - n + 1; i++) {
                     String ng = r.substring(i, i + n);
-                    //System.err.print(ng);
                     Map<Resource, FreqLen> ngs = ngrams.get(ng);
                     if (ngs != null) {
-                        //System.err.printf(" %d", ngs.size());
                         for (Map.Entry<Resource, FreqLen> e : ngs.entrySet()) {
                             if(reps.getInt(ng) < e.getValue().freq)
                                 freqsFinal.put(e.getKey(), freqsFinal.getDouble(e.getKey()) + 1.0 / (e.getValue().len + r.length()));
                         }
                             reps.put(ng, reps.getInt(ng) + 1);
                     }
-                    //System.err.println();
                 }
             }
             List<Resource> resList = new ArrayList<>(freqsFinal.keySet());
@@ -332,7 +342,7 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
 
         @Override
         @SuppressWarnings("Convert2Lambda")
-        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
+        public Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log) {
             final List<Resource> lefts = new ArrayList<>();
             Property leftProp = left.createProperty(property);
             ResIterator leftIter = left.listSubjectsWithProperty(leftProp);
@@ -385,13 +395,17 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
             }
 
             // TODO: Should only produce pairs per entry not label as NGram Approximate matcher
-            return new Iterable<Pair<Resource, Resource>>() {
+            return new AbstractCollection<Blocking>() {
                 @Override
-                public Iterator<Pair<Resource, Resource>> iterator() {
+                public Iterator<Blocking> iterator() {
                     return labels.stream().flatMap(pair -> {
                         return trie.nearest(pair._2, maxMatches, queueMax).stream().
-                                map(x -> new Pair<Resource, Resource>(pair._1, x));
+                                map(x -> new Blocking(pair._1, x, left.id(), right.id()));
                     }).iterator();
+                }
+                @Override
+                public int size() {
+                    throw new UnsupportedOperationException();
                 }
 
             };
