@@ -4,6 +4,7 @@
   <groupId>org.insightcentre</groupId>
   <artifactId>naisc-cili</artifactId>
   <version>1.0</version>
+  <name>Naisc - Linker interface to CILI</name>
   <properties>
       <kotlin.version>1.3.10</kotlin.version>
   </properties>
@@ -17,7 +18,7 @@
     <dependency>
       <groupId>org.insightcentre</groupId>
       <artifactId>naisc-core</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>${project.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
