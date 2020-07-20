@@ -10,33 +10,52 @@ import java.io.File
 import java.util.*
 
 class Run(val id : String, val leftFile : File, val rightFile : File, val config : Configuration) : Runnable {
-    var monitor = RunMonitor()
+    val monitor = RunMonitor()
     var start : Date? = null
     var end : Date? = null
     var result : AlignmentSet? = null
 
     override fun run() {
-        start = Date()
-        result = Main.execute(id, leftFile, rightFile, config, None(), monitor, DefaultDatasetLoader())
-        end = Date()
+        try {
+            start = Date()
+            result = Main.execute(id, leftFile, rightFile, config, None(), monitor, DefaultDatasetLoader())
+        } catch(x : RunAbortedException) {
+            System.err.println("Run aborted by user")
+        } catch(x : Throwable) {
+            x.printStackTrace()
+        } finally {
+            end = Date()
+        }
     }
 }
 
 class RunMonitor : ExecuteListener {
     var stage = NaiscListener.Stage.INITIALIZING
     var message =  ""
+    var aborted = false
 
     override fun updateStatus(stage: NaiscListener.Stage?, message: String?) {
+        if(aborted) throw RunAbortedException()
         if(stage != null) this.stage = stage
         if(message != null) this.message = message
     }
 
     override fun addLensResult(id1: URIRes?, id2: URIRes?, lensId: String?, res: LensResult?) {
+        if(aborted) throw RunAbortedException()
         // Ignore
     }
 
     override fun message(stage: NaiscListener.Stage?, level: NaiscListener.Level?, message: String?) {
+        if(aborted) throw RunAbortedException()
         if(stage != null) this.stage = stage
         if(message != null) this.message = message
     }
+
+    fun abort() {
+        aborted = true
+        message = "Run aborted by user"
+        stage = NaiscListener.Stage.ABORTED
+    }
 }
+
+class RunAbortedException : RuntimeException("Run aborted by user")

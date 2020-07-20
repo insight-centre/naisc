@@ -15,6 +15,7 @@ object RunManager {
     }
 
     fun stopRun(id : String) {
-    TODO("Unimplemented")
+        // Note we don't try to kill the thread, we just make the next message fail so that the run will be aborted
+        runs.get(id)?.monitor?.abort()
     }
 }
