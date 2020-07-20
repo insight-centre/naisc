@@ -1,144 +1,136 @@
 package org.insightcentre.uld.naisc.elexis.Controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.jena.rdf.model.Model;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.DatasetLoader;
+import lombok.extern.java.Log;
+import org.apache.commons.collections4.map.PassiveExpiringMap;
+import org.insightcentre.uld.naisc.elexis.Helper.AsyncDictionaryLinkingHelper;
 import org.insightcentre.uld.naisc.elexis.Model.*;
 import org.insightcentre.uld.naisc.elexis.Model.MessageBody;
-import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.elexis.RestService.ELEXISRest;
-import org.insightcentre.uld.naisc.main.Configuration;
-import org.insightcentre.uld.naisc.main.DefaultDatasetLoader;
-import org.insightcentre.uld.naisc.main.ExecuteListener;
-import org.insightcentre.uld.naisc.util.None;
 import org.json.JSONException;
-import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.swing.text.html.parser.Entity;
-import java.io.File;
+import javax.annotation.PostConstruct;
+import javax.xml.transform.TransformerException;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
- * @author Sampritha Manjunath
+ * Implementation of ELEXIS Linking APIs to return the linking between two dictionaries
+ * defined at: https://elexis-eu.github.io/elexis-rest/linking.html#
+ *
+ * @author Suruchi Gupta
  */
+@Log
 @RestController
 public class SubmitLink {
-    static Model model;
-    static ExecuteListener listener;
-    static AlignmentSet alignmentSet;
+    @Autowired
+    ApplicationContext context;
+    private PassiveExpiringMap<String, AsyncDictionaryLinkingHelper> inMemoryRequestStore;
+
+    @PostConstruct
+    public void postConstruct() {
+        inMemoryRequestStore = new PassiveExpiringMap<>();
+    }
 
     /**
+     * Default call to the ELEXIS Linking API
      *
-     * @return
+     * @return List of available dictionaries
      * @throws MalformedURLException
      * @throws JSONException
      */
     @GetMapping("/")
-    public List<String> test() throws MalformedURLException, JSONException {
+    public ResponseEntity<DefaultResponse> defaultGet() throws MalformedURLException, JSONException {
+//        URL endpoint = new URL("http://localhost:8000/");
         URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
         ELEXISRest elexisRest = new ELEXISRest(endpoint);
-        return elexisRest.getDictionaries();
-    }
 
-    @GetMapping("/test")
-    public String[] entriesTest()
-    {
-        String[] entries = {"cat", "dog"};
-        MessageBody messageBody = new MessageBody();
-        Source source = new Source();
-        source.setEntries(entries);
-
-        return source.getEntries();
+        log.info("[ Initiating default request ]");
+        DefaultResponse defaultResponse = new DefaultResponse();
+        defaultResponse.setDictionaries((ArrayList<String>) elexisRest.getDictionaries());
+        return new ResponseEntity<>(defaultResponse, HttpStatus.OK);
     }
 
     /**
+     * API call to link the sense of two dictionaries
+     *
      * @param messageBody
-     * @return
-     * @throws MalformedURLException
+     * @return requestID for the request
      * @throws JSONException
-     * @throws JsonProcessingException
+     * @throws IOException
      */
-    @RequestMapping(value = "/submit", method = RequestMethod.POST)
-    public List<Model> submitLinkRequest(@RequestBody MessageBody messageBody) throws MalformedURLException, JSONException, JsonProcessingException {
-//      Generate unique name for each submit request
-        String uniqueID = UUID.randomUUID().toString();
-//        Test connection string
-        URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019");
-//        URL endpoint = new URL(messageBody.getSource().getEndpoint());
-        ELEXISRest elexisRest = new ELEXISRest(endpoint);
+    @PostMapping(value = "/submit")
+    public ResponseEntity<SubmitResponse> submitLinkRequest(@RequestBody MessageBody messageBody)
+            throws IOException, TransformerException {
+        String requestId = UUID.randomUUID().toString();
+        AsyncDictionaryLinkingHelper asyncHelper = context.getBean(AsyncDictionaryLinkingHelper.class);
+        inMemoryRequestStore.put(requestId, asyncHelper);
 
-        List<Model> modelObj = new ArrayList<Model>();
+        // Using an object of AsyncDictionaryLinkingHelper, RequestStatusListener to initiate the request in background
+        log.info("[ Loading details for submit request for "+requestId+" ]");
+        asyncHelper.setRequestId(requestId);
+        asyncHelper.getConfigurationDetails(messageBody);
+        asyncHelper.getDictionaryDetails(messageBody);
 
-        String[] entries = messageBody.getSource().getEntries();
-        for(int i = 0; i < entries.length ; i++)
-        {
-            modelObj.add(i, elexisRest.getEntryAsTurtle(messageBody.getSource().getId(), entries[i]));
-        }
+        // Calling the execute method with the generated files
+        log.info("[ Initiating submit request for "+requestId+" ]");
+        asyncHelper.asyncExecute();
 
-        org.insightcentre.uld.naisc.main.Configuration config = messageBody.getConfiguration().getSome();
-        alignmentSet = org.insightcentre.uld.naisc.main.Main.execute("uniqueID", null, null,
-                config, new None<>(), listener, new DefaultDatasetLoader() );
-
-        return modelObj;
+        // Returning the requestId for the request
+        SubmitResponse submitResponse = new SubmitResponse();
+        submitResponse.setRequestId(requestId);
+        return new ResponseEntity<>(submitResponse, HttpStatus.OK);
     }
 
     /**
+     * API call to retrieve the status of linking
      *
      * @return
      */
-    @RequestMapping(value = "/status", method = RequestMethod.POST)
-    public ResponseEntity getLinkStatus()
-    {
-        List<JSONObject> entities = new ArrayList<JSONObject>();
-        Entity[] entityList = new Entity[0];
-        for (Entity n : entityList) {
-            JSONObject status = new JSONObject();
-            status.put("state", "processing");
-            status.put("message", "Still working away");
-            entities.add(status);
+    @PostMapping(value = "/status")
+    public ResponseEntity<StatusResponse> getLinkStatus(@RequestBody GenericMessageBody message) {
+
+        AsyncDictionaryLinkingHelper asyncHelper = inMemoryRequestStore.get(message.getRequestId());
+        String status = asyncHelper.getRequestStatusListener().getStage().name();
+        StatusResponse statusResponse = new StatusResponse();
+
+        log.info("[ Checking the request status for "+asyncHelper.getRequestId()+" ]");
+        if (status.equals("COMPLETED") || status.equals("FAILED")) {
+            statusResponse.setState("COMPLETED");
+            statusResponse.setMessage("Results are ready");
+        } else {
+            statusResponse.setState("PROCESSING");
+            statusResponse.setMessage("Still working away");
         }
-        return new ResponseEntity<Object>(entities, HttpStatus.OK);
+        return new ResponseEntity<>(statusResponse, HttpStatus.OK);
     }
 
     /**
+     * API call to return the linking response
      *
-     * @return
+     * @return Linking Results
      */
     @PostMapping("/result")
-    public ResponseEntity<Result> getResults()
-    {
-        Result createResult = new Result();
-        Linking linking = new Linking();
-        Source source = new Source();
-        String[] entries = source.getEntries();
-        String[] targetEntries = Target.getEntries();
-        List<Linking> linkList = new ArrayList<>();
-        for(int i = 0; i < entries.length ; i++)
-        {
-            createResult.setSourceEntry(entries[i]);
-            createResult.setTargetEntry(targetEntries[i]);
+    public ResponseEntity<Object> getResults(@RequestBody GenericMessageBody message) {
+        AsyncDictionaryLinkingHelper asyncHelper = inMemoryRequestStore.get(message.getRequestId());
+        String status = asyncHelper.getRequestStatusListener().getStage().name();
 
-            linking.setSourceSense("");
-            linking.setTargetSense("");
-            linking.setScore(0.0);
-            linking.setType("");
-
-            linkList.add(linking);
-            createResult.setLinking(linkList);
+        if(status.equals("FAILED")) {
+            log.severe("[ Request status FAILED for "+asyncHelper.getRequestId()+" ]");
+            return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
+        } else if (status.equals("COMPLETED")) {
+            log.info("[ Fetching results for the request "+asyncHelper.getRequestId()+" ]");
+            ArrayList<Result> results = asyncHelper.generateResults();
+            return new ResponseEntity(results, HttpStatus.OK);
+        } else {
+            log.info("[ Request still in progress for "+asyncHelper.getRequestId()+" ]");
+            return new ResponseEntity(HttpStatus.ACCEPTED);
         }
-
-        return new ResponseEntity<Result>(HttpStatus.OK);
     }
 }
