@@ -8,12 +8,7 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.util.Map;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.GraphFeatureFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
@@ -45,7 +40,7 @@ public class Command implements GraphFeatureFactory {
 
     @Override
     public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params,
-            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking, NaiscListener listener) {
+            Lazy<Analysis> analysis, AlignmentSet prelinking, NaiscListener listener) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if(config.command == null) {
             throw new ConfigurationException("Command cannot be null");
@@ -125,7 +120,6 @@ public class Command implements GraphFeatureFactory {
                         if (line == null) {
                             String eline = err.get().readLine();
                             while (eline != null) {
-                                System.err.println(eline);
                                 eline = err.get().readLine();
                             }
                             throw new RuntimeException("Command failed to start");
@@ -145,18 +139,17 @@ public class Command implements GraphFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
+        public Feature[] extractFeatures(URIRes entity1, URIRes entity2, NaiscListener log) {
 
             try {
                 out.get().println(entity1.getURI() + "\t" + entity2.getURI());
                 out.get().flush();
-                return mapper.readValue(in.get().readLine(), double[].class);
+                return mapper.readValue(in.get().readLine(), Feature[].class);
             } catch (IOException x) {
                 throw new RuntimeException();
             }
         }
 
-        @Override
         public String[] getFeatureNames() {
             return features;
         }

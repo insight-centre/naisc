@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import org.insightcentre.uld.naisc.LensResult;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -50,8 +52,8 @@ public class DictionaryTest {
         params.put("dict","src/test/resources/example.dict");
         Dictionary instance = new Dictionary();
         TextFeature extractor = instance.makeFeatureExtractor(tags, params);
-        assertEquals(extractor.extractFeatures(new LangStringPair(Language.ENGLISH, Language.ENGLISH, "cat", "feline"))[0],1.0,0.0);
-        assertEquals(extractor.extractFeatures(new LangStringPair(Language.ENGLISH, Language.ENGLISH, "cat", "canine"))[0],0.0,0.0);
+        assertEquals(extractor.extractFeatures(new LensResult(Language.ENGLISH, Language.ENGLISH, "cat", "feline", null))[0].value,1.0,0.0);
+        assertEquals(extractor.extractFeatures(new LensResult(Language.ENGLISH, Language.ENGLISH, "cat", "canine", null))[0].value,0.0,0.0);
         
     }
 

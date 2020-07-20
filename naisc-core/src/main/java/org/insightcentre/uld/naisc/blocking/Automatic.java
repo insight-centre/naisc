@@ -3,15 +3,11 @@ package org.insightcentre.uld.naisc.blocking;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
+
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.BlockingStrategyFactory;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.analysis.LabelResult;
@@ -94,15 +90,18 @@ public class Automatic implements BlockingStrategyFactory {
     /**
      * Configuration for automatic blocking
      */
+     @ConfigurationClass("The smart, automatic matching strategy that builds on the analysis of the datasets to find potential matches. This setting should be used most of the time")
     public static class Configuration {
 
         /**
          * The maximum number of matches
          */
+         @ConfigurationParameter(description = "The maximum number of candidates to generate per entity")
         public int maxMatches = 100;
         /**
          * The size of ngrams to use
          */
+         @ConfigurationParameter(description = "The character n-gram to use in matching", defaultValue = "3")
         public int ngrams = 3;
     
     }
@@ -124,31 +123,41 @@ public class Automatic implements BlockingStrategyFactory {
         
 
         @Override
-        public Iterable<Pair<Resource, Resource>> block(Dataset left,  Dataset right, NaiscListener log) {
+        public Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log) {
             final Set<Pair<Resource, Resource>> p = preblocking.prelink(left, right, log);
             final ApproximateStringMatching.NgramApproximateStringMatch matcher = 
                     new ApproximateStringMatching.NgramApproximateStringMatch(
                             maxMatches, property, rightProperty, n, 
-                            Prelinking.leftPrelinked(p), Prelinking.rightPrelinked(p), true);
-            final Iterable<Pair<Resource, Resource>> base = matcher.block(left, right, log);
-            return new Iterable<Pair<Resource, Resource>>() {
+                            Prelinking.leftPrelinked(p), Prelinking.rightPrelinked(p), true, null);
+            final Iterable<Blocking> base = matcher.block(left, right, log);
+            return new AbstractCollection<Blocking>() {
                 @Override
-                public Iterator<Pair<Resource, Resource>> iterator() {
-                    return new Iterator<Pair<Resource, Resource>>() {
-                        Iterator<Pair<Resource, Resource>> iter1 = p.iterator(), iter2 = base.iterator();
+                public Iterator<Blocking> iterator() {
+                    return new Iterator<Blocking>() {
+                        Iterator<Pair<Resource, Resource>> iter1 = p.iterator();
+                        Iterator<Blocking> iter2 = base.iterator();
                         @Override
                         public boolean hasNext() {
                             return iter1.hasNext() || iter2.hasNext();
                         }
 
                         @Override
-                        public Pair<Resource, Resource> next() {
-                            if(iter1.hasNext())
-                                return iter1.next();
-                            else
+                        public Blocking next() {
+                            if(iter1.hasNext()) {
+                                Pair<Resource,Resource> p = iter1.next();
+                                if(p._1 == null || p._2 == null || p._1.getURI() == null || p._2.getURI() == null) {
+                                    throw new RuntimeException("Nulls generated in prelinking");
+                                }
+                                return new Blocking(p._1, p._2, left.id(), right.id());
+                            } else
                                 return iter2.next();
                         }
                     };
+                }
+
+                @Override
+                public int size() {
+                    throw new UnsupportedOperationException();
                 }
             };
         }

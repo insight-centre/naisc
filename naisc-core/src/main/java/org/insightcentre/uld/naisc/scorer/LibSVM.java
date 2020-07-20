@@ -4,41 +4,26 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import libsvm.svm;
-import libsvm.svm_model;
-import libsvm.svm_node;
-import libsvm.svm_parameter;
-import libsvm.svm_problem;
+import libsvm.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.jena.ext.xerces.impl.dv.util.Base64;
-import org.insightcentre.uld.naisc.Alignment;
-import static org.insightcentre.uld.naisc.Alignment.SKOS_EXACT_MATCH;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.FeatureSet;
-import org.insightcentre.uld.naisc.FeatureSetWithScore;
-import org.insightcentre.uld.naisc.NaiscListener;
-import org.insightcentre.uld.naisc.ScoreResult;
-import org.insightcentre.uld.naisc.Scorer;
-import org.insightcentre.uld.naisc.ScorerFactory;
-import org.insightcentre.uld.naisc.ScorerTrainer;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.None;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
 
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static org.insightcentre.uld.naisc.Alignment.SKOS_EXACT_MATCH;
+
 /**
- * The LibSVM scorer returns the probability that a particular relation holds
+ * The LibSVM scorer returns the probability that a particular property holds
  * given its input
  *
  * @author John McCrae
@@ -48,6 +33,7 @@ public class LibSVM implements ScorerFactory {
     /**
      * The configuration for LibSVM models
      */
+     @ConfigurationClass("This scorer learns and applies an optimal scoring given the features. This is a supervised method and must be trained in advance. It is not robust to changes in the features generated so cannot easily be applied to other datasets")
     public static class Configuration {
         /**
          * The property to output.
@@ -69,13 +55,13 @@ public class LibSVM implements ScorerFactory {
     private static ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
-    public List<Scorer> makeScorer(Map<String, Object> params, File objectFile) {
+    public Scorer makeScorer(Map<String, Object> params, File objectFile) {
         Configuration config = mapper.convertValue(params, Configuration.class);
         if (!objectFile.exists()) {
             throw new ConfigurationException("Model file does not exist. (Perhaps you need to train this model?)");
         }
         try {
-            return Collections.singletonList(load(objectFile, config));
+            return load(objectFile, config);
         } catch (IOException x) {
             throw new ConfigurationException(x);
         }
@@ -94,7 +80,6 @@ public class LibSVM implements ScorerFactory {
         }
     }
 
-    @Override
     public String id() {
         return "libsvm";
     }
@@ -134,9 +119,6 @@ public class LibSVM implements ScorerFactory {
             double[] v = new double[instances.x.length];
             for (int j = 0; j < instances.x.length; j++) {
                 v[j] = instances.x[j][i].value;
-//                if(!Double.isNaN(v[j]) || v[j] < -1e9 || v[j] > 1e9) {
-//                    System.err.println(String.format("%d %d %f", i, j, v[j]));
-//                }
             }
             double c = corr.correlation(sim, v);
             if (Double.isNaN(c)) {
@@ -213,19 +195,6 @@ public class LibSVM implements ScorerFactory {
             }
 
             svm_parameter param = makeParameters();
-            //final Classifier classifier = loadClassifier(config);
-            /*if (config.arffFile != null) {
-            final File arffFile = new File(config.arffFile);
-            final ArffSaver saver = new ArffSaver();
-            saver.setInstances(instances);
-            try {
-                System.err.println(String.format("Saving features to %s", arffFile.getPath()));
-                saver.setFile(arffFile);
-                saver.writeBatch();
-            } catch (IOException x) {
-                x.printStackTrace();
-            }
-        }*/
 
             libsvm.svm_model model;
             try {
@@ -288,7 +257,7 @@ public class LibSVM implements ScorerFactory {
 //            }
 //            attributes.add(new Attribute(featName));
 //        }
-//        attributes.add(new Attribute("score"));
+//        attributes.add(new Attribute("probability"));
 //        return attributes;
 //    }
     /**
@@ -297,7 +266,7 @@ public class LibSVM implements ScorerFactory {
     public static class LibSVMModel {
 
         /**
-         * The relation trained on
+         * The property trained on
          */
         public String relation;
         /**
@@ -338,7 +307,7 @@ public class LibSVM implements ScorerFactory {
 //        for(int i = 0; i < fss.values.length; i++) {
 //            instance.setValue(i, fss.values[i]);
 //        }
-//        instance.setValue(instance.numAttributes() - 1, score);
+//        instance.setValue(instance.numAttributes() - 1, probability);
         final double[] d = new double[fss.values.length + 1];
         System.arraycopy(fss.values, 0, d, 0, fss.values.length);
         d[fss.values.length] = score;
@@ -374,7 +343,7 @@ public class LibSVM implements ScorerFactory {
          *
          * @param classifier The trained classifier
          * @param featNames The names of the features used
-         * @param relation The relation to output
+         * @param relation The property to output
          */
         public LibSVMClassifier(svm_model classifier, String[] featNames,
                 String relation) {
@@ -386,21 +355,16 @@ public class LibSVM implements ScorerFactory {
         boolean checkedFeatures = false;
 
         @Override
-        public String relation() {
-            return relation;
-        }
-
-        @Override
-        public ScoreResult similarity(FeatureSet features, NaiscListener log) {
+        public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) throws ModelNotTrainedException{
             final svm_problem instances = makeInstances(features);
             final Instance instance = buildInstance(features, 0.0, instances);
             if (features.names.length != featNames.length) {
-                throw new RuntimeException("Classifier has wrong number of attributes. Model does not match trained");
+                throw new ModelNotTrainedException("Classifier has wrong number of attributes. Model does not match trained");
             }
             if (!checkedFeatures) {
                 for (int i = 0; i < featNames.length; i++) {
                     if (!featNames[i].equals(features.names[i]._1 + "-" + features.names[i]._2)) {
-                        throw new RuntimeException("Feature names are not equal: " + featNames[i] + " vs " + features.names[i]);
+                        throw new ModelNotTrainedException("Feature names are not equal: " + featNames[i] + " vs " + features.names[i]);
                     }
                 }
                 checkedFeatures = true;
@@ -416,7 +380,7 @@ public class LibSVM implements ScorerFactory {
                 double[] prob_estimates = new double[totalClasses];
                 svm.svm_predict_probability(classifier, instance.x, prob_estimates);
                 double sim = prob_estimates[0];
-                return ScoreResult.fromDouble(sim);
+                return Collections.singletonList(new ScoreResult(sim, relation));
             } catch (IndexOutOfBoundsException x) {
                 throw new RuntimeException("Length of test-time vector is not the same as train. Please retrain the model for this configuration", x);
             } catch (Exception x) {

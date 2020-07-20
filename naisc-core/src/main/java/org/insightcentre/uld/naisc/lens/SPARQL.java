@@ -4,10 +4,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
 import eu.monnetproject.lang.LanguageCodeFormatException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -18,11 +17,7 @@ import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.LensFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.None;
@@ -47,17 +42,25 @@ import org.insightcentre.uld.naisc.util.Some;
 public class SPARQL implements LensFactory {
 
     @Override
-    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
+    public Lens makeLens(Dataset dataset, Map<String, Object> params) {
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         if(config.query == null) {
             throw new ConfigurationException("Query must be given for SPARQL lens");
         }
-        return new SPARQLImpl(config.query, dataset, config.baseURI, tag);
+        return new SPARQLImpl(config.query, dataset, config.baseURI);
     }
 
     /**
      * Configuration of the SPARQL lens.
      */
+     @ConfigurationClass("A lens that is implemented by a SPARQL query. The query should return exactly two string literals and should contain the special variables $entity1 and $entity2. For example\n" +
+             "```sparql\n"+
+             "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"+
+             "SELECT ?label1 ?label2 WHERE { \n"+
+             "   $entity1 rdfs:label ?label1 .\n"+
+             "   $entity2 rdfs:label ?label2 .\n"+
+             "}\n"+
+             "```")
     public static class Configuration {
         /**
          * The SPARQL query.
@@ -77,23 +80,15 @@ public class SPARQL implements LensFactory {
         private final String query;
         private final Dataset model;
         private final String baseURI;
-        private final String tag;
 
-        public SPARQLImpl(String query, Dataset model, String baseURI, String tag) {
+        public SPARQLImpl(String query, Dataset model, String baseURI) {
             this.query = query;
             this.model = model;
             this.baseURI = baseURI;
-            this.tag = tag;
-        }
-
-
-        @Override
-        public String id() {
-            return String.format("sparql-%04x", query.hashCode());
         }
 
         @Override
-        public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
+        public Collection<LensResult> extract(URIRes entity1, URIRes entity2, NaiscListener log) {
             String queryString = this.query.replaceAll("\\$entity1", "<" + entity1.getURI() + ">")
                     .replaceAll("\\$entity2", "<" + entity2.getURI() + ">");
             Query sparqlQuery = baseURI == null ? QueryFactory.create(queryString)
@@ -115,21 +110,15 @@ public class SPARQL implements LensFactory {
                         Literal l1 = (Literal)node1;
                         Literal l2 = (Literal)node2;
                         return new Some<>(
-                                new LangStringPair(
+                                new LensResult(
                                         toLang(l1.getLanguage()),
                                         toLang(l2.getLanguage()),
-                                        l1.getLexicalForm(), l2.getLexicalForm()));
+                                        l1.getLexicalForm(), l2.getLexicalForm(),"sparql"));
                     }
                 }
             }
             return new None<>();
         }
-
-        @Override
-        public String tag() {
-            return tag;
-        }
-
     }
     
     private static Language toLang(String s) {

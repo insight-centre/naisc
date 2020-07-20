@@ -6,6 +6,8 @@ import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
+
+import org.insightcentre.uld.naisc.URIRes;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -39,8 +41,8 @@ public class EvaluateTest {
     }
 
     private Model m = ModelFactory.createDefaultModel();
-    private Resource r(String s) {
-        return m.createResource(s);
+    private URIRes r(String s) {
+        return new URIRes(s, "dataset");
     }
     /**
      * Test of evaluate method, of class Evaluate.
@@ -49,21 +51,21 @@ public class EvaluateTest {
     public void testEvaluate() {
         System.out.println("evaluate");
         AlignmentSet output = new AlignmentSet();
-        output.add(new Alignment(r("file:id1"), r("file:id2"), 0.0, Alignment.SKOS_EXACT_MATCH));
-        output.add(new Alignment(r("file:id2"), r("file:id1"), 0.01, Alignment.SKOS_EXACT_MATCH));
-        output.add(new Alignment(r("file:id2"), r("file:id3"), 0.56, Alignment.SKOS_EXACT_MATCH));
-        output.add(new Alignment(r("file:id3"), r("file:id1"), 1.0, Alignment.SKOS_EXACT_MATCH));
-        output.add(new Alignment(r("file:id1"), r("file:id2"), 0.3, "file:customProp"));
+        output.add(new Alignment(r("file:id1"), r("file:id2"), 0.0, Alignment.SKOS_EXACT_MATCH, null));
+        output.add(new Alignment(r("file:id2"), r("file:id1"), 0.01, Alignment.SKOS_EXACT_MATCH, null));
+        output.add(new Alignment(r("file:id2"), r("file:id3"), 0.56, Alignment.SKOS_EXACT_MATCH, null));
+        output.add(new Alignment(r("file:id3"), r("file:id1"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
+        output.add(new Alignment(r("file:id1"), r("file:id2"), 0.3, "file:customProp", null));
         AlignmentSet gold = new AlignmentSet();
-        gold.add(new Alignment(r("file:id1"), r("file:id2"), 0.5, Alignment.SKOS_EXACT_MATCH));
-        gold.add(new Alignment(r("file:id2"), r("file:id1"), 0.3, Alignment.SKOS_EXACT_MATCH));
-        gold.add(new Alignment(r("file:id1"),r("file:id2"), 0.3, "file:redHerring"));
+        gold.add(new Alignment(r("file:id1"), r("file:id2"), 0.5, Alignment.SKOS_EXACT_MATCH, null));
+        gold.add(new Alignment(r("file:id2"), r("file:id1"), 0.3, Alignment.SKOS_EXACT_MATCH, null));
+        gold.add(new Alignment(r("file:id1"),r("file:id2"), 0.3, "file:redHerring", null));
         
         Evaluate.EvaluationResults expResult = new Evaluate.EvaluationResults();
         expResult.tp = 1;
         expResult.fp = 3;
         expResult.fn = 2;
-        Evaluate.EvaluationResults result = Evaluate.evaluate(output, gold, STDERR);
+        Evaluate.EvaluationResults result = Evaluate.evaluate(output, gold, STDERR, false);
         assertEquals(expResult.tp, result.tp);
         assertEquals(expResult.fp, result.fp);
         assertEquals(expResult.fn, result.fn);

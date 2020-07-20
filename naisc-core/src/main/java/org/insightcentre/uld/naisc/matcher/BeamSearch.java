@@ -2,13 +2,10 @@ package org.insightcentre.uld.naisc.matcher;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.ArrayList;
+
 import java.util.Map;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Matcher;
-import org.insightcentre.uld.naisc.MatcherFactory;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.constraint.Constraint;
 import org.insightcentre.uld.naisc.constraint.UnsolvableConstraint;
 import org.insightcentre.uld.naisc.main.Configuration.ConstraintConfiguration;
@@ -20,7 +17,7 @@ import org.insightcentre.uld.naisc.util.Beam;
  * A search algorithm for finding near optimal solutions for generic
  * constraints. The algorithm keeps a 'beam' of partial solutions and tries each
  * new solution in order to guarantee the solution quality. The alignments are
- * added in descending order by score and so some constrains may not be solvable
+ * added in descending order by probability and so some constrains may not be solvable
  * with this algorithm.
  *
  * @author John McCrae
@@ -52,6 +49,7 @@ public class BeamSearch implements MatcherFactory {
     /**
      * The configuration of the greedy matcher.
      */
+     @ConfigurationClass("Beam search finds a matching according to a generic constraint by keeping a list of top solutions found during the search")
     public static class Configuration {
 
         /**
@@ -109,14 +107,13 @@ public class BeamSearch implements MatcherFactory {
 
             int iter = 0;
             for (Alignment alignment : matches.getAlignments()) {
-                if (alignment.score >= threshold) {
+                if (alignment.probability >= threshold) {
                     for (Constraint current : beam) {
                         if (current.canAdd(alignment)) {
                             Constraint ts = current.copy();
                             ts.add(alignment);
                             beam.insert(ts, ts.score);
                             if (ts.complete() && (bestValid == null || bestValid.score < ts.score)) {
-                                //System.err.println("Score: " + ts.score);
                                 bestValid = ts.copy();
                             }
                         }
@@ -127,7 +124,7 @@ public class BeamSearch implements MatcherFactory {
                 }
                 if(iter % 10000 == 0 && listener != null) {
                     listener.updateStatus(ExecuteListener.Stage.MATCHING, 
-                            String.format("Generated %sth candidate (max score=%.2f)", iter, 
+                            String.format("Generated %sth candidate (max probability=%.2f)", iter,
                                     bestValid == null ? 0.0 : bestValid.score));
                 }
             }

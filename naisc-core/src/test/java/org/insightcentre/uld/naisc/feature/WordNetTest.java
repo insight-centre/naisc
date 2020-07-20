@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import static org.apache.jena.sparql.vocabulary.TestManifest.result;
+
+import org.insightcentre.uld.naisc.Feature;
+import org.insightcentre.uld.naisc.LensResult;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -50,11 +53,11 @@ public class WordNetTest {
         params.put("wordnetXmlFile", "src/test/resources/wnTest.xml");
         WordNet instance = new WordNet();
         TextFeature extractor = instance.makeFeatureExtractor(tags, params);
-        double[] features = extractor.extractFeatures(new LangStringPair(Language.ENGLISH, Language.ENGLISH, "cat", "dog"));
+        Feature[] features = extractor.extractFeatures(new LensResult(Language.ENGLISH, Language.ENGLISH, "cat", "dog", null));
         assert(features.length == 8);
         for(int i = 0; i < 8; i++) {
-            assert(Double.isFinite(features[i]));
-            assert(features[i] > 0);
+            assert(Double.isFinite(features[i].value));
+            assert(features[i].value > 0);
         }
     }
 

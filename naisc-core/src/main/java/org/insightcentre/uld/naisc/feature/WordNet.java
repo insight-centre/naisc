@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.xml.parsers.ParserConfigurationException;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.NaiscListener;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.feature.wordnet.GWNWordNetReader;
 import org.insightcentre.uld.naisc.feature.wordnet.SemanticSimilarityMeasures;
 import org.insightcentre.uld.naisc.feature.wordnet.Synset;
@@ -22,8 +22,6 @@ import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.PrettyGoodTokenizer;
 import org.xml.sax.SAXException;
-import org.insightcentre.uld.naisc.TextFeature;
-import org.insightcentre.uld.naisc.TextFeatureFactory;
 
 /**
  * Calculate the similarity of two string using WordNet based similarity
@@ -57,6 +55,7 @@ public class WordNet implements TextFeatureFactory {
     /**
      * Configuration for WordNet similarity.
      */
+     @ConfigurationClass("Similarity based on the overlap of synonymous and closely related words according to WordNet")
     public static class Configuration {
         /**
          * The path to the WordNet file in GWA XML format.
@@ -85,32 +84,20 @@ public class WordNet implements TextFeatureFactory {
             this.ssm = new SemanticSimilarityMeasures(wordnet);
         }
 
-        public List<String> findSynsets(String[] tokens) {
-            List<String> synsets = new ArrayList<>();
-
-            for (int i = 0; i < tokens.length; i++) {
-                for (int j = tokens.length; j > i; j++) {
-                    String s = String.join(" ", Arrays.asList(Arrays.copyOfRange(tokens, i, j)));
-                    if (!wordnet.lookupEntry(s).isEmpty()) {
-                        synsets.add(s);
-                        i = j - 1;
-                        break;
-                    }
-                }
-            }
-            return synsets;
+        public List<String[]> findSynsets(String[] tokens) {
+            return new ArrayList<>(wordnet.allEntries(tokens).keySet());
         }
 
         public double[] score(String left, String right, Method method) {
-            List<String> lwords = findSynsets(PrettyGoodTokenizer.tokenize(left));
-            List<String> rwords = findSynsets(PrettyGoodTokenizer.tokenize(right));
+            List<String[]> lwords = findSynsets(PrettyGoodTokenizer.tokenize(left));
+            List<String[]> rwords = findSynsets(PrettyGoodTokenizer.tokenize(right));
             if (lwords.isEmpty() || rwords.isEmpty()) {
                 return new double[] { 0.0, 0.0 };
             }
             double total1 = 0.0;
-            for (String lword : lwords) {
+            for (String[] lword : lwords) {
                 double score = Double.NEGATIVE_INFINITY;
-                for (String rword : rwords) {
+                for (String[] rword : rwords) {
                     double s = sim(lword, rword, method);
                     if (s > score) {
                         score = s;
@@ -119,9 +106,9 @@ public class WordNet implements TextFeatureFactory {
                 total1 += score;
             }
             double total2 = 0.0;
-            for (String rword : rwords) {
+            for (String[] rword : rwords) {
                 double score = Double.NEGATIVE_INFINITY;
-                for (String lword : lwords) {
+                for (String[] lword : lwords) {
                     double s = sim(lword, rword, method);
                     if (s > score) {
                         score = s;
@@ -139,18 +126,17 @@ public class WordNet implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair facet, NaiscListener log) {
+        public Feature[] extractFeatures(LensResult facet, NaiscListener log) {
             double[] vec = new double[methods.size() * 2];
             int i = 0;
             for(Method method : methods) {
-                System.arraycopy(score(facet._1, facet._2, method), 0, vec, i, 2);
+                System.arraycopy(score(facet.string1, facet.string2, method), 0, vec, i, 2);
                 i += 2;
             }
-            return vec;
+            return Feature.mkArray(vec, getFeatureNames());
 
         }
 
-        @Override
         public String[] getFeatureNames() {
             String[] vec = new String[methods.size() * 2];
             int i = 0;
@@ -171,10 +157,12 @@ public class WordNet implements TextFeatureFactory {
         public void close() throws IOException {
         }
 
-        private double sim(String lword, String rword, Method method) {
+        private double sim(String[] lword, String[] rword, Method method) {
             
             List<Synset> ls = wordnet.lookupEntry(lword).stream().flatMap(x -> x.synsets(wordnet).stream()).collect(Collectors.toList());
             List<Synset> rs = wordnet.lookupEntry(rword).stream().flatMap(x -> x.synsets(wordnet).stream()).collect(Collectors.toList());
+            if(ls.isEmpty() || rs.isEmpty())
+                return 0.0;
             switch(method) {
                 case LEAKCOCK_CHODOROW:
                     return 1.0 - ls.stream().flatMap(l -> {

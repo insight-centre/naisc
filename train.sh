@@ -1,3 +1,8 @@
 #!/bin/bash
 
-mvn -q -f naisc-core/pom.xml exec:java -Dexec.mainClass="org.insightcentre.uld.naisc.main.MultiTrain" -Dexec.args="$*"
+# Change to directory where this script is located
+cd "$(dirname "$0")"
+
+./gradlew jarWithDeps
+
+java -cp naisc-core/build/libs/naisc-core-all-1.0-SNAPSHOT.jar org.insightcentre.uld.naisc.main.MultiTrain $*

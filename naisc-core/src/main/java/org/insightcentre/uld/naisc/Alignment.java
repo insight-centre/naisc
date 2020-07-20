@@ -1,10 +1,19 @@
 package org.insightcentre.uld.naisc;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+
+import java.io.IOException;
+import java.util.Map;
 import java.util.Objects;
+
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 
@@ -18,69 +27,80 @@ public class Alignment {
     /**
      * The first entity that is aligned
      */
-    public final Resource entity1;
+     //@JsonSerialize(using=ResourceSerializer.class)
+    public final URIRes entity1;
     /**
      * The second entity that is aligned
      */
-    public final Resource entity2;
+    //@JsonSerialize(using=ResourceSerializer.class)
+    public final URIRes entity2;
     /**
-     * The score (between 0 and 1) of the alignment
+     * The probability (between 0 and 1) of the alignment
      */
-    public final double score;
+    public final double probability;
     /**
      * The alignment type
      */
-    public final String relation;
+    public final String property;
     /**
      * The evaluation mark for this alignment
      */
     public Valid valid = Valid.unknown;
+    /**
+     * The features used to calculate the probability
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Map<String, Double> features;
 
     public static final String SKOS_EXACT_MATCH = "http://www.w3.org/2004/02/skos/core#exactMatch";
 
-    public Alignment(Resource entity1,
-            Resource entity2,
-            double score) {
+    public Alignment(URIRes entity1,
+            URIRes entity2,
+            double probability) {
         this.entity1 = entity1;
         this.entity2 = entity2;
-        this.score = score;
-        this.relation = SKOS_EXACT_MATCH;
-        assert (score >= 0 && score <= 1);
+        this.probability = probability;
+        this.property = SKOS_EXACT_MATCH;
+        assert (probability >= 0 && probability <= 1);
     }
 
-    public Alignment(Resource entity1,
-            Resource entity2,
-            double score, String relation) {
+    @JsonCreator
+    public Alignment(@JsonProperty("entity1") URIRes entity1,
+                     @JsonProperty("entity2") URIRes entity2,
+                     @JsonProperty("probability") double probability,
+                     @JsonProperty("property") String property,
+                     @JsonProperty("features") Map<String, Double> features) {
         this.entity1 = entity1;
         this.entity2 = entity2;
-        this.score = score;
-        this.relation = relation;
-        assert (score >= 0 && score <= 1);
+        this.probability = probability;
+        this.property = property;
+        assert (probability >= 0 && probability <= 1);
+        this.features = features;
     }
     
-    public Alignment(Alignment a, double score, Valid valid) {
+    public Alignment(Alignment a, double probability, Valid valid) {
         this.entity1 = a.entity1;
         this.entity2 = a.entity2;
-        this.score = score;
-        this.relation = a.relation;
+        this.probability = probability;
+        this.property = a.property;
         this.valid = valid;
-        assert (score >= 0 && score <= 1);
+        assert (probability >= 0 && probability <= 1);
     }
 
 
-    public Alignment(Statement statement, double score) {
-        assert(statement.getSubject().isURIResource() && statement.getObject().isURIResource());
-        this.entity1 = statement.getSubject();
-        this.entity2 = statement.getObject().asResource();
-        this.score = score;
-        this.relation = statement.getPredicate().getURI();
-        assert (score >= 0 && score <= 1);
-    }
+//    public Alignment(Statement statement, double probability) {
+//        assert(statement.getSubject().isURIResource() && statement.getObject().isURIResource());
+//        this.entity1 = statement.getSubject();
+//        this.entity2 = statement.getObject().asResource();
+//        this.probability = probability;
+//        this.property = statement.getPredicate().getURI();
+//        assert (probability >= 0 && probability <= 1);
+//    }
     
 
     @Override
     public String toString() {
-        return "Alignment{" + "entity1=" + entity1 + ", entity2=" + entity2 + ", score=" + score + ", relation=" + relation + ", valid=" + valid + '}';
+        return "Alignment{" + "entity1=" + entity1 + ", entity2=" + entity2 + ", probability=" + probability + ", property=" + property + ", valid=" + valid + '}';
     }
 
 
@@ -89,7 +109,7 @@ public class Alignment {
         int hash = 7;
         hash = 29 * hash + Objects.hashCode(this.entity1);
         hash = 29 * hash + Objects.hashCode(this.entity2);
-        hash = 29 * hash + (int) (Double.doubleToLongBits(this.score) ^ (Double.doubleToLongBits(this.score) >>> 32));
+        hash = 29 * hash + (int) (Double.doubleToLongBits(this.probability) ^ (Double.doubleToLongBits(this.probability) >>> 32));
         return hash;
     }
 
@@ -108,7 +128,7 @@ public class Alignment {
         if (!Objects.equals(this.entity2, other.entity2)) {
             return false;
         }
-        if (Double.doubleToLongBits(this.score) != Double.doubleToLongBits(other.score)) {
+        if (Double.doubleToLongBits(this.probability) != Double.doubleToLongBits(other.probability)) {
             return false;
         }
         return true;
@@ -127,6 +147,10 @@ public class Alignment {
          */
         no,
         /**
+         * Incorrect but only due to the link type
+         */
+        bad_link,
+        /**
          * Not marked
          */
         unknown,
@@ -136,4 +160,15 @@ public class Alignment {
         novel
     }
 
+    private static class ResourceSerializer extends JsonSerializer<Resource> {
+
+        @Override
+        public void serialize(Resource resource, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+            if(resource.isURIResource()) {
+                jsonGenerator.writeString(resource.getURI());
+            } else {
+                jsonGenerator.writeString("_:" + resource.getId().getLabelString());
+            }
+        }
+    }
 }

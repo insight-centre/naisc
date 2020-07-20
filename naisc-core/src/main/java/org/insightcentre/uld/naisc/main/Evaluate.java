@@ -9,15 +9,20 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
+import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.NONE;
 import static org.insightcentre.uld.naisc.main.ExecuteListeners.STDERR;
+
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Pair;
 
@@ -72,14 +77,14 @@ public class Evaluate {
         }
     }
 
-    public static void evaluate(File testFile, File goldFile, File outputFile, ExecuteListener monitor) throws IOException {
+    public static void evaluate(File testFile, File goldFile, File outputFile, ExecuteListener monitor, boolean ignoreNotInGold, String leftDatatset, String rightDataset) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading output alignments");
-        final AlignmentSet output = Train.readAlignments(testFile);
+        final AlignmentSet output = Train.readAlignments(testFile, leftDatatset, rightDataset);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading gold standard");
-        final AlignmentSet goldAlignments = Train.readAlignments(goldFile);
+        final AlignmentSet goldAlignments = Train.readAlignments(goldFile, leftDatatset, rightDataset);
 
-        EvaluationResults er = evaluate(output, goldAlignments, monitor);
+        EvaluationResults er = evaluate(output, goldAlignments, monitor, ignoreNotInGold);
 
         final PrintStream out;
         if (outputFile != null) {
@@ -91,52 +96,70 @@ public class Evaluate {
     }
 
     public static EvaluationResults evaluate(AlignmentSet output,
-            AlignmentSet gold, ExecuteListener monitor) {
+            AlignmentSet gold, ExecuteListener monitor, boolean ignoreNotInGold) {
         PearsonsCorrelation correlation = new PearsonsCorrelation();
         EvaluationResults er = new EvaluationResults();
         for (int i = 0; i <= 10; i++) {
             er.thresholds.add(new Pair(0.1 * i, new EvaluationResults()));
         }
+        Set<URIRes> goldLefts = null, goldRights = null;
+        if(ignoreNotInGold) {
+            goldLefts = gold.stream().map(a -> a.entity1).collect(Collectors.toSet());
+            goldRights = gold.stream().map(a -> a.entity2).collect(Collectors.toSet());
+        }
+
         Set<Alignment> seen = new HashSet<>();
         DoubleList outputScores = new DoubleArrayList(), goldScores = new DoubleArrayList();
         for (Alignment align : output) {
             if (align.valid != Valid.unknown) {
                 continue;
             }
-            Option<Alignment> galign = gold.find(align.entity1, align.entity2, align.relation);
+            Option<Alignment> galign = gold.find(align.entity1, align.entity2, align.property);
             if (galign.has()) {
-                double gScore = galign.get().score;
-                outputScores.add(align.score);
+                double gScore = galign.get().probability;
+                outputScores.add(align.probability);
                 goldScores.add(gScore);
-                if (gScore > 0 && align.score > 0) {
+                if (gScore > 0 && align.probability > 0) {
                     er.tp++;
-                } else if (gScore <= 0 && align.score > 0) {
-                    er.fp++;
+                } else if (gScore <= 0 && align.probability > 0) {
+                    if(!ignoreNotInGold || goldLefts.contains(align.entity1)  || goldRights.contains(align.entity2)) {
+                        er.fp++;
+                    }
                 }
-                for (int i = 0; 0.1 * i <= align.score && 0.1 * i <= 1.0; i++) {
-                    if (gScore > 0 && align.score > 0) {
+                for (int i = 0; 0.1 * i <= align.probability && 0.1 * i <= 1.0; i++) {
+                    if (gScore > 0 && align.probability > 0) {
                         er.thresholds.get(i)._2.tp++;
                     } else if (gScore <= 0) {
                         er.thresholds.get(i)._2.fp++;
                     }
                 }
-                if (gScore > 0 && align.score > 0) {
+                if (gScore > 0 && align.probability > 0) {
                     align.valid = Valid.yes;
                 } else {
-                    align.valid = Valid.no;
+                    if(gold.hasLink(align.entity1, align.entity2)) {
+                        align.valid = Valid.bad_link;
+                    } else {
+                        align.valid = Valid.no;
+                    }
                 }
                 seen.add(galign.get());
             } else {
-                if (align.score > 0) {
-                    er.fp++;
+                if (align.probability > 0) {
+                    if(!ignoreNotInGold || goldLefts.contains(align.entity1)  || goldRights.contains(align.entity2)) {
+                        er.fp++;
+                    }
                 }
-                for (int i = 0; 0.1 * i <= align.score; i++) {
-                    if (align.score > 0) {
+                for (int i = 0; 0.1 * i <= align.probability; i++) {
+                    if (align.probability > 0) {
                         er.thresholds.get(i)._2.fp++;
                     }
                 }
-                if (align.score > 0) {
-                    align.valid = Valid.no;
+                if (align.probability > 0) {
+                    if(gold.hasLink(align.entity1, align.entity2)) {
+                        align.valid = Valid.bad_link;
+                    } else {
+                        align.valid = Valid.no;
+                    }
                 } else {
                     align.valid = Valid.yes;
                 }
@@ -166,12 +189,12 @@ public class Evaluate {
         }
         int goldSize = 0;
         for (Alignment a : gold.getAlignments()) {
-            if (a.score > 0) {
+            if (a.probability > 0) {
                 goldSize++;
             }
             try {
                 if (!seen.contains(a)) {
-                    output.add(new Alignment(a, a.score, Valid.novel));
+                    output.add(new Alignment(a, a.probability, Valid.novel));
                 }
             } catch (UnsupportedOperationException x) {
                 // The alignments cannot be expanded 
@@ -202,6 +225,7 @@ public class Evaluate {
                 {
                     accepts("q", "Quiet (suppress output)");
                     accepts("o", "Output file (or none for STDOUT)");
+                    accepts("i", "Ignore URIs not in the gold alignment set");
                     nonOptions("The test alignment and the gold alignment");
                 }
             };
@@ -232,7 +256,7 @@ public class Evaluate {
             final File outputFile = (File) os.valueOf("o");
 
             Evaluate.evaluate(test, gold, outputFile,
-                    os.has("q") ? NONE : STDERR);
+                    os.has("q") ? NONE : STDERR, os.has("i"), "left", "right");
 
         } catch (Exception x) {
             x.printStackTrace();

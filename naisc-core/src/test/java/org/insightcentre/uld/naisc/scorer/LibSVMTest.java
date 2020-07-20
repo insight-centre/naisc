@@ -67,7 +67,7 @@ public class LibSVMTest {
     @Test
     public void testMakeInstances() {
         System.out.println("makeInstances");
-        FeatureSet example = new FeatureSet(new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.5}, "id1", "id2");
+        FeatureSet example = new FeatureSet(new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.5});
         String datasetName = "test";
         String[] featNames = new String[]{"foobar"};
         svm_problem result = LibSVM.makeInstances(example);
@@ -79,7 +79,7 @@ public class LibSVMTest {
     @Test
     public void testAnalyzeFeatures() {
         System.out.println("analyzeFeatures");
-        FeatureSet example = new FeatureSet(new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.5}, "id1", "id2");
+        FeatureSet example = new FeatureSet(new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.5});
         String datasetName = "test";
         String[] featNames = new String[]{"foobar"};
         svm_problem instances = LibSVM.makeInstances(example);
@@ -121,7 +121,7 @@ public class LibSVMTest {
     @Test
     public void testBuildInstance() {
         System.out.println("buildInstance");
-        FeatureSet fss = new FeatureSet(new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.5}, "id1", "id2");
+        FeatureSet fss = new FeatureSet(new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.5});
         String datasetName = "test";
         String[] featNames = new String[]{"foobar"};
         double score = 0.0;
@@ -152,11 +152,11 @@ public class LibSVMTest {
         tmpFile.deleteOnExit();
         LibSVM instance = new LibSVM();
         Scorer result = instance.makeTrainer(params, Alignment.SKOS_EXACT_MATCH, tmpFile).get().train(dataset, NaiscListener.DEFAULT);
-        ScoreResult sim1 = result.similarity(new FeatureSetWithScore(1.0, new StringPair[]{new StringPair("foo", "bar")}, new double[]{1.0}, "id1", "id2"));
+        ScoreResult sim1 = result.similarity(new FeatureSetWithScore(1.0, new StringPair[]{new StringPair("foo", "bar")}, new double[]{1.0}, "id1", "id2")).get(0);
         System.err.println(sim1);
-        ScoreResult sim6 = result.similarity(new FeatureSetWithScore(0.0, new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.0}, "id1", "id2"));
+        ScoreResult sim6 = result.similarity(new FeatureSetWithScore(0.0, new StringPair[]{new StringPair("foo", "bar")}, new double[]{0.0}, "id1", "id2")).get(0);
         System.err.println(sim6);
-        assert(sim1.value() > sim6.value());
+        assert(sim1.getProbability() > sim6.getProbability());
     }
 
 }

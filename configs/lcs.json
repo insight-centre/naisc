@@ -1,0 +1,24 @@
+{
+    "blocking": {
+        "name": "blocking.Automatic"
+    },
+    "lenses": [],
+    "textFeatures": [{
+        "name": "feature.BasicString",
+        "wordWeights": "models/idf",
+        "ngramWeights": "models/ngidf",
+        "labelChar": true,
+        "features": ["lcs"]
+    }],
+    "scorers": [{
+        "name": "scorer.RAdLR",
+        "modelFile": "models/untrained.radlr"
+    }],
+    "matcher": {
+        "name": "matcher.Greedy",
+        "constraint": {
+            "name": "constraint.Bijective"
+        }
+    },
+    "description": "Longest common subsequence as the only feature"
+}

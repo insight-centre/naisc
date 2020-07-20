@@ -11,12 +11,7 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.GraphFeatureFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.StringPair;
@@ -31,12 +26,13 @@ public class PropertyOverlap implements GraphFeatureFactory {
 
     @Override
     public GraphFeature makeFeature(Dataset dataset, Map<String, Object> params,
-            Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking, NaiscListener listener) {
+            Lazy<Analysis> analysis, AlignmentSet prelinking, NaiscListener listener) {
         Configuration config = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).convertValue(params, Configuration.class);
         return new PropertyOverlapImpl(config.properties, dataset);
     }
 
     /** Configuration for the property overlap feature */
+    @ConfigurationClass("Measures the overlap of two entities by properties that they both have. This is useful if there are properties such as part-of-speech or type that can guide the linking")
     public static class Configuration {
         /** The set of properties to use for overlap or empty for no properties */
         @ConfigurationParameter(description = "The set of properties to use for overlap or empty for no properties")
@@ -59,7 +55,8 @@ public class PropertyOverlap implements GraphFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
+        public Feature[] extractFeatures(URIRes res1, URIRes res2, NaiscListener log) {
+            Resource entity1 = res1.toJena(dataset), entity2 = res2.toJena(dataset);
             Set<StringPair> lvals = new HashSet<>();
             StmtIterator iter = dataset.listStatements(entity1, null, null);
             while(iter.hasNext()) {
@@ -83,10 +80,9 @@ public class PropertyOverlap implements GraphFeatureFactory {
             
             double dice = 2.0 * AB / (A + B);
             double jaccard = AB / (A + B - AB);
-            return new double[]{dice, jaccard};
+            return Feature.mkArray(new double[]{dice, jaccard}, getFeatureNames());
         }
 
-        @Override
         public String[] getFeatureNames() {
             return new String[] { "property-overlap-jaccard", "property-overlap-dice" };
         }

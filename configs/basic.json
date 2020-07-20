@@ -1,27 +1,24 @@
 {
     "blocking": {
-        "name": "blocking.ApproximateStringMatching",
-        "maxMatches": 100,
-        "property": "http://www.w3.org/2000/01/rdf-schema#label"
+        "name": "blocking.Automatic"
     },
-    "lenses": [{
-        "name": "lens.Label"
-    }],
+    "lenses": [],
     "textFeatures": [{
         "name": "feature.BasicString",
         "wordWeights": "models/idf",
         "ngramWeights": "models/ngidf",
         "labelChar": true
     }],
+    "graphFeatures": [],
     "scorers": [{
-        "name": "scorer.LibSVM",
-        "modelFile": "models/basic.libsvm"
+        "name": "scorer.RAdLR",
+        "modelFile": "models/auto.radlr"
     }],
     "matcher": {
-        "name": "matcher.BeamSearch",
+        "name": "matcher.Greedy",
         "constraint": {
             "name": "constraint.Bijective"
         }
     },
-    "description": "The good but basic feature setting"
+    "description": "A very simple light matcher"
 }

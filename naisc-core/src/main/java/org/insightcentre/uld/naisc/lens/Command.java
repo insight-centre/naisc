@@ -6,13 +6,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.util.Collection;
 import java.util.Map;
 import org.apache.jena.rdf.model.Resource;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.Lens;
-import org.insightcentre.uld.naisc.LensFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.Configs;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.ExternalCommandException;
@@ -46,7 +43,7 @@ import org.insightcentre.uld.naisc.util.Some;
 public class Command implements LensFactory {
 
     @Override
-    public Lens makeLens(String tag, Dataset dataset, Map<String, Object> params) {
+    public Lens makeLens(Dataset dataset, Map<String, Object> params) {
         Configuration config = Configs.loadConfig(Configuration.class, params);
         if(config.command == null) {
             throw new ConfigurationException("Command cannot be null");
@@ -58,7 +55,7 @@ public class Command implements LensFactory {
             URL sparql = dataset.asEndpoint().getOrExcept(new RuntimeException("Command requires a SPARQL endpoint"));
             config.command = config.command.replace("$SPARQL", sparql.toString());
         }
-        return new CommandImpl(config.id, tag, config.command);
+        return new CommandImpl(config.id, config.command);
     }
 
     /**
@@ -81,15 +78,14 @@ public class Command implements LensFactory {
     }
 
     private static class CommandImpl implements Lens {
-        private final String id, tag;
+        private final String id;
         private final ThreadLocal<Process> pr;
         private final ThreadLocal<PrintWriter> out;
         private final ThreadLocal<BufferedReader> in;
         private final ObjectMapper mapper = new ObjectMapper();
 
-        public CommandImpl(String id, String tag, String command) {
+        public CommandImpl(String id, String command) {
             this.id = id;
-            this.tag = tag;
             pr = new ThreadLocal<Process>() {
                 @Override
                 protected Process initialValue() {
@@ -116,12 +112,7 @@ public class Command implements LensFactory {
         }
 
         @Override
-        public String id() {
-            return id;
-        }
-
-        @Override
-        public Option<LangStringPair> extract(Resource entity1, Resource entity2, NaiscListener log) {
+        public Collection<LensResult> extract(URIRes entity1, URIRes entity2, NaiscListener log) {
             out.get().println(entity1.getURI() + "\t" + entity2.getURI());
             out.get().flush();
             try {
@@ -131,7 +122,6 @@ public class Command implements LensFactory {
                     BufferedReader err = new BufferedReader(new InputStreamReader(pr.get().getErrorStream()));
                     String eline = err.readLine();
                     while (eline != null) {
-                        System.err.println(eline);
                         eline = err.readLine();
                     }
                     throw new RuntimeException("Command failed");
@@ -139,17 +129,11 @@ public class Command implements LensFactory {
                 if(line.equals("")) {
                     return new None<>();
                 } else {
-                    return new Some<>(mapper.readValue(line, LangStringPair.class));
+                    return new Some<>(LensResult.fromLangStringPair(mapper.readValue(line, LangStringPair.class),id));
                 }
             } catch(IOException x) {
                 throw new RuntimeException(x);
             }
         }
-
-        @Override
-        public String tag() {
-            return tag;
-        }
-
     }
 }

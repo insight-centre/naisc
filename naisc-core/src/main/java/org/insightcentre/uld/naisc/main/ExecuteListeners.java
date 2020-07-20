@@ -1,6 +1,8 @@
 package org.insightcentre.uld.naisc.main;
 
 import org.apache.jena.rdf.model.Resource;
+import org.insightcentre.uld.naisc.LensResult;
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 
 /**
@@ -21,7 +23,7 @@ public class ExecuteListeners {
         }
 
         @Override
-        public void addLensResult(Resource id1, Resource id2, String lensId, LangStringPair res) {
+        public void addLensResult(URIRes id1, URIRes id2, String lensId, LensResult res) {
         }
 
         @Override
@@ -39,7 +41,7 @@ public class ExecuteListeners {
         }
 
         @Override
-        public void addLensResult(Resource id1, Resource id2, String lensId, LangStringPair res) {
+        public void addLensResult(URIRes id1, URIRes id2, String lensId, LensResult res) {
         }
 
         @Override

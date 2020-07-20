@@ -10,6 +10,8 @@ import java.util.Random;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.vocabulary.RDF;
+import org.insightcentre.uld.naisc.Blocking;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching.PatriciaTrie;
@@ -207,8 +209,8 @@ public class ApproximateStringMatchingTest {
             right.add(right.createResource("file:tmp#" + s), right.createProperty(Label.RDFS_LABEL), right.createLiteral(s));
             strings.add(right.createResource("file:tmp#" + s));
         }
-        final List<Pair<Resource, Resource>> results = new ArrayList<>();
-        for (Pair<Resource, Resource> p : strat.block(new ModelDataset(left), new ModelDataset(right))) {
+        final List<Blocking> results = new ArrayList<>();
+        for (Blocking p : strat.block(new ModelDataset(left, "left"), new ModelDataset(right, "right"))) {
             results.add(p);
         }
         strings.sort(new Comparator<Resource>() {
@@ -226,7 +228,7 @@ public class ApproximateStringMatchingTest {
         }
         for (int i = 0; i < N; i++) {
             final Resource r = strings.get(i);
-            assert (results.stream().anyMatch(p -> p._2.equals(r)));
+            assert (results.stream().anyMatch(p -> p.entity2.uri.equals(r.getURI())));
         }
     }
 
@@ -262,9 +264,9 @@ public class ApproximateStringMatchingTest {
         right.add(right.createResource("file:id4"), right.createProperty(Label.RDFS_LABEL), "Scapula");
         right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Dendrite");
         right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Splenic White Part");
-        Iterator<Pair<Resource, Resource>> result = strat.block(new ModelDataset(left), new ModelDataset(right)).iterator();
+        Iterator<Blocking> result = strat.block(new ModelDataset(left, "left"), new ModelDataset(right, "right")).iterator();
         assert(result.hasNext());
-        assertEquals(new Pair<>(left.createResource("file:id1"), right.createResource("file:id6")), result.next());
+        assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id6"), "left", "right"), result.next());
     }
 
     @Test
@@ -283,8 +285,56 @@ public class ApproximateStringMatchingTest {
         right.add(right.createResource("file:id4"), right.createProperty(Label.RDFS_LABEL), "Scapula");
         right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Dendrite");
         right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Splenic White Part");
-        Iterator<Pair<Resource, Resource>> result = strat.block(new ModelDataset(left), new ModelDataset(right)).iterator();
+        Iterator<Blocking> result = strat.block(new ModelDataset(left, "left"), new ModelDataset(right, "right")).iterator();
         assert(result.hasNext());
-        assertEquals(new Pair<>(left.createResource("file:id1"), right.createResource("file:id2")), result.next());
+        assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id2"), "left", "right"), result.next());
+    }
+    
+    
+    @Test
+    public void testNgramNearest3() {
+        ApproximateStringMatching asm = new ApproximateStringMatching();
+        Map<String, Object> config = new HashMap<>();
+        config.put("maxMatches", 1);
+        config.put("lowercase", true);
+        BlockingStrategy strat = asm.makeBlockingStrategy(config, Lazy.fromClosure(() -> null), NaiscListener.DEFAULT);
+        Model left = ModelFactory.createDefaultModel();
+        left.add(left.createResource("file:id1"), left.createProperty(Label.RDFS_LABEL), left.createLiteral("frontal artery"));
+        Model right = ModelFactory.createDefaultModel();
+        right.add(right.createResource("file:id1"), right.createProperty(Label.RDFS_LABEL), "Frontal Lobe");
+        right.add(right.createResource("file:id2"), right.createProperty(Label.RDFS_LABEL), "Frontal Bone");
+        right.add(right.createResource("file:id3"), right.createProperty(Label.RDFS_LABEL), "Frontal Sinus");
+        right.add(right.createResource("file:id4"), right.createProperty(Label.RDFS_LABEL), "Frontal Gyrus");
+        right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Frontal Nerve");
+        right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Frontal Artery");
+        Iterator<Blocking> result = strat.block(new ModelDataset(left,"left"), new ModelDataset(right,"right")).iterator();
+        assert(result.hasNext());
+        assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id6"), "left", "right"), result.next());
+    }
+
+    @Test
+    public void testTypedMatching() {
+        ApproximateStringMatching asm = new ApproximateStringMatching();
+        Map<String, Object> config = new HashMap<>();
+        config.put("maxMatches", 100);
+        config.put("lowercase", true);
+        config.put("type", "file:Test");
+        BlockingStrategy strat = asm.makeBlockingStrategy(config, Lazy.fromClosure(() -> null), NaiscListener.DEFAULT);
+        Model left = ModelFactory.createDefaultModel();
+        left.add(left.createResource("file:id1"), left.createProperty(Label.RDFS_LABEL), left.createLiteral("frontal artery"));
+        left.add(left.createResource("file:id1"), RDF.type, left.createResource("file:Test"));
+        Model right = ModelFactory.createDefaultModel();
+        right.add(right.createResource("file:id1"), right.createProperty(Label.RDFS_LABEL), "Frontal Lobe");
+        right.add(right.createResource("file:id2"), right.createProperty(Label.RDFS_LABEL), "Frontal Bone");
+        right.add(right.createResource("file:id3"), right.createProperty(Label.RDFS_LABEL), "Frontal Sinus");
+        right.add(right.createResource("file:id4"), right.createProperty(Label.RDFS_LABEL), "Frontal Gyrus");
+        right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Frontal Nerve");
+        right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Frontal Artery");
+        right.add(right.createResource("file:id6"), RDF.type, right.createResource("file:Test"));
+        Iterator<Blocking> result = strat.block(new ModelDataset(left,"left"), new ModelDataset(right,"right")).iterator();
+        assert(result.hasNext());
+        assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id6"), "left", "right"), result.next());
+        assert(!result.hasNext());
+
     }
 }

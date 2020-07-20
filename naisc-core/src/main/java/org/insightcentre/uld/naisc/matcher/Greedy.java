@@ -1,17 +1,15 @@
 package org.insightcentre.uld.naisc.matcher;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.constraint.UnsolvableConstraint;
 import org.insightcentre.uld.naisc.constraint.Constraint;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Matcher;
-import org.insightcentre.uld.naisc.MatcherFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+
 import org.insightcentre.uld.naisc.main.Configuration.ConstraintConfiguration;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.main.ExecuteListener;
@@ -26,6 +24,7 @@ public class Greedy implements MatcherFactory {
     /**
      * The configuration of the greedy matcher.
      */
+     @ConfigurationClass("The greedy matcher finds a solution given an arbitrary constraint quickly by always taking the highest scoring link. It may produce poorer results than other methods")
     public static class Configuration {
 
         /**
@@ -83,27 +82,39 @@ public class Greedy implements MatcherFactory {
             }
             int overThreshold = 0;
             int nonFinite = 0;
+            PrintWriter out;
+            try {
+                out = new PrintWriter("tmp.data");
+            } catch(IOException x) { out = null; }
             for (Alignment alignment : matches.getAlignments()) {
-                if (alignment.score >= threshold && constraint.canAdd(alignment)) {
+                out.printf("%s,%s,%.4f,", alignment.entity1, alignment.entity2, alignment.probability);
+                if (alignment.probability > threshold && constraint.canAdd(alignment)) {
                     overThreshold++;
                     //Constraint newConstraint = constraint.add(alignment);
                     double newScore = constraint.score + constraint.delta(alignment);
-                    if (newScore > constraint.score) {
+                    if (newScore > constraint.score || (newScore == constraint.score && threshold < 0)) {
                         //constraint = newConstraint;
                         constraint.add(alignment);
+                        out.println("TRUE");
+                    }  else {
+                        out.println("NOGAIN");
                     }
                     if (lastComplete == null || constraint.canComplete(alignment) && newScore > lastComplete.score) {
                         lastComplete = constraint.copy();
                         lastComplete.add(alignment);
                     }
-                } else if(!Double.isFinite(alignment.score)) {
+                } else if(!Double.isFinite(alignment.probability)) {
                     nonFinite++;
+                    out.println("NONFINITE");
+                } else {
+                    out.println("CONSTRAINT");
                 }
             }
 
+            out.close();
             if (lastComplete != null) {
                 List<Alignment> alignment = lastComplete.alignments();
-                listener.updateStatus(NaiscListener.Stage.MATCHING, String.format("Predicted %d/%d alignments (%d non-finite)", alignment.size(), overThreshold, nonFinite));
+                listener.updateStatus(NaiscListener.Stage.MATCHING, String.format("Predicted %d/%d alignments (%d non-finite, probability=%.4f)", alignment.size(), overThreshold, nonFinite, lastComplete.score));
                 return new AlignmentSet(alignment);
             } else {
                 throw new UnsolvableConstraint("No complete solution was generated");

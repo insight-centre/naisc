@@ -9,6 +9,7 @@ import java.util.Set;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
+import org.insightcentre.uld.naisc.Blocking;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.main.ExecuteListeners;
@@ -107,13 +108,13 @@ public class OntoLexTest {
         left.read(new StringReader(ONTOLEX_DOC), "http://www.example.com/", "TURTLE");
         Model right = ModelFactory.createDefaultModel();
         right.read(new StringReader(SIMPLE_DOC), "http://www.example.com/", "TURTLE");
-        assertEquals(9, blocker.estimateSize(new ModelDataset(left), new ModelDataset(right)));
+        assertEquals(9, blocker.estimateSize(new ModelDataset(left,"left"), new ModelDataset(right,"right")));
         Set<String> leftMatching = new HashSet<>(Arrays.asList("http://www.example.com/#cat-1","http://www.example.com/#cat-2","http://www.example.com/#cat-3"));
         Set<String> rightMatching = new HashSet<>(Arrays.asList("file:DDO/11001660/sense/21002471","file:DDO/11001660/sense/21002472","file:DDO/11001660/sense/21002485"));
-        HashSet<Pair<Resource, Resource>> s = new HashSet<>();
-        for(Pair<Resource,Resource> rr : blocker.block(new ModelDataset(left), new ModelDataset(right))) {
-            assert(leftMatching.contains(rr._1.getURI()));
-            assert(rightMatching.contains(rr._2.getURI()));
+        HashSet<Blocking> s = new HashSet<>();
+        for(Blocking rr : blocker.block(new ModelDataset(left,"left"), new ModelDataset(right,"right"))) {
+            assert(leftMatching.contains(rr.entity1.uri));
+            assert(rightMatching.contains(rr.entity2.uri));
             s.add(rr);
         }
         assertEquals(9, s.size());

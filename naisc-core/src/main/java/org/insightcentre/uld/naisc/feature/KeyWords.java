@@ -13,13 +13,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.NaiscListener;
+
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.insightcentre.uld.naisc.util.PrettyGoodTokenizer;
-import org.insightcentre.uld.naisc.TextFeature;
-import org.insightcentre.uld.naisc.TextFeatureFactory;
 
 /**
  * Keywords feature measures the Jaccard/Dice overlap of a set of key terms.
@@ -55,6 +53,7 @@ public class KeyWords implements TextFeatureFactory {
     /**
      * Configuration for keywords extraction.
      */
+     @ConfigurationClass("Keywords feature measures the Jaccard/Dice overlap of a set of key terms.")
     public static class Configuration {
 
         /**
@@ -102,19 +101,18 @@ public class KeyWords implements TextFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(LangStringPair lsp, NaiscListener log) {
-            IntSet s1 = findKeywords(lsp._1.toLowerCase());
-            IntSet s2 = findKeywords(lsp._2.toLowerCase());
+        public Feature[] extractFeatures(LensResult lsp, NaiscListener log) {
+            IntSet s1 = findKeywords(lsp.string1.toLowerCase());
+            IntSet s2 = findKeywords(lsp.string2.toLowerCase());
             double A = s1.size();
             double B = s2.size();
             s1.retainAll(s2);
             double AB = s1.size();
             double dice = 2.0 * AB / (A + B);
             double jaccard = AB / (A + B - AB);
-            return new double[]{dice, jaccard};
+            return Feature.mkArray(new double[]{dice, jaccard}, getFeatureNames());
         }
 
-        @Override
         public String[] getFeatureNames() {
             return new String[]{"keyword-dice", "keyword-jaccard"};
         }

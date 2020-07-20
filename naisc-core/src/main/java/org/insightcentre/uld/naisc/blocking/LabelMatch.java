@@ -3,12 +3,9 @@ package org.insightcentre.uld.naisc.blocking;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.monnetproject.lang.Language;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Property;
@@ -16,11 +13,7 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.BlockingStrategyFactory;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.Lazy;
@@ -52,6 +45,7 @@ public class LabelMatch implements BlockingStrategyFactory {
     /**
      * Configuration for the label match blocking strategy.
      */
+     @ConfigurationClass("This setting assumes that there is a matching label that indicates candidates. This can be used for example for dictionary sense linking where the goal is to match senses with the same entry, although note the same behaviour is implemented by the `OntoLex` linker")
     public static class Configuration {
 
         /**
@@ -115,7 +109,7 @@ public class LabelMatch implements BlockingStrategyFactory {
 
         @Override
         @SuppressWarnings("Convert2Lambda")
-        public Iterable<Pair<Resource, Resource>> block(Dataset left, Dataset right, NaiscListener log) {
+        public Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log) {
             Property leftProp = left.createProperty(leftProperty);
             Property rightProp = right.createProperty(rightProperty);
 
@@ -131,18 +125,23 @@ public class LabelMatch implements BlockingStrategyFactory {
                 log.message(NaiscListener.Stage.BLOCKING, NaiscListener.Level.CRITICAL, "No URIs in the right dataset have the property " + rightProperty);
             }
 
-            return new Iterable<Pair<Resource, Resource>>() {
+            return new AbstractCollection<Blocking>() {
                 @Override
-                public Iterator<Pair<Resource, Resource>> iterator() {
+                public Iterator<Blocking> iterator() {
                     return leftLabels.entrySet().stream().flatMap(k -> {
                         if (rightLabels.containsKey(k.getKey())) {
                             return k.getValue().stream().flatMap(l
                                     -> rightLabels.get(k.getKey()).stream().map(r
-                                            -> new Pair(l, r)));
+                                            -> new Blocking(l, r, left.id(), right.id())));
                         } else {
                             return Collections.EMPTY_LIST.stream();
                         }
                     }).iterator();
+                }
+
+                @Override
+                public int size() {
+                    throw new UnsupportedOperationException();
                 }
             };
         }

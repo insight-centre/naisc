@@ -4,16 +4,14 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.AbstractCollection;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.util.iterator.ExtendedIterator;
-import org.insightcentre.uld.naisc.BlockingStrategy;
-import org.insightcentre.uld.naisc.BlockingStrategyFactory;
-import org.insightcentre.uld.naisc.ConfigurationParameter;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.Lazy;
@@ -40,6 +38,7 @@ public class IDMatch implements BlockingStrategyFactory {
     /**
      * The configuration of the ID match
      */
+     @ConfigurationClass("Match according to the identifier. This is used in the case of a dataset where the linking is already known (by the URI) and the goal is to find the semantic similarity. When using this setting pre-linking should be disabled")
     public static class Configuration {
         /**
          * The method to match {@link IDMatching}
@@ -133,18 +132,21 @@ public class IDMatch implements BlockingStrategyFactory {
         
     }
     
-    private static class RIIter implements Iterator<Pair<Resource,Resource>> {
+    private static class RIIter implements Iterator<Blocking> {
         private final ExtendedIterator<RI> riIter;
         private Resource l;
         private ExtendedIterator<Resource> rs;
+        private final String left, right;
 
-        public RIIter(ExtendedIterator<RI> riIter) {
+        public RIIter(ExtendedIterator<RI> riIter, String left, String right) {
             this.riIter = riIter;
             while(riIter.hasNext() && (rs == null || !rs.hasNext())) {
                 RI ri = riIter.next();
                 this.l = ri.l;
                 this.rs = ri.rs;
             }
+            this.left = left;
+            this.right = right;
         }
 
         @Override
@@ -153,13 +155,13 @@ public class IDMatch implements BlockingStrategyFactory {
         }
 
         @Override
-        public Pair<Resource, Resource> next() {
+        public Blocking next() {
             while(riIter.hasNext() && !rs.hasNext()) {
                 RI ri = riIter.next();
                 this.l = ri.l;
                 this.rs = ri.rs;
             }
-            return new Pair<>(l, rs.next());
+            return new Blocking(l, rs.next(), left, right);
         }
     }
     
@@ -219,15 +221,20 @@ public class IDMatch implements BlockingStrategyFactory {
 
         @Override
         @SuppressWarnings("Convert2Lambda")
-        public Iterable<Pair<Resource, Resource>> block(final Dataset left, final Dataset right, NaiscListener log) {
-            return new Iterable<Pair<Resource, Resource>>() {
+        public Collection<Blocking> block(final Dataset left, final Dataset right, NaiscListener log) {
+            return new AbstractCollection<Blocking>() {
                 @Override
-                public Iterator<Pair<Resource, Resource>> iterator() {
+                public Iterator<Blocking> iterator() {
                     ExtendedIterator<RI> ris = left.listSubjects().filterKeep(x -> x.isURIResource())
                             .mapWith(x -> {
                                 return new RI(x, right.listSubjects().filterKeep(y -> y.isURIResource() && matches(x,y)));
                             });
-                    return new RIIter(ris);
+                    return new RIIter(ris, left.id(), right.id());
+                }
+
+                @Override
+                public int size() {
+                    throw new UnsupportedOperationException();
                 }
             };
         }

@@ -25,6 +25,9 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.BlockingStrategyFactory;
@@ -35,6 +38,16 @@ import org.insightcentre.uld.naisc.Matcher;
 import org.insightcentre.uld.naisc.MatcherFactory;
 import org.insightcentre.uld.naisc.Scorer;
 import org.insightcentre.uld.naisc.ScorerFactory;
+import org.insightcentre.uld.naisc.blocking.*;
+import org.insightcentre.uld.naisc.blocking.Command;
+import org.insightcentre.uld.naisc.blocking.OntoLex;
+import org.insightcentre.uld.naisc.feature.*;
+import org.insightcentre.uld.naisc.graph.ExternalGraphFeature;
+import org.insightcentre.uld.naisc.lens.*;
+import org.insightcentre.uld.naisc.matcher.*;
+import org.insightcentre.uld.naisc.rescaling.MinMax;
+import org.insightcentre.uld.naisc.rescaling.NoRescaling;
+import org.insightcentre.uld.naisc.scorer.*;
 import org.insightcentre.uld.naisc.util.Services;
 import org.insightcentre.uld.naisc.ScorerTrainer;
 import org.insightcentre.uld.naisc.TextFeature;
@@ -42,39 +55,15 @@ import org.insightcentre.uld.naisc.TextFeatureFactory;
 import org.insightcentre.uld.naisc.GraphFeature;
 import org.insightcentre.uld.naisc.GraphFeatureFactory;
 import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.Rescaler;
 import org.insightcentre.uld.naisc.analysis.Analysis;
-import org.insightcentre.uld.naisc.blocking.All;
-import org.insightcentre.uld.naisc.blocking.ApproximateStringMatching;
-import org.insightcentre.uld.naisc.blocking.Automatic;
-import org.insightcentre.uld.naisc.blocking.IDMatch;
-import org.insightcentre.uld.naisc.blocking.LabelMatch;
-import org.insightcentre.uld.naisc.blocking.Path;
-import org.insightcentre.uld.naisc.blocking.Predefined;
 import org.insightcentre.uld.naisc.constraint.Bijective;
 import org.insightcentre.uld.naisc.constraint.Constraint;
 import org.insightcentre.uld.naisc.constraint.ConstraintFactory;
 import org.insightcentre.uld.naisc.constraint.ThresholdConstraint;
-import org.insightcentre.uld.naisc.feature.BagOfWordsSim;
-import org.insightcentre.uld.naisc.feature.BasicString;
-import org.insightcentre.uld.naisc.feature.Dictionary;
-import org.insightcentre.uld.naisc.feature.KeyWords;
-import org.insightcentre.uld.naisc.feature.WordEmbeddings;
-import org.insightcentre.uld.naisc.feature.WordNet;
 import org.insightcentre.uld.naisc.graph.PPR;
 import org.insightcentre.uld.naisc.graph.PropertyOverlap;
-import org.insightcentre.uld.naisc.lens.Label;
-import org.insightcentre.uld.naisc.lens.LensAutoConfig;
-import org.insightcentre.uld.naisc.lens.OntoLex;
-import org.insightcentre.uld.naisc.lens.SPARQL;
-import org.insightcentre.uld.naisc.lens.URI;
-import org.insightcentre.uld.naisc.matcher.BeamSearch;
-import org.insightcentre.uld.naisc.matcher.Greedy;
-import org.insightcentre.uld.naisc.matcher.MonteCarloTreeSearch;
-import org.insightcentre.uld.naisc.matcher.Threshold;
-import org.insightcentre.uld.naisc.matcher.UniqueAssignment;
-import org.insightcentre.uld.naisc.scorer.Average;
-import org.insightcentre.uld.naisc.scorer.LibSVM;
-import org.insightcentre.uld.naisc.scorer.RAdLR;
+import org.insightcentre.uld.naisc.rescaling.Percentile;
 import org.insightcentre.uld.naisc.util.Lazy;
 
 /**
@@ -109,6 +98,10 @@ public class Configuration {
      */
     public final MatcherConfiguration matcher;
     /**
+     * The rescaling method to use
+     */
+    public final RescalerMethod rescaler;
+    /**
      * The description of the configuration
      */
     public final String description;
@@ -116,6 +109,27 @@ public class Configuration {
      * The number of threads to use
      */
     public int nThreads = 10;
+
+    /**
+     * Whether to include the features into the final output
+     */
+    public boolean includeFeatures = false;
+
+    /**
+     * Whether to ignore any elements that are already linked, otherwise new, alternative links will be suggested for these
+     * elements
+     */
+    public boolean ignorePreexisting = false;
+
+    /**
+     * Do not force the matching of unique pairs; Match all elements.
+     */
+    public boolean noPrematching = false;
+
+    /**
+     * Upload path for loading datasets for external services
+     */
+     public String externalEndpoint = null;
 
     @JsonCreator
     public Configuration(
@@ -125,7 +139,8 @@ public class Configuration {
             @JsonProperty("textFeatures") List<TextFeatureConfiguration> textFeatures,
             @JsonProperty("scorers") List<ScorerConfiguration> scorers,
             @JsonProperty("matcher") MatcherConfiguration matcher,
-            @JsonProperty("description") String description) {
+            @JsonProperty("description") String description,
+            @JsonProperty("rescaler") RescalerMethod rescaler) {
         if (blocking == null) {
             throw new ConfigurationException("Blocking strategy not specified");
         }
@@ -145,10 +160,11 @@ public class Configuration {
         this.matcher = matcher;
         this.lenses = lenses == null ? Collections.EMPTY_LIST : lenses;
         this.description = description;
+        this.rescaler = rescaler;
     }
 
     public List<GraphFeature> makeGraphFeatures(Dataset model, Lazy<Analysis> analysis,
-            Lazy<AlignmentSet> prelinking, NaiscListener listener) {
+            AlignmentSet prelinking, NaiscListener listener) {
         List<GraphFeature> extractors = new ArrayList<>();
         for (GraphFeatureConfiguration config : graphFeatures) {
             GraphFeatureFactory extractor = Services.get(GraphFeatureFactory.class, config.name);
@@ -177,7 +193,7 @@ public class Configuration {
         }
         for (LensConfiguration config : lenses) {
             LensFactory lens = Services.get(LensFactory.class, config.name);
-            ls.add(lens.makeLens(config.tag, model, config.params));
+            ls.add(lens.makeLens(model, config.params));
         }
         if (ls.isEmpty()) {
             System.err.println("No lenses loaded!");
@@ -185,23 +201,30 @@ public class Configuration {
         return ls;
     }
 
-    public List<Scorer> makeScorer() throws IOException {
-        List<Scorer> scorerList = new ArrayList<>();
+    public Scorer makeScorer() throws IOException {
+        Scorer scorer = null;
         for (ScorerConfiguration config : this.scorers) {
             File path = config.modelFile == null ? null : new File(config.modelFile);
-            scorerList.addAll(Services.get(ScorerFactory.class, config.name).makeScorer(config.params, path));
+            if(scorer == null) {
+                scorer = Services.get(ScorerFactory.class, config.name).makeScorer(config.params, path);
+            } else {
+                scorer = new MergedScorer(scorer, Services.get(ScorerFactory.class, config.name).makeScorer(config.params, path));
+            }
         }
-        if (scorerList.isEmpty()) {
-            System.err.println("No scorers loaded!");
-        }
-        return scorerList;
+        return scorer;
     }
 
     public List<ScorerTrainer> makeTrainableScorers(String property, String tag) {
         List<ScorerTrainer> tsfs = new ArrayList<>();
         for (ScorerConfiguration config : this.scorers) {
             ScorerFactory sf = Services.get(ScorerFactory.class, config.name);
-            File path = config.modelFile == null ? null : new File(config.modelFile + tag);
+            final File path;
+            if(tag != null) {
+                path = config.modelFile == null ? null : new File(config.modelFile + tag);
+                path.deleteOnExit();
+            } else {
+                path = config.modelFile == null ? null : new File(config.modelFile);
+            }
             tsfs.addAll(sf.makeTrainer(config.params, property, path).toList());
         }
         if (tsfs.isEmpty()) {
@@ -225,8 +248,21 @@ public class Configuration {
         KeyWords.class,
         WordEmbeddings.class,
         WordNet.class,
-        org.insightcentre.uld.naisc.feature.Command.class
+            MachineTranslation.class,
+            ExternalTextFeature.class
     };
+
+    public Rescaler makeRescaler() {
+        if(rescaler == null || rescaler == RescalerMethod.NoScaling) {
+            return new NoRescaling();
+        } else if(rescaler == RescalerMethod.Percentile) {
+            return new Percentile();
+        } else if(rescaler == RescalerMethod.MinMax) {
+            return new MinMax();
+        } else {
+            throw new ConfigurationException(rescaler + " is not a valid value for the rescaler");
+        }
+    }
 
     /**
      * The configuration for text feature extractors. The following extractors
@@ -272,7 +308,7 @@ public class Configuration {
                 @JsonProperty("tags") Set<String> tags) {
             this.name = name;
             this.params = params == null ? Collections.EMPTY_MAP : params;
-            this.tags = tags;
+            this.tags = tags == null || tags.isEmpty() ? null : tags;
         }
 
         @Override
@@ -388,9 +424,9 @@ public class Configuration {
 
     public static Class[] knownGraphFeatures = new Class[]{
         PropertyOverlap.class,
-        org.insightcentre.uld.naisc.graph.Command.class,
         Automatic.class,
-        PPR.class
+        PPR.class,
+            ExternalGraphFeature.class
     };
 
     /**
@@ -416,18 +452,13 @@ public class Configuration {
          * The parameters to configure the feature extractor.
          */
         public final Map<String, Object> params;
-        /**
-         * The tags (of lenses) to apply this feature extractor to
-         */
-        public final Set<String> tags;
+
 
         @JsonCreator
         public GraphFeatureConfiguration(@JsonProperty("name") String name,
-                @JsonProperty("params") Map<String, Object> params,
-                @JsonProperty("tags") Set<String> tags) {
+                @JsonProperty("params") Map<String, Object> params) {
             this.name = name;
             this.params = params == null ? Collections.EMPTY_MAP : params;
-            this.tags = tags;
         }
 
         @Override
@@ -435,7 +466,6 @@ public class Configuration {
             int hash = 3;
             hash = 53 * hash + Objects.hashCode(this.name);
             hash = 53 * hash + Objects.hashCode(this.params);
-            hash = 53 * hash + Objects.hashCode(this.tags);
             return hash;
         }
 
@@ -457,9 +487,6 @@ public class Configuration {
             if (!Objects.equals(this.params, other.params)) {
                 return false;
             }
-            if (!Objects.equals(this.tags, other.tags)) {
-                return false;
-            }
             return true;
         }
 
@@ -477,22 +504,15 @@ public class Configuration {
             final Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
             String name = null;
             Map<String, Object> params = new HashMap<>();
-            Set<String> tags = null;
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> f = fields.next();
                 if (f.getKey().equals("name")) {
                     name = f.getValue().textValue();
-                } else if (f.getKey().equals("tags")) {
-                    tags = new HashSet<>();
-                    final Iterator<JsonNode> elements = f.getValue().elements();
-                    while (elements.hasNext()) {
-                        tags.add(elements.next().asText());
-                    }
                 } else {
                     params.put(f.getKey(), p.getCodec().readValue(f.getValue().traverse(), Object.class));
                 }
             }
-            return new GraphFeatureConfiguration(name, params, tags);
+            return new GraphFeatureConfiguration(name, params);
         }
     }
 
@@ -506,13 +526,6 @@ public class Configuration {
         public void serialize(GraphFeatureConfiguration value, JsonGenerator gen, SerializerProvider provider) throws IOException {
             gen.writeStartObject();
             gen.writeStringField("name", value.name);
-            if (value.tags != null) {
-                gen.writeArrayFieldStart("tags");
-                for (String t : value.tags) {
-                    gen.writeString(t);
-                }
-                gen.writeEndArray();
-            }
             for (Map.Entry<String, Object> e : value.params.entrySet()) {
                 gen.writeObjectField(e.getKey(), e.getValue());
             }
@@ -523,8 +536,8 @@ public class Configuration {
     public static Class[] knownScorers = new Class[]{
         Average.class,
         LibSVM.class,
-        org.insightcentre.uld.naisc.scorer.Command.class,
-        RAdLR.class
+        RAdLR.class,
+            ExternalScorer.class
     };
 
     /**
@@ -653,8 +666,8 @@ public class Configuration {
         UniqueAssignment.class,
         Greedy.class,
         BeamSearch.class,
-        org.insightcentre.uld.naisc.matcher.Command.class,
-        MonteCarloTreeSearch.class
+        MonteCarloTreeSearch.class,
+            ExternalMatcher.class
     };
 
     /**
@@ -772,7 +785,7 @@ public class Configuration {
         URI.class,
         SPARQL.class,
         OntoLex.class,
-        org.insightcentre.uld.naisc.lens.Command.class
+            ExternalLens.class
     };
 
     /**
@@ -801,20 +814,14 @@ public class Configuration {
          * The parameters to configure the lens.
          */
         public final Map<String, Object> params;
-        /**
-         * The tag associated with this lens (null for no tag)
-         */
-        public final String tag;
 
         @JsonCreator
         public LensConfiguration(
                 @JsonProperty("name") String name,
-                @JsonProperty("params") Map<String, Object> params,
-                @JsonProperty("tag") String tag) {
+                @JsonProperty("params") Map<String, Object> params) {
             this.name = name;
             assert (name != null);
             this.params = params == null ? Collections.EMPTY_MAP : params;
-            this.tag = tag;
         }
 
         @Override
@@ -822,7 +829,6 @@ public class Configuration {
             int hash = 3;
             hash = 53 * hash + Objects.hashCode(this.name);
             hash = 53 * hash + Objects.hashCode(this.params);
-            hash = 53 * hash + Objects.hashCode(this.tag);
             return hash;
         }
 
@@ -839,9 +845,6 @@ public class Configuration {
             }
             final LensConfiguration other = (LensConfiguration) obj;
             if (!Objects.equals(this.name, other.name)) {
-                return false;
-            }
-            if (!Objects.equals(this.tag, other.tag)) {
                 return false;
             }
             if (!Objects.equals(this.params, other.params)) {
@@ -869,13 +872,11 @@ public class Configuration {
                 Map.Entry<String, JsonNode> f = fields.next();
                 if (f.getKey().equals("name")) {
                     name = f.getValue().textValue();
-                } else if (f.getKey().equals("tag")) {
-                    tag = f.getValue().textValue();
                 } else {
                     params.put(f.getKey(), p.getCodec().readValue(f.getValue().traverse(), Object.class));
                 }
             }
-            return new LensConfiguration(name, params, tag);
+            return new LensConfiguration(name, params);
         }
     }
 
@@ -889,7 +890,6 @@ public class Configuration {
         public void serialize(LensConfiguration value, JsonGenerator gen, SerializerProvider provider) throws IOException {
             gen.writeStartObject();
             gen.writeStringField("name", value.name);
-            gen.writeStringField("tag", value.tag);
             for (Map.Entry<String, Object> e : value.params.entrySet()) {
                 gen.writeObjectField(e.getKey(), e.getValue());
             }
@@ -905,8 +905,8 @@ public class Configuration {
         ApproximateStringMatching.class,
         Predefined.class,
         org.insightcentre.uld.naisc.blocking.OntoLex.class,
-        org.insightcentre.uld.naisc.blocking.Command.class,
-        Path.class
+        Path.class,
+        ExternalBlocking.class
     };
 
     /**
@@ -1128,6 +1128,16 @@ public class Configuration {
             gen.writeEndObject();
         }
     }
+
+    /**
+     * Values for the rescaler
+     */
+     public static enum RescalerMethod {
+        NoScaling,
+        MinMax,
+        Percentile
+    }
+
 
     @Override
     public int hashCode() {

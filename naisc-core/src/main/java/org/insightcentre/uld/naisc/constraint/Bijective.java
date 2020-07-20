@@ -11,6 +11,10 @@ import java.util.stream.Collectors;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Alignment;
 import static org.insightcentre.uld.naisc.constraint.Bijective.Surjection.bijective;
+
+import org.insightcentre.uld.naisc.ConfigurationClass;
+import org.insightcentre.uld.naisc.ConfigurationParameter;
+import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.util.SimpleCache;
 
 /**
@@ -26,8 +30,10 @@ public class Bijective implements ConstraintFactory {
     /**
      * Configuration of bijective constraint. There are currently no parameters
      */
+     @ConfigurationClass("The bijective constraint requires that no more than one link exists for each element on the source and/or target dataset")
     public static class Configuration {
         /** The type of constraint */
+        @ConfigurationParameter(description = "The type of constraint: *bijective* means at most one link on the source and target side, *surjective* means at most one link on the source side, and *inverseSurjective* means at most one link on the target side", defaultValue = "bijective")
         public Surjection surjection = bijective;
     }
     
@@ -50,11 +56,11 @@ public class Bijective implements ConstraintFactory {
     }
 
     private static class BijectiveImpl extends Constraint {
-        final Map<Resource, List<Alignment>> byLeft;
-        final Map<Resource, List<Alignment>> byRight;
+        final Map<URIRes, List<Alignment>> byLeft;
+        final Map<URIRes, List<Alignment>> byRight;
         final Surjection surjection;
 
-        public BijectiveImpl(Map<Resource, List<Alignment>> byLeft, Map<Resource, List<Alignment>> byRight, Surjection surjection, double score) {
+        public BijectiveImpl(Map<URIRes, List<Alignment>> byLeft, Map<URIRes, List<Alignment>> byRight, Surjection surjection, double score) {
             super(score);
             this.byLeft = byLeft;
             this.byRight = byRight;
@@ -88,8 +94,8 @@ public class Bijective implements ConstraintFactory {
 
         @Override
         public Constraint copy() {
-            Map<Resource, List<Alignment>> newByLeft = new HashMap<>(byLeft);
-            Map<Resource, List<Alignment>> newByRight = new HashMap<>(byRight);
+            Map<URIRes, List<Alignment>> newByLeft = new HashMap<>(byLeft);
+            Map<URIRes, List<Alignment>> newByRight = new HashMap<>(byRight);
             return new BijectiveImpl(newByLeft, newByRight, surjection, score);
         }
         
@@ -119,8 +125,8 @@ public class Bijective implements ConstraintFactory {
 
         public BijectiveImpl(SimpleCache<BijectiveCacheEntry, Boolean> cache, 
                 Random random, Alignment alignment, BijectiveImpl parent, Surjection surjection, 
-                double score) {
-            super(score);
+                double probability) {
+            super(probability);
             this.cache = cache;
             this.id = random.nextLong();
             this.random = random;
@@ -133,7 +139,7 @@ public class Bijective implements ConstraintFactory {
 
         @Override
         public Constraint add(Alignment alignment) {
-            double newscore = this.score + delta(alignment);
+            double newscore = this.probability + delta(alignment);
             return new BijectiveImpl(cache, random, alignment, this, surjection, newscore);
         }
 
@@ -143,7 +149,7 @@ public class Bijective implements ConstraintFactory {
                     (surjection == surjective || !rcontains(alignment.entity2));
         }
 
-        private boolean lcontains(Resource s) {
+        private boolean lcontains(URIRes s) {
             if(alignment == null) {
                 return false;
             } else if (alignment.entity1.equals(s)) {
@@ -159,7 +165,7 @@ public class Bijective implements ConstraintFactory {
             }
         }
         
-        private boolean rcontains(Resource s) {
+        private boolean rcontains(URIRes s) {
             if(alignment == null) {
                 return false;
             } else if (alignment.entity2.equals(s)) {
@@ -190,9 +196,9 @@ public class Bijective implements ConstraintFactory {
 
     private static class BijectiveCacheEntry {
         private final long id;
-        private final Resource text;
+        private final URIRes text;
 
-        public BijectiveCacheEntry(long id, Resource text) {
+        public BijectiveCacheEntry(long id, URIRes text) {
             this.id = id;
             this.text = text;
         }

@@ -4,16 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.Map;
-import org.apache.jena.rdf.model.Model;
+
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.rdf.model.StmtIterator;
-import org.insightcentre.uld.naisc.Alignment;
-import org.insightcentre.uld.naisc.AlignmentSet;
-import org.insightcentre.uld.naisc.Dataset;
-import org.insightcentre.uld.naisc.GraphFeature;
-import org.insightcentre.uld.naisc.GraphFeatureFactory;
-import org.insightcentre.uld.naisc.NaiscListener;
+import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
 import org.insightcentre.uld.naisc.util.FastPPR;
 import org.insightcentre.uld.naisc.util.FastPPR.DirectedGraph;
@@ -28,22 +23,27 @@ import org.insightcentre.uld.naisc.util.Lazy;
 public class PPR implements GraphFeatureFactory {
 
     @Override
-    public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params, Lazy<Analysis> analysis, Lazy<AlignmentSet> prelinking, NaiscListener listener) {
+    public GraphFeature makeFeature(Dataset sparqlData, Map<String, Object> params, Lazy<Analysis> analysis, AlignmentSet prelinking, NaiscListener listener) {
         Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
         Object2IntMap<Resource> identifiers = new Object2IntOpenHashMap<>();
-        DirectedGraph graph = buildGraph(sparqlData, prelinking.get(), identifiers);
+        DirectedGraph graph = buildGraph(sparqlData, prelinking, identifiers);
 
         FastPPRConfiguration pprConfig = new FastPPRConfiguration(config.pprSignificanceThreshold, config.reversePPRApproximationFactor, config.teleportProbability, config.forwardStepsPerReverseStep, config.nWalksConstant);
 
-        return new PPRImpl(graph, identifiers, pprConfig);
+        return new PPRImpl(graph, identifiers, pprConfig, sparqlData);
     }
 
+    @ConfigurationClass("The Personalised PageRank metric estimates how close two elements in the two datasets. This method relies on pre-links being constructed between the two datasets. The implementation is based on Lofgren, Peter A., et al. \"FAST-PPR: scaling personalized pagerank estimation for large graphs.\" and details of the parameters are in the paper")
     public static class Configuration {
-
+        @ConfigurationParameter(description = "PPR Significance Threshold", defaultValue = "1.0e-3")
         float pprSignificanceThreshold = 1.0e-3f;
+        @ConfigurationParameter(description = "Reverse PPR Approximation Factory", defaultValue = "0.1666")
         float reversePPRApproximationFactor = 1.0f / 6.0f;
+        @ConfigurationParameter(description = "Teleport probability", defaultValue = "0.2")
         float teleportProbability = 0.2f;
+        @ConfigurationParameter(description = "Forward Steps per Reverse Step", defaultValue = "6.7")
         float forwardStepsPerReverseStep = 6.7f;
+        @ConfigurationParameter(description = "n Walks Constant", defaultValue = "-276.31")
         float nWalksConstant = (float) (24 * Math.log(1.0e6));
     }
 
@@ -72,19 +72,21 @@ public class PPR implements GraphFeatureFactory {
             }
         }
         for (Alignment a : prealign) {
-            if (a.score > 0) {
+            if (a.probability > 0) {
+                Resource entity1 = a.entity1.toJena(model);
+                Resource entity2 = a.entity2.toJena(model);
                 final int i, j;
-                if (identifiers.containsKey(a.entity1)) {
-                    i = identifiers.getInt(a.entity1);
+                if (identifiers.containsKey(entity1)) {
+                    i = identifiers.getInt(entity1);
                 } else {
                     i = g.addNode();
-                    identifiers.put(a.entity1, i);
+                    identifiers.put(entity1, i);
                 }
-                if (identifiers.containsKey(a.entity2)) {
-                    j = identifiers.getInt(a.entity2);
+                if (identifiers.containsKey(entity2)) {
+                    j = identifiers.getInt(entity2);
                 } else {
                     j = g.addNode();
-                    identifiers.put(a.entity2, j);
+                    identifiers.put(entity2, j);
                 }
                 g.addEdge(i, j);
             }
@@ -93,16 +95,18 @@ public class PPR implements GraphFeatureFactory {
         return g;
     }
 
-    private final class PPRImpl implements GraphFeature {
+    private final static class PPRImpl implements GraphFeature {
 
         private final DirectedGraph graph;
         private final Object2IntMap<Resource> identifiers;
         private final FastPPRConfiguration pprConfig;
+        private final Dataset dataset;
 
-        public PPRImpl(DirectedGraph graph, Object2IntMap<Resource> identifiers, FastPPRConfiguration pprConfig) {
+        public PPRImpl(DirectedGraph graph, Object2IntMap<Resource> identifiers, FastPPRConfiguration pprConfig, Dataset dataset) {
             this.graph = graph;
             this.identifiers = identifiers;
             this.pprConfig = pprConfig;
+            this.dataset = dataset;
         }
 
         @Override
@@ -111,16 +115,10 @@ public class PPR implements GraphFeatureFactory {
         }
 
         @Override
-        public double[] extractFeatures(Resource entity1, Resource entity2, NaiscListener log) {
-            int i = identifiers.getInt(entity1);
-            int j = identifiers.getInt(entity2);
-            return new double[]{FastPPR.estimatePPR(graph, i, j, pprConfig)};
+        public Feature[] extractFeatures(URIRes entity1, URIRes entity2, NaiscListener log) {
+            int i = identifiers.getInt(entity1.toJena(dataset));
+            int j = identifiers.getInt(entity2.toJena(dataset));
+            return Feature.mkArray(new double[]{FastPPR.estimatePPR(graph, i, j, pprConfig)}, FEAT_NAMES);
         }
-
-        @Override
-        public String[] getFeatureNames() {
-            return FEAT_NAMES;
-        }
-
     }
 }

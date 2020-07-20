@@ -75,7 +75,7 @@ public class LabelAnalysisTest {
                 model.createLiteral("???"));
        
         DatasetAnalyzer instance = new DatasetAnalyzer();
-        List<LabelResult> result = instance.analyseModel(new ModelDataset(model), new ModelDataset(model)).leftLabels;
+        List<LabelResult> result = instance.analyseModel(new ModelDataset(model, "model"), new ModelDataset(model, "model")).leftLabels;
         assert(result.stream().anyMatch(x -> x.uri.equals("")));
         assert(result.stream().anyMatch(x -> x.uri.equals(Label.RDFS_LABEL)));
         assert(result.stream().anyMatch(x -> x.uri.equals(Label.SKOS_PREFLABEL)));
