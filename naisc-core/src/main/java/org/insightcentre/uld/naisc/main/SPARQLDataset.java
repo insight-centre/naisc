@@ -86,7 +86,7 @@ public class SPARQLDataset implements Dataset {
     @Override
     public ResIterator listSubjectsWithProperty(Property prop, RDFNode object) {
         try(RDFConnection conn = makeConnection()) {
-            String queryString = "SELECT DISTINCT ?s { ?s <" +  prop.getURI() + "> " + toID(object) +" }";
+            String queryString = "SELECT DISTINCT ?s WHERE { ?s <" +  prop.getURI() + "> " + toID(object) +" }";
             Query query = QueryFactory.create(queryString);
             final ArrayList<Resource> subjects = new ArrayList<>();
             try (QueryExecution qexec = conn.query(query)) {
@@ -103,7 +103,7 @@ public class SPARQLDataset implements Dataset {
     @Override
     public NodeIterator listObjectsOfProperty(Resource r, Property p) {
         try(RDFConnection conn = makeConnection()) {
-            String queryString = "SELECT DISTINCT ?s { " + toID(r) + " <" +  p.getURI() + "> ?o }";
+            String queryString = "SELECT DISTINCT ?o { " + toID(r) + " <" +  p.getURI() + "> ?o }";
             Query query = QueryFactory.create(queryString);
             final ArrayList<RDFNode> objects = new ArrayList<>();
             try (QueryExecution qexec = conn.query(query)) {

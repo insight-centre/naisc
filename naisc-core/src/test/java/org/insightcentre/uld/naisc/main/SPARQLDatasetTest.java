@@ -7,12 +7,13 @@ import org.apache.jena.update.UpdateRequest;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
 public class SPARQLDatasetTest {
     private SPARQLDataset fromModel(Model model) {
-        return new SPARQLDataset("file:example", "test") {
+        return new SPARQLDataset("http://www.example.com/example", "test") {
             @Override protected RDFConnection makeConnection() {
                 return new RDFConnection() {
                     @Override
@@ -173,14 +174,95 @@ public class SPARQLDatasetTest {
     @Test
     public void testListSubjects() {
         Model m = ModelFactory.createDefaultModel();
-        m.add(m.createStatement(m.createResource("file:ex1"), m.createProperty("file:p1"), m.createResource("file:ex2")));
-        m.add(m.createStatement(m.createResource("file:ex2"), m.createProperty("file:p1"), m.createResource("file:ex2")));
-        m.add(m.createStatement(m.createResource("file:ex4"), m.createProperty("file:p1"), m.createResource("file:ex5")));
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex1"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex2")));
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex2"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex2")));
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex4"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex5")));
         SPARQLDataset dataset = fromModel(m);
         List<Resource> results = dataset.listSubjects().toList();
         assertEquals(3, results.size());
-        assert(results.contains(m.createResource("file:ex1")));
-        assert(results.contains(m.createResource("file:ex2")));
-        assert(results.contains(m.createResource("file:ex4")));
+        assert(results.contains(m.createResource("http://www.example.com/ex1")));
+        assert(results.contains(m.createResource("http://www.example.com/ex2")));
+        assert(results.contains(m.createResource("http://www.example.com/ex4")));
+    }
+
+    @Test
+    public void testListSubjectsWithProperty() {
+        Model m = ModelFactory.createDefaultModel();
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex1"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex2")));
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex2"), m.createProperty("http://www.example.com/p2"), m.createResource("http://www.example.com/ex2")));
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex4"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex5")));
+        SPARQLDataset dataset = fromModel(m);
+        List<Resource> results = dataset.listSubjectsWithProperty(m.createProperty("http://www.example.com/p1")).toList();
+        assertEquals(2, results.size());
+        assert(results.contains(m.createResource("http://www.example.com/ex1")));
+        assert(results.contains(m.createResource("http://www.example.com/ex4")));
+    }
+
+    @Test
+    public void testListSubjectWithProperty2() {
+        Model m = ModelFactory.createDefaultModel();
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex1"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex2")));
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex2"), m.createProperty("http://www.example.com/p2"), m.createResource("http://www.example.com/ex2")));
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex4"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex5")));
+        SPARQLDataset dataset = fromModel(m);
+        List<Resource> results = dataset.listSubjectsWithProperty(m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex2")).toList();
+        assertEquals(1, results.size());
+        assert(results.contains(m.createResource("http://www.example.com/ex1")));
+    }
+
+    @Test
+    public void testListObjectsOfProperty() {
+        Model m = ModelFactory.createDefaultModel();
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex1"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex2")));
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex2"), m.createProperty("http://www.example.com/p2"), m.createResource("http://www.example.com/ex2")));
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex4"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex5")));
+        SPARQLDataset dataset = fromModel(m);
+        List<RDFNode> results = dataset.listObjectsOfProperty(m.createResource("http://www.example.com/ex2"), m.createProperty("http://www.example.com/p2")).toList();
+        assertEquals(1, results.size());
+        assert(results.contains(m.createResource("http://www.example.com/ex2")));
+    }
+
+    @Test
+    public void testListStatements() {
+        Model m = ModelFactory.createDefaultModel();
+        for(int i = 0; i < 100; i++) {
+            m.add(m.createStatement(m.createResource("http://www.example.com/ex" + i), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex" + (i + 1))));
+        }
+        SPARQLDataset dataset = fromModel(m);
+        List<Statement> results = dataset.listStatements().toList();
+        assertEquals(100, results.size());
+    }
+
+    @Test
+    public void testListStatements2() {
+        Model m = ModelFactory.createDefaultModel();
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex1"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex2")));
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex2"), m.createProperty("http://www.example.com/p2"), m.createResource("http://www.example.com/ex2")));
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex4"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex5")));
+        SPARQLDataset dataset = fromModel(m);
+        {
+        List<Resource> results = dataset.listStatements(null, null, null).toList().stream().map(s -> s.getSubject()).collect(Collectors.toList());
+        assertEquals(3, results.size());
+        assert(results.contains(m.createResource("http://www.example.com/ex1")));
+        assert(results.contains(m.createResource("http://www.example.com/ex2")));
+        assert(results.contains(m.createResource("http://www.example.com/ex4")));
+        }
+        {
+        List<Resource> results = dataset.listStatements(null, m.createProperty("http://www.example.com/p1"), null).toList().stream().map(s -> s.getSubject()).collect(Collectors.toList());
+        assertEquals(2, results.size());
+        assert(results.contains(m.createResource("http://www.example.com/ex1")));
+        assert(results.contains(m.createResource("http://www.example.com/ex4")));
+        }
+        {
+        List<Resource> results = dataset.listStatements(null, m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex2")).toList().stream().map(s -> s.getSubject()).collect(Collectors.toList());
+        assertEquals(1, results.size());
+        assert(results.contains(m.createResource("http://www.example.com/ex1")));
+        }
+        {
+        List<RDFNode> results = dataset.listStatements(m.createResource("http://www.example.com/ex2"), m.createProperty("http://www.example.com/p2"), null).toList().stream().map(s -> s.getSubject()).collect(Collectors.toList());
+        assertEquals(1, results.size());
+        assert(results.contains(m.createResource("http://www.example.com/ex2")));
+        }
+
     }
 }
