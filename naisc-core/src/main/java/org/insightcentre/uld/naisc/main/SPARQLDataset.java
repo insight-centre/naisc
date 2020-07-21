@@ -11,10 +11,7 @@ import org.insightcentre.uld.naisc.util.Option;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.apache.jena.rdfconnection.*;
@@ -137,25 +134,19 @@ public class SPARQLDataset implements Dataset {
 
     @Override
     public StmtIterator listStatements(Resource s, Property p, RDFNode o) {
-        try(RDFConnection conn = makeConnection()) {
             String queryString = "SELECT * { " +
                     (s == null ? "?s" : toID(s)) + " " +
                     (p == null ? "?p" : toID(p)) + " " +
                     (o == null ? "?o" : toID(o)) + "}";
-            Query query = QueryFactory.create(queryString);
-            final ArrayList<Statement> objects = new ArrayList<>();
-            try (QueryExecution qexec = conn.query(query)) {
-                ResultSet results = qexec.execSelect();
-                while(results.hasNext()) {
-                    QuerySolution soln = results.next();
-                    objects.add(model.createStatement(
-                    s == null ? soln.getResource("s") : s,
-                    p == null ? model.createProperty(soln.getResource("p").getURI()) : p,
-                    o == null ? soln.get("o") : o));
+            return new StmtIteratorImpl(new OffsetLimitSPARQL<Statement>(queryString, 20) {
+                @Override
+                protected Statement makeResult(QuerySolution soln) {
+                    return model.createStatement(
+                            s == null ? soln.getResource("s") : s,
+                            p == null ? model.createProperty(soln.getResource("p").getURI()) : p,
+                            o == null ? soln.get("o") : o);
                 }
-            }
-            return new StmtIteratorImpl(objects.iterator());
-        }
+            });
     }
 
     @Override
@@ -186,6 +177,68 @@ public class SPARQLDataset implements Dataset {
             return "<" + node.asResource().getURI() + ">";
         } else {
             return "[]";
+        }
+    }
+
+    private abstract class OffsetLimitSPARQL<A> implements Iterator<A> {
+        private final String queryString;
+        private int offset = 0;
+        private final int limit;
+        private boolean done = false;
+        private int index = 0;
+
+        public OffsetLimitSPARQL(String queryString, int limit) {
+            this.queryString = queryString;
+            this.limit = limit;
+            advance();
+        }
+
+        private ArrayList<A> resultCache = new ArrayList<>();
+
+        private void advance() {
+            try(RDFConnection conn = makeConnection()) {
+                final A last;
+                if(!resultCache.isEmpty()) {
+                    last = resultCache.get(resultCache.size() - 1);
+                } else {
+                    last = null;
+                }
+                resultCache.clear();
+                index = 0;
+                if(last != null) {
+                    resultCache.add(last);
+                }
+                done = true;
+                Query query = QueryFactory.create(queryString + " LIMIT " + limit + " OFFSET " + offset);
+                offset += limit;
+                try (QueryExecution qexec = conn.query(query)) {
+                    ResultSet results = qexec.execSelect();
+                    while(results.hasNext()) {
+                        QuerySolution soln = results.next();
+                        resultCache.add(makeResult(soln));
+                        done = false;
+                    }
+                }
+            }
+
+        }
+
+        protected abstract A makeResult(QuerySolution soln);
+
+        @Override
+        public boolean hasNext() {
+            return !done || index < resultCache.size();
+        }
+
+        @Override
+        public A next() {
+            if(done && index >= resultCache.size()) {
+                throw new NoSuchElementException();
+            }
+            if(index == resultCache.size() - 1) {
+                advance();
+            }
+            return resultCache.get(index++);
         }
     }
 }
