@@ -1,10 +1,15 @@
 package org.insightcentre.uld.naisc.rest.controllers
 
 import org.insightcentre.uld.naisc.NaiscListener
+import org.insightcentre.uld.naisc.main.SPARQLDataset
 import org.insightcentre.uld.naisc.rest.ConfigurationManager
 import org.insightcentre.uld.naisc.rest.models.maple.*
 import org.insightcentre.uld.naisc.rest.models.runs.Run
 import org.insightcentre.uld.naisc.rest.models.runs.RunManager
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
+import java.lang.StringBuilder
+import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.ws.rs.*
@@ -31,7 +36,7 @@ class MapleController {
     @Path("/matchers/search")
     @Consumes("application/json")
     @Produces("application/json")
-    fun searchMatchers(scenarioDefinition : ScenarioDefinition) : Matcher = Matcher("auto", "Search not supported, use `auto` as this works for everything", null)
+    fun searchMatchers(_scenarioDefinition : ScenarioDefinition) : Matcher = Matcher("auto", "Search not supported, use `auto` as this works for everything", null)
 
     @GET
     @Path("/matchers/{id}")
@@ -47,7 +52,7 @@ class MapleController {
     fun getTasks() : List<Task> = RunManager.runs.values.map { r -> run2task(r) }
 
     private fun run2task(r : Run) = Task(r.id, r.leftFile.id(), r.rightFile.id(), convertStatus(r.monitor.stage), null,
-            Reason(r.monitor.message ?: ""), convertTime(r.start), convertTime(r.start), convertTime(r.end))
+            Reason(r.monitor.message), convertTime(r.start), convertTime(r.start), convertTime(r.end))
 
     private fun convertTime(start: Date?): String? {
         if(start != null) {
@@ -71,9 +76,25 @@ class MapleController {
     @Path("/tasks")
     @Consumes("application/json")
     @Produces("application/json")
-    fun submitTask(plan : AlignmentPlan) : Task {
-        throw UnsupportedOperationException("TODO")
+    fun submitTask(plan : AlignmentPlan) : Response {
+        if(plan.scenarioDefinition.leftDataset.sparqlEndpoint == null ||
+            plan.scenarioDefinition.rightDataset.sparqlEndpoint == null) {
+            return Response.status(Response.Status.NOT_IMPLEMENTED).entity("A SPARQL endpoint must be given for both datasets").build();
+        } else {
+            val left = SPARQLDataset(plan.scenarioDefinition.leftDataset.sparqlEndpoint,
+                    plan.scenarioDefinition.leftDataset.id, 1000, null,
+                    plan.scenarioDefinition.leftDataset.conformsTo);
+            val right = SPARQLDataset(plan.scenarioDefinition.rightDataset.sparqlEndpoint,
+                plan.scenarioDefinition.rightDataset.id, 1000, null,
+                plan.scenarioDefinition.rightDataset.conformsTo);
+            val run = RunManager.startRun(plan.matcherDefinition?.id?:randId(), left, right, ConfigurationManager.loadConfiguration(plan.matcherDefinition?.id?:"auto"));
+            return Response.status(201)
+                    .entity(run2task(run)).build();
+
+        }
     }
+
+    private fun randId() = String.format("%08x", Random().nextInt());
 
     @GET
     @Path("/tasks/{id}")
@@ -97,6 +118,16 @@ class MapleController {
     @GET
     @Path("/tasks/{id}/alignment")
     fun downloadAlignment(@PathParam("id") id : String) : Response {
-        throw UnsupportedOperationException("TODO")
+        val alignment = RunManager.result(id)
+        if(alignment != null) {
+            val baos = ByteArrayOutputStream()
+            val out = PrintStream(baos)
+            alignment.toXML(out)
+            return Response.status(200)
+                    .entity(baos.toByteArray())
+                    .build()
+        } else {
+            return Response.status(404).entity("ID not supported or not completed").build()
+        }
     }
 }

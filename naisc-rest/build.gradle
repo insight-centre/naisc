@@ -26,6 +26,7 @@ dependencies {
     testCompile 'org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:2.22.2'
     compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.10.0'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+"
 }
 compileKotlin {
     kotlinOptions {
