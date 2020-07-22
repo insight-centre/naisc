@@ -69,6 +69,11 @@
             <artifactId>commons-text</artifactId>
             <version>1.7</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-rdfconnection</artifactId>
+            <version>3.9.0</version>
+        </dependency>
     </dependencies>
 
     <properties>
