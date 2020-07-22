@@ -1,9 +1,5 @@
 package org.insightcentre.uld.naisc.main;
 
-<<<<<<< HEAD
-public class SPARQLDataset {
-}
-=======
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.rdf.model.impl.NodeIteratorImpl;
@@ -218,5 +214,3 @@ public class SPARQLDataset implements Dataset {
         }
     }
 }
-
->>>>>>> dev

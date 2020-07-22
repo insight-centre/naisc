@@ -46,7 +46,7 @@ class MapleController {
     @Produces("application/json")
     fun getTasks() : List<Task> = RunManager.runs.values.map { r -> run2task(r) }
 
-    private fun run2task(r : Run) = Task(r.id, r.leftFile.name, r.rightFile.name, convertStatus(r.monitor.stage), null,
+    private fun run2task(r : Run) = Task(r.id, r.leftFile.id(), r.rightFile.id(), convertStatus(r.monitor.stage), null,
             Reason(r.monitor.message ?: ""), convertTime(r.start), convertTime(r.start), convertTime(r.end))
 
     private fun convertTime(start: Date?): String? {

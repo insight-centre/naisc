@@ -9,7 +9,7 @@ import org.insightcentre.uld.naisc.util.None
 import java.io.File
 import java.util.*
 
-class Run(val id : String, val leftFile : File, val rightFile : File, val config : Configuration) : Runnable {
+class Run(val id : String, val leftFile : Dataset, val rightFile : Dataset, val config : Configuration) : Runnable {
     val monitor = RunMonitor()
     var start : Date? = null
     var end : Date? = null
@@ -18,7 +18,7 @@ class Run(val id : String, val leftFile : File, val rightFile : File, val config
     override fun run() {
         try {
             start = Date()
-            result = Main.execute(id, leftFile, rightFile, config, None(), monitor, DefaultDatasetLoader())
+            result = Main.execute(id, leftFile, rightFile, config, None(), monitor, null, null, DefaultDatasetLoader())
         } catch(x : RunAbortedException) {
             System.err.println("Run aborted by user")
         } catch(x : Throwable) {
