@@ -73,7 +73,7 @@ object ConfigurationManager {
             })
     }
 
-    fun getPrelinking(dataset1: Dataset, dataset2 : Dataset) : AlignmentSet  {
+    fun getPrelinking(_dataset1: Dataset, _dataset2 : Dataset) : AlignmentSet  {
         // TODO: Figure out how pre-linking should really work
         return AlignmentSet()
     }

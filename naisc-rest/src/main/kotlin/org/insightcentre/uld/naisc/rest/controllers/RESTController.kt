@@ -173,7 +173,7 @@ class RESTController {
     @Consumes("application/json")
     @Produces("application/json")
     @Throws(NotFoundException::class)
-    fun prematch(@PathParam("config") _config : String, _body: Blocking) : Response {
+    fun prematch(@PathParam("config") config : String, body: Blocking) : Response {
         throw UnsupportedOperationException("TODO")
     }
 }

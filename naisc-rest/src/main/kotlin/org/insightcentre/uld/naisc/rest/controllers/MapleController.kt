@@ -36,7 +36,7 @@ class MapleController {
     @Path("/matchers/search")
     @Consumes("application/json")
     @Produces("application/json")
-    fun searchMatchers(_scenarioDefinition : ScenarioDefinition) : Matcher = Matcher("auto", "Search not supported, use `auto` as this works for everything", null)
+    fun searchMatchers(scenarioDefinition : ScenarioDefinition) : Matcher = Matcher("auto", "Search not supported, use `auto` as this works for everything", null)
 
     @GET
     @Path("/matchers/{id}")
@@ -87,7 +87,7 @@ class MapleController {
             val right = SPARQLDataset(plan.scenarioDefinition.rightDataset.sparqlEndpoint,
                 plan.scenarioDefinition.rightDataset.id, 1000, null,
                 plan.scenarioDefinition.rightDataset.conformsTo);
-            val run = RunManager.startRun(plan.matcherDefinition?.id?:randId(), left, right, ConfigurationManager.loadConfiguration(plan.matcherDefinition?.id?:"auto"));
+            val run = RunManager.startRun(randId(), left, right, ConfigurationManager.loadConfiguration(plan.matcherDefinition?.id?:"auto"));
             return Response.status(201)
                     .entity(run2task(run)).build();
 

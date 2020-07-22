@@ -16,7 +16,7 @@ data class ServicesMetadata(
     /** The address of the documentation of the service */
     val documentation : String?,
     /** The settings */
-    val settings : Object?)
+    val settings : Any?)
 
 enum class Status(val status : String) {
     starting("starting"), active("active"), busy("busy"), shutting_down("shutting down"), failed("failed")

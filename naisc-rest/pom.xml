@@ -52,6 +52,17 @@
       <version>2.22.2</version>
       <scope>test</scope>
     </dependency>
+      <dependency>
+          <groupId>com.fasterxml.jackson.module</groupId>
+          <artifactId>jackson-module-kotlin</artifactId>
+          <version>2.11.1</version>
+      </dependency>
+      <dependency>
+          <groupId>org.mockito</groupId>
+          <artifactId>mockito-core</artifactId>
+          <version>3.4.4</version>
+          <scope>test</scope>
+      </dependency>
   </dependencies>
   <build>
     <sourceDirectory>${project.basedir}/src/main/kotlin</sourceDirectory>

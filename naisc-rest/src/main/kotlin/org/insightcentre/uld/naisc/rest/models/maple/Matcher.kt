@@ -6,4 +6,4 @@ data class Matcher(
         /** Description of the matcher */
         val description: String,
         /** The settings */
-        val settings: Object?)
+        val settings: Any?)

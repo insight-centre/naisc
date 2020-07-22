@@ -27,6 +27,7 @@ dependencies {
     compile 'com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.10.0'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.11.+"
+    testCompile 'org.mockito:mockito-core:3.4.4'
 }
 compileKotlin {
     kotlinOptions {
