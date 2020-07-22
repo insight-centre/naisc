@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 
 public class SPARQLDatasetTest {
     private SPARQLDataset fromModel(Model model) {
-        return new SPARQLDataset("http://www.example.com/example", "test") {
+        return new SPARQLDataset("http://www.example.com/example", "test", 1000) {
             @Override protected RDFConnection makeConnection() {
                 return new RDFConnection() {
                     @Override

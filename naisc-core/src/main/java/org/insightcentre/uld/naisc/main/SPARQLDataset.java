@@ -21,10 +21,12 @@ public class SPARQLDataset implements Dataset {
     private final Model model = ModelFactory.createDefaultModel();
     private final String endpoint;
     private final String id;
+    private final int limit;
 
-    public SPARQLDataset(String endpoint, String id) {
+    public SPARQLDataset(String endpoint, String id, int limit) {
         this.endpoint = endpoint;
         this.id = id;
+        this.limit = limit;
     }
 
     @Override
@@ -38,19 +40,13 @@ public class SPARQLDataset implements Dataset {
 
     @Override
     public ResIterator listSubjects() {
-        try(RDFConnection conn = makeConnection()) {
-            String queryString = "SELECT DISTINCT ?s { ?s ?p ?o }";
-            Query query = QueryFactory.create(queryString);
-            final ArrayList<Resource> subjects = new ArrayList<>();
-            try (QueryExecution qexec = conn.query(query)) {
-                ResultSet results = qexec.execSelect();
-                while(results.hasNext()) {
-                    QuerySolution soln = results.next();
-                    subjects.add(soln.getResource("s"));
-                }
+        String queryString = "SELECT DISTINCT ?s { ?s ?p ?o }";
+        return new ResIteratorImpl(new OffsetLimitSPARQL<Resource>(queryString, limit) {
+            @Override
+            protected Resource makeResult(QuerySolution soln) {
+                return soln.getResource("s");
             }
-            return new ResIteratorImpl(subjects.iterator());
-        }
+        });
     }
 
     @Override
@@ -65,88 +61,64 @@ public class SPARQLDataset implements Dataset {
 
     @Override
     public ResIterator listSubjectsWithProperty(Property prop) {
-        try(RDFConnection conn = makeConnection()) {
-            String queryString = "SELECT DISTINCT ?s { ?s <" +  prop.getURI() + "> ?o }";
-            Query query = QueryFactory.create(queryString);
-            final ArrayList<Resource> subjects = new ArrayList<>();
-            try (QueryExecution qexec = conn.query(query)) {
-                ResultSet results = qexec.execSelect();
-                while(results.hasNext()) {
-                    QuerySolution soln = results.next();
-                    subjects.add(soln.getResource("s"));
-                }
+        String queryString = "SELECT DISTINCT ?s { ?s <" +  prop.getURI() + "> ?o }";
+        return new ResIteratorImpl(new OffsetLimitSPARQL<Resource>(queryString, limit) {
+            @Override
+            protected Resource makeResult(QuerySolution soln) {
+                return soln.getResource("s");
             }
-            return new ResIteratorImpl(subjects.iterator());
-        }
+        });
     }
 
     @Override
     public ResIterator listSubjectsWithProperty(Property prop, RDFNode object) {
-        try(RDFConnection conn = makeConnection()) {
-            String queryString = "SELECT DISTINCT ?s WHERE { ?s <" +  prop.getURI() + "> " + toID(object) +" }";
-            Query query = QueryFactory.create(queryString);
-            final ArrayList<Resource> subjects = new ArrayList<>();
-            try (QueryExecution qexec = conn.query(query)) {
-                ResultSet results = qexec.execSelect();
-                while(results.hasNext()) {
-                    QuerySolution soln = results.next();
-                    subjects.add(soln.getResource("s"));
-                }
+        String queryString = "SELECT DISTINCT ?s WHERE { ?s <" +  prop.getURI() + "> " + toID(object) +" }";
+        return new ResIteratorImpl(new OffsetLimitSPARQL<Resource>(queryString, limit) {
+            @Override
+            protected Resource makeResult(QuerySolution soln) {
+                return soln.getResource("s");
             }
-            return new ResIteratorImpl(subjects.iterator());
-        }
+        });
     }
 
     @Override
     public NodeIterator listObjectsOfProperty(Resource r, Property p) {
-        try(RDFConnection conn = makeConnection()) {
-            String queryString = "SELECT DISTINCT ?o { " + toID(r) + " <" +  p.getURI() + "> ?o }";
-            Query query = QueryFactory.create(queryString);
-            final ArrayList<RDFNode> objects = new ArrayList<>();
-            try (QueryExecution qexec = conn.query(query)) {
-                ResultSet results = qexec.execSelect();
-                while(results.hasNext()) {
-                    QuerySolution soln = results.next();
-                    objects.add(soln.get("o"));
-                }
+        String queryString = "SELECT DISTINCT ?o { " + toID(r) + " <" +  p.getURI() + "> ?o }";
+        return new NodeIteratorImpl(new OffsetLimitSPARQL<RDFNode>(queryString, limit) {
+            @Override
+            protected RDFNode makeResult(QuerySolution soln) {
+                return soln.get("o");
             }
-            return new NodeIteratorImpl(objects.iterator(), null /* This is an undocumented parameter that does nothing in the Jena source code */);
-        }
+        }, null /* This is an undocumented parameter that does nothing in the Jena source code */);
     }
 
     @Override
     public StmtIterator listStatements() {
-        try(RDFConnection conn = makeConnection()) {
-            String queryString = "SELECT * { ?s ?p ?o }";
-            Query query = QueryFactory.create(queryString);
-            final ArrayList<Statement> objects = new ArrayList<>();
-            try (QueryExecution qexec = conn.query(query)) {
-                ResultSet results = qexec.execSelect();
-                while(results.hasNext()) {
-                    QuerySolution soln = results.next();
-                    objects.add(model.createStatement(soln.getResource("s"), model.createProperty(soln.getResource("p").getURI()),
-                        soln.get("o")));
-                }
+        String queryString = "SELECT * { ?s ?p ?o }";
+        return new StmtIteratorImpl(new OffsetLimitSPARQL<Statement>(queryString, limit) {
+            @Override
+            protected Statement makeResult(QuerySolution soln) {
+                return model.createStatement(soln.getResource("s"), model.createProperty(soln.getResource("p").getURI()),
+                        soln.get("o"));
             }
-            return new StmtIteratorImpl(objects.iterator());
-        }
+        });
     }
 
     @Override
     public StmtIterator listStatements(Resource s, Property p, RDFNode o) {
-            String queryString = "SELECT * { " +
-                    (s == null ? "?s" : toID(s)) + " " +
-                    (p == null ? "?p" : toID(p)) + " " +
-                    (o == null ? "?o" : toID(o)) + "}";
-            return new StmtIteratorImpl(new OffsetLimitSPARQL<Statement>(queryString, 20) {
-                @Override
-                protected Statement makeResult(QuerySolution soln) {
-                    return model.createStatement(
-                            s == null ? soln.getResource("s") : s,
-                            p == null ? model.createProperty(soln.getResource("p").getURI()) : p,
-                            o == null ? soln.get("o") : o);
-                }
-            });
+        String queryString = "SELECT * { " +
+                (s == null ? "?s" : toID(s)) + " " +
+                (p == null ? "?p" : toID(p)) + " " +
+                (o == null ? "?o" : toID(o)) + "}";
+        return new StmtIteratorImpl(new OffsetLimitSPARQL<Statement>(queryString, 20) {
+            @Override
+            protected Statement makeResult(QuerySolution soln) {
+                return model.createStatement(
+                        s == null ? soln.getResource("s") : s,
+                        p == null ? model.createProperty(soln.getResource("p").getURI()) : p,
+                        o == null ? soln.get("o") : o);
+            }
+        });
     }
 
     @Override
