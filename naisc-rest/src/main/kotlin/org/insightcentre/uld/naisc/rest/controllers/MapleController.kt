@@ -2,6 +2,7 @@ package org.insightcentre.uld.naisc.rest.controllers
 
 import org.insightcentre.uld.naisc.NaiscListener
 import org.insightcentre.uld.naisc.main.SPARQLDataset
+import org.insightcentre.uld.naisc.main.SPARQLDatasetLoader
 import org.insightcentre.uld.naisc.rest.ConfigurationManager
 import org.insightcentre.uld.naisc.rest.models.maple.*
 import org.insightcentre.uld.naisc.rest.models.runs.Run
@@ -51,7 +52,7 @@ class MapleController {
     @Produces("application/json")
     fun getTasks() : List<Task> = RunManager.runs.values.map { r -> run2task(r) }
 
-    private fun run2task(r : Run) = Task(r.id, r.leftFile.id(), r.rightFile.id(), convertStatus(r.monitor.stage), null,
+    private fun run2task(r : Run<*>) = Task(r.id, r.leftFile.id(), r.rightFile.id(), convertStatus(r.monitor.stage), null,
             Reason(r.monitor.message), convertTime(r.start), convertTime(r.start), convertTime(r.end))
 
     private fun convertTime(start: Date?): String? {
@@ -64,11 +65,12 @@ class MapleController {
     }
 
 
-    private fun convertStatus(stage: NaiscListener.Stage): Status {
+    private fun convertStatus(stage: NaiscListener.Stage): RunStatus {
         return when(stage) {
-            NaiscListener.Stage.FAILED -> Status.failed
-            NaiscListener.Stage.INITIALIZING -> Status.starting
-            else -> Status.active
+            NaiscListener.Stage.FAILED -> RunStatus.failed
+            NaiscListener.Stage.INITIALIZING -> RunStatus.submitted
+            NaiscListener.Stage.COMPLETED -> RunStatus.completed
+            else -> RunStatus.running
         }
     }
 
@@ -87,7 +89,8 @@ class MapleController {
             val right = SPARQLDataset(plan.scenarioDefinition.rightDataset.sparqlEndpoint,
                 plan.scenarioDefinition.rightDataset.id, 1000, null,
                 plan.scenarioDefinition.rightDataset.conformsTo);
-            val run = RunManager.startRun(randId(), left, right, ConfigurationManager.loadConfiguration(plan.matcherDefinition?.id?:"auto"));
+            val run = RunManager.startRun(randId(), left, right, ConfigurationManager.loadConfiguration(plan.matcherDefinition?.id?:"auto"),
+                SPARQLDatasetLoader(1000));
             return Response.status(201)
                     .entity(run2task(run)).build();
 

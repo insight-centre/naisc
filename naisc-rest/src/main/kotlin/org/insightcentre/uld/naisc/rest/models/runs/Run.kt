@@ -2,14 +2,14 @@ package org.insightcentre.uld.naisc.rest.models.runs
 
 import org.insightcentre.uld.naisc.*
 import org.insightcentre.uld.naisc.main.Configuration
-import org.insightcentre.uld.naisc.main.DefaultDatasetLoader
+import org.insightcentre.uld.naisc.DatasetLoader
 import org.insightcentre.uld.naisc.main.ExecuteListener
 import org.insightcentre.uld.naisc.main.Main
 import org.insightcentre.uld.naisc.util.None
 import java.io.File
 import java.util.*
 
-class Run(val id : String, val leftFile : Dataset, val rightFile : Dataset, val config : Configuration) : Runnable {
+class Run<C : Dataset>(val id : String, val leftFile : C, val rightFile : C, val config : Configuration, val loader : DatasetLoader<C>) : Runnable {
     val monitor = RunMonitor()
     var start : Date? = null
     var end : Date? = null
@@ -18,7 +18,8 @@ class Run(val id : String, val leftFile : Dataset, val rightFile : Dataset, val 
     override fun run() {
         try {
             start = Date()
-            result = Main.execute(id, leftFile, rightFile, config, None(), monitor, null, null, DefaultDatasetLoader())
+            result = Main.execute(id, leftFile, rightFile, config, None(), monitor, null, null, loader)
+            monitor.updateStatus(NaiscListener.Stage.COMPLETED, "Alignment complete")
         } catch(x : RunAbortedException) {
             System.err.println("Run aborted by user")
         } catch(x : Throwable) {

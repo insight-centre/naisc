@@ -2,16 +2,17 @@ package org.insightcentre.uld.naisc.rest.models.runs
 
 import org.insightcentre.uld.naisc.AlignmentSet
 import org.insightcentre.uld.naisc.Dataset
+import org.insightcentre.uld.naisc.DatasetLoader
 import org.insightcentre.uld.naisc.main.Configuration
 import org.insightcentre.uld.naisc.main.Main
 import java.io.File
 import java.net.URL
 
 object RunManager {
-    var runs = mutableMapOf<String, Run>()
+    var runs = mutableMapOf<String, Run<*>>()
 
-    fun startRun(id : String, leftFile : Dataset, rightFile : Dataset, config : Configuration) : Run {
-        val run = Run(id, leftFile, rightFile, config)
+    fun <D : Dataset> startRun(id : String, leftFile : D, rightFile : D, config : Configuration, loader : DatasetLoader<D>) : Run<D> {
+        val run = Run(id, leftFile, rightFile, config, loader)
         runs[id] = run
         val thread = Thread(run)
         thread.start()

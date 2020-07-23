@@ -158,7 +158,7 @@ public class SPARQLDataset implements Dataset {
     private String toID(RDFNode node) {
         if(node.isLiteral()) {
             Literal l = node.asLiteral();
-            if(l.getLanguage() != null) {
+            if(l.getLanguage() != null && !l.getLanguage().equals("")) {
                 return "\"" + l.getLexicalForm() + "\"@" + l.getLanguage();
             } else if(l.getDatatypeURI() != null) {
                 return "\"" + l.getLexicalForm() + "\"^^<" + l.getDatatypeURI() + ">";

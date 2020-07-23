@@ -8,7 +8,7 @@ data class Task(
         /** The dataset containing the right-hand side of the semantic correspondences to compute */
         val rightDataset : String,
         /** Different stages of a task lifecycle */
-        val status: Status,
+        val status: RunStatus,
         /** the percentage of work done by `running` tasks */
         val progress: Int?,
         /** the reason of a failure */
@@ -22,3 +22,7 @@ data class Task(
 )
 data class Reason (
         val message : String)
+
+enum class RunStatus {
+        submitted, running, failed, completed
+}
