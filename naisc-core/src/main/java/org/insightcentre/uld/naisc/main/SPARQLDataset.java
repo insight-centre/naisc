@@ -22,11 +22,15 @@ public class SPARQLDataset implements Dataset {
     private final String endpoint;
     private final String id;
     private final int limit;
+    private final String graph;
+    private final String uriSpace;
 
-    public SPARQLDataset(String endpoint, String id, int limit) {
+    public SPARQLDataset(String endpoint, String id, int limit, String graph, String uriSpace) {
         this.endpoint = endpoint;
         this.id = id;
         this.limit = limit;
+        this.graph = graph;
+        this.uriSpace = uriSpace;
     }
 
     @Override
@@ -38,9 +42,25 @@ public class SPARQLDataset implements Dataset {
         }
     }
 
+    private String sparqlGraph() {
+        if(graph != null) {
+            return "FROM <" + graph + "> ";
+        } else {
+            return "";
+        }
+    }
+
+    private String uriFilter(String var) {
+        if(uriSpace != null) {
+            return "FILTER(STRSTARTS(STR(?" + var + "), \"" + uriSpace + "\")) ";
+        } else {
+            return "";
+        }
+    }
+
     @Override
     public ResIterator listSubjects() {
-        String queryString = "SELECT DISTINCT ?s { ?s ?p ?o }";
+        String queryString = "SELECT DISTINCT ?s " + sparqlGraph() + "{ ?s ?p ?o " + uriFilter("s") + "}";
         return new ResIteratorImpl(new OffsetLimitSPARQL<Resource>(queryString, limit) {
             @Override
             protected Resource makeResult(QuerySolution soln) {
@@ -61,7 +81,7 @@ public class SPARQLDataset implements Dataset {
 
     @Override
     public ResIterator listSubjectsWithProperty(Property prop) {
-        String queryString = "SELECT DISTINCT ?s { ?s <" +  prop.getURI() + "> ?o }";
+        String queryString = "SELECT DISTINCT ?s " + sparqlGraph() + "{ ?s <" +  prop.getURI() + "> ?o " + uriFilter("s") + "}";
         return new ResIteratorImpl(new OffsetLimitSPARQL<Resource>(queryString, limit) {
             @Override
             protected Resource makeResult(QuerySolution soln) {
@@ -72,7 +92,7 @@ public class SPARQLDataset implements Dataset {
 
     @Override
     public ResIterator listSubjectsWithProperty(Property prop, RDFNode object) {
-        String queryString = "SELECT DISTINCT ?s WHERE { ?s <" +  prop.getURI() + "> " + toID(object) +" }";
+        String queryString = "SELECT DISTINCT ?s " + sparqlGraph() + "WHERE { ?s <" +  prop.getURI() + "> " + toID(object) +" " + uriFilter("s") + "}";
         return new ResIteratorImpl(new OffsetLimitSPARQL<Resource>(queryString, limit) {
             @Override
             protected Resource makeResult(QuerySolution soln) {
@@ -83,7 +103,7 @@ public class SPARQLDataset implements Dataset {
 
     @Override
     public NodeIterator listObjectsOfProperty(Resource r, Property p) {
-        String queryString = "SELECT DISTINCT ?o { " + toID(r) + " <" +  p.getURI() + "> ?o }";
+        String queryString = "SELECT DISTINCT ?o " + sparqlGraph() + "{ " + toID(r) + " <" +  p.getURI() + "> ?o }";
         return new NodeIteratorImpl(new OffsetLimitSPARQL<RDFNode>(queryString, limit) {
             @Override
             protected RDFNode makeResult(QuerySolution soln) {
@@ -94,7 +114,7 @@ public class SPARQLDataset implements Dataset {
 
     @Override
     public StmtIterator listStatements() {
-        String queryString = "SELECT * { ?s ?p ?o }";
+        String queryString = "SELECT * " + sparqlGraph() + "{ ?s ?p ?o " + uriFilter("s") + "}";
         return new StmtIteratorImpl(new OffsetLimitSPARQL<Statement>(queryString, limit) {
             @Override
             protected Statement makeResult(QuerySolution soln) {
@@ -106,10 +126,10 @@ public class SPARQLDataset implements Dataset {
 
     @Override
     public StmtIterator listStatements(Resource s, Property p, RDFNode o) {
-        String queryString = "SELECT * { " +
+        String queryString = "SELECT * " + sparqlGraph() + "{ " +
                 (s == null ? "?s" : toID(s)) + " " +
                 (p == null ? "?p" : toID(p)) + " " +
-                (o == null ? "?o" : toID(o)) + "}";
+                (o == null ? "?o" : toID(o)) + (s == null ? uriFilter("s") : "") + "}";
         return new StmtIteratorImpl(new OffsetLimitSPARQL<Statement>(queryString, 20) {
             @Override
             protected Statement makeResult(QuerySolution soln) {
@@ -138,7 +158,7 @@ public class SPARQLDataset implements Dataset {
     private String toID(RDFNode node) {
         if(node.isLiteral()) {
             Literal l = node.asLiteral();
-            if(l.getLanguage() != null) {
+            if(l.getLanguage() != null && !l.getLanguage().equals("")) {
                 return "\"" + l.getLexicalForm() + "\"@" + l.getLanguage();
             } else if(l.getDatatypeURI() != null) {
                 return "\"" + l.getLexicalForm() + "\"^^<" + l.getDatatypeURI() + ">";
@@ -214,4 +234,3 @@ public class SPARQLDataset implements Dataset {
         }
     }
 }
-

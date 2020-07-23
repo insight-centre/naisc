@@ -13,7 +13,11 @@ import static org.junit.Assert.*;
 
 public class SPARQLDatasetTest {
     private SPARQLDataset fromModel(Model model) {
-        return new SPARQLDataset("http://www.example.com/example", "test", 1000) {
+        return fromModel(model, null);
+    }
+
+    private SPARQLDataset fromModel(Model model, String uriSpace) {
+        return new SPARQLDataset("http://www.example.com/example", "test", 1000, null, uriSpace) {
             @Override protected RDFConnection makeConnection() {
                 return new RDFConnection() {
                     @Override
@@ -263,6 +267,20 @@ public class SPARQLDatasetTest {
         assertEquals(1, results.size());
         assert(results.contains(m.createResource("http://www.example.com/ex2")));
         }
+
+    }
+
+    @Test
+    public void testFiltered() {
+        Model m = ModelFactory.createDefaultModel();
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex1"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex2")));
+        m.add(m.createStatement(m.createResource("http://www.example.com/ex2"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex2")));
+        m.add(m.createStatement(m.createResource("http://www.example2.com/ex4"), m.createProperty("http://www.example.com/p1"), m.createResource("http://www.example.com/ex5")));
+        SPARQLDataset dataset = fromModel(m, "http://www.example.com");
+        List<Resource> results = dataset.listSubjects().toList();
+        assertEquals(2, results.size());
+        assert(results.contains(m.createResource("http://www.example.com/ex1")));
+        assert(results.contains(m.createResource("http://www.example.com/ex2")));
 
     }
 }

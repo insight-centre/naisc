@@ -32,6 +32,6 @@ public interface DatasetLoader<Combinable extends Dataset> {
      * @param name The name of the combined dataset
      * @return The combination of the two datasets
      */
-    Combinable combine(Combinable dataset1, Combinable dataset2, String name);
+    Dataset combine(Combinable dataset1, Combinable dataset2, String name);
 
 }

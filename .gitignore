@@ -169,3 +169,10 @@ naisc-elexis/leftFile.ttl
 naisc-elexis/rightFile.ttl
 eds.db
 Testing_Steps.sh
+maple-test.sh
+apache-jena-fuseki-3.16.0/
+left.nt
+left.ttl
+right.ttl
+apache-jena-fuseki-3.16.0.tar.gz
+apache-jena2/
