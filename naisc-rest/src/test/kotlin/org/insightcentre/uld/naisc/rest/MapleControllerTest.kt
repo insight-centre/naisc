@@ -13,6 +13,7 @@ import javax.ws.rs.core.Application
 class MapleControllerTest : JerseyTest() {
 
     override fun configure(): Application {
+        System.setProperty("naisc.skip.install", "yes");
         return org.insightcentre.uld.naisc.rest.Application()
     }
 
