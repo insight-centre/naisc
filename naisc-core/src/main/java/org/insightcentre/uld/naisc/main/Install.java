@@ -79,6 +79,8 @@ public class Install {
     }
     
     public static void verify() throws IOException {
+        if(System.getProperty("naisc.skip.install") != null)
+            return;
         getConfigs();
         verifyOrDownload("idf");
         verifyOrDownload("ngidf");
