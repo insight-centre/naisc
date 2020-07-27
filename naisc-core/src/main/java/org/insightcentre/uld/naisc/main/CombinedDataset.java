@@ -23,6 +23,11 @@ public class CombinedDataset implements Dataset {
     }
 
     @Override
+    public URL getLocation() {
+        return null;
+    }
+
+    @Override
     public String id() {
         return id;
     }

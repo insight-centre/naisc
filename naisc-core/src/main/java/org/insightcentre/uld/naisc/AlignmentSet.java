@@ -5,6 +5,7 @@ import org.insightcentre.uld.naisc.util.Option;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.PrintStream;
+import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.insightcentre.uld.naisc.util.None;
@@ -198,15 +199,28 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
         }
     }
 
-    public void toXML(PrintStream out) {
+    public void toXML(PrintStream out, URL onto1, URL onto2) {
         out.println("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-        out.println("<rdf:RDF xmlns=\"http://knowledgeweb.semanticweb.org/heterogeneity/alignment\"");
+        out.println("<rdf:RDF xmlns=\"http://knowledgeweb.semanticweb.org/heterogeneity/alignment#\"");
         out.println("  xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"");
         out.println("  xmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\">");
         out.println("<Alignment>");
         out.println("  <xml>yes</xml>");
         out.println("  <level>0</level>");
         out.println("  <type>??</type>");
+        if(onto1 != null && onto2 != null) {
+            out.println("  <onto1>");
+            out.println("    <Ontology>");
+            out.println("      <location>" + onto1 + "</location>");
+            out.println("    </Ontology>");
+            out.println("  </onto1>");
+
+            out.println("  <onto2>");
+            out.println("    <Ontology>");
+            out.println("      <location>" + onto2 + "</location>");
+            out.println("    </Ontology>");
+            out.println("  </onto2>");
+        }
         for(Alignment alignment : alignments) {
             out.println("  <map>");
             out.println("    <Cell>");

@@ -210,7 +210,7 @@ public class ApproximateStringMatchingTest {
             strings.add(right.createResource("file:tmp#" + s));
         }
         final List<Blocking> results = new ArrayList<>();
-        for (Blocking p : strat.block(new ModelDataset(left, "left"), new ModelDataset(right, "right"))) {
+        for (Blocking p : strat.block(new ModelDataset(left, "left", null), new ModelDataset(right, "right", null))) {
             results.add(p);
         }
         strings.sort(new Comparator<Resource>() {
@@ -264,7 +264,7 @@ public class ApproximateStringMatchingTest {
         right.add(right.createResource("file:id4"), right.createProperty(Label.RDFS_LABEL), "Scapula");
         right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Dendrite");
         right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Splenic White Part");
-        Iterator<Blocking> result = strat.block(new ModelDataset(left, "left"), new ModelDataset(right, "right")).iterator();
+        Iterator<Blocking> result = strat.block(new ModelDataset(left, "left", null), new ModelDataset(right, "right", null)).iterator();
         assert(result.hasNext());
         assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id6"), "left", "right"), result.next());
     }
@@ -285,7 +285,7 @@ public class ApproximateStringMatchingTest {
         right.add(right.createResource("file:id4"), right.createProperty(Label.RDFS_LABEL), "Scapula");
         right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Dendrite");
         right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Splenic White Part");
-        Iterator<Blocking> result = strat.block(new ModelDataset(left, "left"), new ModelDataset(right, "right")).iterator();
+        Iterator<Blocking> result = strat.block(new ModelDataset(left, "left", null), new ModelDataset(right, "right", null)).iterator();
         assert(result.hasNext());
         assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id2"), "left", "right"), result.next());
     }
@@ -307,7 +307,7 @@ public class ApproximateStringMatchingTest {
         right.add(right.createResource("file:id4"), right.createProperty(Label.RDFS_LABEL), "Frontal Gyrus");
         right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Frontal Nerve");
         right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Frontal Artery");
-        Iterator<Blocking> result = strat.block(new ModelDataset(left,"left"), new ModelDataset(right,"right")).iterator();
+        Iterator<Blocking> result = strat.block(new ModelDataset(left,"left", null), new ModelDataset(right,"right", null)).iterator();
         assert(result.hasNext());
         assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id6"), "left", "right"), result.next());
     }
@@ -331,7 +331,7 @@ public class ApproximateStringMatchingTest {
         right.add(right.createResource("file:id5"), right.createProperty(Label.RDFS_LABEL), "Frontal Nerve");
         right.add(right.createResource("file:id6"), right.createProperty(Label.RDFS_LABEL), "Frontal Artery");
         right.add(right.createResource("file:id6"), RDF.type, right.createResource("file:Test"));
-        Iterator<Blocking> result = strat.block(new ModelDataset(left,"left"), new ModelDataset(right,"right")).iterator();
+        Iterator<Blocking> result = strat.block(new ModelDataset(left,"left", null), new ModelDataset(right,"right", null)).iterator();
         assert(result.hasNext());
         assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id6"), "left", "right"), result.next());
         assert(!result.hasNext());

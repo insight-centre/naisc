@@ -42,7 +42,7 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
         } else {
             model.read(new FileReader(file), file.toURI().toString(), "RDF/XML");
         }
-        return new ModelDataset(model, name);
+        return new ModelDataset(model, name, file.toURI().toURL());
     }
 
     @Override
@@ -57,16 +57,23 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
         final Model rightModel = dataset2.model;
         combined.add(leftModel);
         combined.add(rightModel);
-        return new ModelDataset(combined, dataset1.id() + "+" + dataset2.id());
+        return new ModelDataset(combined, dataset1.id() + "+" + dataset2.id(), null);
     }
 
     public static class ModelDataset implements Dataset {
         public final Model model;
         public final String id;
+        public final URL location;
 
-        public ModelDataset(Model model, String id) {
+        public ModelDataset(Model model, String id, URL location) {
             this.model = model;
             this.id = id;
+            this.location = location;
+        }
+
+        @Override
+        public URL getLocation() {
+            return location;
         }
 
         @Override
@@ -133,6 +140,11 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
         public EndpointDataset(URL url, String id) {
             this.url = url;
             this.id = id;
+        }
+
+        @Override
+        public URL getLocation() {
+            return url;
         }
 
         @Override

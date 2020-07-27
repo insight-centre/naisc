@@ -50,7 +50,7 @@ public class LabelTest {
         Model model = ModelFactory.createDefaultModel();
         Map<String, Object> params = new HashMap<>();
         Label instance = new Label();
-        Dataset dataset = new ModelDataset(model, "model");
+        Dataset dataset = new ModelDataset(model, "model", null);
         Lens lens = instance.makeLens(dataset, params);
         final URIRes res = new URIRes("http://www.example.com/foo", "model");
         final URIRes res2 = new URIRes("http://www.example.com/foo2", "model");
@@ -84,7 +84,7 @@ public class LabelTest {
         assert(!lens.extract(res, res5).iterator().hasNext());
         
         params.put("language", "en");
-        lens = instance.makeLens(new ModelDataset(model, "model"), params);
+        lens = instance.makeLens(new ModelDataset(model, "model", null), params);
         
         
         assert(!lens.extract(res, res2).iterator().hasNext());
@@ -94,7 +94,7 @@ public class LabelTest {
         
         params.remove("language");
         params.put("property", Label.RDFS_LABEL);
-        lens = instance.makeLens(new ModelDataset(model, "model"), params);
+        lens = instance.makeLens(new ModelDataset(model, "model", null), params);
         
         
         assert(!lens.extract(res, res2).iterator().hasNext());

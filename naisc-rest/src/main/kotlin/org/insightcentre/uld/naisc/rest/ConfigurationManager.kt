@@ -59,7 +59,7 @@ object ConfigurationManager {
     fun loadDataset(dataset : String, content : String, format : String) : Dataset {
         val model = ModelFactory.createDefaultModel()
         model.read(StringReader(content), "file:$dataset/", format)
-        val modelDataset = DefaultDatasetLoader.ModelDataset(model, dataset)
+        val modelDataset = DefaultDatasetLoader.ModelDataset(model, dataset, File(dataset).toURI().toURL())
         datasets[dataset] = modelDataset
         return modelDataset
     }

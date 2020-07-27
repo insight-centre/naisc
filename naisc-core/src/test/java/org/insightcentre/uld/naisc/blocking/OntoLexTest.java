@@ -108,11 +108,11 @@ public class OntoLexTest {
         left.read(new StringReader(ONTOLEX_DOC), "http://www.example.com/", "TURTLE");
         Model right = ModelFactory.createDefaultModel();
         right.read(new StringReader(SIMPLE_DOC), "http://www.example.com/", "TURTLE");
-        assertEquals(9, blocker.estimateSize(new ModelDataset(left,"left"), new ModelDataset(right,"right")));
+        assertEquals(9, blocker.estimateSize(new ModelDataset(left,"left", null), new ModelDataset(right,"right", null)));
         Set<String> leftMatching = new HashSet<>(Arrays.asList("http://www.example.com/#cat-1","http://www.example.com/#cat-2","http://www.example.com/#cat-3"));
         Set<String> rightMatching = new HashSet<>(Arrays.asList("file:DDO/11001660/sense/21002471","file:DDO/11001660/sense/21002472","file:DDO/11001660/sense/21002485"));
         HashSet<Blocking> s = new HashSet<>();
-        for(Blocking rr : blocker.block(new ModelDataset(left,"left"), new ModelDataset(right,"right"))) {
+        for(Blocking rr : blocker.block(new ModelDataset(left,"left", null), new ModelDataset(right,"right", null))) {
             assert(leftMatching.contains(rr.entity1.uri));
             assert(rightMatching.contains(rr.entity2.uri));
             s.add(rr);

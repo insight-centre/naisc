@@ -21,7 +21,7 @@ import java.io.File
 import java.net.URL
 import javax.xml.parsers.DocumentBuilderFactory
 
-class GWADataset(xmlFile : File) : Dataset {
+class GWADataset(private val xmlFile : File) : Dataset {
     val stats : List<Statement>
     val model = ModelFactory.createDefaultModel()
     val prefix : String
@@ -41,6 +41,7 @@ class GWADataset(xmlFile : File) : Dataset {
 
     val id = xmlFile.toString()
     override fun id() = id
+    override fun getLocation() = xmlFile.toURI().toURL()
 
     init {
         val dbFactory = DocumentBuilderFactory.newInstance()

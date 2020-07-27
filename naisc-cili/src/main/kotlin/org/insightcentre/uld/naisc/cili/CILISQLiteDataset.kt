@@ -23,6 +23,8 @@ class CILISQLiteDataset(dbFile : File) : Dataset, Closeable {
         connection.close()
     }
 
+    override fun getLocation(): URL? = dbFile.toURI().toURL()
+
     override fun id() = dbFile.toString()
 
     companion object {

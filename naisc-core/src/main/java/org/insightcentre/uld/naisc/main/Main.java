@@ -109,7 +109,7 @@ public class Main {
             if(finalAlignment != null) {
                 monitor.updateStatus(Stage.FINALIZING, "Saving");
                 if (outputXML) {
-                    finalAlignment.toXML(outputFile == null ? System.out : new PrintStream(outputFile));
+                    finalAlignment.toXML(outputFile == null ? System.out : new PrintStream(outputFile), leftFile.toURI().toURL(), rightFile.toURI().toURL());
                 } else {
                     finalAlignment.toRDF(outputFile == null ? System.out : new PrintStream(outputFile));
                 }
@@ -416,10 +416,10 @@ public class Main {
             final Configuration config = mapper.readValue(configFile, Configuration.class);
 
             Model leftModel = ModelFactory.createDefaultModel();
-            Dataset left = new DefaultDatasetLoader.ModelDataset(leftModel, "left");
+            Dataset left = new DefaultDatasetLoader.ModelDataset(leftModel, "left", null);
 
             Model rightModel = ModelFactory.createDefaultModel();
-            Dataset right = new DefaultDatasetLoader.ModelDataset(rightModel, "right");
+            Dataset right = new DefaultDatasetLoader.ModelDataset(rightModel, "right", null);
 
 
             Map<String, Resource> leftResByDef = new HashMap<>(), rightResByDef = new HashMap<>();

@@ -69,8 +69,8 @@ public class DataViewTest {
         mright.add(mright.createResource("file:bar/id1"), mright.createProperty("file:p2"), mright.createResource("file:bar/id3"));
         mright.add(mright.createResource("file:bar/id5"), mright.createProperty("file:p1"), mright.createResource("file:bar/id4"));
         mright.add(mright.createResource("file:bar/id5"), mright.createProperty("file:p1"), mright.createResource("file:bar/id6"));
-        Dataset left = new DefaultDatasetLoader.ModelDataset(mleft, "mleft");
-        Dataset right = new DefaultDatasetLoader.ModelDataset(mright, "mright");
+        Dataset left = new DefaultDatasetLoader.ModelDataset(mleft, "mleft", null);
+        Dataset right = new DefaultDatasetLoader.ModelDataset(mright, "mright", null);
         AlignmentSet alignment = new AlignmentSet();
         alignment.add(new Alignment(new URIRes("file:foo/id1", "mleft"), new URIRes("file:bar/id1", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
         alignment.add(new Alignment(new URIRes("file:foo/id2", "mleft"), new URIRes("file:bar/id2", "mright"), 1.0, Alignment.SKOS_EXACT_MATCH, null));
@@ -153,7 +153,7 @@ public class DataViewTest {
                 new DataViewPath("file:bar/id1", Arrays.asList("file:p1","file:p1","file:p1","file:p1","file:p1"), Arrays.asList("file:p1"), new Alignment(new URIRes("file:foo/id5", "model"), new URIRes("file:bar/id5", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null)),
                 new DataViewPath("file:bar/id1", Arrays.asList("file:p1","file:p1","file:p1","file:p1"), Arrays.asList(), new Alignment(new URIRes("file:foo/id6", "model"), new URIRes("file:bar/id6", "model"), 1.0, Alignment.SKOS_EXACT_MATCH, null))
         ));
-        List<DataView.DataViewEntry> result = DataView.convertToDataView(t, rightPaths, alignmentSet, new DefaultDatasetLoader.ModelDataset(model, "model"), new DefaultDatasetLoader.ModelDataset(model, "model"));
+        List<DataView.DataViewEntry> result = DataView.convertToDataView(t, rightPaths, alignmentSet, new DefaultDatasetLoader.ModelDataset(model, "model", null), new DefaultDatasetLoader.ModelDataset(model, "model", null));
         assertEquals(1, result.size());
         assertEquals(expResult.root, result.get(0).root);
         for(int i = 0; i < expResult.paths.size(); i++) {
@@ -176,7 +176,7 @@ public class DataViewTest {
         model.add(model.createResource("file:foo/id4"), model.createProperty("file:p1"), model.createResource("file:foo/id6"));
         model.add(model.createResource("file:foo/id6"), model.createProperty("file:p1"), model.createResource("file:foo/id5"));
         model.add(model.createResource("file:foo/id4"), model.createProperty("file:p1"), model.createResource("file:foo/id4"));
-        Dataset d = new DefaultDatasetLoader.ModelDataset(model, "d");
+        Dataset d = new DefaultDatasetLoader.ModelDataset(model, "d", null);
         
                 Map<Resource, List<Statement>> adjacencies = new HashMap<>();
         adjacencies.put(model.createResource("file:foo/id1"), Arrays.asList(model.createStatement(model.createResource("file:foo/id1"), model.createProperty("file:p1"), model.createResource("file:foo/id2"))));
@@ -273,7 +273,7 @@ public class DataViewTest {
         model.add(model.createResource("file:foo/id4"), model.createProperty("file:p1"), model.createResource("file:foo/id6"));
         model.add(model.createResource("file:foo/id6"), model.createProperty("file:p1"), model.createResource("file:foo/id5"));
         model.add(model.createResource("file:foo/id4"), model.createProperty("file:p1"), model.createResource("file:foo/id4"));
-        Dataset d = new DefaultDatasetLoader.ModelDataset(model, "d");
+        Dataset d = new DefaultDatasetLoader.ModelDataset(model, "d", null);
         Set<Resource> expResult = new HashSet<>();
         expResult.add(model.createResource("file:foo/id1"));
         Set<Resource> result = DataView.findRoots(d);
@@ -296,7 +296,7 @@ public class DataViewTest {
         model.add(model.createResource("file:foo/id4"), model.createProperty("file:p1"), model.createResource("file:foo/id4"));
         Resource current = model.createResource("file:foo/id1");
         Map<Resource, List<Statement>> adjacencies = new HashMap<>();
-        Dataset d = new DefaultDatasetLoader.ModelDataset(model, "d");
+        Dataset d = new DefaultDatasetLoader.ModelDataset(model, "d", null);
         Set<Resource> visited = new HashSet<>();
         visited.add(model.createResource("file:foo/id1"));
         DataView.breadthSearch(current, adjacencies, d, visited);
