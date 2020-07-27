@@ -79,7 +79,7 @@ public class MeasDatasetLoader implements DatasetLoader<MeasDatasetLoader.MeasDa
         private final String name;
 
         public MeasDataset(String name, Model model) {
-            super(model, name);
+            super(model, name, null);
             this.name = name;
         }
 

@@ -67,7 +67,7 @@ public class AllTest {
         right.add(right.createStatement(right.createResource("file:fuzz3"), right.createProperty("file:bar"), right.createResource("file:baz")));
         right.add(right.createStatement(right.createResource(new AnonId()), right.createProperty("file:bar"), right.createResource("file:baz")));
         
-        final Iterable<Blocking> block = strategy.block(new ModelDataset(left,"left"), new ModelDataset(right,"right"));
+        final Iterable<Blocking> block = strategy.block(new ModelDataset(left,"left", null), new ModelDataset(right,"right", null));
         int i = 0;
         for(Blocking r : block) {
             System.err.println(String.format("%s <-> %s", r.entity1, r.entity2));

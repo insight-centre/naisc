@@ -72,10 +72,10 @@ public class AutomaticTest {
         model2.add(model2.createStatement(model2.createResource("file:bar3"), model2.createProperty("file:label"), "the label3"));
         model2.add(model2.createStatement(model2.createResource("file:bar4"), model2.createProperty("file:label"), "the label4"));
         model2.add(model2.createStatement(model2.createResource("file:bar5"), model2.createProperty("file:label"), "the label5"));
-        Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model1, "model1"), new ModelDataset(model2, "model2")));
+        Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model1, "model1", null), new ModelDataset(model2, "model2", null)));
         Automatic instance = new Automatic();
         BlockingStrategy strat = instance.makeBlockingStrategy(params, _analysis, ExecuteListeners.NONE);
-        Iterable<Blocking> _results = strat.block(new ModelDataset(model1, "model1"), new ModelDataset(model2, "model2"));
+        Iterable<Blocking> _results = strat.block(new ModelDataset(model1, "model1", null), new ModelDataset(model2, "model2", null));
         Set<Blocking> results = new HashSet<>();
         for(Blocking p : _results) {
             results.add(p);
@@ -111,10 +111,10 @@ public class AutomaticTest {
         model2.add(model2.createStatement(model2.createResource("file:barfoo1"), model2.createProperty("file:p1"), model2.createResource("adfafafdasf")));
         model2.add(model2.createStatement(model2.createResource("file:barfoo2"), model2.createProperty("file:p1"), model2.createResource("adfafdafdsafaf")));
         model2.add(model2.createStatement(model2.createResource("file:foobar2"), model2.createProperty("file:p1"), model2.createResource("adfadfdafawdf")));
-        Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model1, "model1"), new ModelDataset(model2, "model2")));
+        Lazy<Analysis> _analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(model1, "model1", null), new ModelDataset(model2, "model2", null)));
         Automatic instance = new Automatic();
         BlockingStrategy strat = instance.makeBlockingStrategy(params, _analysis, ExecuteListeners.NONE);
-        Iterable<Blocking> _results = strat.block(new ModelDataset(model1, "model1"), new ModelDataset(model2, "model2"));
+        Iterable<Blocking> _results = strat.block(new ModelDataset(model1, "model1", null), new ModelDataset(model2, "model2", null));
         Set<Blocking> results = new HashSet<>();
         for(Blocking p : _results) {
             results.add(p);

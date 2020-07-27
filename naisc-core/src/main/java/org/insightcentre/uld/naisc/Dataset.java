@@ -10,6 +10,7 @@ import org.apache.jena.rdf.model.ResIterator;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.StmtIterator;
 import org.insightcentre.uld.naisc.util.Option;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Get a dataset either as a model or if available as a SPARQL endpoint URL
@@ -27,6 +28,11 @@ public interface Dataset {
      * @return The endpoint URL (if available)
      */
     Option<URL> asEndpoint();
+
+    /**
+     * Return the location of this dataset or null if not known
+     */
+    @Nullable URL getLocation();
 
     public ResIterator listSubjects();
 

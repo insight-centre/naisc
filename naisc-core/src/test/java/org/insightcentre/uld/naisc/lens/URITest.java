@@ -52,7 +52,7 @@ public class URITest {
         Model model = ModelFactory.createDefaultModel();
         Map<String, Object> params = new HashMap<>();
         URI instance = new URI();
-        Lens lens = instance.makeLens(new ModelDataset(model, "model"), params);
+        Lens lens = instance.makeLens(new ModelDataset(model, "model", null), params);
 
         URIRes r1 = new URIRes("http://www.example.com/foo/thisIsAPath#fragmentID", "data");
         URIRes r2 = new URIRes("http://www.example.com/foo/this_is_also_a_path#fragment_id", "data");
@@ -66,7 +66,7 @@ public class URITest {
 
         params.put("location", "fragment");
         params.put("form", "camelCased");
-        lens = instance.makeLens(new ModelDataset(model, "model2"), params);
+        lens = instance.makeLens(new ModelDataset(model, "model2", null), params);
 
         assertEquals(new LensResult(Language.UNDEFINED, Language.UNDEFINED,
                 "fragment ID", "fragment_id", "uri"), lens.extract(r1, r2).iterator().next());
@@ -74,7 +74,7 @@ public class URITest {
 
         params.put("location", "endOfPath");
         params.put("form", "urlEncoded");
-        lens = instance.makeLens(new ModelDataset(model, "model3"), params);
+        lens = instance.makeLens(new ModelDataset(model, "model3", null), params);
 
         assertEquals(new LensResult(Language.UNDEFINED, Language.UNDEFINED,
                 "thisIsAPath", "this_is_also_a_path", "uri"), lens.extract(r1, r2).iterator().next());

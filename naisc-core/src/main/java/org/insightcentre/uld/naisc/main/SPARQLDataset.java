@@ -1,5 +1,6 @@
 package org.insightcentre.uld.naisc.main;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.rdf.model.impl.NodeIteratorImpl;
@@ -31,6 +32,11 @@ public class SPARQLDataset implements Dataset {
         this.limit = limit;
         this.graph = graph;
         this.uriSpace = uriSpace;
+    }
+
+    @Override
+    public URL getLocation() {
+        return asEndpoint().get();
     }
 
     @Override
@@ -129,7 +135,7 @@ public class SPARQLDataset implements Dataset {
         String queryString = "SELECT * " + sparqlGraph() + "{ " +
                 (s == null ? "?s" : toID(s)) + " " +
                 (p == null ? "?p" : toID(p)) + " " +
-                (o == null ? "?o" : toID(o)) + (s == null ? uriFilter("s") : "") + "}";
+                (o == null ? "?o" : toID(o)) + (s == null ? " " + uriFilter("s") : "") + "}";
         return new StmtIteratorImpl(new OffsetLimitSPARQL<Statement>(queryString, 20) {
             @Override
             protected Statement makeResult(QuerySolution soln) {
@@ -159,11 +165,11 @@ public class SPARQLDataset implements Dataset {
         if(node.isLiteral()) {
             Literal l = node.asLiteral();
             if(l.getLanguage() != null && !l.getLanguage().equals("")) {
-                return "\"" + l.getLexicalForm() + "\"@" + l.getLanguage();
+                return "\"" + StringEscapeUtils.escapeJava(l.getLexicalForm()) + "\"@" + l.getLanguage();
             } else if(l.getDatatypeURI() != null) {
-                return "\"" + l.getLexicalForm() + "\"^^<" + l.getDatatypeURI() + ">";
+                return "\"" + StringEscapeUtils.escapeJava(l.getLexicalForm()) + "\"^^<" + l.getDatatypeURI() + ">";
             } else {
-                return "\"" + l.getLexicalForm() + "\"";
+                return "\"" + StringEscapeUtils.escapeJava(l.getLexicalForm()) + "\"";
             }
         } else if(node.isURIResource()) {
             return "<" + node.asResource().getURI() + ">";

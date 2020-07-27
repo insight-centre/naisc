@@ -27,7 +27,7 @@ class MapleController {
             "Naisc",
             "1.1",
             Status.active,
-            listOf("http://art.uniroma2.it/maple/alignment-services-1.0.yaml"), null, null, null)
+            listOf("http://art.uniroma2.it/maple/alignment-services-2.0.yaml"), null, null, null)
     @GET
     @Path("/matchers")
     @Produces("application/json")
@@ -37,7 +37,7 @@ class MapleController {
     @Path("/matchers/search")
     @Consumes("application/json")
     @Produces("application/json")
-    fun searchMatchers(scenarioDefinition : ScenarioDefinition) : Matcher = Matcher("auto", "Search not supported, use `auto` as this works for everything", null)
+    fun searchMatchers(scenarioDefinition : ScenarioDefinition) : List<Matcher> = listOf(Matcher("auto", "Search not supported, use `auto` as this works for everything", null))
 
     @GET
     @Path("/matchers/{id}")
@@ -85,10 +85,10 @@ class MapleController {
         } else {
             val left = SPARQLDataset(plan.scenarioDefinition.leftDataset.sparqlEndpoint,
                     plan.scenarioDefinition.leftDataset.id, 1000, null,
-                    plan.scenarioDefinition.leftDataset.conformsTo);
+                    plan.scenarioDefinition.leftDataset.uriSpace);
             val right = SPARQLDataset(plan.scenarioDefinition.rightDataset.sparqlEndpoint,
                 plan.scenarioDefinition.rightDataset.id, 1000, null,
-                plan.scenarioDefinition.rightDataset.conformsTo);
+                plan.scenarioDefinition.rightDataset.uriSpace);
             val run = RunManager.startRun(randId(), left, right, ConfigurationManager.loadConfiguration(plan.matcherDefinition?.id?:"auto"),
                 SPARQLDatasetLoader(1000));
             return Response.status(201)
@@ -125,7 +125,7 @@ class MapleController {
         if(alignment != null) {
             val baos = ByteArrayOutputStream()
             val out = PrintStream(baos)
-            alignment.toXML(out)
+            alignment.toXML(out, RunManager.leftURL(id), RunManager.rightURL(id))
             return Response.status(200)
                     .entity(baos.toByteArray())
                     .build()

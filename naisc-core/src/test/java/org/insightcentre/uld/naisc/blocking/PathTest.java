@@ -79,7 +79,7 @@ public class PathTest {
         right.add(right.createStatement(right.createResource("file:fuzz5"), right.createProperty(Alignment.SKOS_EXACT_MATCH), right.createResource("fuzz6")));
         
         BlockingStrategy strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
-        Iterable<Blocking> result = strategy.block(new ModelDataset(left, "left"), new ModelDataset(right, "right"));
+        Iterable<Blocking> result = strategy.block(new ModelDataset(left, "left", null), new ModelDataset(right, "right", null));
         Map<URIRes,List<URIRes>> result2 = new HashMap<>();
         for(Blocking r : result) {
             if(!result2.containsKey(r.entity1))
