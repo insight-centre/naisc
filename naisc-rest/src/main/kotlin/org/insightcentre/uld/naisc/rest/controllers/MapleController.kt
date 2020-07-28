@@ -37,7 +37,7 @@ class MapleController {
     @Path("/matchers/search")
     @Consumes("application/json")
     @Produces("application/json")
-    fun searchMatchers(scenarioDefinition : ScenarioDefinition) : List<Matcher> = listOf(Matcher("auto", "Search not supported, use `auto` as this works for everything", null))
+    fun searchMatchers(scenarioDefinition : ScenarioDefinition) : List<Matcher> = listOf(Matcher("auto", "Automatic configuration that is good for most settings", null))
 
     @GET
     @Path("/matchers/{id}")
