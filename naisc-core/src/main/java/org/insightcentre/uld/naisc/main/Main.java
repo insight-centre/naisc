@@ -218,7 +218,7 @@ public class Main {
      * Execute NAISC, limiting the results to a gold set
      *
      * @param name        The identifier for this run
-     * @param leftFile    The left RDF dataset to align
+     * @param file    The left RDF dataset to align
      * @param rightFile   The right RDF dataset to align
      * @param goldFile    The gold standard
      * @param config      The configuration
@@ -298,7 +298,7 @@ public class Main {
             } else {
                 blocks = _blocks;
             }
-            monitor.updateStatus(Stage.INITIALIZING, "Loading Graph Extractors");
+            monitor.updateStatus(Stage.BLOCKING, "Loading Graph Extractors");
             AlignmentSet prematch = new Prematcher().prematch(blocks, leftModel, rightModel);
             List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
@@ -353,7 +353,7 @@ public class Main {
                                 }
 
                                 if (!labelsProduced) {
-                                    monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block1, block2));
+                                    monitor.updateStatus(Stage.SCORING, String.format("Lens produced no label for %s %s", block1, block2));
                                 }
                                 for (GraphFeature feature : dataFeatures) {
                                     Feature[] features = feature.extractFeatures(block.entity1, block.entity2, monitor);
