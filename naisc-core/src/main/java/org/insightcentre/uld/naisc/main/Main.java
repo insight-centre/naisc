@@ -206,6 +206,8 @@ public class Main {
                 entity.setContentType("text/turtle");
             } else if(file.getName().endsWith(".nt")) {
                 entity.setContentType("application/n-triples");
+            } else if(file.getName().endsWith(".gz")) {
+                throw new RuntimeException("Cannot upload compressed file to external endpoint. Please decompress files to use with this configuration");
             } else {
                 entity.setContentType("application/rdf+xml");
             }
