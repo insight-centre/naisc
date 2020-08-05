@@ -10,13 +10,12 @@ import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
 
 /**
  * The Meas loader also creates a SPARQL endpoint for the datasets
@@ -41,6 +40,12 @@ public class MeasDatasetLoader implements DatasetLoader<MeasDatasetLoader.MeasDa
             model.read(new FileReader(file), file.toURI().toString(), "Turtle");
         } else if(file.getName().endsWith(".nt")) {
             model.read(new FileReader(file), file.toURI().toString(), "N-TRIPLES");
+        } else if(file.getName().endsWith(".rdf.gz")) {
+            model.read(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))), file.toURI().toString(), "RDF/XML");
+        } else if(file.getName().endsWith(".ttl.gz")) {
+            model.read(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))), file.toURI().toString(), "Turtle");
+        } else if(file.getName().endsWith(".nt.gz")) {
+            model.read(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))), file.toURI().toString(), "N-TRIPLES");
         } else {
             model.read(new FileReader(file), file.toURI().toString(), "RDF/XML");
         }

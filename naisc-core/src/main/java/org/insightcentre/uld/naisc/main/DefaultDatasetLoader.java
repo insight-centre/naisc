@@ -1,9 +1,9 @@
 package org.insightcentre.uld.naisc.main;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
+import java.util.zip.GZIPInputStream;
+
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -39,6 +39,12 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
             model.read(new FileReader(file), file.toURI().toString(), "Turtle");
         } else if(file.getName().endsWith(".nt")) {
             model.read(new FileReader(file), file.toURI().toString(), "N-TRIPLES");
+        } else if(file.getName().endsWith(".rdf.gz")) {
+            model.read(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))), file.toURI().toString(), "RDF/XML");
+        } else if(file.getName().endsWith(".ttl.gz")) {
+            model.read(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))), file.toURI().toString(), "Turtle");
+        } else if(file.getName().endsWith(".nt.gz")) {
+            model.read(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))), file.toURI().toString(), "N-TRIPLES");
         } else {
             model.read(new FileReader(file), file.toURI().toString(), "RDF/XML");
         }
