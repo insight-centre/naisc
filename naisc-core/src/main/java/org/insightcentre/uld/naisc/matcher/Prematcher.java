@@ -4,7 +4,10 @@ import java.util.*;
 
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.*;
+import org.insightcentre.uld.naisc.main.ExecuteListener;
 import org.insightcentre.uld.naisc.util.Pair;
+
+import static java.lang.String.format;
 
 /**
  * A prematcher is a simple step that looks for any potential matches that are 
@@ -14,13 +17,17 @@ import org.insightcentre.uld.naisc.util.Pair;
  */
 public class Prematcher {
 
-    public AlignmentSet prematch(Collection<Blocking> blocking, Dataset left, Dataset right) {
+    public AlignmentSet prematch(Collection<Blocking> blocking, Dataset left, Dataset right, ExecuteListener listener) {
         AlignmentSet prematch = new AlignmentSet();
         Map<URIRes, URIRes> l2r = new HashMap<>();
         Map<URIRes, URIRes> r2l = new HashMap<>();
         Set<URIRes> lburnt = new HashSet<>();
         Set<URIRes> rburnt = new HashSet<>();
+        int count = 0;
         for(Blocking block : blocking) {
+            if(++count % 10000 == 0) {
+                listener.updateStatus(NaiscListener.Stage.MATCHING, format("Prematched %d entities", count));
+            }
             if(l2r.containsKey(block.entity1) || r2l.containsKey(block.entity2)) {
                 l2r.remove(block.entity1);
                 r2l.remove(block.entity2);

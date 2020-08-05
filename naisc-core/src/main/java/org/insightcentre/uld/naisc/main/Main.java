@@ -299,11 +299,10 @@ public class Main {
                 blocks = _blocks;
             }
             monitor.updateStatus(Stage.BLOCKING, "Loading Graph Extractors");
-            AlignmentSet prematch = new Prematcher().prematch(blocks, leftModel, rightModel);
+            AlignmentSet prematch = new Prematcher().prematch(blocks, leftModel, rightModel, monitor);
             List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
             monitor.updateStatus(Stage.SCORING, "Scoring");
-            //int count = 0;
             final AtomicInteger count = new AtomicInteger(0);
             ConcurrentLinkedQueue<TmpAlignment> alignments = new ConcurrentLinkedQueue<>();
             ExecutorService executor = new ThreadPoolExecutor(config.nThreads, config.nThreads, 0,
