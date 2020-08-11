@@ -192,7 +192,7 @@ public class DatasetAnalyzerTest {
         strings.add("b");
         strings.add("c");
         DatasetAnalyzer instance = new DatasetAnalyzer();
-        double expResult = 0.5;
+        double expResult = 0.333;
         double result = instance.uniqueness(strings);
         assertEquals(expResult, result, 0.001);
     }

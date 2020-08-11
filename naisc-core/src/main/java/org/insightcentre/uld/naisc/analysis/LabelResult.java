@@ -28,11 +28,11 @@ public class LabelResult {
     }
     
     public boolean isLabelLike() {
-        return this.coverage > 0.5 && this.uniqueness > 0.5 && this.isDataProperty && this.naturalLangLike > 0.5;
+        return this.coverage > 0.2 && this.uniqueness > 0.1 && this.isDataProperty && this.naturalLangLike > 0.5;
     }
     
     public boolean isLabelLens() {
-        return (this.coverage > 0.5 && this.uniqueness > 0.1 && (this.uri.equals("") || this.isDataProperty) && this.naturalLangLike > 0.5)
+        return (this.coverage > 0.2 && this.uniqueness > 0.1 && (this.uri.equals("") || this.isDataProperty) && this.naturalLangLike > 0.5)
             || this.uri.equals(RDFS.label.getURI());
     }
 
