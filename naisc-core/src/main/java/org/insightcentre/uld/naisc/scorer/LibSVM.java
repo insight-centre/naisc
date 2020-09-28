@@ -15,10 +15,7 @@ import org.insightcentre.uld.naisc.util.Option;
 import org.insightcentre.uld.naisc.util.Some;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.insightcentre.uld.naisc.Alignment.SKOS_EXACT_MATCH;
 
@@ -353,17 +350,25 @@ public class LibSVM implements ScorerFactory {
         }
 
         boolean checkedFeatures = false;
+        boolean failedFeatures = false;
 
         @Override
         public List<ScoreResult> similarity(FeatureSet features, NaiscListener log) throws ModelNotTrainedException{
+            if(failedFeatures) {
+                throw new ModelNotTrainedException();
+            }
             final svm_problem instances = makeInstances(features);
             final Instance instance = buildInstance(features, 0.0, instances);
             if (features.names.length != featNames.length) {
+                System.err.println(Arrays.toString(features.names));
+                System.err.println(Arrays.toString(featNames));
+                failedFeatures = true;
                 throw new ModelNotTrainedException("Classifier has wrong number of attributes. Model does not match trained");
             }
             if (!checkedFeatures) {
                 for (int i = 0; i < featNames.length; i++) {
                     if (!featNames[i].equals(features.names[i]._1 + "-" + features.names[i]._2)) {
+                        failedFeatures = true;
                         throw new ModelNotTrainedException("Feature names are not equal: " + featNames[i] + " vs " + features.names[i]);
                     }
                 }
