@@ -176,3 +176,8 @@ left.ttl
 right.ttl
 apache-jena-fuseki-3.16.0.tar.gz
 apache-jena2/
+
+left.nt.gz
+configs/wikidata-wordnet.json
+right.nt.gz
+wordnet-wikidata.nt

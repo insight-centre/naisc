@@ -138,12 +138,12 @@ class GWADatasetTest {
             "        <!-- The list of lexical entries (words) in your wordnet -->\n" +
             "        <LexicalEntry id=\"w4\">\n" +
             "            <Lemma writtenForm=\"farfar\" partOfSpeech=\"n\"/>\n" +
-            "            <Form  writtenForm=\"farfäder\">\n" +
+            "            <Form  writtenForm=\"farf&#xe4;der\">\n" +
             "                <Tag category=\"penn\">NNS</Tag>\n" +
             "            </Form>\n" +
             "            <!-- Synsets need not be language-specific but senses must be -->\n" +
             "            <Sense id=\"example-sv-2-n-1\" synset=\"example-en-1-n\">\n" +
-            "                <Example dc:source=\"Europarl Corpus\">Jag vill berätta för er att min farfar var svensk beredskapssoldat vid norska gränsen under andra världskriget, ett krig som Sverige stod utanför</Example>\n" +
+            "                <Example dc:source=\"Europarl Corpus\">Jag vill ber&#xe4;tta f&xf6;r er att min farfar var svensk beredskapssoldat vid norska gr&#xe4;nsen under andra v&#xe4;rldskriget, ett krig som Sverige stod utanf&xf6;r</Example>\n" +
             "            </Sense>\n" +
             "        </LexicalEntry>\n" +
             "    </Lexicon>\n" +
