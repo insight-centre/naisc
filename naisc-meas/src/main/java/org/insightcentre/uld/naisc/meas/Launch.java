@@ -62,8 +62,13 @@ public class Launch {
             if(os.has("b")) {
                 System.setProperty("base.url", os.valueOf("b").toString());
             }
-            
-            Install.verify();
+
+            try {
+                Install.verify();
+            } catch(IOException x) {
+                System.err.println("Could not verify installed version of Naisc\n" + x.getMessage());
+                System.exit(-1);
+            }
             Launch main = new Launch(port);
             main.start();
             System.err.println("Naisc started at http://localhost:" + port + "/");

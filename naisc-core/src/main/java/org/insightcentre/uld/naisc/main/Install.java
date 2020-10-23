@@ -18,29 +18,45 @@ import java.util.zip.ZipInputStream;
 public class Install {
     
     private static void verifyOrDownload(String name) throws IOException {
-        if(!new File("models").exists()) {
-            new File("models").mkdir();
+        try {
+            if(!new File("models").exists()) {
+                new File("models").mkdir();
+            }
+            if(!new File("models/" + name).exists()) {
+                System.err.println("Downloading resource: " + name);
+                URL website = new URL("http://server1.nlp.insight-centre.org/naisc-models/" + name + ".gz");
+                ReadableByteChannel rbc = Channels.newChannel(new GZIPInputStream(website.openStream()));
+                FileOutputStream fos = new FileOutputStream("models/" + name);
+                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+            }
+        } catch(IOException x) {
+            throw new IOException("Could not download a resource. You can fix this by manually downloading and installing it\n" +
+            "For example on a Linux machine use the following commands:\n" +
+            "    wget http://server1.nlp.insight-centre.org/naisc-models/" + name + ".gz\n" +
+            "    gunzip " + name + " .gz\n" +
+            "    mv " + name + ".gz models/\n", x);
         }
-        if(!new File("models/" + name).exists()) {
-            System.err.println("Downloading resource: " + name);
-            URL website = new URL("http://server1.nlp.insight-centre.org/naisc-models/" + name + ".gz");
-            ReadableByteChannel rbc = Channels.newChannel(new GZIPInputStream(website.openStream()));
-            FileOutputStream fos = new FileOutputStream("models/" + name);
-            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-        }
+
     }
     
     private static void getConfigs() throws IOException {
-        if(!new File("configs").exists()) {
-            new File("configs").mkdir();
-            System.err.println("Downloading configurations");
-            URL website = new URL("http://server1.nlp.insight-centre.org/naisc-models/configs.zip");
-            ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-            FileOutputStream fos = new FileOutputStream("configs.zip");
-            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-            unzip("configs.zip", "configs");
-            new File("configs.zip").delete();
-            
+        try {
+            if(!new File("configs").exists()) {
+                new File("configs").mkdir();
+                System.err.println("Downloading configurations");
+                URL website = new URL("http://server1.nlp.insight-centre.org/naisc-models/configs.zip");
+                ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+                FileOutputStream fos = new FileOutputStream("configs.zip");
+                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                unzip("configs.zip", "configs");
+                new File("configs.zip").delete();
+
+            }
+        } catch(IOException x) {
+            throw new IOException("Could not download a resource. You can fix this by manually downloading and installing it\n" +
+                    "For example on a Linux machine use the following commands:\n" +
+                    "    wget http://server1.nlp.insight-centre.org/naisc-models/configs.zip\n" +
+                    "    unzip configs.zip -d configs/\n", x);
         }
     }
     
