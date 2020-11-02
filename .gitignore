@@ -181,3 +181,9 @@ left.nt.gz
 configs/wikidata-wordnet.json
 right.nt.gz
 wordnet-wikidata.nt
+configs/twb.json
+twb-bangladesh-wikidata.ttl
+twb-bangladesh-wordnet.ttl
+twb-covid-wikidata.ttl
+twb-covid-wordnet.ttl
+twb-naisc.zip
