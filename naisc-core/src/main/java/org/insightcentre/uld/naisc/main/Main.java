@@ -319,6 +319,12 @@ public class Main {
                 String property = config.noPrematching ? null : prematch.findLink(block.entity1, block.entity2);
                 if(property != null) {
                     alignments.add(new TmpAlignment(block.entity1, block.entity2, new ScoreResult(1.0, property), property, null));
+                    // Still run lens extraction so it is available in the results
+                    for(Lens lens : lenses) {
+                        for(LensResult facet: lens.extract(block.entity1, block.entity2, monitor)) {
+                            monitor.addLensResult(block.entity1, block.entity2, facet.tag, facet);
+                        }
+                    }
                 } else {
                     executor.submit(new Runnable() {
                         @Override
