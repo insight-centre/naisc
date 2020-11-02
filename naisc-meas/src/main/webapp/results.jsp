@@ -75,29 +75,29 @@
                     </thead>
                     <tr v-for="(result,idx) in results" v-bind:class="{'valid-yes':result.valid === 'yes','valid-no':result.valid === 'no' || result.valid === 'bad_link','valid-unknown':result.valid === 'unknown','valid-novel':result.valid === 'novel'}">
                         <td>
-                            <span v-if="result.leftRoot && result.leftRoot !== result.subject"><a v-bind:href="result.leftRoot" class="root">{{displayUrl(result.leftRoot)}}</a><br/></span>
-                            <div v-for="(lp, lpidx) in result.leftPath" class="path">
+                            <span v-if="result.leftRoot && result.leftRoot !== result.subject" v-bind:style="{display:showHierarchy2}"><a v-bind:href="result.leftRoot">{{displayUrl(result.leftRoot)}}</a><br/></span>
+                            <div v-for="(lp, lpidx) in result.leftPath" v-bind:style="{ display: showHierarchy }">
                                 <span v-if="lp"><a v-bind:href="lp" class="treeLink" v-bind:style="{ marginLeft: (lpidx*10 + 10) + 'px' }">{{displayUrl(lp)}}</a><br/></span>
                             </div>
-                            <span class="path" v-bind:style="{ marginLeft: (result.leftPath.length*10 + 20) + 'px' }"></span>
+                            <span class="path" v-bind:style="{ marginLeft: (result.leftPath.length*10 + 20) + 'px', display:showHierarchy2 }"></span>
                             <a v-bind:href="result.subject">{{displayUrl(result.subject)}}</a>
                             <button type="button" class="btn btn-info" title="Change this entity" v-if="result.valid==='no' || result.valid === 'bad_link'" v-on:click.prevent="changeLeft(idx,result.subject)">
                                 <i class="fas fa-wrench"></i></button>
-                            <div v-for="(l, lensid) in result.lens" v-bind:style="{ marginLeft: (result.leftPath.length*10 + 20) + 'px' }">
+                            <div v-for="(l, lensid) in result.lens">
                                 <span class="lens-id">{{lensid}}:</span> <span class="lens-content">{{l.string1}}</span> <span class="lens-language">{{l.lang1}}</span>
                             </div>
                         </td>
                         <td><a v-bind:href="result.property">{{displayUrl(result.property)}}</a></td>
                         <td>
-                            <span v-if="result.rightRoot && result.rightRoot !== result.object"><a v-bind:href="result.rightRoot" class="root">{{displayUrl(result.rightRoot)}}</a><br/></span>
-                            <div v-for="(lp, lpidx) in result.rightPath" class="path">
+                            <span v-if="result.rightRoot && result.rightRoot !== result.object" v-bind:style="{display:showHierarchy2}"><a v-bind:href="result.rightRoot" class="root">{{displayUrl(result.rightRoot)}}</a><br/></span>
+                            <div v-for="(lp, lpidx) in result.rightPath" v-bind:style="{ display: showHierarchy }">
                                 <span v-if="lp"><a v-bind:href="lp" class="treeLink" v-bind:style="{ marginLeft: (lpidx*10 + 10) + 'px' }">{{displayUrl(lp)}}</a><br/></span>
                             </div>
-                            <span class="path" v-bind:style="{ marginLeft: (result.leftPath.length*10 + 20) + 'px' }"></span>
+                            <span class="path" v-bind:style="{ marginLeft: (result.leftPath.length*10 + 20) + 'px', display: showHierarchy2 }"></span>
                             <a v-bind:href="result.object">{{displayUrl(result.object)}}</a>
                             <button type="button" class="btn btn-info" title="Change this entity" v-if="result.valid==='no' || result.valid === 'bad_link'" v-on:click.prevent="changeRight(idx,result.object)">
                                 <i class="fas fa-wrench"></i></button>
-                            <div v-for="(l, lensid) in result.lens" v-bind:style="{ marginLeft: (result.rightPath.length*10 + 20) + 'px' }">
+                            <div v-for="(l, lensid) in result.lens">
                                 <span class="lens-id">{{lensid}}:</span> <span class="lens-content">{{l.string2}}</span> <span class="lens-language">{{l.lang2}}</span>
                             </div>
                         </td>
@@ -218,6 +218,8 @@ data.currentElem = "";
 data.elems = new Set();
 data.left = true;
 data.updateIdx = 0;
+data.showHierarchy = "block";
+data.showHierarhcy2 = "inline";
 
 var app = new Vue({
   el: '#app',
@@ -470,11 +472,13 @@ var app = new Vue({
         $('#compareModal').modal('show');
     },
     toggleHierarchy() {
-        $('.root').toggle();
-        $('.path').toggle();
         if($('#hide-hierarchy').text() === "Hide hierarchy") {
+            this.showHierarchy = "none";
+            this.showHierarchy2 = "none";
             $('#hide-hierarchy').text("Show hierarchy");
         } else {
+            this.showHierarchy = "block";
+            this.showHierarchy2 = "inline";
             $('#hide-hierarchy').text("Hide hierarchy");
         }
      }
