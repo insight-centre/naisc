@@ -10,7 +10,6 @@
     <modules>
         <module>naisc-core</module>
         <module>naisc-meas</module>
-        <module>naisc-elexis</module>
         <module>naisc-rest</module>
         <module>naisc-cili</module>
     </modules>
