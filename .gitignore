@@ -169,6 +169,24 @@ naisc-elexis/leftFile.ttl
 naisc-elexis/rightFile.ttl
 eds.db
 Testing_Steps.sh
+maple-test.sh
+apache-jena-fuseki-3.16.0/
+left.nt
+left.ttl
+right.ttl
+apache-jena-fuseki-3.16.0.tar.gz
+apache-jena2/
+
+left.nt.gz
+configs/wikidata-wordnet.json
+right.nt.gz
+wordnet-wikidata.nt
+configs/twb.json
+twb-bangladesh-wikidata.ttl
+twb-bangladesh-wordnet.ttl
+twb-covid-wikidata.ttl
+twb-covid-wordnet.ttl
+twb-naisc.zip
 apache-jena-fuseki-3.16.0/
 apache-jena2/
 

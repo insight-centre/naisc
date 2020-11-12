@@ -18,7 +18,8 @@ public interface NaiscListener {
         FINALIZING,
         FAILED,
         COMPLETED,
-        EVALUATION
+        EVALUATION,
+        ABORTED
     }
     /**
      * Indicates the level of a message

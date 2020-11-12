@@ -141,7 +141,7 @@ public class DatasetAnalyzerTest {
                 rightModel.createProperty(Label.SKOS_PREFLABEL),
                 rightModel.createLiteral("???"));
         DatasetAnalyzer instance = new DatasetAnalyzer();
-        Analysis result = instance.analyseModel(new DefaultDatasetLoader.ModelDataset(leftModel, "left"), new DefaultDatasetLoader.ModelDataset(rightModel, "right"));
+        Analysis result = instance.analyseModel(new DefaultDatasetLoader.ModelDataset(leftModel, "left", null), new DefaultDatasetLoader.ModelDataset(rightModel, "right", null));
     }
 
     /**

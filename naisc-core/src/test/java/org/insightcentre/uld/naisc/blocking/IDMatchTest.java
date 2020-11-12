@@ -64,21 +64,21 @@ public class IDMatchTest {
         right.add(right.createStatement(right.createResource("http://www.beispiel.de/foo/bar#baz"), right.createProperty(RDFS_LABEL), left.createLiteral("dog house", "en")));
         
         BlockingStrategy strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
-        assertEquals(3, count(strategy.block(new ModelDataset(left, "left"), new ModelDataset(right, "right"))));
+        assertEquals(3, count(strategy.block(new ModelDataset(left, "left", null), new ModelDataset(right, "right", null))));
         
         params.put("method", "exact");
         strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
-        assertEquals(1, count(strategy.block(new ModelDataset(left, "left"), new ModelDataset(right, "right"))));
+        assertEquals(1, count(strategy.block(new ModelDataset(left, "left", null), new ModelDataset(right, "right", null))));
         
         params.put("method", "fragment");
         strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
-        assertEquals(4, count(strategy.block(new ModelDataset(left, "left"), new ModelDataset(right, "right"))));
+        assertEquals(4, count(strategy.block(new ModelDataset(left, "left", null), new ModelDataset(right, "right", null))));
         
         params.put("method", "exact");
         params.put("leftNamespace", "http://www.example.com/");
         params.put("rightNamespace", "http://www.beispiel.de");
         strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
-        assertEquals(1, count(strategy.block(new ModelDataset(left, "left"), new ModelDataset(right, "right"))));
+        assertEquals(1, count(strategy.block(new ModelDataset(left, "left", null), new ModelDataset(right, "right", null))));
     }
 
        

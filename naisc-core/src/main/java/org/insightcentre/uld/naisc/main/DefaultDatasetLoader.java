@@ -1,9 +1,9 @@
 package org.insightcentre.uld.naisc.main;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
+import java.util.zip.GZIPInputStream;
+
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
@@ -39,10 +39,16 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
             model.read(new FileReader(file), file.toURI().toString(), "Turtle");
         } else if(file.getName().endsWith(".nt")) {
             model.read(new FileReader(file), file.toURI().toString(), "N-TRIPLES");
+        } else if(file.getName().endsWith(".rdf.gz")) {
+            model.read(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))), file.toURI().toString(), "RDF/XML");
+        } else if(file.getName().endsWith(".ttl.gz")) {
+            model.read(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))), file.toURI().toString(), "Turtle");
+        } else if(file.getName().endsWith(".nt.gz")) {
+            model.read(new InputStreamReader(new GZIPInputStream(new FileInputStream(file))), file.toURI().toString(), "N-TRIPLES");
         } else {
             model.read(new FileReader(file), file.toURI().toString(), "RDF/XML");
         }
-        return new ModelDataset(model, name);
+        return new ModelDataset(model, name, file.toURI().toURL());
     }
 
     @Override
@@ -57,16 +63,23 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
         final Model rightModel = dataset2.model;
         combined.add(leftModel);
         combined.add(rightModel);
-        return new ModelDataset(combined, dataset1.id() + "+" + dataset2.id());
+        return new ModelDataset(combined, dataset1.id() + "+" + dataset2.id(), null);
     }
 
     public static class ModelDataset implements Dataset {
         public final Model model;
         public final String id;
+        public final URL location;
 
-        public ModelDataset(Model model, String id) {
+        public ModelDataset(Model model, String id, URL location) {
             this.model = model;
             this.id = id;
+            this.location = location;
+        }
+
+        @Override
+        public URL getLocation() {
+            return location;
         }
 
         @Override
@@ -133,6 +146,11 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
         public EndpointDataset(URL url, String id) {
             this.url = url;
             this.id = id;
+        }
+
+        @Override
+        public URL getLocation() {
+            return url;
         }
 
         @Override

@@ -79,10 +79,10 @@ public class AutomaticTest {
             prealign.add(new Alignment(new URIRes("file:foo" + i, "left"), new URIRes("file:bar" + i, "right"), 1.0));
 
         }
-        Dataset sparqlData = new DefaultDatasetLoader().combine(new ModelDataset(lmodel, "lmodel"), new ModelDataset(rmodel, "rmodel"), "model");
+        Dataset sparqlData = new DefaultDatasetLoader().combine(new ModelDataset(lmodel, "lmodel", null), new ModelDataset(rmodel, "rmodel", null), "model");
 
         Map<String, Object> params = new HashMap<>();
-        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(lmodel,"lmodel"), new ModelDataset(rmodel,"rmodel")));
+        Lazy<Analysis> analysis = Lazy.fromClosure(() -> new DatasetAnalyzer().analyseModel(new ModelDataset(lmodel,"lmodel", null), new ModelDataset(rmodel,"rmodel", null)));
         AlignmentSet prelinking = prealign;
         GraphFeature feat = new Automatic().makeFeature(sparqlData, params, analysis, prelinking, ExecuteListeners.NONE);
         Feature[] result = feat.extractFeatures(new URIRes("file:foo2", "lmodel"), new URIRes("file:bar2", "rmodel"));

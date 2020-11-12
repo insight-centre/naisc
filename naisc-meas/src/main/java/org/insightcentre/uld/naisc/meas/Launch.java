@@ -19,6 +19,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 import org.eclipse.jetty.webapp.Configuration;
+import org.insightcentre.uld.naisc.main.Install;
 
 public class Launch {
 
@@ -61,8 +62,13 @@ public class Launch {
             if(os.has("b")) {
                 System.setProperty("base.url", os.valueOf("b").toString());
             }
-            
-            Install.verify();
+
+            try {
+                Install.verify();
+            } catch(IOException x) {
+                System.err.println("Could not verify installed version of Naisc\n" + x.getMessage());
+                System.exit(-1);
+            }
             Launch main = new Launch(port);
             main.start();
             System.err.println("Naisc started at http://localhost:" + port + "/");

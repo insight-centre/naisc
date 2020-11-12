@@ -23,6 +23,7 @@ import org.insightcentre.uld.naisc.Dataset;
  * @author John McCrae
  */
 public class DataView {
+    private static final int MAX_PATH_LENGTH = 15;
 
     public static final String[] BLACK_PROPERTIES = new String[]{
         "http://www.w3.org/2002/07/owl#allValuesFrom",
@@ -115,6 +116,9 @@ public class DataView {
                 if (leftPath == null) {
                     continue;
                 }
+                if(leftPath.size() > MAX_PATH_LENGTH) {
+                    leftPath = Collections.EMPTY_LIST;
+                }
                 List<String> rightPath = null;
                 String rightRoot = null;
                 for (Paths rightP : rightPaths) {
@@ -124,7 +128,7 @@ public class DataView {
                         break;
                     }
                 }
-                if (rightRoot == null) {
+                if (rightRoot == null || rightPath.size() > MAX_PATH_LENGTH) {
                     rightRoot = "";
                     rightPath = Collections.EMPTY_LIST;
                 }

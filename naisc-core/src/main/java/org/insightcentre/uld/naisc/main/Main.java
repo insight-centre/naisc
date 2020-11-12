@@ -109,7 +109,7 @@ public class Main {
             if(finalAlignment != null) {
                 monitor.updateStatus(Stage.FINALIZING, "Saving");
                 if (outputXML) {
-                    finalAlignment.toXML(outputFile == null ? System.out : new PrintStream(outputFile));
+                    finalAlignment.toXML(outputFile == null ? System.out : new PrintStream(outputFile), leftFile.toURI().toURL(), rightFile.toURI().toURL());
                 } else {
                     finalAlignment.toRDF(outputFile == null ? System.out : new PrintStream(outputFile));
                 }
@@ -206,6 +206,8 @@ public class Main {
                 entity.setContentType("text/turtle");
             } else if(file.getName().endsWith(".nt")) {
                 entity.setContentType("application/n-triples");
+            } else if(file.getName().endsWith(".gz")) {
+                throw new RuntimeException("Cannot upload compressed file to external endpoint. Please decompress files to use with this configuration");
             } else {
                 entity.setContentType("application/rdf+xml");
             }
@@ -218,7 +220,7 @@ public class Main {
      * Execute NAISC, limiting the results to a gold set
      *
      * @param name        The identifier for this run
-     * @param leftFile    The left RDF dataset to align
+     * @param file    The left RDF dataset to align
      * @param rightFile   The right RDF dataset to align
      * @param goldFile    The gold standard
      * @param config      The configuration
@@ -298,12 +300,11 @@ public class Main {
             } else {
                 blocks = _blocks;
             }
-            monitor.updateStatus(Stage.INITIALIZING, "Loading Graph Extractors");
-            AlignmentSet prematch = new Prematcher().prematch(blocks, leftModel, rightModel);
+            monitor.updateStatus(Stage.BLOCKING, "Loading Graph Extractors");
+            AlignmentSet prematch = new Prematcher().prematch(blocks, leftModel, rightModel, monitor);
             List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
             monitor.updateStatus(Stage.SCORING, "Scoring");
-            //int count = 0;
             final AtomicInteger count = new AtomicInteger(0);
             ConcurrentLinkedQueue<TmpAlignment> alignments = new ConcurrentLinkedQueue<>();
             ExecutorService executor = new ThreadPoolExecutor(config.nThreads, config.nThreads, 0,
@@ -318,6 +319,12 @@ public class Main {
                 String property = config.noPrematching ? null : prematch.findLink(block.entity1, block.entity2);
                 if(property != null) {
                     alignments.add(new TmpAlignment(block.entity1, block.entity2, new ScoreResult(1.0, property), property, null));
+                    // Still run lens extraction so it is available in the results
+                    for(Lens lens : lenses) {
+                        for(LensResult facet: lens.extract(block.entity1, block.entity2, monitor)) {
+                            monitor.addLensResult(block.entity1, block.entity2, facet.tag, facet);
+                        }
+                    }
                 } else {
                     executor.submit(new Runnable() {
                         @Override
@@ -353,7 +360,7 @@ public class Main {
                                 }
 
                                 if (!labelsProduced) {
-                                    monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, String.format("Lens produced no label for %s %s", block1, block2));
+                                    monitor.updateStatus(Stage.SCORING, String.format("Lens produced no label for %s %s", block1, block2));
                                 }
                                 for (GraphFeature feature : dataFeatures) {
                                     Feature[] features = feature.extractFeatures(block.entity1, block.entity2, monitor);
@@ -416,10 +423,10 @@ public class Main {
             final Configuration config = mapper.readValue(configFile, Configuration.class);
 
             Model leftModel = ModelFactory.createDefaultModel();
-            Dataset left = new DefaultDatasetLoader.ModelDataset(leftModel, "left");
+            Dataset left = new DefaultDatasetLoader.ModelDataset(leftModel, "left", null);
 
             Model rightModel = ModelFactory.createDefaultModel();
-            Dataset right = new DefaultDatasetLoader.ModelDataset(rightModel, "right");
+            Dataset right = new DefaultDatasetLoader.ModelDataset(rightModel, "right", null);
 
 
             Map<String, Resource> leftResByDef = new HashMap<>(), rightResByDef = new HashMap<>();

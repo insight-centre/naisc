@@ -221,7 +221,7 @@ public class Train {
         List<Lens> lenses = config.makeLenses(combined, analysis, monitor);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Loading Feature Extractors");
-        AlignmentSet prematch = new Prematcher().prematch(blocking.block(leftModel, rightModel), leftModel, rightModel);
+        AlignmentSet prematch = new Prematcher().prematch(blocking.block(leftModel, rightModel), leftModel, rightModel, monitor);
         List<TextFeature> textFeatures = config.makeTextFeatures();
         List<GraphFeature> dataFeatures = config.makeGraphFeatures(combined, analysis, prematch, monitor);
 
