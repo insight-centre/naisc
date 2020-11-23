@@ -22,6 +22,7 @@ task jarWithDeps(type: Jar, dependsOn: build) {
             'Main-Class': 'org.insightcentre.uld.naisc.main.Main'
     }
     baseName = project.name + '-all'
+    zip64 = true
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
