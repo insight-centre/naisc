@@ -46,11 +46,15 @@ public class Train {
     }
     final static ObjectMapper mapper = new ObjectMapper();
 
-    public static AlignmentSet readAlignments(File alignmentFile, String leftDataset, String rightDataset) throws IOException {
+    public static AlignmentSet readAlignments(File alignmentFile, String leftDataset, String rightDataset,
+        String leftBaseURL, String rightBaseURL) throws IOException {
         AlignmentSet alignments = new AlignmentSet();
         Model model = ModelFactory.createDefaultModel();
         BufferedReader br = new BufferedReader(new FileReader(alignmentFile));
         Pattern lineRegex = Pattern.compile("(<.*>\\s+<.*>\\s+<.*>\\s*\\.)\\s*(#\\s*(\\d*\\.?\\d*))?\\s*");
+        // Workaround for how parsing in Jena works
+        if(leftBaseURL != null) { leftBaseURL = leftBaseURL.replaceAll("^file:/(?!/)", "file:///"); }
+        if(rightBaseURL != null) { rightBaseURL = rightBaseURL.replaceAll("^file:/(?!/)", "file:///"); }
         String line = br.readLine();
         while (line != null && !line.matches("\\s*")) {
             java.util.regex.Matcher m = lineRegex.matcher(line);
@@ -69,8 +73,12 @@ public class Train {
                 }
                 double score = m.group(2) == null ? 1.0 : Double.parseDouble(m.group(3));
                 alignments.add(new Alignment(
-                    new URIRes(st.getSubject().getURI(), leftDataset),
-                    new URIRes(st.getObject().asResource().getURI(), rightDataset),
+                    new URIRes(
+                            (leftBaseURL != null && st.getSubject().getURI().startsWith("#") ? leftBaseURL : "") +
+                        st.getSubject().getURI(), leftDataset),
+                    new URIRes(
+                            (rightBaseURL != null && st.getObject().asResource().getURI().startsWith("#") ? rightBaseURL : "") +
+                        st.getObject().asResource().getURI(), rightDataset),
                     score, st.getPredicate().getURI(), null));
             } else {
                 throw new RuntimeException("Line does not seem valid: " + line);
@@ -136,7 +144,8 @@ public class Train {
             Configuration config, ExecuteListener monitor, DatasetLoader loader,
             @Nullable String tag) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading alignments");
-        AlignmentSet goldAlignments = readAlignments(alignment, leftFile.getName(), rightFile.getName());
+        AlignmentSet goldAlignments = readAlignments(alignment, leftFile.getName(), rightFile.getName(),
+            leftFile.toURI().toString(), rightFile.toURI().toString());
         execute(name, leftFile, rightFile, goldAlignments, negativeSampling, config, monitor, loader, tag);
     }
 

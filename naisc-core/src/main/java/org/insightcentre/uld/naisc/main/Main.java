@@ -141,7 +141,8 @@ public class Main {
             final Option<AlignmentSet> partial;
             if (partialSoln.has()) {
                 monitor.updateStatus(Stage.INITIALIZING, "Loading partial solution");
-                partial = new Some<>(Train.readAlignments(partialSoln.get(), leftFile.getName(), rightFile.getName()));
+                partial = new Some<>(Train.readAlignments(partialSoln.get(), leftFile.getName(), rightFile.getName(),
+                    leftFile.toURI().toString(), rightFile.toURI().toString()));
             } else {
                 partial = new None<>();
             }
@@ -240,7 +241,8 @@ public class Main {
             Dataset rightModel = loader.fromFile(rightFile, "right");
 
             monitor.updateStatus(Stage.INITIALIZING, "Reading gold dataset");
-            AlignmentSet gold = Train.readAlignments(goldFile, leftModel.id(), rightModel.id());
+            AlignmentSet gold = Train.readAlignments(goldFile, leftModel.id(), rightModel.id(),
+                file.toURI().toString(), rightFile.toURI().toString());
 
             Set<URIRes> left = gold.stream().map(a -> a.entity1).collect(Collectors.toSet());
             Set<URIRes> right = gold.stream().map(a -> a.entity2).collect(Collectors.toSet());
