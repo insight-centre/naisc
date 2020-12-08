@@ -356,8 +356,10 @@ public class Execution implements ExecuteListener {
                             rrr.idx = rs.getInt(7);
                             rrr.leftRoot = rs.getString(8);
                             rrr.rightRoot = rs.getString(9);
-                            rrr.leftPath = mapper.readValue(rs.getString(10), mapper.getTypeFactory().constructCollectionType(List.class, String.class));
-                            rrr.rightPath = mapper.readValue(rs.getString(11), mapper.getTypeFactory().constructCollectionType(List.class, String.class));
+                            if(rs.getString(10) != null)
+                                rrr.leftPath = mapper.readValue(rs.getString(10), mapper.getTypeFactory().constructCollectionType(List.class, String.class));
+                            if(rs.getString(11) != null)
+                                rrr.rightPath = mapper.readValue(rs.getString(11), mapper.getTypeFactory().constructCollectionType(List.class, String.class));
                             rrrs.add(rrr);
                         }
                     }
@@ -420,6 +422,8 @@ public class Execution implements ExecuteListener {
         List<String> lastLeftPath = Collections.EMPTY_LIST;
         List<String> lastRightPath = Collections.EMPTY_LIST;
         for (RunResultRow rrr : rrrs) {
+            if (rrr.leftRoot == null || rrr.rightRoot == null)
+                continue;
             if (rrr.leftRoot.equals(lastLeftRoot)) {
                 rrr.leftRoot = "";
                 List<String> newLeftPath = new ArrayList<>();
