@@ -49,4 +49,12 @@ public class ScoreResult {
     public int hashCode() {
         return Objects.hash(value, relation);
     }
+
+    @Override
+    public String toString() {
+        return "ScoreResult{" +
+                "value=" + value +
+                ", relation='" + relation + '\'' +
+                '}';
+    }
 }

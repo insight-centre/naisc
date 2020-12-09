@@ -335,11 +335,27 @@ public class Train {
                 if (data != null) {
                     monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Learning model (" + data.size() + " items)");
                     tsf.save(tsf.train(data, monitor));
+                    evaluateTrainedModel(monitor, config, data, prop);
                 } else {
                     System.err.println(String.format("No data for %s so could not train model", prop));
                 }
                 tsf.close();
             }
+        }
+    }
+
+    private static void evaluateTrainedModel(ExecuteListener monitor, Configuration config, List<FeatureSetWithScore> data, String prop) {
+        try {
+            Scorer scorer = config.makeScorer();
+            double x = 0.0;
+            for(FeatureSetWithScore fss : data) {
+                double predicted = scorer.similarity(fss).stream().filter(y -> y.getProperty().equals(prop)).findFirst().get().getProbability();
+                x += Math.sqrt((predicted - fss.score) * (predicted - fss.score));
+            }
+            monitor.updateStatus(NaiscListener.Stage.TRAINING, String.format("Model averages %.4f L2 error on training data for property %s", x/data.size(), prop));
+        } catch(Exception x) {
+            System.err.println("Failed to evaluate trained model due to an exception (this may not be critical)");
+            x.printStackTrace();
         }
     }
 
