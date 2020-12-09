@@ -194,7 +194,7 @@ public class Evaluate {
                 goldSize++;
             }
             try {
-                if (!seen.contains(a)) {
+                if (!seen.contains(a) && a.probability > 0) {
                     output.add(new Alignment(a, a.probability, Valid.novel));
                 }
             } catch (UnsupportedOperationException x) {
