@@ -422,8 +422,11 @@ public class Execution implements ExecuteListener {
         List<String> lastLeftPath = Collections.EMPTY_LIST;
         List<String> lastRightPath = Collections.EMPTY_LIST;
         for (RunResultRow rrr : rrrs) {
-            if (rrr.leftRoot == null || rrr.rightRoot == null)
+            if (rrr.leftRoot == null || rrr.rightRoot == null) {
+                rrr.leftPath = Collections.EMPTY_LIST;
+                rrr.rightPath = Collections.EMPTY_LIST;
                 continue;
+            }
             if (rrr.leftRoot.equals(lastLeftRoot)) {
                 rrr.leftRoot = "";
                 List<String> newLeftPath = new ArrayList<>();

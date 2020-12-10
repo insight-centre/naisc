@@ -219,7 +219,7 @@ data.elems = new Set();
 data.left = true;
 data.updateIdx = 0;
 data.showHierarchy = "block";
-data.showHierarhcy2 = "inline";
+data.showHierarchy2 = "inline";
 
 var app = new Vue({
   el: '#app',
@@ -460,6 +460,7 @@ var app = new Vue({
         jQuery.ajax({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/results?id=<%= request.getParameter("id") %>&offset=" + (this.offset+<%=limit%>) + "&limit=<%=limit%>",
             success: function(d) {
+                console.log(JSON.stringify(d));
                 self.results = d;
                 self.offset += <%=limit%>;
                 $router.push({ "path": "<%= System.getProperties().getProperty("base.url", "")  %>/results.jsp", "query": { "id": "<%= request.getParameter("id") %>", "offset": offset }});
