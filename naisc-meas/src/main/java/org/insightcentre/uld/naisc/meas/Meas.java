@@ -1,7 +1,14 @@
 package org.insightcentre.uld.naisc.meas;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.insightcentre.uld.naisc.Alignment.Valid;
 import org.insightcentre.uld.naisc.EvaluationSet;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
@@ -14,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -30,6 +38,21 @@ public class Meas {
         data.runs = runs();
         data.configs = configNames();
         data.datasetNames = datasetNames();
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(new StdSerializer<LocalDateTime>(LocalDateTime.class) {
+
+            @Override
+            public void serialize(LocalDateTime localDateTime, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+                jsonGenerator.writeString(localDateTime.toString());
+            }
+        });
+        module.addDeserializer(LocalDateTime.class, new StdDeserializer<LocalDateTime>(LocalDateTime.class) {
+            @Override
+            public LocalDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                return LocalDateTime.parse(jsonParser.readValueAs(String.class));
+            }
+        });
+        mapper.registerModule(module);
     }
 
     public static String json() {
@@ -181,11 +204,12 @@ public class Meas {
         public double precision, recall, fmeasure, correlation;
         public long time;
         public boolean isTrain;
+        public LocalDateTime startTime;
 
         public Run() {
         }
 
-        public Run(String identifier, String configName, String datasetName, double precision, double recall, double fmeasure, double correlation, long time, boolean isTrain) {
+        public Run(String identifier, String configName, String datasetName, double precision, double recall, double fmeasure, double correlation, long time, boolean isTrain, LocalDateTime startTime) {
             this.identifier = identifier;
             this.configName = configName;
             this.datasetName = datasetName;
@@ -195,6 +219,7 @@ public class Meas {
             this.correlation = correlation;
             this.time = time;
             this.isTrain = isTrain;
+            this.startTime = startTime;
         }
 
     }

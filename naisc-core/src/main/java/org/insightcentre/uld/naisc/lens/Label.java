@@ -13,6 +13,7 @@ import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.riot.Lang;
 import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.Labels;
 import org.insightcentre.uld.naisc.util.LangStringPair;
@@ -101,7 +102,7 @@ public class Label implements LensFactory {
                     return new Some<>(LensResult.fromLangStringPair(label,id()));
                 }
             }
-            return new None<>();
+            return new Some<>(LensResult.fromLangStringPair(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "", ""), id()));
         }
     }
 

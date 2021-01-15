@@ -5,11 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -163,7 +160,7 @@ public class ManageServlet extends HttpServlet {
                 AddRemoveData data = mapper.readValue(req.getReader(), AddRemoveData.class);
                 Run oldRun = getOldRun(data.data, id);
                 if (oldRun != null) {
-                    Run run = new Meas.Run(data.data.identifier, oldRun.configName, oldRun.datasetName, data.data.precision, data.data.recall, data.data.fmeasure, -2, oldRun.time, oldRun.isTrain);
+                    Run run = new Meas.Run(data.data.identifier, oldRun.configName, oldRun.datasetName, data.data.precision, data.data.recall, data.data.fmeasure, -2, oldRun.time, oldRun.isTrain, LocalDateTime.now());
                     completed.put(data.data.identifier, run);
                     Meas.updateRun(data.data.identifier, run);
                     int newId = new Execution(id).addAlignment(run, data.idx, data.subject, data.property, data.object);
@@ -178,7 +175,7 @@ public class ManageServlet extends HttpServlet {
                 AddRemoveData data = mapper.readValue(req.getReader(), AddRemoveData.class);
                 Run oldRun = getOldRun(data.data, id);
                 if (oldRun != null) {
-                    Run run = new Meas.Run(data.data.identifier, oldRun.configName, oldRun.datasetName, data.data.precision, data.data.recall, data.data.fmeasure, -2, oldRun.time, oldRun.isTrain);
+                    Run run = new Meas.Run(data.data.identifier, oldRun.configName, oldRun.datasetName, data.data.precision, data.data.recall, data.data.fmeasure, -2, oldRun.time, oldRun.isTrain, LocalDateTime.now());
                     completed.put(data.data.identifier, run);
                     Meas.updateRun(data.data.identifier, run);
                     new Execution(id).removeAlignment(run, data.idx);
@@ -190,7 +187,7 @@ public class ManageServlet extends HttpServlet {
                 AddRemoveData data = mapper.readValue(req.getReader(), AddRemoveData.class);
                 Run oldRun = getOldRun(data.data, id);
                 if (oldRun != null) {
-                    Run run = new Meas.Run(data.data.identifier, oldRun.configName, oldRun.datasetName, data.data.precision, data.data.recall, data.data.fmeasure, -2, oldRun.time, oldRun.isTrain);
+                    Run run = new Meas.Run(data.data.identifier, oldRun.configName, oldRun.datasetName, data.data.precision, data.data.recall, data.data.fmeasure, -2, oldRun.time, oldRun.isTrain, LocalDateTime.now());
                     completed.put(data.data.identifier, run);
                     Meas.updateRun(data.data.identifier, run);
                     new Execution(id).changeStatus(run, data.idx, data.valid);
