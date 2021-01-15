@@ -25,7 +25,7 @@ public class Prematcher {
         Set<URIRes> rburnt = new HashSet<>();
         int count = 0;
         for(Blocking block : blocking) {
-            if(++count % 10000 == 0) {
+            if(++count % 100000 == 0) {
                 listener.updateStatus(NaiscListener.Stage.MATCHING, format("Prematched %d entities", count));
             }
             if(l2r.containsKey(block.entity1) || r2l.containsKey(block.entity2)) {
