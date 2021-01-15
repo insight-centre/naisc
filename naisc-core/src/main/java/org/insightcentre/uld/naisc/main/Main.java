@@ -141,7 +141,8 @@ public class Main {
             final Option<AlignmentSet> partial;
             if (partialSoln.has()) {
                 monitor.updateStatus(Stage.INITIALIZING, "Loading partial solution");
-                partial = new Some<>(Train.readAlignments(partialSoln.get(), leftFile.getName(), rightFile.getName()));
+                partial = new Some<>(Train.readAlignments(partialSoln.get(), leftFile.getName(), rightFile.getName(),
+                    leftFile.toURI().toString(), rightFile.toURI().toString()));
             } else {
                 partial = new None<>();
             }
@@ -240,7 +241,8 @@ public class Main {
             Dataset rightModel = loader.fromFile(rightFile, "right");
 
             monitor.updateStatus(Stage.INITIALIZING, "Reading gold dataset");
-            AlignmentSet gold = Train.readAlignments(goldFile, leftModel.id(), rightModel.id());
+            AlignmentSet gold = Train.readAlignments(goldFile, leftModel.id(), rightModel.id(),
+                file.toURI().toString(), rightFile.toURI().toString());
 
             Set<URIRes> left = gold.stream().map(a -> a.entity1).collect(Collectors.toSet());
             Set<URIRes> right = gold.stream().map(a -> a.entity2).collect(Collectors.toSet());
@@ -319,6 +321,12 @@ public class Main {
                 String property = config.noPrematching ? null : prematch.findLink(block.entity1, block.entity2);
                 if(property != null) {
                     alignments.add(new TmpAlignment(block.entity1, block.entity2, new ScoreResult(1.0, property), property, null));
+                    // Still run lens extraction so it is available in the results
+                    for(Lens lens : lenses) {
+                        for(LensResult facet: lens.extract(block.entity1, block.entity2, monitor)) {
+                            monitor.addLensResult(block.entity1, block.entity2, facet.tag, facet);
+                        }
+                    }
                 } else {
                     executor.submit(new Runnable() {
                         @Override

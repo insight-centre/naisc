@@ -62,8 +62,9 @@ public class ExternalTextFeature implements TextFeatureFactory {
             try(CloseableHttpClient client = HttpClients.createDefault()) {
                 ObjectMapper mapper = new ObjectMapper();
                 HttpPost post = new HttpPost(path);
-                StringEntity entity = new StringEntity(mapper.writeValueAsString(facet));
+                StringEntity entity = new StringEntity(mapper.writeValueAsString(facet), "UTF-8");
                 entity.setContentType("application/json");
+                entity.setContentEncoding("UTF-8");
                 post.setEntity(entity);
                 ResponseHandler<Feature[]> handler = new ResponseHandler<Feature[]>() {
                     @Override
@@ -72,6 +73,7 @@ public class ExternalTextFeature implements TextFeatureFactory {
                         if(status == 200) {
                             return mapper.readValue(httpResponse.getEntity().getContent(), mapper.getTypeFactory().constructArrayType(Feature.class));
                         } else {
+                            System.err.println(mapper.writeValueAsString(facet));
                             throw new RuntimeException(String.format("%s returned status code %d", path, status));
                         }
                     }

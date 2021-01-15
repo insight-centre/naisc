@@ -89,6 +89,12 @@ public class Label implements LensFactory {
                 }
 
             }
+            if(lit1.isEmpty()) {
+                log.message(NaiscListener.Stage.MATCHING, NaiscListener.Level.WARNING, String.format("Property %s not found in left ontology\n", leftProp.getURI()));
+            }
+            if(lit2.isEmpty()) {
+                log.message(NaiscListener.Stage.MATCHING, NaiscListener.Level.WARNING, String.format("Property %s not found in right ontology\n", rightProp.getURI()));
+            }
             List<LangStringPair> labels = Labels.closestLabelsByLang(lit1, lit2);
 
             for (LangStringPair label : labels) {

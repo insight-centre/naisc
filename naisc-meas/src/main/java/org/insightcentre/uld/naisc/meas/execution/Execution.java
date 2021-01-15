@@ -76,10 +76,10 @@ public class Execution implements ExecuteListener {
                 leftLensResults.put(id1, new HashMap<>());
             }
             leftLensResults.get(id1).put(lensId, res);
-            if (!rightLensResults.containsKey(id1)) {
-                rightLensResults.put(id1, new HashMap<>());
+            if (!rightLensResults.containsKey(id2)) {
+                rightLensResults.put(id2, new HashMap<>());
             }
-            rightLensResults.get(id1).put(lensId, res);
+            rightLensResults.get(id2).put(lensId, res);
         }
     }
 
@@ -154,6 +154,7 @@ public class Execution implements ExecuteListener {
                         + "stage TEXT,"
                         + "level TEXT,"
                         + "message TEXT)");
+                stat.execute("CREATE TABLE lens (res TEXT, left INTEGER, lens TEXT)");
             }
             tablesCreated = true;
         }
@@ -250,6 +251,7 @@ public class Execution implements ExecuteListener {
                 saveResults(connection, dataView);
                 saveBlocks(connection, blocks);
                 saveMessages(connection, messages);
+                saveLenses(connection, leftLensResults, rightLensResults);
             } catch (SQLException | JsonProcessingException x) {
                 throw new RuntimeException(x);
             }
@@ -354,8 +356,10 @@ public class Execution implements ExecuteListener {
                             rrr.idx = rs.getInt(7);
                             rrr.leftRoot = rs.getString(8);
                             rrr.rightRoot = rs.getString(9);
-                            rrr.leftPath = mapper.readValue(rs.getString(10), mapper.getTypeFactory().constructCollectionType(List.class, String.class));
-                            rrr.rightPath = mapper.readValue(rs.getString(11), mapper.getTypeFactory().constructCollectionType(List.class, String.class));
+                            if(rs.getString(10) != null)
+                                rrr.leftPath = mapper.readValue(rs.getString(10), mapper.getTypeFactory().constructCollectionType(List.class, String.class));
+                            if(rs.getString(11) != null)
+                                rrr.rightPath = mapper.readValue(rs.getString(11), mapper.getTypeFactory().constructCollectionType(List.class, String.class));
                             rrrs.add(rrr);
                         }
                     }
@@ -418,6 +422,11 @@ public class Execution implements ExecuteListener {
         List<String> lastLeftPath = Collections.EMPTY_LIST;
         List<String> lastRightPath = Collections.EMPTY_LIST;
         for (RunResultRow rrr : rrrs) {
+            if (rrr.leftRoot == null || rrr.rightRoot == null) {
+                rrr.leftPath = Collections.EMPTY_LIST;
+                rrr.rightPath = Collections.EMPTY_LIST;
+                continue;
+            }
             if (rrr.leftRoot.equals(lastLeftRoot)) {
                 rrr.leftRoot = "";
                 List<String> newLeftPath = new ArrayList<>();
@@ -627,11 +636,11 @@ public class Execution implements ExecuteListener {
         synchronized (databaseLock) {
             try (Connection connection = connection(id)) {
                 try (PreparedStatement pstat = connection.prepareStatement("SELECT DISTINCT blocks.res"
-                        + (left ? "2" : "1") + ", results.lens FROM blocks JOIN results ON blocks.res"
-                        + (left ? "2" : "1") + "=results.res"
-                        + (left ? "2" : "1") + " WHERE blocks.res"
-                        + (left ? "1" : "2") + "=?")) {
+                        + (left ? "2" : "1") + ", lens.lens FROM blocks LEFT JOIN lens ON blocks.res"
+                        + (left ? "2" : "1") + "=lens.res"
+                        + " WHERE blocks.res" + (left ? "1" : "2") + "=? AND lens.left=?")) {
                     pstat.setString(1, entityid);
+                    pstat.setInt(2, left ? 0 : 1);
                     try (ResultSet rs = pstat.executeQuery()) {
                         List<Pair<String, Map<String, String>>> result = new ArrayList<>();
                         RESULTS:
@@ -718,6 +727,25 @@ public class Execution implements ExecuteListener {
             return merged;
         } else {
             return null;
+        }
+    }
+
+    private void saveLenses(Connection connection, Map<URIRes, Map<String, LensResult>> left, Map<URIRes, Map<String, LensResult>> right) throws SQLException, JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        try (PreparedStatement stat = connection.prepareStatement("INSERT INTO lens(res,left,lens) VALUES (?,?,?)")) {
+            for(Map.Entry<URIRes, Map<String, LensResult>> e : left.entrySet()) {
+                stat.setString(1, e.getKey().uri);
+                stat.setInt(2, 1);
+                stat.setString(3, mapper.writeValueAsString(e.getValue()));
+                stat.execute();
+            }
+            for(Map.Entry<URIRes, Map<String, LensResult>> e : right.entrySet()) {
+                stat.setString(1, e.getKey().uri);
+                stat.setInt(2, 0);
+                stat.setString(3, mapper.writeValueAsString(e.getValue()));
+                stat.execute();
+            }
+            connection.commit();
         }
     }
 

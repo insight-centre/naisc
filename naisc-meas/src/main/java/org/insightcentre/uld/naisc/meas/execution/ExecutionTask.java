@@ -80,7 +80,7 @@ public class ExecutionTask implements Runnable {
                 Option<File> alignFile = ds.align();
                 if (alignFile.has()) {
                     listener.updateStatus(ExecuteListener.Stage.EVALUATION, "Evaluating");
-                    AlignmentSet gold = Train.readAlignments(alignFile.get(), "left", "right");
+                    AlignmentSet gold = Train.readAlignments(alignFile.get(), "left", "right", ds.left().toURI().toString(), ds.right().toURI().toString());
                     er = Evaluate.evaluate(alignment, gold, listener, ds.trainAlign().has());
                 } else {
                     er = null;

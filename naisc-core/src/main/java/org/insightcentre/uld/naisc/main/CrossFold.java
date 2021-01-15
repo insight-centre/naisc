@@ -115,7 +115,7 @@ public class CrossFold {
         Dataset rightModel = loader.fromFile(rightFile, "right");
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading gold standard");
-        final AlignmentSet goldAlignments = Train.readAlignments(gold, "left", "right");
+        final AlignmentSet goldAlignments = Train.readAlignments(gold, "left", "right", leftFile.toURI().toString(), rightFile.toURI().toString());
 
 
         return execute(name, leftModel, rightModel, goldAlignments, nFolds, direction, negativeSampling, config, monitor, loader);

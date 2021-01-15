@@ -83,6 +83,8 @@ public class ManageServlet extends HttpServlet {
                         for (Meas.RunResultRow rrr : data) {
                             if (rrr.valid == Valid.yes || rrr.valid == Valid.novel) {
                                 out.printf("<%s> <%s> <%s> . # %.4f\n", rrr.subject, rrr.property, rrr.object, rrr.score);
+                            } else if (rrr.valid == Valid.no) {
+                                out.printf("#<%s> <%s> <%s> . # %.4f\n", rrr.subject, rrr.property, rrr.object, rrr.score);
                             }
                         }
                     }

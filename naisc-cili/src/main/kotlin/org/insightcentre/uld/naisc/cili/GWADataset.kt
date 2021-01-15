@@ -45,6 +45,12 @@ class GWADataset(private val xmlFile : File) : Dataset {
 
     init {
         val dbFactory = DocumentBuilderFactory.newInstance()
+        dbFactory.setValidating(false);
+        dbFactory.setNamespaceAware(true);
+        dbFactory.setFeature("http://xml.org/sax/features/namespaces", false);
+        dbFactory.setFeature("http://xml.org/sax/features/validation", false);
+        dbFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+        dbFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
         val dBuilder = dbFactory.newDocumentBuilder()
         val doc = dBuilder.parse(xmlFile)
         val children = doc.documentElement.getElementsByTagName("Lexicon")
