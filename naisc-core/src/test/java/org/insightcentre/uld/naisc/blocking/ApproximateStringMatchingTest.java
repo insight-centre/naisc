@@ -23,6 +23,9 @@ import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
 import org.junit.After;
 import org.junit.AfterClass;
+
+import static org.insightcentre.uld.naisc.lens.Label.SKOSXL_LITERAL_FORM;
+import static org.insightcentre.uld.naisc.lens.Label.SKOSXL_PREFLABEL;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -337,4 +340,32 @@ public class ApproximateStringMatchingTest {
         assert(!result.hasNext());
 
     }
+
+    @Test
+    public void testSKOSXLMatching() {
+        ApproximateStringMatching asm = new ApproximateStringMatching();
+        Map<String, Object> config = new HashMap<>();
+        config.put("maxMatches", 100);
+        config.put("lowercase", true);
+        config.put("type", "file:Test");
+        config.put("property", SKOSXL_PREFLABEL);
+        BlockingStrategy strat = asm.makeBlockingStrategy(config, Lazy.fromClosure(() -> null), NaiscListener.DEFAULT);
+        Model left = ModelFactory.createDefaultModel();
+        left.add(left.createResource("file:id1"), left.createProperty(SKOSXL_PREFLABEL), left.createResource().addProperty(left.createProperty(SKOSXL_LITERAL_FORM), left.createLiteral("frontal artery")));
+        left.add(left.createResource("file:id1"), RDF.type, left.createResource("file:Test"));
+        Model right = ModelFactory.createDefaultModel();
+        right.add(right.createResource("file:id1"), right.createProperty(SKOSXL_PREFLABEL), right.createResource().addProperty(right.createProperty(SKOSXL_LITERAL_FORM), "Frontal Lobe"));
+        right.add(right.createResource("file:id2"), right.createProperty(SKOSXL_PREFLABEL), right.createResource().addProperty(right.createProperty(SKOSXL_LITERAL_FORM), "Frontal Bone"));
+        right.add(right.createResource("file:id3"), right.createProperty(SKOSXL_PREFLABEL), right.createResource().addProperty(right.createProperty(SKOSXL_LITERAL_FORM), "Frontal Sinus"));
+        right.add(right.createResource("file:id4"), right.createProperty(SKOSXL_PREFLABEL), right.createResource().addProperty(right.createProperty(SKOSXL_LITERAL_FORM), "Frontal Gyrus"));
+        right.add(right.createResource("file:id5"), right.createProperty(SKOSXL_PREFLABEL), right.createResource().addProperty(right.createProperty(SKOSXL_LITERAL_FORM), "Frontal Nerve"));
+        right.add(right.createResource("file:id6"), right.createProperty(SKOSXL_PREFLABEL), right.createResource().addProperty(right.createProperty(SKOSXL_LITERAL_FORM), "Frontal Artery"));
+        right.add(right.createResource("file:id6"), RDF.type, right.createResource("file:Test"));
+        Iterator<Blocking> result = strat.block(new ModelDataset(left,"left", null), new ModelDataset(right,"right", null)).iterator();
+        assert(result.hasNext());
+        assertEquals(new Blocking(left.createResource("file:id1"), right.createResource("file:id6"), "left", "right"), result.next());
+        assert(!result.hasNext());
+
+    }
+
 }
