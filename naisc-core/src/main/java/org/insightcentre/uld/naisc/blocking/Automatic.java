@@ -66,11 +66,13 @@ public class Automatic implements BlockingStrategyFactory {
             "http://creativecommons.org/ns#attributionName",
             "http://www.aktors.org/ontology/portal#family-name",
             "http://www.aktors.org/ontology/portal#full-name" };
+    private static Object2IntMap<String> labelMap = new Object2IntOpenHashMap<>();
 
-    private Object2IntMap<String> labelMap() {
-        Object2IntMap<String> labelMap = new Object2IntOpenHashMap<>();
-        for(int i = 0; i < LABEL_PROPS.length; i++) {
-            labelMap.put(LABEL_PROPS[i], LABEL_PROPS.length - i);
+    public static Object2IntMap<String> labelMap() {
+        if(labelMap.isEmpty()) {
+            for(int i = 0; i < LABEL_PROPS.length; i++) {
+                labelMap.put(LABEL_PROPS[i], LABEL_PROPS.length - i);
+            }
         }
         return labelMap;
     }
