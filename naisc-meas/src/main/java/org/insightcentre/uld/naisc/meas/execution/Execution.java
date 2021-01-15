@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import org.apache.jena.rdf.model.Resource;
@@ -135,7 +136,8 @@ public class Execution implements ExecuteListener {
                         + "recall REAL,"
                         + "fmeasure REAL,"
                         + "correlation REAL,\n"
-                        + "time BIGINT)");
+                        + "time BIGINT, \n" +
+                         "startTime TEXT)");
 
                 stat.execute("CREATE TABLE results (id INTEGER PRIMARY KEY AUTOINCREMENT, "
                         + "res1 TEXT, "
@@ -175,7 +177,7 @@ public class Execution implements ExecuteListener {
     }
 
     private void saveStats(Connection connection, Run run) throws SQLException {
-        try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time) VALUES (?,?,?,?,?,?,?,?)")) {
+        try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time,startTime) VALUES (?,?,?,?,?,?,?,?,?)")) {
             pstat.setString(1, run.identifier);
             pstat.setString(2, run.configName);
             pstat.setString(3, run.datasetName);
@@ -184,6 +186,7 @@ public class Execution implements ExecuteListener {
             pstat.setDouble(6, run.fmeasure);
             pstat.setDouble(7, run.correlation);
             pstat.setLong(8, run.time);
+            pstat.setString(9, run.startTime.toString());
             pstat.execute();
         }
     }
@@ -263,7 +266,7 @@ public class Execution implements ExecuteListener {
         synchronized (databaseLock) {
             try (Connection connection = connection(id)) {
                 try (Statement stat = connection.createStatement()) {
-                    try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time) VALUES (?,?,?,?,?,?,?,?)")) {
+                    try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time,startTime) VALUES (?,?,?,?,?,?,?,?,?)")) {
                         pstat.setString(1, run.identifier);
                         pstat.setString(2, run.configName);
                         pstat.setString(3, run.datasetName);
@@ -272,6 +275,7 @@ public class Execution implements ExecuteListener {
                         pstat.setDouble(6, run.fmeasure);
                         pstat.setDouble(7, run.correlation);
                         pstat.setLong(8, run.time);
+                        pstat.setString(9, run.startTime.toString());
                         pstat.execute();
                         pstat.close();
                         stat.execute("DELETE FROM results");
@@ -301,7 +305,7 @@ public class Execution implements ExecuteListener {
         synchronized (databaseLock) {
             try (Connection connection = connection(id)) {
                 try (Statement stat = connection.createStatement()) {
-                    try (ResultSet rs = stat.executeQuery("SELECT identifier,configName,datasetName,precision,recall,fmeasure,correlation,time FROM runs")) {
+                    try (ResultSet rs = stat.executeQuery("SELECT identifier,configName,datasetName,precision,recall,fmeasure,correlation,time,startTime FROM runs")) {
                         Run r = null;
                         while (rs.next()) {
                             r = new Run();
@@ -313,9 +317,29 @@ public class Execution implements ExecuteListener {
                             r.fmeasure = rs.getDouble(6);
                             r.correlation = rs.getDouble(7);
                             r.time = rs.getLong(8);
+                            r.startTime = LocalDateTime.parse(rs.getString(9));
                         }
 
                         return r;
+                    } catch(SQLException x) {
+                        try (ResultSet rs = stat.executeQuery("SELECT identifier,configName,datasetName,precision,recall,fmeasure,correlation,time FROM runs")) {
+                            Run r = null;
+                            while (rs.next()) {
+                                r = new Run();
+                                r.identifier = rs.getString(1);
+                                r.configName = rs.getString(2);
+                                r.datasetName = rs.getString(3);
+                                r.precision = rs.getDouble(4);
+                                r.recall = rs.getDouble(5);
+                                r.fmeasure = rs.getDouble(6);
+                                r.correlation = rs.getDouble(7);
+                                r.time = rs.getLong(8);
+                                r.startTime = LocalDateTime.now();
+                                System.err.println(String.format("%s is a Naisc 1.0 database, startTime will be incorrect", id));
+                            }
+
+                            return r;
+                        }
                     }
                 }
             } catch (SQLException x) {
@@ -537,7 +561,7 @@ public class Execution implements ExecuteListener {
         synchronized (databaseLock) {
             try (Connection connection = connection(id)) {
                 connection.setAutoCommit(false);
-                try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time) VALUES (?,?,?,?,?,?,?,?)")) {
+                try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time,startTime) VALUES (?,?,?,?,?,?,?,?,?)")) {
                     pstat.setString(1, run.identifier);
                     pstat.setString(2, run.configName);
                     pstat.setString(3, run.datasetName);
@@ -546,6 +570,7 @@ public class Execution implements ExecuteListener {
                     pstat.setDouble(6, run.fmeasure);
                     pstat.setDouble(7, run.correlation);
                     pstat.setLong(8, run.time);
+                    pstat.setString(9, run.startTime.toString());
                     pstat.execute();
                 }
 
@@ -580,7 +605,7 @@ public class Execution implements ExecuteListener {
 
         synchronized (databaseLock) {
             try (Connection connection = connection(id)) {
-                try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time) VALUES (?,?,?,?,?,?,?,?)")) {
+                try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time,startTime) VALUES (?,?,?,?,?,?,?,?,?)")) {
                     pstat.setString(1, run.identifier);
                     pstat.setString(2, run.configName);
                     pstat.setString(3, run.datasetName);
@@ -589,6 +614,7 @@ public class Execution implements ExecuteListener {
                     pstat.setDouble(6, run.fmeasure);
                     pstat.setDouble(7, run.correlation);
                     pstat.setLong(8, run.time);
+                    pstat.setString(9, run.startTime.toString());
                     pstat.execute();
                 }
 
@@ -605,7 +631,7 @@ public class Execution implements ExecuteListener {
 
         synchronized (databaseLock) {
             try (Connection connection = connection(id)) {
-                try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time) VALUES (?,?,?,?,?,?,?,?)")) {
+                try (PreparedStatement pstat = connection.prepareStatement("INSERT INTO runs(identifier,configName,datasetName,precision,recall,fmeasure,correlation,time,startTime) VALUES (?,?,?,?,?,?,?,?,?)")) {
                     pstat.setString(1, run.identifier);
                     pstat.setString(2, run.configName);
                     pstat.setString(3, run.datasetName);
@@ -614,6 +640,7 @@ public class Execution implements ExecuteListener {
                     pstat.setDouble(6, run.fmeasure);
                     pstat.setDouble(7, run.correlation);
                     pstat.setLong(8, run.time);
+                    pstat.setString(9, run.startTime.toString());
                     pstat.execute();
                 }
 

@@ -1,6 +1,9 @@
 package org.insightcentre.uld.naisc.meas.execution;
 
 import java.io.File;
+import java.time.LocalDateTime;
+import java.util.Date;
+
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.main.Configuration;
@@ -114,7 +117,7 @@ public class ExecutionTask implements Runnable {
                 throw new RuntimeException("Unreachable");
             }
             listener.updateStatus(ExecuteListener.Stage.COMPLETED, "Completed");
-            Meas.Run run = new Meas.Run(id, configName, dataset, er == null ? -1.0 : er.precision(), er == null ? -1.0 : er.recall(), er == null ? -1.0 : er.fmeasure(), er == null ? -2.0 : er.correlation, time, mode == ExecutionMode.TRAIN);
+            Meas.Run run = new Meas.Run(id, configName, dataset, er == null ? -1.0 : er.precision(), er == null ? -1.0 : er.recall(), er == null ? -1.0 : er.fmeasure(), er == null ? -2.0 : er.correlation, time, mode == ExecutionMode.TRAIN, LocalDateTime.now());
             ManageServlet.completed.put(id, run);
             if (alignment != null) {
                 listener.saveAlignment(run, alignment, loader.fromFile(ds.left(), "left"), loader.fromFile(ds.right(), "right"));
