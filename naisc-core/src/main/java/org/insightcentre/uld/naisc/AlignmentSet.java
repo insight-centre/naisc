@@ -184,16 +184,6 @@ public class AlignmentSet extends AbstractCollection<Alignment> {
     private String toXML(String rel) {
         if(rel == null ? Alignment.SKOS_EXACT_MATCH == null : rel.equals(Alignment.SKOS_EXACT_MATCH)) {
             return "=";
-        /*} else if(rel == Relation.broader) {
-            return ">";
-        } else if(rel == Relation.narrower) {
-            return "<";
-        } else if(rel == Relation.incompatible) {
-            return "%";
-        } else if(rel == Relation.instance) {
-            return "HasInstance";
-        } else if(rel == Relation.isInstanceOf) {
-            return "InstanceOf";*/
         } else {
             throw new RuntimeException("Relation not supported by XML");
         }
