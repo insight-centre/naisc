@@ -785,7 +785,8 @@ public class Configuration {
         URI.class,
         SPARQL.class,
         OntoLex.class,
-            ExternalLens.class
+            ExternalLens.class,
+            SPARQL.class
     };
 
     /**
