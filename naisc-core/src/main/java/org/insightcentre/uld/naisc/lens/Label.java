@@ -77,7 +77,7 @@ public class Label implements LensFactory {
                 RDFNode node1 = iter1.next();
                 if (node1.isLiteral()) {
                     lit1.add(node1.asLiteral());
-                }
+               }
             }
 
             List<Literal> lit2 = new ArrayList<>();
@@ -108,6 +108,8 @@ public class Label implements LensFactory {
 
     public static final String RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label";
     public static final String SKOS_PREFLABEL = "http://www.w3.org/2004/02/skos/core#prefLabel";
+    public static final String SKOSXL_PREFLABEL = "	http://www.w3.org/2008/05/skos-xl#prefLabel";
+    public static final String SKOSXL_LITERAL_FORM = "http://www.w3.org/2008/05/skos-xl#literalForm";
 
     /**
      * Configuration of the label lens.

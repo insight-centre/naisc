@@ -5,6 +5,8 @@ import org.apache.jena.vocabulary.RDF;
 import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.util.TreeNode;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+import static org.insightcentre.uld.naisc.lens.Label.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
@@ -15,7 +17,7 @@ import java.util.*;
 
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
 import org.insightcentre.uld.naisc.analysis.Analysis;
-import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
+
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -203,6 +205,16 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                             String s = node.asLiteral().getLexicalForm();
                             if(lowercase) s = s.toLowerCase();
                             extractNgram(s, ngrams, r);
+                        } else if(rightProperty.equals(SKOSXL_PREFLABEL) && node.isResource()) {
+                            NodeIterator iter2 = right.listObjectsOfProperty(node.asResource(), right.createProperty(SKOSXL_LITERAL_FORM));
+                            while(iter2.hasNext()) {
+                                RDFNode node2 = iter2.next();
+                                if(node2.isLiteral()) {
+                                    String s = node2.asLiteral().getLexicalForm();
+                                    if(lowercase) s = s.toLowerCase();
+                                    extractNgram(s, ngrams, r);
+                                }
+                            }
                         }
                     }
                 }
@@ -232,6 +244,16 @@ public class ApproximateStringMatching implements BlockingStrategyFactory {
                             String s = n.asLiteral().getLexicalForm();
                             if(lowercase) s = s.toLowerCase();
                             l.add(s);
+                        } else if(property.equals(SKOSXL_PREFLABEL) && n.isResource()) {
+                            NodeIterator iter2 = left.listObjectsOfProperty(n.asResource(), left.createProperty(SKOSXL_LITERAL_FORM));
+                            while(iter2.hasNext()) {
+                                RDFNode node2 = iter2.next();
+                                if(node2.isLiteral()) {
+                                    String s = node2.asLiteral().getLexicalForm();
+                                    if(lowercase) s = s.toLowerCase();
+                                    l.add(s);
+                                }
+                            }
                         }
                     }
                     labels.add(new Pair(r, l));

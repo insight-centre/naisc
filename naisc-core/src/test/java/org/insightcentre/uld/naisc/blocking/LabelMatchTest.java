@@ -8,12 +8,13 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.insightcentre.uld.naisc.BlockingStrategy;
 import org.insightcentre.uld.naisc.lens.Label;
-import static org.insightcentre.uld.naisc.lens.Label.RDFS_LABEL;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
 import org.insightcentre.uld.naisc.main.ExecuteListeners;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.junit.After;
 import org.junit.AfterClass;
+
+import static org.insightcentre.uld.naisc.lens.Label.*;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -89,4 +90,42 @@ public class LabelMatchTest {
         }
         return n;
     }
+
+
+    /**
+     * Test of makeBlockingStrategy method, of class LabelMatch.
+     */
+    @Test
+    public void testSKOSXL() {
+        System.out.println("makeBlockingStrategy");
+        Map<String, Object> params = new HashMap<>();
+        params.put("property", SKOSXL_PREFLABEL);
+        LabelMatch instance = new LabelMatch();
+        Model left = ModelFactory.createDefaultModel();
+        Model right = ModelFactory.createDefaultModel();
+
+        left.add(left.createStatement(left.createResource("file:foo"), left.createProperty(SKOSXL_PREFLABEL), left.createResource().addProperty(left.createProperty(SKOSXL_LITERAL_FORM), left.createLiteral("cat", "en"))));
+        left.add(left.createStatement(left.createResource(new AnonId()), left.createProperty(SKOSXL_PREFLABEL), left.createResource().addProperty(left.createProperty(SKOSXL_LITERAL_FORM), left.createLiteral("dog", "en"))));
+        left.add(left.createStatement(left.createResource("file:foo2"), left.createProperty(SKOSXL_PREFLABEL), left.createResource().addProperty(left.createProperty(SKOSXL_LITERAL_FORM), left.createLiteral("dog", "en"))));
+        left.add(left.createStatement(left.createResource("file:foo3"), left.createProperty(SKOSXL_PREFLABEL), left.createResource().addProperty(left.createProperty(SKOSXL_LITERAL_FORM), left.createLiteral("cat", "ga"))));
+        left.add(left.createStatement(left.createResource("file:foo3"), left.createProperty("foo:example"), left.createResource().addProperty(left.createProperty(SKOSXL_LITERAL_FORM),  left.createLiteral("cat", "en"))));
+
+        right.add(right.createStatement(right.createResource("file:fuzz"), right.createProperty(SKOSXL_PREFLABEL), right.createResource().addProperty(right.createProperty(SKOSXL_LITERAL_FORM), right.createLiteral("cat", "en"))));
+        right.add(right.createStatement(right.createResource("file:fuzz2"), right.createProperty(SKOSXL_PREFLABEL), right.createResource().addProperty(right.createProperty(SKOSXL_LITERAL_FORM), right.createLiteral("dog", "en"))));
+        right.add(right.createStatement(right.createResource("file:fuzz3"), right.createProperty(SKOSXL_PREFLABEL), right.createResource().addProperty(right.createProperty(SKOSXL_LITERAL_FORM), right.createLiteral("dog house", "en"))));
+
+        BlockingStrategy strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
+        assertEquals(3, count(strategy.block(new ModelDataset(left, "left", null), new ModelDataset(right, "right", null))));
+
+        params.put("language", "en");
+        strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
+        assertEquals(2, count(strategy.block(new ModelDataset(left, "left", null), new ModelDataset(right, "right", null))));
+
+
+        params.put("mode", "lenient");
+        strategy = instance.makeBlockingStrategy(params, Lazy.fromClosure(() -> null), ExecuteListeners.NONE);
+        assertEquals(3, count(strategy.block(new ModelDataset(left, "left", null), new ModelDataset(right, "right", null))));
+
+    }
+
 }

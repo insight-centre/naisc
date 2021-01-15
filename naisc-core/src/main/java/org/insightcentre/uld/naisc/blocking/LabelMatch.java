@@ -6,15 +6,10 @@ import eu.monnetproject.lang.Language;
 
 import java.util.*;
 
-import org.apache.jena.rdf.model.Literal;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.Property;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.Statement;
-import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.rdf.model.*;
 import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
+import org.insightcentre.uld.naisc.lens.Label;
 import org.insightcentre.uld.naisc.main.ConfigurationException;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.Pair;
@@ -160,6 +155,23 @@ public class LabelMatch implements BlockingStrategyFactory {
                                 map.put(indexable, new ArrayList<>());
                             }
                             map.get(indexable).add(subj);
+                        }
+                    }
+                } else if(stmt.getObject().isResource() && prop.getURI().equals(Label.SKOSXL_PREFLABEL)) {
+                    NodeIterator iter2 = model.listObjectsOfProperty(stmt.getObject().asResource(), model.createProperty(Label.SKOSXL_LITERAL_FORM));
+                    while(iter2.hasNext()) {
+                        RDFNode node = iter2.next();
+                        if(node.isLiteral() && (language == null || language.equals(getLang(node)))) {
+                            Resource subj = stmt.getSubject();
+                            if (subj.isURIResource()) {
+                                String[] indexables = indexables(node.asLiteral().getString(), mode, lowercase);
+                                for (String indexable : indexables) {
+                                    if (!map.containsKey(indexable)) {
+                                        map.put(indexable, new ArrayList<>());
+                                    }
+                                    map.get(indexable).add(subj);
+                                }
+                            }
                         }
                     }
                 }
