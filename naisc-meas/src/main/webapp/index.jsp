@@ -304,6 +304,7 @@
                             <td>Recall <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'recall' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'recall' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'recall' }" v-on:click="sortColumn('recall')"/></i></td>
                             <td>F-Measure <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'fmeasure' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'fmeasure' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'fmeasure' }" v-on:click="sortColumn('fmeasure')"/></i></td>
                             <td>Time <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'time' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'time' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'time' }" v-on:click="sortColumn('time')"/></i></td>
+                            <td>Start <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'startTime' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'startTime' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'startTime' }" v-on:click="sortColumn('startTime')"/></i></td>
                             <td class="icon-table-col"></td>
                             <td class="icon-table-col"></td>
                             <td class="icon-table-col"></td>
@@ -326,6 +327,7 @@
                         <!--<td v-if="run.correlation >= -1">{{run.correlation.toFixed(3)}}</td>
                         <td v-if="run.correlation < -1">n/a</td>-->
                         <td>{{(run.time / 1000).toFixed(3)}}s</td>
+                        <td>{{run.startTime}}</td>
                         <td><a class="btn btn-info" v-bind:href="'results.jsp?id=' + run.identifier" v-if="!run.isTrain" style="font-weight:bold;">View Results</a></td>
                         <td><a class="btn btn-info" v-on:click="showMessages(run.identifier)" title="Show messages"><i class="fa fa-info" aria-hidden="true"></i></button></td>
                         <td><button class="btn btn-danger" v-on:click="delRun(run.identifier)" title="Delete this run"><i class="fa fa-trash" aria-hidden="true"></i></button></td>
