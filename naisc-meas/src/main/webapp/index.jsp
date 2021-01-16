@@ -28,11 +28,11 @@
                     <thead>
                         <tr>
                             <td class="icon-table-col"></td>
-                            <td>Run Identifier</td>
-                            <td>Configuration</td>
-                            <td>Dataset</td>
-                            <td>Stage</td>
-                            <td>Status</td>
+                            <td style="width:15%">Run Identifier</td>
+                            <td style="width:15%">Configuration</td>
+                            <td style="width:15%">Dataset</td>
+                            <td style="width:15%">Stage</td>
+                            <td style="width:25%">Status</td>
                             <td class="icon-table-col"></td>
                         </tr>
                     </thead>
