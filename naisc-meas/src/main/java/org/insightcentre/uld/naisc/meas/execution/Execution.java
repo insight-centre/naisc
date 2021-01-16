@@ -63,6 +63,7 @@ public class Execution implements ExecuteListener {
         this.response.stage = stage;
         this.response.lastMessage = message;
         System.err.println("[" + stage + "] " + message);
+        messages.add(new Message(stage, Level.STATUS, "[" + stage + "] " + message));
     }
 
     @Override
