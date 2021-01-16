@@ -42,10 +42,17 @@ public class ELEXISRest {
      *
      * @param endpoint
      */
-    public ELEXISRest(URL endpoint) {
+    protected ELEXISRest(URL endpoint) {
         ELEXISRest.endpoint = endpoint;
         apiConnection = new APIConnection(endpoint);
     }
+
+    public static ELEXISRestFactory factory = new ELEXISRestFactory() {
+        @Override
+        public ELEXISRest make(URL endpoint) {
+            return new ELEXISRest(endpoint);
+        }
+    };
 
     /**
      * Calls dictionaries endpoint and returns list of available dictionaries
@@ -131,12 +138,12 @@ public class ELEXISRest {
      * @return dictionary entry As JSON
      * @throws MalformedURLException
      */
-    public JSONObject getEntryAsJSON(String dictionary, String id) throws MalformedURLException {
+    public Model getEntryAsJSON(String dictionary, String id) throws MalformedURLException {
         URL entryAsJSONEndPoint = new URL(endpoint.toString()+"/json/"+dictionary+"/"+id);
         String response = apiConnection.executeAPICall(entryAsJSONEndPoint);
 
         JSONObject entryAsJSON = new JSONObject(response);
-        return entryAsJSON;
+        return jsonToRDF(entryAsJSON);
     }
 
     /**
@@ -145,7 +152,7 @@ public class ELEXISRest {
      * @param inputString
      * @return OntoLex Model
      */
-    public Model parseTurtleEntry(String inputString) {
+    private Model parseTurtleEntry(String inputString) {
         Model turtleModel = ModelFactory.createDefaultModel();
         turtleModel.read(new ByteArrayInputStream(inputString.getBytes()), null, "TTL");
         return turtleModel;
@@ -207,7 +214,7 @@ public class ELEXISRest {
      * @param jsonObject
      * @return converted RDF model
      */
-    public Model jsonToRDF(JSONObject jsonObject) {
+    private Model jsonToRDF(JSONObject jsonObject) {
 
         // Creating default model and adding prefixes
         Model rdfModel = ModelFactory.createDefaultModel();
@@ -246,9 +253,10 @@ public class ELEXISRest {
         rdfModel.getResource(id).addProperty(rdfModel.createProperty(ONTOLEX_HEADER, "canonicalForm"), canonicalFormNode);
 
         // Adding senses(definition + reference) details
-        Resource sensesNode = rdfModel.createResource();
         JSONArray senses = jsonObject.getJSONArray("senses");
+        int i = 0;
         for (Object s: senses) {
+            Resource sensesNode = rdfModel.createResource(id + "-sense-" + (++i));
             JSONObject sense = (JSONObject) s;
             for (Object k : sense.keySet()) {
                 String key = (String) k;
@@ -262,8 +270,8 @@ public class ELEXISRest {
                     sensesNode.addProperty(referenceProperty, referenceLiteral);
                 }
             }
+            rdfModel.getResource(id).addProperty(rdfModel.createProperty(ONTOLEX_HEADER, "sense"), sensesNode);
         }
-        rdfModel.getResource(id).addProperty(rdfModel.createProperty(ONTOLEX_HEADER, "sense"), sensesNode);
 
         return rdfModel;
     }
