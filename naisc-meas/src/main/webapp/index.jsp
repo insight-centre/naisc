@@ -225,23 +225,40 @@
                                 </button>
                             </div>
                             <div class="modal-body">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="check-critical" value="CRITICAL" v-model="selected_statuses">
+                                    <label class="form-check-label" for="check-critical"><i class="fas fa-car-crash"></i> CRITICAL</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="check-warning" value="WARNING" v-model="selected_statuses">
+                                    <label class="form-check-label" for="check-warning"><i class="fas fa-exclamation-triangle"></i> WARNING</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="check-info" value="INFO" v-model="selected_statuses">
+                                    <label class="form-check-label" for="check-info"><i class="fas fa-info"></i> INFO</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="check-status" value="STATUS" v-model="selected_statuses">
+                                    <label class="form-check-label" for="check-status"><i class="fas fa-cogs"></i> STATUS</label>
+                                </div>
                                 <table v-if="messages.length > 0" style="width:100%;">
                                     <tr>
                                         <th class="icon-table-col"></th>
                                         <th>Stage</th>
                                         <th>Message</th>
                                     </tr>
-                                    <tr v-for="message in messages">
+                                    <tr v-for="message in messages.filter(message => selected_statuses.includes(message.level))">
                                         <td>
                                             <i class="fas fa-car-crash" v-if="message.level == 'CRITICAL'"></i>
                                             <i class="fas fa-exclamation-triangle" v-if="message.level == 'WARNING'"></i>
                                             <i class="fas fa-info" v-if="message.level == 'INFO'"></i>
+                                            <i class="fas fa-cogs" v-if="message.level == 'STATUS'"></i>
                                         </td>
                                         <td>{{message.stage}}</td>
                                         <td>{{message.message}}</td>
                                     </tr>
                                 </table>
-                                <div v-if="messages.length == 0">
+                                <div v-if="messages.filter(message => selected_statuses.includes(message.level)).length == 0">
                                     <i>No messages!</i>
                                 </div>
                             </div>
@@ -412,6 +429,7 @@ function unflatten_config(config) {
 data.polling = null;
 data.sortingProperty = "none";
 data.sortingDir = "none";
+data.selected_statuses = ["CRITICAL","WARNING","INFO"];
 
 var app = new Vue({
   el: '#app',
@@ -735,6 +753,7 @@ var app = new Vue({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/messages?id=" + id,
             success: function(result) {
                 app.messages = result;
+                app.selected_statuses = ["CRITICAL","WARNING","INFO"];
                 console.log(JSON.stringify(result));
                 $('#messagesModal').modal('show');
             },

@@ -163,7 +163,7 @@ local.properties
 
 runs_dev/
 mwsa
-runs_mwsa/
+runs_*
 
 naisc-elexis/leftFile.ttl
 naisc-elexis/rightFile.ttl

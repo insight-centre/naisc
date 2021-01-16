@@ -26,6 +26,10 @@ public interface NaiscListener {
      */
     public static enum Level {
         /**
+         * An update to the status
+         */
+        STATUS,
+        /**
          * The process cannot continue and the extraction will fail
          */        
         CRITICAL,
