@@ -273,10 +273,27 @@ public class DatasetAnalyzer {
         if (strings.isEmpty()) {
             return 0.0;
         }
-        Set<String> withoutDupes = new HashSet<>(strings);
+        int unique = 0;
+        int total = 0;
+        Set<String> seen = new HashSet<>();
+        Set<String> seenTwice = new HashSet<>();
+        for(String s : strings) {
+            if(seen.contains(s)) {
+                if(!seenTwice.contains(s)) {
+                    seenTwice.add(s);
+                    unique--;
+                }
+            } else {
+                seen.add(s);
+                unique++;
+                total++;
+            }
+        }
+        return (double) unique/total;
+        /*Set<String> withoutDupes = new HashSet<>(strings);
         int n = withoutDupes.size();
         int N = strings.size();
-        return (double) n / N;
+        return (double) n / N;*/
     }
 
     private static double lcc(List<Set<Resource>> components) {

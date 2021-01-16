@@ -9,6 +9,7 @@ from functools import lru_cache
 model = SentenceTransformer('bert-base-nli-mean-tokens')
 
 api = Flask(__name__)
+api.config['JSON_AS_ASCII'] = False
 
 @api.route('/naisc/default/text_features', methods=['POST'])
 def sbert_sim():

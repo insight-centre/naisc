@@ -46,11 +46,15 @@ public class Train {
     }
     final static ObjectMapper mapper = new ObjectMapper();
 
-    public static AlignmentSet readAlignments(File alignmentFile, String leftDataset, String rightDataset) throws IOException {
+    public static AlignmentSet readAlignments(File alignmentFile, String leftDataset, String rightDataset,
+        String leftBaseURL, String rightBaseURL) throws IOException {
         AlignmentSet alignments = new AlignmentSet();
         Model model = ModelFactory.createDefaultModel();
         BufferedReader br = new BufferedReader(new FileReader(alignmentFile));
         Pattern lineRegex = Pattern.compile("(<.*>\\s+<.*>\\s+<.*>\\s*\\.)\\s*(#\\s*(\\d*\\.?\\d*))?\\s*");
+        // Workaround for how parsing in Jena works
+        if(leftBaseURL != null) { leftBaseURL = leftBaseURL.replaceAll("^file:/(?!/)", "file:///"); }
+        if(rightBaseURL != null) { rightBaseURL = rightBaseURL.replaceAll("^file:/(?!/)", "file:///"); }
         String line = br.readLine();
         while (line != null && !line.matches("\\s*")) {
             java.util.regex.Matcher m = lineRegex.matcher(line);
@@ -69,8 +73,12 @@ public class Train {
                 }
                 double score = m.group(2) == null ? 1.0 : Double.parseDouble(m.group(3));
                 alignments.add(new Alignment(
-                    new URIRes(st.getSubject().getURI(), leftDataset),
-                    new URIRes(st.getObject().asResource().getURI(), rightDataset),
+                    new URIRes(
+                            (leftBaseURL != null && st.getSubject().getURI().startsWith("#") ? leftBaseURL : "") +
+                        st.getSubject().getURI(), leftDataset),
+                    new URIRes(
+                            (rightBaseURL != null && st.getObject().asResource().getURI().startsWith("#") ? rightBaseURL : "") +
+                        st.getObject().asResource().getURI(), rightDataset),
                     score, st.getPredicate().getURI(), null));
             } else {
                 throw new RuntimeException("Line does not seem valid: " + line);
@@ -136,7 +144,8 @@ public class Train {
             Configuration config, ExecuteListener monitor, DatasetLoader loader,
             @Nullable String tag) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading alignments");
-        AlignmentSet goldAlignments = readAlignments(alignment, leftFile.getName(), rightFile.getName());
+        AlignmentSet goldAlignments = readAlignments(alignment, leftFile.getName(), rightFile.getName(),
+            leftFile.toURI().toString(), rightFile.toURI().toString());
         execute(name, leftFile, rightFile, goldAlignments, negativeSampling, config, monitor, loader, tag);
     }
 
@@ -326,11 +335,27 @@ public class Train {
                 if (data != null) {
                     monitor.updateStatus(ExecuteListener.Stage.TRAINING, "Learning model (" + data.size() + " items)");
                     tsf.save(tsf.train(data, monitor));
+                    evaluateTrainedModel(monitor, config, data, prop);
                 } else {
                     System.err.println(String.format("No data for %s so could not train model", prop));
                 }
                 tsf.close();
             }
+        }
+    }
+
+    private static void evaluateTrainedModel(ExecuteListener monitor, Configuration config, List<FeatureSetWithScore> data, String prop) {
+        try {
+            Scorer scorer = config.makeScorer();
+            double x = 0.0;
+            for(FeatureSetWithScore fss : data) {
+                double predicted = scorer.similarity(fss).stream().filter(y -> y.getProperty().equals(prop)).findFirst().get().getProbability();
+                x += Math.sqrt((predicted - fss.score) * (predicted - fss.score));
+            }
+            monitor.updateStatus(NaiscListener.Stage.TRAINING, String.format("Model averages %.4f L2 error on training data for property %s", x/data.size(), prop));
+        } catch(Exception x) {
+            System.err.println("Failed to evaluate trained model due to an exception (this may not be critical)");
+            x.printStackTrace();
         }
     }
 

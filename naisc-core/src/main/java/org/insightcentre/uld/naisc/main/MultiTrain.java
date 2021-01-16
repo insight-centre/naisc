@@ -42,7 +42,8 @@ public class MultiTrain {
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading right dataset");
             Dataset rightModel = loader.fromFile(es.right(), name + "/right");
             monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading alignments");
-            AlignmentSet goldAlignments = readAlignments(es.align().get(), leftModel.id(), rightModel.id());
+            AlignmentSet goldAlignments = readAlignments(es.align().get(), leftModel.id(), rightModel.id(),
+                es.left().toURI().toString(), es.right().toURI().toString());
             Map<String, List<FeatureSetWithScore>> d = Train.extractData(name, leftModel, rightModel, goldAlignments, negativeSampling, config, monitor, loader);
             merge(trainData, d);
         }

@@ -2,7 +2,7 @@ allprojects  {
   apply plugin: 'maven'
 
   group = 'org.insightcentre'
-  version = '1.0.1'
+  version = '1.1'
 }
 
 subprojects {

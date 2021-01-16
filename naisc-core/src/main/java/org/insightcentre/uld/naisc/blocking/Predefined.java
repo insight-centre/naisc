@@ -51,7 +51,7 @@ public class Predefined implements BlockingStrategyFactory {
         @Override
         public Collection<Blocking> block(final Dataset _left, final Dataset _right, NaiscListener log) {
             try {
-                final AlignmentSet as = Train.readAlignments(links, _left.id(), _right.id());
+                final AlignmentSet as = Train.readAlignments(links, _left.id(), _right.id(), null, null);
                 return new AbstractCollection<Blocking>() {
                     @Override
                     public Iterator<Blocking> iterator() {

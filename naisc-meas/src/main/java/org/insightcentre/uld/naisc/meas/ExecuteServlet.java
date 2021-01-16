@@ -1,5 +1,13 @@
 package org.insightcentre.uld.naisc.meas;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.main.CrossFold;
 import org.insightcentre.uld.naisc.meas.execution.ExecutionMode;
@@ -10,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,9 +48,27 @@ import org.insightcentre.uld.naisc.util.Some;
 public class ExecuteServlet extends HttpServlet {
 
     private static final HashMap<String, ExecutionTask> executions = new HashMap<>();
-    ObjectMapper mapper = new ObjectMapper();
+    private static ObjectMapper mapper = new ObjectMapper();
+    static {
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(new StdSerializer<LocalDateTime>(LocalDateTime.class) {
 
-    final static public String VALID_ID = "[A-Za-z0-9][A-Za-z0-9_\\-]*";
+            @Override
+            public void serialize(LocalDateTime localDateTime, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+                jsonGenerator.writeString(localDateTime.toString());
+            }
+        });
+        module.addDeserializer(LocalDateTime.class, new StdDeserializer<LocalDateTime>(LocalDateTime.class) {
+            @Override
+            public LocalDateTime deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+                return LocalDateTime.parse(jsonParser.readValueAs(String.class));
+            }
+        });
+        mapper.registerModule(module);
+
+    }
+
+        final static public String VALID_ID = "[A-Za-z0-9][A-Za-z0-9_\\-]*";
 
     private static String getURL(HttpServletRequest req) {
 
@@ -72,7 +99,7 @@ public class ExecuteServlet extends HttpServlet {
                 String id = er.runId == null || !er.runId.matches(VALID_ID)
                         ? String.format("%016x", new Random().nextLong())
                         : er.runId;
-                if (executions.containsKey(id) && !executions.get(id).isActive && !ManageServlet.completed.containsKey(id)) {
+                if (executions.containsKey(id) && (!executions.get(id).isActive && !ManageServlet.completed.containsKey(id)) || er.forceOverwrite) {
                     executions.remove(id);
                 } else if (ManageServlet.completed.containsKey(id) || executions.containsKey(id)) {
                     throw new IllegalArgumentException("Run already exists!");
@@ -169,6 +196,7 @@ public class ExecuteServlet extends HttpServlet {
         public String runId;
         public int foldCount = 0;
         public CrossFold.FoldDirection foldDir;
+        public boolean forceOverwrite = false;
     }
 
     /**

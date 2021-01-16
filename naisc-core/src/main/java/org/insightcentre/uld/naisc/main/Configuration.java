@@ -41,6 +41,7 @@ import org.insightcentre.uld.naisc.ScorerFactory;
 import org.insightcentre.uld.naisc.blocking.*;
 import org.insightcentre.uld.naisc.blocking.Command;
 import org.insightcentre.uld.naisc.blocking.OntoLex;
+import org.insightcentre.uld.naisc.constraint.*;
 import org.insightcentre.uld.naisc.feature.*;
 import org.insightcentre.uld.naisc.graph.ExternalGraphFeature;
 import org.insightcentre.uld.naisc.lens.*;
@@ -57,10 +58,6 @@ import org.insightcentre.uld.naisc.GraphFeatureFactory;
 import org.insightcentre.uld.naisc.NaiscListener;
 import org.insightcentre.uld.naisc.Rescaler;
 import org.insightcentre.uld.naisc.analysis.Analysis;
-import org.insightcentre.uld.naisc.constraint.Bijective;
-import org.insightcentre.uld.naisc.constraint.Constraint;
-import org.insightcentre.uld.naisc.constraint.ConstraintFactory;
-import org.insightcentre.uld.naisc.constraint.ThresholdConstraint;
 import org.insightcentre.uld.naisc.graph.PPR;
 import org.insightcentre.uld.naisc.graph.PropertyOverlap;
 import org.insightcentre.uld.naisc.rescaling.Percentile;
@@ -785,7 +782,8 @@ public class Configuration {
         URI.class,
         SPARQL.class,
         OntoLex.class,
-            ExternalLens.class
+            ExternalLens.class,
+            SPARQL.class
     };
 
     /**
@@ -1020,7 +1018,8 @@ public class Configuration {
 
     public static Class[] knownConstraints = new Class[]{
         ThresholdConstraint.class,
-        Bijective.class
+        Bijective.class,
+        Taxonomic.class
 
     };
 

@@ -28,11 +28,11 @@
                     <thead>
                         <tr>
                             <td class="icon-table-col"></td>
-                            <td>Run Identifier</td>
-                            <td>Configuration</td>
-                            <td>Dataset</td>
-                            <td>Stage</td>
-                            <td>Status</td>
+                            <td style="width:15%">Run Identifier</td>
+                            <td style="width:15%">Configuration</td>
+                            <td style="width:15%">Dataset</td>
+                            <td style="width:15%">Stage</td>
+                            <td style="width:25%">Status</td>
                             <td class="icon-table-col"></td>
                         </tr>
                     </thead>
@@ -225,23 +225,40 @@
                                 </button>
                             </div>
                             <div class="modal-body">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="check-critical" value="CRITICAL" v-model="selected_statuses">
+                                    <label class="form-check-label" for="check-critical"><i class="fas fa-car-crash"></i> CRITICAL</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="check-warning" value="WARNING" v-model="selected_statuses">
+                                    <label class="form-check-label" for="check-warning"><i class="fas fa-exclamation-triangle"></i> WARNING</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="check-info" value="INFO" v-model="selected_statuses">
+                                    <label class="form-check-label" for="check-info"><i class="fas fa-info"></i> INFO</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="check-status" value="STATUS" v-model="selected_statuses">
+                                    <label class="form-check-label" for="check-status"><i class="fas fa-cogs"></i> STATUS</label>
+                                </div>
                                 <table v-if="messages.length > 0" style="width:100%;">
                                     <tr>
                                         <th class="icon-table-col"></th>
                                         <th>Stage</th>
                                         <th>Message</th>
                                     </tr>
-                                    <tr v-for="message in messages">
+                                    <tr v-for="message in messages.filter(message => selected_statuses.includes(message.level))">
                                         <td>
                                             <i class="fas fa-car-crash" v-if="message.level == 'CRITICAL'"></i>
                                             <i class="fas fa-exclamation-triangle" v-if="message.level == 'WARNING'"></i>
                                             <i class="fas fa-info" v-if="message.level == 'INFO'"></i>
+                                            <i class="fas fa-cogs" v-if="message.level == 'STATUS'"></i>
                                         </td>
                                         <td>{{message.stage}}</td>
                                         <td>{{message.message}}</td>
                                     </tr>
                                 </table>
-                                <div v-if="messages.length == 0">
+                                <div v-if="messages.filter(message => selected_statuses.includes(message.level)).length == 0">
                                     <i>No messages!</i>
                                 </div>
                             </div>
@@ -304,6 +321,7 @@
                             <td>Recall <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'recall' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'recall' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'recall' }" v-on:click="sortColumn('recall')"/></i></td>
                             <td>F-Measure <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'fmeasure' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'fmeasure' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'fmeasure' }" v-on:click="sortColumn('fmeasure')"/></i></td>
                             <td>Time <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'time' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'time' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'time' }" v-on:click="sortColumn('time')"/></i></td>
+                            <td>Start <i class="fas fa-sort" v-bind:class="{ 'fa-sort-up': sortingProperty === 'startTime' && sortingDir === 'up', 'fa-sort-down': sortingProperty === 'startTime' && sortingDir === 'down', 'fa-sort': sortingProperty !== 'startTime' }" v-on:click="sortColumn('startTime')"/></i></td>
                             <td class="icon-table-col"></td>
                             <td class="icon-table-col"></td>
                             <td class="icon-table-col"></td>
@@ -326,6 +344,7 @@
                         <!--<td v-if="run.correlation >= -1">{{run.correlation.toFixed(3)}}</td>
                         <td v-if="run.correlation < -1">n/a</td>-->
                         <td>{{(run.time / 1000).toFixed(3)}}s</td>
+                        <td>{{run.startTime}}</td>
                         <td><a class="btn btn-info" v-bind:href="'results.jsp?id=' + run.identifier" v-if="!run.isTrain" style="font-weight:bold;">View Results</a></td>
                         <td><a class="btn btn-info" v-on:click="showMessages(run.identifier)" title="Show messages"><i class="fa fa-info" aria-hidden="true"></i></button></td>
                         <td><button class="btn btn-danger" v-on:click="delRun(run.identifier)" title="Delete this run"><i class="fa fa-trash" aria-hidden="true"></i></button></td>
@@ -410,6 +429,7 @@ function unflatten_config(config) {
 data.polling = null;
 data.sortingProperty = "none";
 data.sortingDir = "none";
+data.selected_statuses = ["CRITICAL","WARNING","INFO"];
 
 var app = new Vue({
   el: '#app',
@@ -512,16 +532,43 @@ var app = new Vue({
                 $('#error').modal('show');
             }
         });
-    },        
+    },
+    checkDuplicateRuns() {
+        for(run in this.runs) {
+            if(this.identifier === this.runs[run].identifier) {
+                if(confirm("Run already exists. Delete previous run before continuing?")) {
+                    forceOverwrite = true;
+                    this.runs.splice(run, 1);
+                    break;
+                } else {
+                    return "abort";
+                }
+            }
+        }
+        for(run in this.activeRuns) {
+            if(this.identifier === this.runs[run].identifier) {
+                if(confirm("Run already exists. Delete previous run before continuing?")) {
+                    forceOverwrite = true;
+                    this.activeRuns.splice(run, 1);
+                    break;
+                } else {
+                    return "abort";
+                }
+            }
+        }
+        return false;
+    },
     startRun() {
         var configName = this.configName;
         var datasetName = this.datasetName;
         console.log(this.config);
         var data = this;
+        var forceOverwrite = this.checkDuplicateRuns();
+        if(forceOverwrite === "abort") { return; }
         jQuery.ajax({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/start",
             method: "POST",
-            data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier }),
+            data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier, "forceOverwrite": forceOverwrite }),
             processData: false,
             success: function(result) {
                 var id = result;
@@ -544,10 +591,12 @@ var app = new Vue({
         var configName = this.configName;
         var datasetName = this.datasetName;
         var data = this;
+        var forceOverwrite = this.checkDuplicateRuns();
+        if(forceOverwrite === "abort") { return; }
         jQuery.ajax({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/train",
             method: "POST",
-            data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier }),
+            data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier, "forceOverwrite": forceOverwrite }),
             processData: false,
             success: function(result) {
                 var id = result;
@@ -579,6 +628,8 @@ var app = new Vue({
         var configName = this.configName;
         var datasetName = this.datasetName;
         var data = this;
+        var forceOverwrite = this.checkDuplicateRuns();
+        if(forceOverwrite === "abort") { return; }
         if(this.configName == null || this.configName == "" ||
             this.datasetName == null || this.datasetName == "") {
             $('#exceptionText').html("<h5>Configuration or dataset not set</h5>");
@@ -588,7 +639,8 @@ var app = new Vue({
         var postData = JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName,
                                    "dataset": this.datasetName, "runId": this.identifier,
                                    "foldDir": $('input[name="foldDir"]:checked').val(),
-                                   "foldCount": $('#foldCount').val()
+                                   "foldCount": $('#foldCount').val(),
+                                   "forceOverwrite": forceOverwrite
                                    });
         jQuery.ajax({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/crossfold",
@@ -701,6 +753,7 @@ var app = new Vue({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/manage/messages?id=" + id,
             success: function(result) {
                 app.messages = result;
+                app.selected_statuses = ["CRITICAL","WARNING","INFO"];
                 console.log(JSON.stringify(result));
                 $('#messagesModal').modal('show');
             },

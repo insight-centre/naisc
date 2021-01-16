@@ -2,18 +2,24 @@ package org.insightcentre.uld.naisc.lens;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import eu.monnetproject.lang.Language;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.Dataset;
 import org.insightcentre.uld.naisc.Lens;
+import org.insightcentre.uld.naisc.LensResult;
 import org.insightcentre.uld.naisc.URIRes;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader.ModelDataset;
+import org.insightcentre.uld.naisc.util.LangStringPair;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -78,32 +84,29 @@ public class LabelTest {
                 model.createProperty(Label.SKOS_PREFLABEL), 
                 model.createLiteral("???"));
         
-        assert(!lens.extract(res, res2).iterator().hasNext());
-        assert(lens.extract(res, res3).iterator().hasNext());
-        assert(lens.extract(res, res4).iterator().hasNext());
-        assert(!lens.extract(res, res5).iterator().hasNext());
-        
+        assertEquals(lens.extract(res, res2).iterator().next(), LensResult.fromLangStringPair(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "", ""), "label"));
+        assertEquals(lens.extract(res, res3).iterator().next(), LensResult.fromLangStringPair(new LangStringPair(Language.ENGLISH, Language.ENGLISH, "english", "???"), "label"));
+        assertEquals(lens.extract(res, res4).iterator().next(), LensResult.fromLangStringPair(new LangStringPair(Language.ENGLISH, Language.ENGLISH, "english", "more english"), "label"));
+        assertEquals(lens.extract(res, res5).iterator().next(), LensResult.fromLangStringPair(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "", ""), "label"));
+
         params.put("language", "en");
         lens = instance.makeLens(new ModelDataset(model, "model", null), params);
-        
-        
-        assert(!lens.extract(res, res2).iterator().hasNext());
-        assert(lens.extract(res, res3).iterator().hasNext());
-        assert(lens.extract(res, res4).iterator().hasNext());
-        assert(!lens.extract(res, res5).iterator().hasNext());
-        
+
+
+        assertEquals(lens.extract(res, res2).iterator().next(), LensResult.fromLangStringPair(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "", ""), "label-en"));
+        assertEquals(lens.extract(res, res3).iterator().next(), LensResult.fromLangStringPair(new LangStringPair(Language.ENGLISH, Language.ENGLISH, "english", "???"), "label-en"));
+        assertEquals(lens.extract(res, res4).iterator().next(), LensResult.fromLangStringPair(new LangStringPair(Language.ENGLISH, Language.ENGLISH, "english", "more english"), "label-en"));
+        assertEquals(lens.extract(res, res5).iterator().next(), LensResult.fromLangStringPair(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "", ""), "label-en"));
+
         params.remove("language");
         params.put("property", Label.RDFS_LABEL);
         lens = instance.makeLens(new ModelDataset(model, "model", null), params);
-        
-        
-        assert(!lens.extract(res, res2).iterator().hasNext());
-        assert(lens.extract(res, res3).iterator().hasNext());
-        assert(lens.extract(res, res4).iterator().hasNext());
-        //assert(lens.extract(res, res5).has());
-        
-        
-        
+
+
+        assertEquals(lens.extract(res, res2).iterator().next(), LensResult.fromLangStringPair(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "", ""), "label"));
+        assertEquals(lens.extract(res, res3).iterator().next(), LensResult.fromLangStringPair(new LangStringPair(Language.ENGLISH, Language.ENGLISH, "english", "???"), "label"));
+        assertEquals(lens.extract(res, res4).iterator().next(), LensResult.fromLangStringPair(new LangStringPair(Language.ENGLISH, Language.ENGLISH, "english", "more english"), "label"));
+        assertEquals(lens.extract(res, res5).iterator().next(), LensResult.fromLangStringPair(new LangStringPair(Language.UNDEFINED, Language.UNDEFINED, "", ""), "label"));
     }
 
 }

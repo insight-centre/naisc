@@ -6,6 +6,8 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
 import java.util.*;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.jena.rdf.model.Resource;
 import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.NaiscListener.Stage;
@@ -22,6 +24,58 @@ import org.insightcentre.uld.naisc.util.URI2Label;
  * @author John McCrae
  */
 public class Automatic implements BlockingStrategyFactory {
+    private static final String[] LABEL_PROPS = new String[] {
+            "http://www.w3.org/2000/01/rdf-schema#label",
+            "http://www.w3.org/2004/02/skos/core#prefLabel",
+            "http://www.bbc.co.uk/ontologies/coreconcepts/label",
+            "http://lexvo.org/ontology#label",
+            "http://dbpedia.org/ontology/name",
+            "http://www.w3.org/2000/01/rdf-schema#label",
+            "http://xmlns.com/foaf/0.1/nick",
+            "http://purl.org/dc/elements/1.1/title",
+            "http://purl.org/rss/1.0/title",
+            "http://xmlns.com/foaf/0.1/name",
+            "http://purl.org/dc/terms/title",
+            "http://www.geonames.org/ontology#name",
+            "http://xmlns.com/foaf/0.1/nickname",
+            "http://swrc.ontoware.org/ontology#name",
+            "http://sw.cyc.com/CycAnnotations_v1#label",
+            "http://rdf.opiumfield.com/lastfm/spec#title",
+            "http://www.proteinontology.info/po.owl#ResidueName",
+            "http://www.proteinontology.info/po.owl#Atom",
+            "http://www.proteinontology.info/po.owl#Element",
+            "http://www.proteinontology.info/po.owl#AtomName",
+            "http://www.proteinontology.info/po.owl#ChainName",
+            "http://purl.uniprot.org/core/fullName",
+            "http://purl.uniprot.org/core/title",
+            "http://www.aktors.org/ontology/portal#has-title",
+            "http://www.w3.org/2004/02/skos/core#prefLabel",
+            "http://www.aktors.org/ontology/portal#name",
+            "http://xmlns.com/foaf/0.1/givenName",
+            "http://www.w3.org/2000/10/swap/pim/contact#fullName",
+            "http://xmlns.com/foaf/0.1/surName",
+            "http://swrc.ontoware.org/ontology#title",
+            "http://swrc.ontoware.org/ontology#booktitle",
+            "http://www.aktors.org/ontology/portal#has-pretty-name",
+            "http://purl.uniprot.org/core/orfName",
+            "http://purl.uniprot.org/core/name",
+            "http://www.daml.org/2003/02/fips55/fips-55-ont#name",
+            "http://www.geonames.org/ontology#alternateName",
+            "http://purl.uniprot.org/core/locusName",
+            "http://www.w3.org/2004/02/skos/core#altLabel",
+            "http://creativecommons.org/ns#attributionName",
+            "http://www.aktors.org/ontology/portal#family-name",
+            "http://www.aktors.org/ontology/portal#full-name" };
+    private static Object2IntMap<String> labelMap = new Object2IntOpenHashMap<>();
+
+    public static Object2IntMap<String> labelMap() {
+        if(labelMap.isEmpty()) {
+            for(int i = 0; i < LABEL_PROPS.length; i++) {
+                labelMap.put(LABEL_PROPS[i], LABEL_PROPS.length - i);
+            }
+        }
+        return labelMap;
+    }
 
     @Override
     public BlockingStrategy makeBlockingStrategy(Map<String, Object> params, Lazy<Analysis> _analysis, NaiscListener listener) {
@@ -36,27 +90,38 @@ public class Automatic implements BlockingStrategyFactory {
         }
         Object2DoubleMap<String> leftUniqueness = new Object2DoubleOpenHashMap<>();
         Object2DoubleMap<String> rightUniqueness = new Object2DoubleOpenHashMap<>();
-        
+        Object2IntMap<String> labelMap = labelMap();
+
         // 2. Find a good property on the left
         double bestCoverage = -1;
+        int bestLabel = 0;
         String bestLeftProp = "";
         for(LabelResult prop : analysis.leftLabels) {
-            if(prop.isLabelLike()) {
-                if(bestLeftProp == null || prop.coverage > bestCoverage) {
+            int label = labelMap.getInt(prop.uri);
+            if(prop.isLabelLike() || label > 0) {
+                if(bestLeftProp == null ||
+                        (prop.coverage > bestCoverage && label >= bestLabel) ||
+                        (label > bestLabel && prop.coverage > 0.5)) {
                     bestLeftProp = prop.uri;
                     bestCoverage = prop.coverage;
+                    bestLabel = label;
                 }
             }
             leftUniqueness.put(prop.uri, prop.uniqueness);
         }
         // 3. Find a good property on the right
         bestCoverage = -1;
+        bestLabel = 0;
         String bestRightProp = "";
         for(LabelResult prop : analysis.rightLabels) {
-            if(prop.isLabelLike()) {
-                if(bestRightProp == null || prop.coverage > bestCoverage) {
+            int label = labelMap.getInt(prop.uri);
+            if(prop.isLabelLike() || label > 0) {
+                if(bestRightProp == null ||
+                        (prop.coverage > bestCoverage && label >= bestLabel) ||
+                        (label > bestLabel && prop.coverage > 0.5)) {
                     bestRightProp = prop.uri;
                     bestCoverage = prop.coverage;
+                    bestLabel = label;
                 }
             }
             rightUniqueness.put(prop.uri, prop.uniqueness);
@@ -67,15 +132,15 @@ public class Automatic implements BlockingStrategyFactory {
             String leftString = URI2Label.fromURI(mr.leftUri).toLowerCase();
             String rightString = URI2Label.fromURI(mr.rightUri).toLowerCase();
             if(leftString.equals(rightString)
-                    && mr.coversData() 
-                    && leftUniqueness.getDouble(mr.leftUri) > 0.9 
-                    && rightUniqueness.getDouble(mr.rightUri) > 0.9) {
+                    && mr.coversData()
+                    && leftUniqueness.getDouble(mr.leftUri) > 0.5
+                    && rightUniqueness.getDouble(mr.rightUri) > 0.5) {
                 preblocks.add(new Pair<>(mr.leftUri,mr.rightUri));
             }
         }
-        
-        listener.message(Stage.INITIALIZING, NaiscListener.Level.INFO, String.format("Matching using properties %s and %s", 
-                bestLeftProp.equals("") ? "<URI>" : bestLeftProp, 
+
+        listener.message(Stage.INITIALIZING, NaiscListener.Level.INFO, String.format("Matching using properties %s and %s",
+                bestLeftProp.equals("") ? "<URI>" : bestLeftProp,
                 bestRightProp.equals("") ? "<URI>" : bestRightProp));
         if(!preblocks.isEmpty()) {
             StringBuilder sb = new StringBuilder("Pre-blocking on properties:\n");
@@ -90,27 +155,27 @@ public class Automatic implements BlockingStrategyFactory {
     /**
      * Configuration for automatic blocking
      */
-     @ConfigurationClass("The smart, automatic matching strategy that builds on the analysis of the datasets to find potential matches. This setting should be used most of the time")
+    @ConfigurationClass("The smart, automatic matching strategy that builds on the analysis of the datasets to find potential matches. This setting should be used most of the time")
     public static class Configuration {
 
         /**
          * The maximum number of matches
          */
-         @ConfigurationParameter(description = "The maximum number of candidates to generate per entity")
+        @ConfigurationParameter(description = "The maximum number of candidates to generate per entity")
         public int maxMatches = 100;
         /**
          * The size of ngrams to use
          */
-         @ConfigurationParameter(description = "The character n-gram to use in matching", defaultValue = "3")
+        @ConfigurationParameter(description = "The character n-gram to use in matching", defaultValue = "3")
         public int ngrams = 3;
-    
+
     }
-    
+
     private static class AutomaticImpl implements BlockingStrategy {
         private final Prelinking preblocking;
         private final int maxMatches, n;
         private final String property, rightProperty;
-        
+
 
         public AutomaticImpl(Set<Pair<String,String>> preblockProperties, int maxMatches, String property, String rightProperty, int n) {
             this.preblocking = new Prelinking(preblockProperties);
@@ -119,15 +184,15 @@ public class Automatic implements BlockingStrategyFactory {
             this.rightProperty = rightProperty;
             this.n = n;
         }
-        
-        
+
+
 
         @Override
         public Collection<Blocking> block(Dataset left, Dataset right, NaiscListener log) {
             final Set<Pair<Resource, Resource>> p = preblocking.prelink(left, right, log);
-            final ApproximateStringMatching.NgramApproximateStringMatch matcher = 
+            final ApproximateStringMatching.NgramApproximateStringMatch matcher =
                     new ApproximateStringMatching.NgramApproximateStringMatch(
-                            maxMatches, property, rightProperty, n, 
+                            maxMatches, property, rightProperty, n,
                             Prelinking.leftPrelinked(p), Prelinking.rightPrelinked(p), true, null);
             final Iterable<Blocking> base = matcher.block(left, right, log);
             return new AbstractCollection<Blocking>() {
@@ -161,6 +226,6 @@ public class Automatic implements BlockingStrategyFactory {
                 }
             };
         }
-        
+
     }
 }

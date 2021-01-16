@@ -77,12 +77,13 @@ public class Evaluate {
         }
     }
 
-    public static void evaluate(File testFile, File goldFile, File outputFile, ExecuteListener monitor, boolean ignoreNotInGold, String leftDatatset, String rightDataset) throws IOException {
+    public static void evaluate(File testFile, File goldFile, File outputFile, ExecuteListener monitor,
+            boolean ignoreNotInGold, String leftDatatset, String rightDataset) throws IOException {
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading output alignments");
-        final AlignmentSet output = Train.readAlignments(testFile, leftDatatset, rightDataset);
+        final AlignmentSet output = Train.readAlignments(testFile, leftDatatset, rightDataset, null, null);
 
         monitor.updateStatus(ExecuteListener.Stage.INITIALIZING, "Reading gold standard");
-        final AlignmentSet goldAlignments = Train.readAlignments(goldFile, leftDatatset, rightDataset);
+        final AlignmentSet goldAlignments = Train.readAlignments(goldFile, leftDatatset, rightDataset, null, null);
 
         EvaluationResults er = evaluate(output, goldAlignments, monitor, ignoreNotInGold);
 
@@ -193,7 +194,7 @@ public class Evaluate {
                 goldSize++;
             }
             try {
-                if (!seen.contains(a)) {
+                if (!seen.contains(a) && a.probability > 0) {
                     output.add(new Alignment(a, a.probability, Valid.novel));
                 }
             } catch (UnsupportedOperationException x) {
