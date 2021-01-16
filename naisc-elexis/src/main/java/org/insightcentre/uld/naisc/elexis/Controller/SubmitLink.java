@@ -48,12 +48,8 @@ public class SubmitLink {
     @GetMapping("/")
     public ResponseEntity<DefaultResponse> defaultGet() throws MalformedURLException, JSONException {
 //        URL endpoint = new URL("http://localhost:8000/");
-        URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
-        ELEXISRest elexisRest = new ELEXISRest(endpoint);
-
         log.info("[ Initiating default request ]");
         DefaultResponse defaultResponse = new DefaultResponse();
-        defaultResponse.setDictionaries((ArrayList<String>) elexisRest.getDictionaries());
         return new ResponseEntity<>(defaultResponse, HttpStatus.OK);
     }
 

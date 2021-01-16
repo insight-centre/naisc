@@ -11,5 +11,5 @@ import java.util.ArrayList;
  */
 @Data
 public class DefaultResponse {
-    private ArrayList<String> dictionaries = new ArrayList<String>();
+    private String message = "ELEXIS dictionary linking service online";
 }
