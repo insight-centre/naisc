@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.java.Log;
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.vocabulary.SKOS;
+import org.apache.logging.log4j.message.Message;
 import org.insightcentre.uld.naisc.Alignment;
 import org.insightcentre.uld.naisc.AlignmentSet;
 import org.insightcentre.uld.naisc.NaiscListener;
@@ -14,8 +15,10 @@ import org.insightcentre.uld.naisc.elexis.RestService.ELEXISRest;
 import org.insightcentre.uld.naisc.elexis.RestService.Lemma;
 import org.insightcentre.uld.naisc.main.Configuration;
 import org.insightcentre.uld.naisc.main.DefaultDatasetLoader;
+import org.insightcentre.uld.naisc.scorer.ModelNotTrainedException;
 import org.insightcentre.uld.naisc.util.None;
 
+import org.insightcentre.uld.naisc.util.Pair;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 
 /**
@@ -37,29 +42,24 @@ import java.util.HashMap;
 @Service
 @Scope(value = "prototype")
 public class AsyncDictionaryLinkingHelper {
-    String requestId;
-    Configuration config = null;
-    RequestStatusListener requestStatusListener;
+    private final String requestId;
+    //Configuration config = null;
+    private final RequestStatusListener requestStatusListener;
 
-    Model leftModel, rightModel;
-    File leftFile, rightFile;
+    private Model leftModel = null, rightModel = null;
+    private URL sourceEndpoint = null, targetEndpoint = null;
+    private String sourceId = null, targetId = null;
+    private AlignmentSet alignments;
+    private ArrayList<Result> results;
 
-    AlignmentSet alignments;
-    ArrayList<Result> results;
-
-    public AsyncDictionaryLinkingHelper() {
-        leftFile = new File("leftFile.ttl");
-        rightFile = new File("rightFile.ttl");
+    public AsyncDictionaryLinkingHelper(String requestId) {
         requestStatusListener = new RequestStatusListener();
         results = new ArrayList<>();
+        this.requestId = requestId;
     }
 
     public RequestStatusListener getRequestStatusListener() {
         return requestStatusListener;
-    }
-
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
     }
 
     public String getRequestId() {
@@ -72,19 +72,22 @@ public class AsyncDictionaryLinkingHelper {
      * @param messageBody
      * @throws IOException
      */
-    public void getConfigurationDetails(MessageBody messageBody) throws IOException {
+    public Configuration getConfigurationDetails(MessageBody messageBody) throws IOException {
         if (messageBody.getConfiguration() == null) {
-            // Reading default configuration details
-            log.info("[ Loading default config details for request: "+requestId+" ]");
-            try {
-                config = new ObjectMapper().readValue(new File("configs/auto.json"), Configuration.class);
-            } catch(IOException x) {
-                throw new RuntimeException("could not find auto config in " + new File("configs/auto.json").getAbsolutePath(), x);
-            }
+            Configuration config = new Configuration(
+                    new Configuration.BlockingStrategyConfiguration("blocking.OntoLex", Collections.EMPTY_MAP),
+                    Arrays.asList(new Configuration.LensConfiguration("lens.OntoLex", Collections.EMPTY_MAP)),
+                    Collections.EMPTY_LIST,
+                    Arrays.asList(new Configuration.TextFeatureConfiguration("feature.BasicString", Collections.EMPTY_MAP, Collections.EMPTY_SET)),
+                    Arrays.asList(new Configuration.ScorerConfiguration("scorer.Average", Collections.EMPTY_MAP, null)),
+                    new Configuration.MatcherConfiguration("matcher.Greedy", Collections.singletonMap("constraint", Collections.singletonMap("name", "constraint.Bijective"))),
+                    "Default ELEXIS matching profile",
+                    Configuration.RescalerMethod.NoScaling);
+            return config;
         } else {
             // Setting the configurations sent in the MessageBody
             log.info("[ Loading config from messageBody for request: "+requestId+" ]");
-            config = messageBody.getConfiguration().getSome();
+            return messageBody.getConfiguration();
         }
     }
 
@@ -99,13 +102,16 @@ public class AsyncDictionaryLinkingHelper {
      * @throws TransformerException
      */
     private Model processDictionary(ArrayList<String> entries, ELEXISRest elexisRest,
-                                    String id) throws IOException, TransformerException {
+                                    String id, ArrayList<String> lemmaForms) throws IOException, TransformerException {
 
         // Getting all the lemmas from the dictionary and creating a map
         Lemma[] lemmas = elexisRest.getAllLemmas(id);
         HashMap<String, Lemma> map = new HashMap<String, Lemma>();
-        for (Lemma l : lemmas)
+        for (Lemma l : lemmas) {
             map.put(l.getId(), l);
+            if(lemmaForms != null)
+                lemmaForms.add(l.getLemma());
+        }
 
         // Creating a model and retrieving the relevant entries
         Model model = ModelFactory.createDefaultModel();
@@ -143,7 +149,7 @@ public class AsyncDictionaryLinkingHelper {
         } else if (formats.contains("tei")) {
             return elexisRest.getEntryAsTEI(id, entry);
         } else {
-            return elexisRest.jsonToRDF(elexisRest.getEntryAsJSON(id, entry));
+            return elexisRest.getEntryAsJSON(id, entry);
         }
     }
 
@@ -154,49 +160,54 @@ public class AsyncDictionaryLinkingHelper {
      * @throws IOException
      * @throws TransformerException
      */
-    public void getDictionaryDetails(MessageBody messageBody) throws IOException, TransformerException {
+    private void prepareAsyncRun(MessageBody messageBody) throws IOException, TransformerException {
         // Processing source object from MessageBody
-        URL sourceEndpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
-        if (null != messageBody.getSource().getEndpoint()) {
-            sourceEndpoint = new URL(messageBody.getSource().getEndpoint());
-        }
-        ELEXISRest elexisRest = new ELEXISRest(sourceEndpoint);
+        sourceEndpoint = new URL(messageBody.getSource().getEndpoint());
+        sourceId = messageBody.getSource().getId();
+        ELEXISRest elexisRest = ELEXISRest.factory.make(sourceEndpoint);
 
         // Getting the left dictionary id and the entries from messageBody
         log.info("[ Loading Source details for request: "+requestId+" ]");
         String sourceId = messageBody.getSource().getId();
         ArrayList<String> sourceEntries = messageBody.getSource().getEntries();
-        leftModel = processDictionary(sourceEntries, elexisRest, sourceId);
+        ArrayList<String> lemmaForms = new ArrayList<>();
+        leftModel = processDictionary(sourceEntries, elexisRest, sourceId, lemmaForms);
 
-        // Writing the left dictionary into leftFile
-        FileWriter out = new FileWriter(leftFile);
-        leftModel.write(out, "TTL");
 
         // Processing target object from MessageBody
-        URL targetEndpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
-        if (null != messageBody.getTarget().getEndpoint()) {
-            targetEndpoint = new URL(messageBody.getTarget().getEndpoint());
-        }
-        elexisRest = new ELEXISRest(targetEndpoint);
+        targetEndpoint = new URL(messageBody.getTarget().getEndpoint());
+        targetId = messageBody.getTarget().getId();
+        elexisRest = ELEXISRest.factory.make(targetEndpoint);
 
         // Getting the right dictionary id and the entries from messageBody
         log.info("[ Loading Target details for request: "+requestId+" ]");
         String targetId = messageBody.getTarget().getId();
         ArrayList<String> targetEntries = messageBody.getTarget().getEntries();
-        rightModel = processDictionary(targetEntries, elexisRest, targetId);
+        if(targetEntries == null) {
+            targetEntries = new ArrayList<>();
+            for(String lemma : lemmaForms) {
+                Lemma[] lemmas = elexisRest.getHeadWordLookup(targetId, lemma);
+                if(lemmas != null) {
+                    for(Lemma l : lemmas) {
+                        targetEntries.add(l.getId());
+                    }
+                }
+            }
+        }
+        rightModel = processDictionary(targetEntries, elexisRest, targetId, null);
 
-        // Writing the right dictionary into rightFile
-        out = new FileWriter(rightFile);
-        rightModel.write(out, "TTL");
     }
 
     /**
      * Method to run the linking for the dictionaries in background
      */
     @Async
-    public void asyncExecute() {
-        alignments = org.insightcentre.uld.naisc.main.Main.execute(requestId, leftFile, rightFile,
-                config, new None<>(), requestStatusListener, new DefaultDatasetLoader());
+    public void asyncExecute(MessageBody body, Configuration config) throws IllegalStateException, ModelNotTrainedException, IOException, TransformerException {
+        prepareAsyncRun(body);
+        alignments = org.insightcentre.uld.naisc.main.Main.execute(requestId,
+                new DefaultDatasetLoader.ModelDataset(leftModel, sourceId, sourceEndpoint),
+                new DefaultDatasetLoader.ModelDataset(rightModel, targetId, targetEndpoint),
+                config, new None<>(), requestStatusListener, null, null, new DefaultDatasetLoader());
         requestStatusListener.updateStatus(NaiscListener.Stage.COMPLETED, "Linking Process Complete");
     }
 

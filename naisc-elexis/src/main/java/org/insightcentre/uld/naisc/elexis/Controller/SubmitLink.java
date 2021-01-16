@@ -6,6 +6,7 @@ import org.insightcentre.uld.naisc.elexis.Helper.AsyncDictionaryLinkingHelper;
 import org.insightcentre.uld.naisc.elexis.Model.*;
 import org.insightcentre.uld.naisc.elexis.Model.MessageBody;
 import org.insightcentre.uld.naisc.elexis.RestService.ELEXISRest;
+import org.insightcentre.uld.naisc.scorer.ModelNotTrainedException;
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -49,7 +50,7 @@ public class SubmitLink {
     public ResponseEntity<DefaultResponse> defaultGet() throws MalformedURLException, JSONException {
 //        URL endpoint = new URL("http://localhost:8000/");
         URL endpoint = new URL("http://server1.nlp.insight-centre.org:9019/");
-        ELEXISRest elexisRest = new ELEXISRest(endpoint);
+        ELEXISRest elexisRest = ELEXISRest.factory.make(endpoint);
 
         log.info("[ Initiating default request ]");
         DefaultResponse defaultResponse = new DefaultResponse();
@@ -67,20 +68,18 @@ public class SubmitLink {
      */
     @PostMapping(value = "/submit")
     public ResponseEntity<SubmitResponse> submitLinkRequest(@RequestBody MessageBody messageBody)
-            throws IOException, TransformerException {
+            throws IOException, TransformerException, ModelNotTrainedException {
         String requestId = UUID.randomUUID().toString();
-        AsyncDictionaryLinkingHelper asyncHelper = context.getBean(AsyncDictionaryLinkingHelper.class);
+        AsyncDictionaryLinkingHelper asyncHelper = new AsyncDictionaryLinkingHelper(requestId);
         inMemoryRequestStore.put(requestId, asyncHelper);
 
         // Using an object of AsyncDictionaryLinkingHelper, RequestStatusListener to initiate the request in background
         log.info("[ Loading details for submit request for "+requestId+" ]");
-        asyncHelper.setRequestId(requestId);
-        asyncHelper.getConfigurationDetails(messageBody);
-        asyncHelper.getDictionaryDetails(messageBody);
+        org.insightcentre.uld.naisc.main.Configuration config = asyncHelper.getConfigurationDetails(messageBody);
 
         // Calling the execute method with the generated files
         log.info("[ Initiating submit request for "+requestId+" ]");
-        asyncHelper.asyncExecute();
+        asyncHelper.asyncExecute(messageBody, config);
 
         // Returning the requestId for the request
         SubmitResponse submitResponse = new SubmitResponse();
