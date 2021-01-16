@@ -99,7 +99,7 @@ public class ExecuteServlet extends HttpServlet {
                 String id = er.runId == null || !er.runId.matches(VALID_ID)
                         ? String.format("%016x", new Random().nextLong())
                         : er.runId;
-                if (executions.containsKey(id) && !executions.get(id).isActive && !ManageServlet.completed.containsKey(id)) {
+                if (executions.containsKey(id) && (!executions.get(id).isActive && !ManageServlet.completed.containsKey(id)) || er.forceOverwrite) {
                     executions.remove(id);
                 } else if (ManageServlet.completed.containsKey(id) || executions.containsKey(id)) {
                     throw new IllegalArgumentException("Run already exists!");
@@ -196,6 +196,7 @@ public class ExecuteServlet extends HttpServlet {
         public String runId;
         public int foldCount = 0;
         public CrossFold.FoldDirection foldDir;
+        public boolean forceOverwrite = false;
     }
 
     /**
