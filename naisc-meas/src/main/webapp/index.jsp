@@ -514,16 +514,43 @@ var app = new Vue({
                 $('#error').modal('show');
             }
         });
-    },        
+    },
+    checkDuplicateRuns() {
+        for(run in this.runs) {
+            if(this.identifier === this.runs[run].identifier) {
+                if(confirm("Run already exists. Delete previous run before continuing?")) {
+                    forceOverwrite = true;
+                    this.runs.splice(run, 1);
+                    break;
+                } else {
+                    return "abort";
+                }
+            }
+        }
+        for(run in this.activeRuns) {
+            if(this.identifier === this.runs[run].identifier) {
+                if(confirm("Run already exists. Delete previous run before continuing?")) {
+                    forceOverwrite = true;
+                    this.activeRuns.splice(run, 1);
+                    break;
+                } else {
+                    return "abort";
+                }
+            }
+        }
+        return false;
+    },
     startRun() {
         var configName = this.configName;
         var datasetName = this.datasetName;
         console.log(this.config);
         var data = this;
+        var forceOverwrite = this.checkDuplicateRuns();
+        if(forceOverwrite === "abort") { return; }
         jQuery.ajax({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/start",
             method: "POST",
-            data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier }),
+            data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier, "forceOverwrite": forceOverwrite }),
             processData: false,
             success: function(result) {
                 var id = result;
@@ -546,10 +573,12 @@ var app = new Vue({
         var configName = this.configName;
         var datasetName = this.datasetName;
         var data = this;
+        var forceOverwrite = this.checkDuplicateRuns();
+        if(forceOverwrite === "abort") { return; }
         jQuery.ajax({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/train",
             method: "POST",
-            data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier }),
+            data: JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName, "dataset": this.datasetName, "runId": this.identifier, "forceOverwrite": forceOverwrite }),
             processData: false,
             success: function(result) {
                 var id = result;
@@ -581,6 +610,8 @@ var app = new Vue({
         var configName = this.configName;
         var datasetName = this.datasetName;
         var data = this;
+        var forceOverwrite = this.checkDuplicateRuns();
+        if(forceOverwrite === "abort") { return; }
         if(this.configName == null || this.configName == "" ||
             this.datasetName == null || this.datasetName == "") {
             $('#exceptionText').html("<h5>Configuration or dataset not set</h5>");
@@ -590,7 +621,8 @@ var app = new Vue({
         var postData = JSON.stringify({"config": unflatten_config(this.config), "configName": this.configName,
                                    "dataset": this.datasetName, "runId": this.identifier,
                                    "foldDir": $('input[name="foldDir"]:checked').val(),
-                                   "foldCount": $('#foldCount').val()
+                                   "foldCount": $('#foldCount').val(),
+                                   "forceOverwrite": forceOverwrite
                                    });
         jQuery.ajax({
             url: "<%= System.getProperties().getProperty("base.url", "")  %>/execute/crossfold",
