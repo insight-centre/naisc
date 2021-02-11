@@ -24,7 +24,7 @@ The Web interface will be available at `http://localhost:8080`
 
 The linking interface for use with ELEXIS can be started with
 
-    ./gradlew appRun
+    ./gradlew bootRun
 
 It will be available at `http://localhost:8080`. More information about how
 to use this service is available at https://elexis-eu.github.io/elexis-rest/linking.html
