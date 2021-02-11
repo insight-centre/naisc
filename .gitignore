@@ -188,3 +188,16 @@ twb-covid-wikidata.ttl
 twb-covid-wordnet.ttl
 twb-naisc.zip
 feats.csv
+apache-jena-fuseki-3.16.0/
+apache-jena2/
+
+apache-jena-fuseki-3.16.0.tar.gz
+configs/wikidata-wordnet.json
+left.nt
+left.nt.gz
+left.ttl
+maple-test.sh
+right.nt.gz
+right.ttl
+wordnet-wikidata.nt
+feats.csv
