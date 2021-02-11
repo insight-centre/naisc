@@ -4,7 +4,7 @@
     },
     "lenses": [{
         "name": "lens.Label",
-        "property": ["http://www.w3.org/2004/02/skos/core#definition"],
+        "property": "http://www.w3.org/2004/02/skos/core#definition",
         "id": "label"
     }],
     "textFeatures": [{
