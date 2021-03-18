@@ -87,7 +87,7 @@ public class Greedy implements MatcherFactory {
                 out = new PrintWriter("tmp.data");
             } catch(IOException x) { out = null; }
             for (Alignment alignment : matches.getAlignments()) {
-                out.printf("%s,%s,%.4f,", alignment.entity1, alignment.entity2, alignment.probability);
+                if(out != null) out.printf("%s,%s,%.4f,", alignment.entity1, alignment.entity2, alignment.probability);
                 if (alignment.probability > threshold && constraint.canAdd(alignment)) {
                     overThreshold++;
                     //Constraint newConstraint = constraint.add(alignment);
@@ -95,9 +95,9 @@ public class Greedy implements MatcherFactory {
                     if (newScore > constraint.score || (newScore == constraint.score && threshold < 0)) {
                         //constraint = newConstraint;
                         constraint.add(alignment);
-                        out.println("TRUE");
+                        if(out != null) out.println("TRUE");
                     }  else {
-                        out.println("NOGAIN");
+                        if(out != null) out.println("NOGAIN");
                     }
                     if (lastComplete == null || constraint.canComplete(alignment) && newScore > lastComplete.score) {
                         lastComplete = constraint.copy();
@@ -105,13 +105,13 @@ public class Greedy implements MatcherFactory {
                     }
                 } else if(!Double.isFinite(alignment.probability)) {
                     nonFinite++;
-                    out.println("NONFINITE");
+                    if(out != null) out.println("NONFINITE");
                 } else {
-                    out.println("CONSTRAINT");
+                    if(out != null) out.println("CONSTRAINT");
                 }
             }
 
-            out.close();
+            if(out != null) out.close();
             if (lastComplete != null) {
                 List<Alignment> alignment = lastComplete.alignments();
                 listener.updateStatus(NaiscListener.Stage.MATCHING, String.format("Predicted %d/%d alignments (%d non-finite, probability=%.4f)", alignment.size(), overThreshold, nonFinite, lastComplete.score));
