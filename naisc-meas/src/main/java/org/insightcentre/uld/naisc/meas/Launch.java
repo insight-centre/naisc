@@ -23,7 +23,7 @@ import org.insightcentre.uld.naisc.main.Install;
 
 public class Launch {
 
-    private static final String WEBROOT_INDEX = "/webapp/";
+    private static final String WEBROOT_INDEX = "/webapp";
 
     private final int port;
 
