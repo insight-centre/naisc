@@ -1,0 +1,171 @@
+.config {
+    clear:both;
+    padding-top: 20px;
+}
+/* Enter and leave animations can use different */
+/* durations and timing functions.              */
+.slide-fade-enter-active {
+  transition: all .3s ease;
+}
+.slide-fade-leave-active {
+  transition: all .8s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+.slide-fade-enter, .slide-fade-leave-to
+/* .slide-fade-leave-active below version 2.1.8 */ {
+  transform: translateX(10px);
+  opacity: 0;
+}
+.icon-table-col {
+    width:26px !important;
+}
+
+body {
+    font-family: 'Rokkitt', serif;
+}
+
+h1, h2 {
+    font-family: 'Unica One', serif;
+    
+}
+
+h3,h4,h5,thead,button,label {
+    font-family: 'Patua One', serif;
+}
+
+h1 {
+    padding-top: 30px;
+    color: #621d7d;
+}
+
+.percentage-large {
+    font-size: 80px;
+    text-align:center;
+    color: #aaa;
+}
+
+.percentage-title {
+    font-size: 20px;
+    text-align:center;
+    color: #555;
+}
+
+.percentage {
+    margin-bottom: 20px;
+    margin-top:20px;
+}
+
+.percentage-bordered {
+    border-right: 2px solid #ddd;
+}
+
+.spaced-buttons button {
+    margin-left: 5px;
+}
+
+.spaced-buttons {
+    padding-bottom: 25px;
+}
+
+.progress span {
+    color: #ccc;
+    font-family: 'Patua One', serif;
+    text-shadow: 1px 1px #333;
+}
+
+a {
+    color: #621d7d;
+}
+
+a:hover {
+    color: #AA32D9;
+}
+
+.btn {
+    font-size: 15px;
+}
+
+td .btn {
+    font-size: 12px;
+    height: 30px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 9px;
+    padding-right: 9px;
+}
+
+td {
+    font-size: 18px;
+}
+
+.valid-yes {
+    background-color: #C9FFBA !important;
+}
+
+.valid-no {
+    background-color: #FFC7C3 !important;
+}
+
+.valid-novel {
+    background-color: #C9C8FF !important;
+}
+
+.form-control {
+    font-size: 20px;
+}
+
+input:invalid {
+    border-color: red;
+}
+
+.lens-id {
+    font-weight: bold;
+    text-transform: capitalize;
+}
+
+.lens-content::before {
+    content: "\201C";
+}
+
+.lens-content::after {
+    content: "\201D";
+}
+
+.lens-content {
+    
+}
+
+.lens-language {
+    font-size: 70%;
+    color: #666;
+}
+
+.results_title {
+    color: #333;
+    text-align:center;
+    font-style: italic;
+    width: 100%;
+}
+
+.btn-user {
+    margin: 6px;
+}
+
+.modal-wide {
+    max-width: 750px;
+}
+
+.treeLink {
+    border-left: 1px solid black;
+    padding-left: 5px;
+    font-style: italic;
+    color: #555;
+}
+
+.root {
+    font-weight: bold;
+    color: #000;
+}
+
+.table td {
+    vertical-align: center;
+}
