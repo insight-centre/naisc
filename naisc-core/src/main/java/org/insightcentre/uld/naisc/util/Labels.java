@@ -11,7 +11,7 @@ import org.apache.jena.rdf.model.Literal;
 /**
  * Tools for working with labels
  *
- * @author John McCrae <john@mccr.ae>
+ * @author John McCrae &lt;john@mccr.ae&gt;
  */
 public final class Labels {
 

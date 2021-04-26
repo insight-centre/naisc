@@ -23,7 +23,7 @@ public interface Option<A> extends Collection<A> {
     /**
      * Get the value of raise an exception
      * @param exception The exception to raise
-     * @returns A if this value is some
+     * @return A if this value is some
      */
     A getOrExcept(RuntimeException exception);
     /**

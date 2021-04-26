@@ -13,7 +13,7 @@ import org.insightcentre.uld.naisc.util.Some;
  * <li>A left dataset</li>
  * <li>A right dataset</li>
  * <li>(Optional) A gold standard alignment</li>
- * <ul>
+ * </ul>
  *
  * @author John McCrae
  */
