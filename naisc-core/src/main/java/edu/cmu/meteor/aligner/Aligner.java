@@ -196,7 +196,7 @@ this.functionWords.add("first");
 this.functionWords.add("“");
 this.functionWords.add("over");
 this.functionWords.add("other");
-this.functionWords.add("”");
+this.functionWords.add("\u201d");
 this.functionWords.add("into");
 this.functionWords.add("some");
 this.functionWords.add("what");

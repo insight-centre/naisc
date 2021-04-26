@@ -61,10 +61,10 @@ public class Normalizer {
 			.compile("([^\\p{Digit}])[,]([\\p{Digit}])");
 
 	// Single quotes to normalize
-	private static Pattern r_quote_norm = Pattern.compile("([`‘’])");
+	private static Pattern r_quote_norm = Pattern.compile("([`\u2018\u2019])");
 	private static String s_quote_norm = "'";
 	// Double quotes to normalize
-	private static Pattern r_quote_norm2 = Pattern.compile("([“”]|'')");
+	private static Pattern r_quote_norm2 = Pattern.compile("([\u201c\u201d]|'')");
 	private static String s_quote_norm2 = " \" ";
 
 	// Dashes to normalize
@@ -108,7 +108,7 @@ public class Normalizer {
 	private static String s_rm_dash = "$1 $2";
 
     //                                                  Unicode spaces
-	private static Pattern r_white = Pattern.compile("[               　 ]+");
+	private static Pattern r_white = Pattern.compile("[  \u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u00a0]+");
 	private static String s_white = " ";
 
 	// Nonbreaking prefixes
