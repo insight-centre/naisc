@@ -19,5 +19,5 @@
         }
     },
     "description": "The default setting with ACDH predictor (please start server manually before using)",
-    "rescaler": "Percentile"
+    "rescaler": "NoScaling"
 }
