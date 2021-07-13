@@ -3,14 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.insightcentre</groupId>
     <artifactId>naisc</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Naisc - Automatic Linking Tool</name>
 
     <modules>
         <module>naisc-core</module>
         <module>naisc-meas</module>
-        <module>naisc-elexis</module>
         <module>naisc-rest</module>
         <module>naisc-cili</module>
     </modules>

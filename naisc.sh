@@ -5,4 +5,4 @@ cd "$(dirname "$0")"
 
 ./gradlew jarWithDeps
 
-java -jar naisc-core/build/libs/naisc-core-all-1.1.jar $*
+java -jar naisc-core/build/libs/naisc-core-all-1.2-SNAPSHOT.jar $*

@@ -474,7 +474,7 @@ public class Execution implements ExecuteListener {
                 lastLeftRoot = rrr.leftRoot;
                 lastLeftPath = rrr.leftPath;
             }
-            if (rrr.rightRoot.equals(lastRightRoot)) {
+            if (rrr.rightRoot != null && rrr.rightRoot.equals(lastRightRoot)) {
                 rrr.rightRoot = "";
                 List<String> newRightPath = new ArrayList<>();
                 Iterator<String> i1 = rrr.rightPath.iterator();
