@@ -127,7 +127,7 @@ public class ACDHFeature implements GraphFeatureFactory {
                                     mapper.getTypeFactory().constructArrayType(ACDHResponse.class));
                             Feature[] features = new Feature[responses.length];
                             for(int i = 0; i < features.length; i++) {
-                                features[i] = new Feature("acdh_" + responses[i].alignment,
+                                features[i] = new Feature(responses[i].alignment,
                                         Double.parseDouble(responses[i].probability));
                             }
                             return features;

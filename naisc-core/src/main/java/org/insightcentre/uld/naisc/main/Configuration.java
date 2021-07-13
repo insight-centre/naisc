@@ -43,6 +43,7 @@ import org.insightcentre.uld.naisc.blocking.Command;
 import org.insightcentre.uld.naisc.blocking.OntoLex;
 import org.insightcentre.uld.naisc.constraint.*;
 import org.insightcentre.uld.naisc.feature.*;
+import org.insightcentre.uld.naisc.graph.ACDHFeature;
 import org.insightcentre.uld.naisc.graph.ExternalGraphFeature;
 import org.insightcentre.uld.naisc.lens.*;
 import org.insightcentre.uld.naisc.matcher.*;
@@ -423,7 +424,8 @@ public class Configuration {
         PropertyOverlap.class,
         Automatic.class,
         PPR.class,
-            ExternalGraphFeature.class
+            ExternalGraphFeature.class,
+            ACDHFeature.class
     };
 
     /**
@@ -534,7 +536,8 @@ public class Configuration {
         Average.class,
         LibSVM.class,
         RAdLR.class,
-            ExternalScorer.class
+            ExternalScorer.class,
+            ACDHScorer.class
     };
 
     /**

@@ -1,0 +1,23 @@
+{
+    "blocking": {
+        "name": "blocking.Automatic"
+    },
+    "lenses": [],
+    "textFeatures": [
+    ],
+    "graphFeatures": [{
+        "name": "graph.ACDHFeature",
+        "endpoint": "http://localhost:5000/ACDH/ACDH_MWSA_Service/1o/achda-mwsa/scores/"
+    }],
+    "scorers": [{
+        "name": "scorer.ACDHScorer"
+    }],
+    "matcher": {
+        "name": "matcher.Greedy",
+        "constraint": {
+            "name": "constraint.Taxonomic"
+        }
+    },
+    "description": "The default setting with ACDH predictor (please start server manually before using)",
+    "rescaler": "Percentile"
+}
