@@ -8,10 +8,11 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.jena.rdf.model.NodeIterator;
-import org.apache.jena.rdf.model.RDFNode;
+import org.apache.http.util.EntityUtils;
+import org.apache.jena.rdf.model.*;
 import org.insightcentre.uld.naisc.*;
 import org.insightcentre.uld.naisc.analysis.Analysis;
+import org.insightcentre.uld.naisc.lens.OntoLex;
 import org.insightcentre.uld.naisc.util.Lazy;
 import org.insightcentre.uld.naisc.util.StringPair;
 
@@ -29,6 +30,15 @@ public class ACDHFeature implements GraphFeatureFactory {
 
         @ConfigurationParameter(description = "The property used for part-of-speech")
         public String posURL = "http://www.lexinfo.net/ontology/3.0/lexinfo#partOfSpeech";
+
+        @ConfigurationParameter(description = "The property used for the definitions")
+        public String defURL = "http://www.w3.org/2004/02/skos/core#definition";
+
+        @ConfigurationParameter(description = "The classifier to use")
+        public String classifier = "randomforest";
+
+        @ConfigurationParameter(description = "OntoLex dialect to use")
+        public OntoLex.Dialect ontolexDialect = OntoLex.Dialect.ONTOLEX;
     }
 
     @Override
@@ -36,25 +46,41 @@ public class ACDHFeature implements GraphFeatureFactory {
         Configuration config = new ObjectMapper().convertValue(params, Configuration.class);
         if(config.endpoint == null) {
             throw new RuntimeException("Endpoint for ACDH service must be specified");
-        } //else if(config.)
-        throw new RuntimeException("TODO");
+        } else if(config.defURL == null) {
+            throw new RuntimeException("Definition URL cannot be null");
+        }
+        return new ACDHFeatureImpl(sparqlData, config.lemmaURL, config.defURL, config.posURL, config.endpoint, config.classifier, config.ontolexDialect);
     }
+
 
     private static class ACDHFeatureImpl implements GraphFeature {
         private final Dataset dataset;
         private final String lemmaURL, defURL, posURL;
         private final String path;
         private final String classifier;
+        private final OntoLex.Dialect dialect;
 
-        public ACDHFeatureImpl(Dataset dataset, String lemmaURL, String defURL, String posURL, String path, String classifier) {
+        public ACDHFeatureImpl(Dataset dataset, String lemmaURL, String defURL, String posURL, String path, String classifier, OntoLex.Dialect dialect) {
             this.dataset = dataset;
             this.lemmaURL = lemmaURL;
             this.defURL = defURL;
             this.posURL = posURL;
             this.path = path;
             this.classifier = classifier;
+            this.dialect = dialect;
         }
 
+        private Property ontolex(Dataset model, String name) {
+            switch (dialect) {
+                case ONTOLEX:
+                    return model.createProperty("http://www.w3.org/ns/lemon/ontolex#"+ name);
+                case LEMON:
+                    return model.createProperty("http://lemon-model.net/lemon#"+ name);
+                case MONNET_LEMON:
+                    return model.createProperty("http://www.monnet-project.eu/lemon#"+ name);
+            }
+            throw new RuntimeException("Dialect not valid");
+        }
         @Override
         public String id() {
             return "acdh";
@@ -88,8 +114,8 @@ public class ACDHFeature implements GraphFeatureFactory {
                 HttpPost post = new HttpPost(path);
                 StringEntity entity = new StringEntity(mapper.writeValueAsString(
                         new ACDHMessageBody(classifier, new ACDHMessagePair(
-                                lemma, lang, pos == null ? "noun" : pos,
-                        def1, def2))));
+                                lemma, pos == null ? "noun" : pos, lang,
+                                def1, def2))));
                 entity.setContentType("application/json");
                 post.setEntity(entity);
                 ResponseHandler<Feature[]> handler = new ResponseHandler<Feature[]>() {
@@ -106,6 +132,7 @@ public class ACDHFeature implements GraphFeatureFactory {
                             }
                             return features;
                         } else {
+                            System.err.println(EntityUtils.toString(httpResponse.getEntity()));
                             throw new RuntimeException(String.format("%s returned status code %d", path, status));
                         }
                     }
@@ -158,7 +185,7 @@ public class ACDHFeature implements GraphFeatureFactory {
         private StringPair extractLemma(URIRes entity1, NaiscListener listener) {
             if(lemmaURL != null) {
                 NodeIterator iter1 = dataset.listObjectsOfProperty(entity1.toJena(dataset), dataset.createProperty(lemmaURL));
-                if (iter1.hasNext()) {
+                while (iter1.hasNext()) {
                     RDFNode n = iter1.next();
                     if (n.isLiteral()) {
                         return new StringPair(n.asLiteral().getString(),n.asLiteral().getLanguage());
@@ -168,9 +195,42 @@ public class ACDHFeature implements GraphFeatureFactory {
                     }
                 }
             }
+            ResIterator iter2 = dataset.listSubjectsWithProperty(ontolex(dataset,"sense"), entity1.toJena(dataset));
+            while(iter2.hasNext()) {
+                Resource r = iter2.next();
+                NodeIterator iter3 = dataset.listObjectsOfProperty(r, dataset.createProperty("http://www.w3.org/2000/01/rdf-schema#label"));
+                while(iter3.hasNext()) {
+                    RDFNode n = iter3.next();
+                    if (n.isLiteral()) {
+                        return new StringPair(n.asLiteral().getString(), n.asLiteral().getLanguage());
+                    }
+                }
+                for(String formProp : ONTOLEX_FORM_PROPERTIES) {
+                    NodeIterator iter4 = dataset.listObjectsOfProperty(r, ontolex(dataset, formProp));
+                    while (iter4.hasNext()) {
+                        RDFNode n = iter4.next();
+                        if (n.isResource()) {
+                            NodeIterator iter5 = dataset.listObjectsOfProperty(n.asResource(), ontolex(dataset, "canonicalForm"));
+                            while (iter5.hasNext()) {
+                                RDFNode n2 = iter5.next();
+                                if (n2.isLiteral()) {
+                                    return new StringPair(n2.asLiteral().getString(), n2.asLiteral().getLanguage());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             return null;
         }
     }
+
+    private static String[] ONTOLEX_FORM_PROPERTIES = new String[] {
+        "canonicalForm",
+            "lexicalForm",
+            "otherForm",
+            "form" // Incorrect but occasionally encountered
+    };
 
     private static class ACDHMessageBody {
         public String classifier;
