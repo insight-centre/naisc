@@ -52,6 +52,11 @@ then
     gzip models/rnns.zip
 fi
 
+if [ ! -f $MODELS/english-wordnet-2020.xml.gz ]
+then
+    wget https://en-word.net/static/english-wordnet-2020.xml.gz -O $MODELS/english-wordnet-2020.xml.gz
+fi
+
 if [ ! -d data ]
 then
     wget http://john.mccr.ae/naisc/data.zip
