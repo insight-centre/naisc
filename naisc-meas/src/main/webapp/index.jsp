@@ -355,10 +355,9 @@
 
     <script
   src="<%= System.getProperties().getProperty("base.url", "")  %>/js/jquery-3.3.1.min.js"
-  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-  crossorigin="anonymous"></script>
-    <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
-    <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+  ></script>
+    <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/popper.min.js" ></script>
+    <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/bootstrap.min.js" ></script>
     <script src="<%= System.getProperties().getProperty("base.url", "")  %>/js/vue.js"></script>
 
     <script>var data = <%= Meas.json() %>;</script>

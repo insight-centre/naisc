@@ -432,7 +432,7 @@ public class Execution implements ExecuteListener {
 
                     }
                 }
-            } catch(SQLException|JsonProcessingException x) {
+            } catch(SQLException|IOException x) {
                 throw new RuntimeException(x);
             }
         }
