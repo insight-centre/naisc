@@ -20,6 +20,11 @@ by the following
 
 The Web interface will be available at `http://localhost:8080`
 
+Alternatively you may download a precompiled version from 
+https://john.mccr.ae/naisc/naisc-meas-all-1.1.jar and run it wtih
+
+    java -jar naisc-meas-all-1.1.jar
+
 ## ELEXIS Interface
 
 The linking interface for use with ELEXIS can be started with
