@@ -6,15 +6,15 @@ _'Naisc' means 'links' in Irish and is pronounced 'nashk'._
 
 ## Installation
 
-Naisc can be installed with Gradle, to compile and run the system run the 
+Naisc can be installed with Maven, to compile and run the system run the 
 following:
 
-    ./gradlew jarWithDeps
+    mvn install
 
 ## Meas - Meas Evaluation and Analysis Suite
 
 For developing models and training there is a web application that can be built
-by the following
+by the following (this requires Gradle for the moment and may not work on Java 17+)
 
     ./gradlew meas
 

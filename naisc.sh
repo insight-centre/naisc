@@ -3,6 +3,9 @@
 # Change to directory where this script is located
 cd "$(dirname "$0")"
 
-./gradlew jarWithDeps
+if [ ! -f naisc-core/target/naisc-core-1.1-jar-with-dependencies.jar ]
+then
+    mvn install
+fi
 
-java -jar naisc-core/build/libs/naisc-core-all-1.1.jar $*
+java -jar naisc-core/target/naisc-core-1.1-jar-with-dependencies.jar $*
