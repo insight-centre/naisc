@@ -3,4 +3,4 @@
 # Change to directory where this script is located
 cd "$(dirname "$0")"
 
-./gradlew meas
+mvn -q exec:java -Dexec.mainClass="org.insightcentre.uld.naisc.meas.Launch" -Dexec.args="$*"

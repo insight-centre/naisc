@@ -22,5 +22,7 @@ jobs:
           prerelease: true
           title: "Build"
           files: |
-            naisc-meas/target/naisc-meas-jar-with-dependencies.jar 
+            naisc-meas/target/naisc-meas-jar-with-dependencies.jar
             naisc-core/target/naisc-core-1.1-jar-with-dependencies.jar
+            configs/
+            datasets/
