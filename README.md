@@ -28,23 +28,13 @@ place them at the following paths
 For developing models and training there is a web application that can be built
 by the following (this requires Gradle for the moment and may not work on Java 17+)
 
-    ./gradlew meas
+    ./meas.sh
 
 The Web interface will be available at `http://localhost:8080`
 
-Alternatively you may download a precompiled version from 
-https://john.mccr.ae/naisc/naisc-meas-all-1.1.jar and run it wtih
+**Alternatively** you may download use the release version with
 
-    java -jar naisc-meas-all-1.1.jar
-
-## ELEXIS Interface
-
-The linking interface for use with ELEXIS can be started with
-
-    ./gradlew bootRun
-
-It will be available at `http://localhost:8080`. More information about how
-to use this service is available at https://elexis-eu.github.io/elexis-rest/linking.html
+    java -jar naisc-meas-jar-with-dependencies-1.1.jar
 
 ## Command line operation
 
