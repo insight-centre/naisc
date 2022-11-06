@@ -20,9 +20,7 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN}}"
           automatic_release_tag: "Ubuntu-latest"
           prerelease: true
-          title: "Build"
+          title: "Latest Build"
           files: |
             naisc-meas/target/naisc-meas-jar-with-dependencies.jar
             naisc-core/target/naisc-core-1.1-jar-with-dependencies.jar
-            configs/
-            datasets/

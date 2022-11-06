@@ -6,10 +6,22 @@ _'Naisc' means 'links' in Irish and is pronounced 'nashk'._
 
 ## Installation
 
-Naisc can be installed with Maven, to compile and run the system run the 
+The latest build can be downloaded from [GitHub Releases](https://github.com/insight-centre/naisc/releases)
+
+The latest versions can be downloaded with
+
+    install.sh
+
+**Alternatively** Naisc can be installed with Maven, to compile and run the system run the 
 following:
 
-    mvn install
+    install.sh
+
+**Alternatively** you may download the compiled JARs from the release and 
+place them at the following paths
+
+* `https://github.com/insight-centre/naisc/releases/download/Ubuntu-latest/naisc-core-1.1-jar-with-dependencies.jar` →  `naisc-core/target/naisc-core-1.1-jar-with-dependencies.jar`
+* `https://github.com/insight-centre/naisc/releases/download/Ubuntu-latest/naisc-meas-jar-with-dependencies.jar` → `naisc-meas/target/naisc-meas-jar-with-dependencies.jar`
 
 ## Meas - Meas Evaluation and Analysis Suite
 
