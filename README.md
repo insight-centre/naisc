@@ -26,7 +26,7 @@ place them at the following paths
 ## Meas - Meas Evaluation and Analysis Suite
 
 For developing models and training there is a web application that can be built
-by the following (this requires Gradle for the moment and may not work on Java 17+)
+by the following
 
     ./meas.sh
 
