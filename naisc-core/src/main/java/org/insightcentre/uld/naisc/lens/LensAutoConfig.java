@@ -86,7 +86,9 @@ public class LensAutoConfig {
             for(Pair<String,String> elem : keys) {
                 if(leftCandidates.contains(elem._1) && rightCandidates.contains(elem._2)) {
                     lenses.add(new Label.LabelImpl(elem._1, elem._2, null, leftModel, null));
-                    log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, "Using " +  elem._1 +" with " + elem._2 + " as a lens");
+                    log.message(Stage.INITIALIZING, NaiscListener.Level.INFO, "Using " +  
+                            (elem._1.equals("") ? "URI" : elem._1) + " with " + 
+                            (elem._2.equals("") ? "URI" : elem._2) + elem._2 + " as a lens");
                     leftCandidates.remove(elem._1);
                     rightCandidates.remove(elem._2);
                     if(scores.getDouble(elem) <= 0.1) {

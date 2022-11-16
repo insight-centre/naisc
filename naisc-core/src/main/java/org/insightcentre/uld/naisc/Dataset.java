@@ -3,6 +3,7 @@ package org.insightcentre.uld.naisc;
 import java.net.URL;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
+import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.NodeIterator;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
@@ -38,6 +39,7 @@ public interface Dataset {
 
     public Property createProperty(String uri);
     public Resource createResource(String uri);
+    public Literal createLiteral(String value);
 
     public ResIterator listSubjectsWithProperty(Property createProperty);
     public ResIterator listSubjectsWithProperty(Property createProperty, RDFNode object);
@@ -51,4 +53,5 @@ public interface Dataset {
     public QueryExecution createQuery(Query query);
 
     public String id();
+
 }

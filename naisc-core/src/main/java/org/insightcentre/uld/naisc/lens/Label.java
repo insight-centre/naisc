@@ -90,10 +90,26 @@ public class Label implements LensFactory {
 
             }
             if(lit1.isEmpty()) {
-                log.message(NaiscListener.Stage.MATCHING, NaiscListener.Level.WARNING, String.format("Property %s not found in left ontology for %s\n", leftProp.getURI(), res1));
+                if(leftProp.getURI().equals("")) {
+                    try {
+                        lit1.add(model.createLiteral(URI.getRaw(new java.net.URI(res1.getURI()), URI.LabelLocation.infer)));
+                    } catch(java.net.URISyntaxException x) {
+                        throw new RuntimeException("Jena URI is not valid Java URI?!", x);
+                    }
+                } else {
+                    log.message(NaiscListener.Stage.MATCHING, NaiscListener.Level.WARNING, String.format("Property %s not found in left ontology for %s\n", leftProp.getURI(), res1));
+                }
             }
             if(lit2.isEmpty()) {
-                log.message(NaiscListener.Stage.MATCHING, NaiscListener.Level.WARNING, String.format("Property %s not found in right ontology for %s\n", rightProp.getURI(), res2));
+                if(rightProp.getURI().equals("")) {
+                    try {
+                        lit2.add(model.createLiteral(URI.getRaw(new java.net.URI(res2.getURI()), URI.LabelLocation.infer)));
+                    } catch(java.net.URISyntaxException x) {
+                        throw new RuntimeException("Jena URI is not valid Java URI?!", x);
+                    }
+                } else {
+                    log.message(NaiscListener.Stage.MATCHING, NaiscListener.Level.WARNING, String.format("Property %s not found in right ontology for %s\n", rightProp.getURI(), res2));
+                }
             }
             List<LangStringPair> labels = Labels.closestLabelsByLang(lit1, lit2);
 

@@ -255,6 +255,10 @@ class CILISQLiteDataset(dbFile : File) : Dataset, Closeable {
         return model.createResource(uri)
     }
 
+    override fun createLiteral(value: String?): Literal {
+        return model.createLiteral(value)
+    }
+
     override fun listSubjectsWithProperty(property : Property?): ResIterator {
         if(property == null) {
             throw UnsupportedOperationException("Propert cannot be null")

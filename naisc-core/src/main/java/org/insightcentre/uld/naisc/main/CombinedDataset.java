@@ -49,7 +49,12 @@ public class CombinedDataset implements Dataset {
 
     @Override
     public Resource createResource(String uri) {
-        return dataset2.createResource(uri);
+        return dataset1.createResource(uri);
+    }
+
+    @Override
+    public Literal createLiteral(String val) {
+        return dataset1.createLiteral(val);
     }
 
     @Override

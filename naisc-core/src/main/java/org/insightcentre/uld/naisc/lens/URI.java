@@ -134,7 +134,7 @@ public class URI implements LensFactory {
         }
     }
     
-    private static String getRaw(java.net.URI uri, LabelLocation location) {
+    static String getRaw(java.net.URI uri, LabelLocation location) {
         switch(location) {
             case fragment:
                 return uri.getFragment();

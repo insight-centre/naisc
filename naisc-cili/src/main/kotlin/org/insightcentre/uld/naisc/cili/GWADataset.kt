@@ -178,6 +178,10 @@ class GWADataset(private val xmlFile : File) : Dataset {
         return model.createResource(uri)
     }
 
+    override fun createLiteral(value: String?): Literal {
+        return model.createLiteral(value)
+    }
+
     override fun listSubjectsWithProperty(property: Property?): ResIterator {
         return ResIteratorImpl(stats.filter { s -> s.predicate == property }
                 .map{ s -> s.subject }

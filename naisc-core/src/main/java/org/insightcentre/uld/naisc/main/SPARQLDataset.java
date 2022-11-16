@@ -86,6 +86,11 @@ public class SPARQLDataset implements Dataset {
     }
 
     @Override
+    public Literal createLiteral(String v) {
+        return model.createLiteral(v);
+    }
+
+    @Override
     public ResIterator listSubjectsWithProperty(Property prop) {
         String queryString = "SELECT DISTINCT ?s " + sparqlGraph() + "{ ?s <" +  prop.getURI() + "> ?o " + uriFilter("s") + "}";
         return new ResIteratorImpl(new OffsetLimitSPARQL<Resource>(queryString, limit) {

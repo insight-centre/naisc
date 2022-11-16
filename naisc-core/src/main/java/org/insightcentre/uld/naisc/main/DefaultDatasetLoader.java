@@ -7,6 +7,7 @@ import java.util.zip.GZIPInputStream;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QueryExecutionFactory;
+import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.NodeIterator;
@@ -108,6 +109,11 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
         }
 
         @Override
+        public Literal createLiteral(String val) {
+            return model.createLiteral(val);
+        }
+
+        @Override
         public ResIterator listSubjectsWithProperty(Property createProperty) {
             return model.listSubjectsWithProperty(createProperty);
         }
@@ -175,6 +181,11 @@ public class DefaultDatasetLoader implements DatasetLoader<ModelDataset> {
 
         @Override
         public Resource createResource(String uri) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Literal createLiteral(String val) {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
