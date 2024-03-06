@@ -201,3 +201,13 @@ right.nt.gz
 right.ttl
 wordnet-wikidata.nt
 feats.csv
+
+naisc-cili/.classpath
+naisc-cili/.project
+naisc-core/.classpath
+naisc-core/.project
+naisc-meas/.classpath
+naisc-meas/.project
+naisc-rest/.classpath
+naisc-rest/.project
+.project

@@ -10,6 +10,9 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Methods that download appropriate datasets
@@ -17,7 +20,7 @@ import java.util.zip.ZipInputStream;
  */
 public class Install {
     
-    private static void verifyOrDownload(String name) throws IOException {
+    private static List<String> verifyOrDownload(String name) throws IOException {
         try {
             if(!new File("models").exists()) {
                 new File("models").mkdir();
@@ -26,16 +29,14 @@ public class Install {
                 System.err.println("Downloading resource: " + name);
                 URL website = new URL("http://server1.nlp.insight-centre.org/naisc-models/" + name + ".gz");
                 ReadableByteChannel rbc = Channels.newChannel(new GZIPInputStream(website.openStream()));
-                FileOutputStream fos = new FileOutputStream("models/" + name);
-                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                try(FileOutputStream fos = new FileOutputStream("models/" + name)) {
+                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                }
             }
+            return Collections.emptyList();
         } catch(IOException x) {
-            throw new IOException("Could not download a resource. You can fix this by manually downloading and installing it\n" +
-            "For example on a Linux machine use the following commands:\n" +
-            "    wget http://server1.nlp.insight-centre.org/naisc-models/" + name + ".gz\n" +
-            "    gunzip " + name + " .gz\n" +
-            "    mv " + name + ".gz models/\n", x);
-        }
+            return Collections.singletonList(name);
+       }
 
     }
     
@@ -98,13 +99,27 @@ public class Install {
         if(System.getProperty("naisc.skip.install") != null)
             return;
         getConfigs();
-        verifyOrDownload("idf");
-        verifyOrDownload("ngidf");
-        verifyOrDownload("glove.6B.100d.txt");
-        verifyOrDownload("jaccard.libsvm");
-        verifyOrDownload("basic.libsvm");
-        verifyOrDownload("default.libsvm");
-        
+        List<String> missing = new ArrayList<>();
+        missing.addAll(verifyOrDownload("idf"));
+        missing.addAll(verifyOrDownload("ngidf"));
+        missing.addAll(verifyOrDownload("glove.6B.100d.txt"));
+        missing.addAll(verifyOrDownload("jaccard.libsvm"));
+        missing.addAll(verifyOrDownload("basic.libsvm"));
+        missing.addAll(verifyOrDownload("default.libsvm"));
+        if(!missing.isEmpty()) {
+            System.err.println("Could not download a resource. You can fix this by manually downloading and installing it\n" +
+            "For example on a Linux machine use the following commands:");
+            for (String name : missing) {
+                System.err.println("    wget http://server1.nlp.insight-centre.org/naisc-models/" + name + ".gz");
+            }
+            for (String name : missing) {                System.err.println("    gunzip " + name + ".gz");
+                System.err.println("    mv " + name + " models/");
+            }
+            for (String name : missing) {
+                System.err.println("    rm " + name + ".gz");
+            }
+            throw new IOException("Missing resources: " + missing);
+        }
     }
 
 }
