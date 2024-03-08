@@ -162,15 +162,18 @@ public class Meas {
 
     private static List<String> getAvailableDataset() {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(
-                new URL("http://server1.nlp.insight-centre.org/naisc-datasets/").
+                new URL("https://server1.nlp.insight-centre.org/naisc-datasets/").
                         openConnection().getInputStream()))) {
             List<String> datasets = new ArrayList<>();
             String line = in.readLine();
             while (line != null) {
-                if (line.contains("[DIR]")) {
+                if (line.contains("<a href=\"")) {
                     int i1 = line.indexOf("href=\"") + 6;
                     int i2 = line.indexOf("\"", i1) - 1;
-                    datasets.add(line.substring(i1, i2));
+                    String dataset = line.substring(i1, i2);
+                    if (!dataset.contains(".")) {
+                        datasets.add(dataset);
+                    }
                 }
                 line = in.readLine();
             }

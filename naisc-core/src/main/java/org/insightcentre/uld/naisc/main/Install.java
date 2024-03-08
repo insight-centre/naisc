@@ -27,7 +27,7 @@ public class Install {
             }
             if(!new File("models/" + name).exists()) {
                 System.err.println("Downloading resource: " + name);
-                URL website = new URL("http://server1.nlp.insight-centre.org/naisc-models/" + name + ".gz");
+                URL website = new URL("https://server1.nlp.insight-centre.org/naisc-models/" + name + ".gz");
                 ReadableByteChannel rbc = Channels.newChannel(new GZIPInputStream(website.openStream()));
                 try(FileOutputStream fos = new FileOutputStream("models/" + name)) {
                     fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
@@ -35,6 +35,7 @@ public class Install {
             }
             return Collections.emptyList();
         } catch(IOException x) {
+            x.printStackTrace();
             return Collections.singletonList(name);
        }
 
@@ -45,18 +46,19 @@ public class Install {
             if(!new File("configs").exists()) {
                 new File("configs").mkdir();
                 System.err.println("Downloading configurations");
-                URL website = new URL("http://server1.nlp.insight-centre.org/naisc-models/configs.zip");
+                URL website = new URL("https://server1.nlp.insight-centre.org/naisc-models/configs.zip");
                 ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                FileOutputStream fos = new FileOutputStream("configs.zip");
-                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                unzip("configs.zip", "configs");
-                new File("configs.zip").delete();
+                try(FileOutputStream fos = new FileOutputStream("configs.zip")) {
+                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                    unzip("configs.zip", "configs");
+                    new File("configs.zip").delete();
+                }
 
             }
         } catch(IOException x) {
             throw new IOException("Could not download a resource. You can fix this by manually downloading and installing it\n" +
                     "For example on a Linux machine use the following commands:\n" +
-                    "    wget http://server1.nlp.insight-centre.org/naisc-models/configs.zip\n" +
+                    "    wget https://server1.nlp.insight-centre.org/naisc-models/configs.zip\n" +
                     "    unzip configs.zip -d configs/\n", x);
         }
     }
@@ -110,7 +112,7 @@ public class Install {
             System.err.println("Could not download a resource. You can fix this by manually downloading and installing it\n" +
             "For example on a Linux machine use the following commands:");
             for (String name : missing) {
-                System.err.println("    wget http://server1.nlp.insight-centre.org/naisc-models/" + name + ".gz");
+                System.err.println("    wget https://server1.nlp.insight-centre.org/naisc-models/" + name + ".gz");
             }
             for (String name : missing) {                System.err.println("    gunzip " + name + ".gz");
                 System.err.println("    mv " + name + " models/");

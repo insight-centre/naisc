@@ -25,18 +25,18 @@ public class DatasetDownloadServlet extends HttpServlet {
                 if (!directory.mkdirs() && !directory.exists() && !directory.isDirectory()) {
                     throw new ServletException("Could not create directoy");
                 }
-                downloadRDF("http://server1.nlp.insight-centre.org/naisc-datasets/" + datasetName + "/left",
+                downloadRDF("https://server1.nlp.insight-centre.org/naisc-datasets/" + datasetName + "/left",
                         directory, "left");
-                downloadRDF("http://server1.nlp.insight-centre.org/naisc-datasets/" + datasetName + "/right",
+                downloadRDF("https://server1.nlp.insight-centre.org/naisc-datasets/" + datasetName + "/right",
                         directory, "right");
                 try {
-                    downloadRDF("http://server1.nlp.insight-centre.org/naisc-datasets/" + datasetName + "/align",
+                    downloadRDF("https://server1.nlp.insight-centre.org/naisc-datasets/" + datasetName + "/align",
                             directory, "align");
                 } catch(IOException x) {
                     // Ignore: not all datasets have a gold standard
                 }
                 try {
-                    downloadURL("http://server1.nlp.insight-centre.org/naisc-datasets/" + datasetName + "/blocks.nt",
+                    downloadURL("https://server1.nlp.insight-centre.org/naisc-datasets/" + datasetName + "/blocks.nt",
                             new File(directory, "blocks.nt"));
                 } catch(IOException x) {
                     // Ignore: not all datasets have a blocking
