@@ -44,11 +44,11 @@ dependencies {
 task jarWithDeps(type: Jar, dependsOn:build) {
     manifest {
         attributes 'Implementation-Title': 'Naisc-CILI Integration',
-        	'Implementation-Version': version,
+        	'Implementation-Version': archiveVersion,
         	'Main-Class': 'org.insightcentre.uld.naisc.cili.MainKt'
     }
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    baseName = project.name + '-all'
+    archiveBaseName = project.name + '-all'
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }

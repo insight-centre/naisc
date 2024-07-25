@@ -42,8 +42,7 @@ fi
 
 if [ ! -f $MODELS/wn31.xml.gz ]
 then
-    wget http://john.mccr.ae/wn31.xml -O models/wn31.xml
-    gzip models/wn31.xml
+    wget http://john.mccr.ae/wn31.xml.gz -O models/wn31.xml.gz
 fi
 
 if [ ! -f $MODELS/rnn-300 ]

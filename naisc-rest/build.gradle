@@ -7,12 +7,15 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.6.10"
+}
 
 apply plugin: 'war'
 apply plugin: 'kotlin'
 apply from: 'https://raw.github.com/gretty-gradle-plugin/gretty/master/pluginScripts/gretty.plugin'
 repositories {
-    jcenter()
+    mavenCentral()
 }
 dependencies {
     implementation project(':naisc-core')

@@ -15,17 +15,17 @@ dependencies {
 task jarWithDeps(type: Jar, dependsOn:build) {
     manifest {
         attributes 'Implementation-Title': 'Naisc Meas Evaluation and Analysis Suite',
-        	'Implementation-Version': version,
+        	'Implementation-Version': archiveVersion,
         	'Main-Class': 'org.insightcentre.uld.naisc.meas.Launch'
     }
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    baseName = project.name + '-all'
+    archiveBaseName = project.name + '-all'
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
 
 task meas(type: JavaExec, dependsOn:jarWithDeps) {
-    main = "-jar"
+    mainClass = "-jar"
     args = [ "naisc-meas/build/libs/naisc-meas-all-" + project.version + ".jar" ]
     workingDir = ".."        
 }

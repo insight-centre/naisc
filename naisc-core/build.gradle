@@ -18,17 +18,17 @@ dependencies {
 task jarWithDeps(type: Jar, dependsOn: build) {
     manifest {
         attributes 'Implementation-Title': 'Naisc Linking Tool',
-            'Implementation-Version': version,
+            'Implementation-Version': archiveVersion,
             'Main-Class': 'org.insightcentre.uld.naisc.main.Main'
     }
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    baseName = project.name + '-all'
+    archiveBaseName = project.name + '-all'
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
 
 task runNaisc(type: JavaExec, dependsOn: 'classes') {
-    main = "org.insightcentre.uld.naisc.main.Main"
+    mainClass = "org.insightcentre.uld.naisc.main.Main"
     classpath = sourceSets.main.runtimeClasspath
     if (project.hasProperty("appArgs")) {
         args appArgs.split(" ")
@@ -36,7 +36,7 @@ task runNaisc(type: JavaExec, dependsOn: 'classes') {
 }
 
 task train(type: JavaExec, dependsOn: 'classes') {
-    main = "org.insightcentre.uld.naisc.main.MultiTrain"
+    mainClass = "org.insightcentre.uld.naisc.main.MultiTrain"
     classpath = sourceSets.main.runtimeClasspath
     if (project.hasProperty("appArgs")) {
         args appArgs.split(" ")
